@@ -23,11 +23,11 @@ const Hero = () => {
                         <h1 className="text-5xl lg:text-7xl font-extrabold text-gray-900 tracking-tight leading-[1.1] mb-6">
                             Modern <span className="text-emerald-500 italic">Lead</span> <br />
                             Management <br />
-                            System
+                            Module
                         </h1>
 
                         <p className="text-lg text-gray-600 mb-8 max-w-xl mx-auto lg:mx-0">
-                            Stop losing leads in spreadsheets. Convert more deals faster with our AI-driven Lead Management System designed for modern teams.
+                            Stop losing leads in spreadsheets. Convert more deals faster with our AI-driven Lead Management Module designed for modern teams.
                         </p>
 
                         <div className="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start">
@@ -67,7 +67,7 @@ const Hero = () => {
                                 <div className="w-3 h-3 rounded-full bg-amber-400"></div>
                                 <div className="w-3 h-3 rounded-full bg-green-400"></div>
                             </div>
-                            <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=800" alt="Dashboard Lead Management System Mockup" className="w-full h-auto object-cover object-top max-h-[400px]" />
+                            <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=800" alt="Dashboard Lead Management Module Mockup" className="w-full h-auto object-cover object-top max-h-[400px]" />
 
                             {/* Floating elements */}
                             <motion.div

@@ -19,7 +19,7 @@ const Productivity = () => {
                             care about <span className="text-emerald-500">productivity</span>
                         </h2>
                         <p className="text-lg text-gray-600 mb-10 max-w-lg">
-                            Efficiency is at the core of our Lead Management System. Spend less time clicking and more time closing, thanks to an intuitive design and seamless integrations.
+                            Efficiency is at the core of our Lead Management Module. Spend less time clicking and more time closing, thanks to an intuitive design and seamless integrations.
                         </p>
 
                         <div className="space-y-8">

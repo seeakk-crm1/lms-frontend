@@ -13,7 +13,7 @@ const Testimonials = () => {
         {
             name: "Marcus Torres",
             role: "Customer Success Manager, GrowCorp",
-            text: "Finally, a lead management system that doesn't feel like a data entry chore. The UI is incredibly intuitive and fast.",
+            text: "Finally, a lead management module that doesn't feel like a data entry chore. The UI is incredibly intuitive and fast.",
             avatar: "https://i.pravatar.cc/150?img=11"
         },
         {
