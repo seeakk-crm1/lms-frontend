@@ -24,9 +24,9 @@ const Login = () => {
             setAuth(data.user, data.accessToken, data.refreshToken);
             toast.success(`Welcome back, ${data.user.name.split(' ')[0]}!`);
             if (!data.user.isOnboarded) {
-                navigate('/workspace/setup');
+                navigate('/workspace/setup', { replace: true });
             } else {
-                navigate('/dashboard');
+                navigate('/dashboard', { replace: true });
             }
         },
         onError: (error) => {
@@ -48,9 +48,9 @@ const Login = () => {
             setAuth(data.user, data.accessToken, data.refreshToken);
             toast.success('Successfully logged in with Google!');
             if (!data.user.isOnboarded) {
-                navigate('/workspace/setup');
+                navigate('/workspace/setup', { replace: true });
             } else {
-                navigate('/dashboard');
+                navigate('/dashboard', { replace: true });
             }
         },
         onError: (error) => {

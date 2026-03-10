@@ -72,7 +72,7 @@ const WorkspaceSetup = () => {
             // Update global state without needing to relogin
             updateUser({ isOnboarded: true, workspaceId: response.data.workspace._id, role: response.data.user.role });
             toast.success("Workspace perfectly configured!", { id: toastId });
-            navigate('/dashboard');
+            navigate('/dashboard', { replace: true });
         } catch (err) {
             toast.error(err.response?.data?.message || "Failed to configure workspace", { id: toastId });
         } finally {

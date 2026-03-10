@@ -34,6 +34,14 @@ const OnboardingRoute = ({ children }) => {
   return children;
 };
 
+// Protect login page from authenticated users
+const PublicRoute = ({ children }) => {
+  const { isAuthenticated, user } = useAuthStore();
+  if (isAuthenticated && user?.isOnboarded) return <Navigate to="/dashboard" replace />;
+  if (isAuthenticated && !user?.isOnboarded) return <Navigate to="/workspace/setup" replace />;
+  return children;
+};
+
 function App() {
   const [loading, setLoading] = useState(true);
 
@@ -107,7 +115,11 @@ function App() {
           </div>
         } />
 
-        <Route path="/login" element={<Login />} />
+        <Route path="/login" element={
+          <PublicRoute>
+            <Login />
+          </PublicRoute>
+        } />
 
         <Route path="/workspace/setup" element={
           <OnboardingRoute>
