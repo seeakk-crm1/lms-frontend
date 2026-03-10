@@ -12,6 +12,25 @@ const InputWrapper = ({ label, icon: Icon, children }) => (
 );
 
 const WorkspaceForm = ({ error, formData, handleChange, handleSubmit, loading }) => {
+
+    // Dynamically generate standardized label options to prevent mismatch on any auto-detected OS values
+    const getLanguageLabel = (isoCode) => {
+        try {
+            return new Intl.DisplayNames(['en'], { type: 'language' }).of(isoCode);
+        } catch (e) { return isoCode; }
+    };
+
+    const getCurrencyLabel = (isoCode) => {
+        try {
+            return `${new Intl.DisplayNames(['en'], { type: 'currency' }).of(isoCode)} (${isoCode})`;
+        } catch (e) { return isoCode; }
+    };
+
+    // Guarantee the User's auto-detected browser defaults are ALWAYS safely included in the lists
+    const timeZones = Array.from(new Set([formData.timeZone, 'Asia/Kolkata', 'Europe/London', 'America/New_York', 'America/Los_Angeles', 'UTC']));
+    const languages = Array.from(new Set([formData.language, 'en-US', 'en-GB', 'es-ES', 'fr-FR', 'de-DE']));
+    const currencies = Array.from(new Set([formData.currencyLocale, 'USD', 'INR', 'EUR', 'GBP', 'AUD']));
+
     return (
         <div className="md:w-[58%] p-8 sm:p-12 pl-8 sm:pl-14 flex flex-col justify-center bg-white relative">
             <h1 className="text-2xl font-black text-gray-900 mb-2">Configure Your Workspace</h1>
@@ -60,10 +79,9 @@ const WorkspaceForm = ({ error, formData, handleChange, handleSubmit, loading })
                         onChange={handleChange}
                         className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all appearance-none font-medium"
                     >
-                        <option value="GMT +5:30 India Standard Time (Asia/Kolkata)">(GMT +5:30) India Standard Time (Asia/Kolkata)</option>
-                        <option value="GMT +0:00 Greenwich Mean Time (Europe/London)">(GMT +0:00) Greenwich Mean Time (Europe/London)</option>
-                        <option value="GMT -5:00 Eastern Standard Time (America/New_York)">(GMT -5:00) Eastern Standard Time (America/New_York)</option>
-                        <option value="GMT -8:00 Pacific Standard Time (America/Los_Angeles)">(GMT -8:00) Pacific Standard Time (America/Los_Angeles)</option>
+                        {timeZones.map((tz) => (
+                            <option key={tz} value={tz}>IANA: {tz}</option>
+                        ))}
                     </select>
                 </InputWrapper>
 
@@ -76,10 +94,9 @@ const WorkspaceForm = ({ error, formData, handleChange, handleSubmit, loading })
                                 onChange={handleChange}
                                 className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all appearance-none font-medium"
                             >
-                                <option value="English (US)">English (US)</option>
-                                <option value="English (UK)">English (UK)</option>
-                                <option value="Spanish (ES)">Spanish (ES)</option>
-                                <option value="French (FR)">French (FR)</option>
+                                {languages.map((lang) => (
+                                    <option key={lang} value={lang}>{getLanguageLabel(lang)}</option>
+                                ))}
                             </select>
                         </InputWrapper>
                     </div>
@@ -91,10 +108,9 @@ const WorkspaceForm = ({ error, formData, handleChange, handleSubmit, loading })
                                 onChange={handleChange}
                                 className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all appearance-none font-medium"
                             >
-                                <option value="India (INR)">India (INR)</option>
-                                <option value="United States (USD)">United States (USD)</option>
-                                <option value="Europe (EUR)">Europe (EUR)</option>
-                                <option value="United Kingdom (GBP)">United Kingdom (GBP)</option>
+                                {currencies.map((currency) => (
+                                    <option key={currency} value={currency}>{getCurrencyLabel(currency)}</option>
+                                ))}
                             </select>
                         </InputWrapper>
                     </div>

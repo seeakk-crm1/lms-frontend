@@ -14,12 +14,22 @@ const WorkspaceSetup = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
+    const browserTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Kolkata';
+    const browserLanguage = navigator.language || 'en-US';
+
+    const guessCurrency = (tz, lang) => {
+        if (tz.includes('Kolkata') || lang === 'hi-IN') return 'INR';
+        if (tz.includes('London') || lang === 'en-GB') return 'GBP';
+        if (tz.includes('Europe')) return 'EUR';
+        return 'USD';
+    };
+
     const [formData, setFormData] = useState({
         companyName: '',
         employeeCount: '',
-        timeZone: 'GMT +5:30 India Standard Time (Asia/Kolkata)',
-        language: 'English (US)',
-        currencyLocale: 'India (INR)',
+        timeZone: browserTimeZone,
+        language: browserLanguage,
+        currencyLocale: guessCurrency(browserTimeZone, browserLanguage),
         loadSampleData: true
     });
 
