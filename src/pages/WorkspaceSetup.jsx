@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-hot-toast';
 import useAuthStore from '../store/useAuthStore';
 import api from '../services/api';
 
@@ -12,7 +13,6 @@ const WorkspaceSetup = () => {
     const navigate = useNavigate();
 
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
     const [metaLists, setMetaLists] = useState({ timeZones: [], languages: [], currencies: [] });
 
     const [formData, setFormData] = useState({
@@ -40,6 +40,7 @@ const WorkspaceSetup = () => {
                 }));
             } catch (err) {
                 console.error("Failed to load workspace configuration metadata", err);
+                toast.error("Failed to load global configurations.");
             }
         };
 
@@ -56,21 +57,24 @@ const WorkspaceSetup = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setError(null);
 
         if (!formData.companyName.trim() || !formData.employeeCount) {
-            setError("Company Name and Employee Count are required.");
+            toast.error("Company Name and Employee Count are required.", {
+                icon: '🏢',
+            });
             return;
         }
 
         setLoading(true);
+        const toastId = toast.loading('Configuring your workspace...');
         try {
             const response = await api.post('/workspace/setup', formData);
             // Update global state without needing to relogin
             updateUser({ isOnboarded: true, workspaceId: response.data.workspace._id, role: response.data.user.role });
+            toast.success("Workspace perfectly configured!", { id: toastId });
             navigate('/dashboard');
         } catch (err) {
-            setError(err.response?.data?.message || "Failed to configure workspace");
+            toast.error(err.response?.data?.message || "Failed to configure workspace", { id: toastId });
         } finally {
             setLoading(false);
         }
@@ -101,7 +105,6 @@ const WorkspaceSetup = () => {
             >
                 <WorkspaceSidebar user={user} />
                 <WorkspaceForm
-                    error={error}
                     formData={formData}
                     handleChange={handleChange}
                     handleSubmit={handleSubmit}

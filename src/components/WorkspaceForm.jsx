@@ -12,7 +12,7 @@ const InputWrapper = ({ label, icon: Icon, children }) => (
     </div>
 );
 
-const WorkspaceForm = ({ error, formData, handleChange, handleSubmit, loading, lists }) => {
+const WorkspaceForm = ({ formData, handleChange, handleSubmit, loading, lists }) => {
 
     const timeZones = lists?.timeZones || [];
     const languages = lists?.languages || [];
@@ -32,12 +32,6 @@ const WorkspaceForm = ({ error, formData, handleChange, handleSubmit, loading, l
 
             <h1 className="text-2xl font-black text-gray-900 mb-2">Configure Your Workspace</h1>
             <p className="text-gray-500 text-sm mb-8 font-medium">Tailor your Seeakk experience by providing a few details about your team.</p>
-
-            {error && (
-                <div className="mb-6 p-4 bg-red-50 text-red-600 rounded-xl text-sm font-bold border border-red-100 flex items-start gap-2">
-                    <span>⚠️</span> {error}
-                </div>
-            )}
 
             <form onSubmit={handleSubmit} className="w-full max-w-[460px]">
                 <InputWrapper label="Company Name" icon={Building2}>

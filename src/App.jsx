@@ -12,6 +12,7 @@ import CTA from './components/CTA';
 import Footer from './components/Footer';
 
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
 import useAuthStore from './store/useAuthStore';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
@@ -45,6 +46,32 @@ function App() {
 
   return (
     <>
+      <Toaster
+        position="top-center"
+        toastOptions={{
+          className: 'text-sm font-bold',
+          style: {
+            borderRadius: '16px',
+            background: '#ffffff',
+            color: '#111827',
+            padding: '12px 24px',
+            boxShadow: '0 20px 40px -15px rgba(0,0,0,0.1)',
+            border: '1px solid rgba(0,0,0,0.05)',
+          },
+          success: {
+            iconTheme: {
+              primary: '#10b981',
+              secondary: '#fff',
+            },
+          },
+          error: {
+            iconTheme: {
+              primary: '#ef4444',
+              secondary: '#fff',
+            },
+          },
+        }}
+      />
       <AnimatePresence>
         {loading && (
           <motion.div

@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, ArrowRight, TrendingUp, Users, Calendar, Search } from 'lucide-react';
 import { useMutation } from '@tanstack/react-query';
 import { GoogleLogin } from '@react-oauth/google';
+import { toast } from 'react-hot-toast';
 import useAuthStore from '../store/useAuthStore';
 import api from '../services/api';
 
@@ -13,7 +14,6 @@ const Login = () => {
 
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [loginError, setLoginError] = useState('');
 
     const loginMutation = useMutation({
         mutationFn: async (credentials) => {
@@ -22,6 +22,7 @@ const Login = () => {
         },
         onSuccess: (data) => {
             setAuth(data.user, data.accessToken, data.refreshToken);
+            toast.success(`Welcome back, ${data.user.name.split(' ')[0]}!`);
             if (!data.user.isOnboarded) {
                 navigate('/workspace/setup');
             } else {
@@ -29,13 +30,12 @@ const Login = () => {
             }
         },
         onError: (error) => {
-            setLoginError(error.response?.data?.message || 'Login failed. Please try again.');
+            toast.error(error.response?.data?.message || 'Login failed. Please try again.');
         }
     });
 
     const handleLogin = (e) => {
         e.preventDefault();
-        setLoginError('');
         loginMutation.mutate({ email, password });
     };
 
@@ -46,6 +46,7 @@ const Login = () => {
         },
         onSuccess: (data) => {
             setAuth(data.user, data.accessToken, data.refreshToken);
+            toast.success('Successfully logged in with Google!');
             if (!data.user.isOnboarded) {
                 navigate('/workspace/setup');
             } else {
@@ -53,17 +54,16 @@ const Login = () => {
             }
         },
         onError: (error) => {
-            setLoginError(error.response?.data?.message || 'Google login failed. Please try again.');
+            toast.error(error.response?.data?.message || 'Google login failed. Please try again.');
         }
     });
 
     const handleGoogleSuccess = (credentialResponse) => {
-        setLoginError('');
         googleLoginMutation.mutate(credentialResponse.credential);
     };
 
     const handleGoogleError = () => {
-        setLoginError('Google Login failed completely.');
+        toast.error('Google Login failed completely.');
     };
     return (
         <motion.div
@@ -246,12 +246,6 @@ const Login = () => {
                         <span className="text-[10px] sm:text-[11px] flex-shrink-0 font-bold text-gray-400 uppercase tracking-wider sm:tracking-widest text-center">OR CONTINUE WITH EMAIL</span>
                         <div className="flex-grow h-px bg-gray-200"></div>
                     </div>
-
-                    {loginError && (
-                        <div className="mb-4 p-3 bg-red-50 text-red-600 border border-red-200 rounded-xl text-sm font-medium">
-                            {loginError}
-                        </div>
-                    )}
                     <form className="space-y-6" onSubmit={handleLogin}>
                         <div>
                             <label className="block text-sm font-bold text-gray-900 mb-2">Email Address</label>
