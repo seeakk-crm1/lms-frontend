@@ -11,8 +11,27 @@ import Testimonials from './components/Testimonials';
 import CTA from './components/CTA';
 import Footer from './components/Footer';
 
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import useAuthStore from './store/useAuthStore';
 import Login from './pages/Login';
+import Dashboard from './pages/Dashboard';
+import WorkspaceSetup from './pages/WorkspaceSetup';
+
+// Protect routes that require login AND onboarding
+const ProtectedRoute = ({ children }) => {
+  const { isAuthenticated, user } = useAuthStore();
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (user && !user.isOnboarded) return <Navigate to="/workspace/setup" replace />;
+  return children;
+};
+
+// Protect routes that require login but ONLY IF they aren't onboarded yet
+const OnboardingRoute = ({ children }) => {
+  const { isAuthenticated, user } = useAuthStore();
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (user && user.isOnboarded) return <Navigate to="/dashboard" replace />;
+  return children;
+};
 
 function App() {
   const [loading, setLoading] = useState(true);
@@ -62,6 +81,18 @@ function App() {
         } />
 
         <Route path="/login" element={<Login />} />
+
+        <Route path="/workspace/setup" element={
+          <OnboardingRoute>
+            <WorkspaceSetup />
+          </OnboardingRoute>
+        } />
+
+        <Route path="/dashboard" element={
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        } />
       </Routes>
     </>
   );

@@ -1,9 +1,70 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, ArrowRight, TrendingUp, Users, Calendar, Search } from 'lucide-react';
+import { useMutation } from '@tanstack/react-query';
+import { GoogleLogin } from '@react-oauth/google';
+import useAuthStore from '../store/useAuthStore';
+import api from '../services/api';
 
 const Login = () => {
+    const navigate = useNavigate();
+    const setAuth = useAuthStore((state) => state.setAuth);
+
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [loginError, setLoginError] = useState('');
+
+    const loginMutation = useMutation({
+        mutationFn: async (credentials) => {
+            const response = await api.post('/auth/login', credentials);
+            return response.data;
+        },
+        onSuccess: (data) => {
+            setAuth(data.user, data.accessToken, data.refreshToken);
+            if (!data.user.isOnboarded) {
+                navigate('/workspace/setup');
+            } else {
+                navigate('/dashboard');
+            }
+        },
+        onError: (error) => {
+            setLoginError(error.response?.data?.message || 'Login failed. Please try again.');
+        }
+    });
+
+    const handleLogin = (e) => {
+        e.preventDefault();
+        setLoginError('');
+        loginMutation.mutate({ email, password });
+    };
+
+    const googleLoginMutation = useMutation({
+        mutationFn: async (token) => {
+            const response = await api.post('/auth/google', { token });
+            return response.data;
+        },
+        onSuccess: (data) => {
+            setAuth(data.user, data.accessToken, data.refreshToken);
+            if (!data.user.isOnboarded) {
+                navigate('/workspace/setup');
+            } else {
+                navigate('/dashboard');
+            }
+        },
+        onError: (error) => {
+            setLoginError(error.response?.data?.message || 'Google login failed. Please try again.');
+        }
+    });
+
+    const handleGoogleSuccess = (credentialResponse) => {
+        setLoginError('');
+        googleLoginMutation.mutate(credentialResponse.credential);
+    };
+
+    const handleGoogleError = () => {
+        setLoginError('Google Login failed completely.');
+    };
     return (
         <motion.div
             initial={{ opacity: 0 }}
@@ -169,15 +230,16 @@ const Login = () => {
                         <p className="text-[15px] text-gray-500 font-medium">Please enter your details to sign in to your account.</p>
                     </div>
 
-                    <button className="w-full mb-8 flex items-center justify-center gap-3 bg-white border border-gray-100 hover:bg-gray-50 text-gray-700 font-bold py-3.5 px-4 rounded-xl transition-all shadow-sm text-sm">
-                        <svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
-                            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
-                            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
-                            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
-                        </svg>
-                        Sign in with Google
-                    </button>
+                    <div className="w-full mb-8 flex justify-center">
+                        <GoogleLogin
+                            onSuccess={handleGoogleSuccess}
+                            onError={handleGoogleError}
+                            size="large"
+                            text="signin_with"
+                            theme="outline"
+                            shape="rectangular"
+                        />
+                    </div>
 
                     <div className="flex items-center mb-8 w-full gap-2">
                         <div className="flex-grow h-px bg-gray-200"></div>
@@ -185,7 +247,12 @@ const Login = () => {
                         <div className="flex-grow h-px bg-gray-200"></div>
                     </div>
 
-                    <form className="space-y-6">
+                    {loginError && (
+                        <div className="mb-4 p-3 bg-red-50 text-red-600 border border-red-200 rounded-xl text-sm font-medium">
+                            {loginError}
+                        </div>
+                    )}
+                    <form className="space-y-6" onSubmit={handleLogin}>
                         <div>
                             <label className="block text-sm font-bold text-gray-900 mb-2">Email Address</label>
                             <div className="relative">
@@ -194,6 +261,9 @@ const Login = () => {
                                 </div>
                                 <input
                                     type="email"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    required
                                     className="block w-full pl-11 pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors shadow-sm text-gray-900 font-medium placeholder-gray-400"
                                     placeholder="alex@example.com"
                                 />
@@ -211,6 +281,9 @@ const Login = () => {
                                 </div>
                                 <input
                                     type="password"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    required
                                     className="block w-full pl-11 pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors shadow-sm text-gray-900 font-bold tracking-widest placeholder-gray-400"
                                     placeholder="........"
                                 />
@@ -231,11 +304,12 @@ const Login = () => {
 
                         <div className="relative w-full">
                             <button
-                                type="button"
-                                className="w-full flex justify-center items-center gap-2 py-3.5 px-4 rounded-xl text-base font-bold text-white bg-[#22c55e] hover:bg-[#16a34a] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#22c55e] transition-all relative z-10"
+                                type="submit"
+                                disabled={loginMutation.isPending}
+                                className="w-full flex justify-center items-center gap-2 py-3.5 px-4 rounded-xl text-base font-bold text-white bg-[#22c55e] hover:bg-[#16a34a] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#22c55e] transition-all relative z-10 disabled:opacity-70 disabled:cursor-not-allowed"
                             >
-                                Login to Account
-                                <ArrowRight size={18} strokeWidth={2.5} />
+                                {loginMutation.isPending ? 'Logging in...' : 'Login to Account'}
+                                {!loginMutation.isPending && <ArrowRight size={18} strokeWidth={2.5} />}
                             </button>
                             {/* The Purple Sweeping Figma Curve specific to design photo */}
                             <svg className="absolute top-1/2 left-[98%] hidden lg:block pointer-events-none z-0" width="250" height="200" viewBox="0 0 250 200" fill="none">
