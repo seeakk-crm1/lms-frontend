@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import useAuthStore from '../store/useAuthStore';
@@ -13,25 +13,38 @@ const WorkspaceSetup = () => {
 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
-
-    const browserTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Kolkata';
-    const browserLanguage = navigator.language || 'en-US';
-
-    const guessCurrency = (tz, lang) => {
-        if (tz.includes('Kolkata') || lang === 'hi-IN') return 'INR';
-        if (tz.includes('London') || lang === 'en-GB') return 'GBP';
-        if (tz.includes('Europe')) return 'EUR';
-        return 'USD';
-    };
+    const [metaLists, setMetaLists] = useState({ timeZones: [], languages: [], currencies: [] });
 
     const [formData, setFormData] = useState({
         companyName: '',
         employeeCount: '',
-        timeZone: browserTimeZone,
-        language: browserLanguage,
-        currencyLocale: guessCurrency(browserTimeZone, browserLanguage),
+        timeZone: '',
+        language: '',
+        currencyLocale: '',
         loadSampleData: true
     });
+
+    useEffect(() => {
+        const fetchMeta = async () => {
+            try {
+                const response = await api.get('/workspace/config-meta');
+                const { lists, defaults } = response.data;
+
+                setMetaLists(lists);
+
+                setFormData(prev => ({
+                    ...prev,
+                    timeZone: defaults.timeZone || 'UTC',
+                    language: defaults.language || 'en-US',
+                    currencyLocale: defaults.currencyLocale || 'USD'
+                }));
+            } catch (err) {
+                console.error("Failed to load workspace configuration metadata", err);
+            }
+        };
+
+        fetchMeta();
+    }, []);
 
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
@@ -93,6 +106,7 @@ const WorkspaceSetup = () => {
                     handleChange={handleChange}
                     handleSubmit={handleSubmit}
                     loading={loading}
+                    lists={metaLists}
                 />
             </motion.div>
 

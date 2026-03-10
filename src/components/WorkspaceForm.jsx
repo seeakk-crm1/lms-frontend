@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Building2, Users, Globe2, Languages, Coins, CheckCircle2, ChevronRight, Loader2, Sparkles } from 'lucide-react';
 
 const InputWrapper = ({ label, icon: Icon, children }) => (
@@ -11,25 +11,11 @@ const InputWrapper = ({ label, icon: Icon, children }) => (
     </div>
 );
 
-const WorkspaceForm = ({ error, formData, handleChange, handleSubmit, loading }) => {
+const WorkspaceForm = ({ error, formData, handleChange, handleSubmit, loading, lists }) => {
 
-    // Dynamically generate standardized label options to prevent mismatch on any auto-detected OS values
-    const getLanguageLabel = (isoCode) => {
-        try {
-            return new Intl.DisplayNames(['en'], { type: 'language' }).of(isoCode);
-        } catch (e) { return isoCode; }
-    };
-
-    const getCurrencyLabel = (isoCode) => {
-        try {
-            return `${new Intl.DisplayNames(['en'], { type: 'currency' }).of(isoCode)} (${isoCode})`;
-        } catch (e) { return isoCode; }
-    };
-
-    // Guarantee the User's auto-detected browser defaults are ALWAYS safely included in the lists
-    const timeZones = Array.from(new Set([formData.timeZone, 'Asia/Kolkata', 'Europe/London', 'America/New_York', 'America/Los_Angeles', 'UTC']));
-    const languages = Array.from(new Set([formData.language, 'en-US', 'en-GB', 'es-ES', 'fr-FR', 'de-DE']));
-    const currencies = Array.from(new Set([formData.currencyLocale, 'USD', 'INR', 'EUR', 'GBP', 'AUD']));
+    const timeZones = lists?.timeZones || [];
+    const languages = lists?.languages || [];
+    const currencies = lists?.currencies || [];
 
     return (
         <div className="md:w-[58%] p-8 sm:p-12 pl-8 sm:pl-14 flex flex-col justify-center bg-white relative">
@@ -72,7 +58,7 @@ const WorkspaceForm = ({ error, formData, handleChange, handleSubmit, loading })
                     </select>
                 </InputWrapper>
 
-                <InputWrapper label="Time Zone" icon={Globe2}>
+                <InputWrapper label="Time Zone (IANA)" icon={Globe2}>
                     <select
                         name="timeZone"
                         value={formData.timeZone}
@@ -80,36 +66,36 @@ const WorkspaceForm = ({ error, formData, handleChange, handleSubmit, loading })
                         className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all appearance-none font-medium"
                     >
                         {timeZones.map((tz) => (
-                            <option key={tz} value={tz}>IANA: {tz}</option>
+                            <option key={tz} value={tz}>{tz.replace(/_/g, ' ')}</option>
                         ))}
                     </select>
                 </InputWrapper>
 
                 <div className="flex flex-col sm:flex-row gap-4 mb-2">
                     <div className="flex-1">
-                        <InputWrapper label="Language" icon={Languages}>
+                        <InputWrapper label="Language (ISO-639)" icon={Languages}>
                             <select
                                 name="language"
                                 value={formData.language}
                                 onChange={handleChange}
                                 className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all appearance-none font-medium"
                             >
-                                {languages.map((lang) => (
-                                    <option key={lang} value={lang}>{getLanguageLabel(lang)}</option>
+                                {languages.map((lng) => (
+                                    <option key={lng.code} value={lng.code}>{lng.label}</option>
                                 ))}
                             </select>
                         </InputWrapper>
                     </div>
                     <div className="flex-1">
-                        <InputWrapper label="Currency Locale" icon={Coins}>
+                        <InputWrapper label="Currency (ISO-4217)" icon={Coins}>
                             <select
                                 name="currencyLocale"
                                 value={formData.currencyLocale}
                                 onChange={handleChange}
                                 className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all appearance-none font-medium"
                             >
-                                {currencies.map((currency) => (
-                                    <option key={currency} value={currency}>{getCurrencyLabel(currency)}</option>
+                                {currencies.map((cur) => (
+                                    <option key={cur.code} value={cur.code}>{cur.label}</option>
                                 ))}
                             </select>
                         </InputWrapper>
