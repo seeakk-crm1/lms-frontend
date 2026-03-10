@@ -10,7 +10,7 @@ const Dashboard = () => {
 
     const handleLogout = () => {
         logout();
-        navigate('/login');
+        navigate('/login', { replace: true });
     };
 
     const currentDeviceId = localStorage.getItem('deviceId');
