@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { Building2, Users, Globe2, Languages, Coins, CheckCircle2, ChevronRight, Loader2, Sparkles } from 'lucide-react';
+import SearchableSelect from './SearchableSelect';
 
 const InputWrapper = ({ label, icon: Icon, children }) => (
     <div className="mb-5">
@@ -16,6 +17,10 @@ const WorkspaceForm = ({ error, formData, handleChange, handleSubmit, loading, l
     const timeZones = lists?.timeZones || [];
     const languages = lists?.languages || [];
     const currencies = lists?.currencies || [];
+
+    const timeZoneOptions = timeZones.map(tz => ({ value: tz, label: tz.replace(/_/g, ' ') }));
+    const languageOptions = languages.map(lng => ({ value: lng.code, label: lng.label }));
+    const currencyOptions = currencies.map(cur => ({ value: cur.code, label: cur.label }));
 
     return (
         <div className="md:w-[58%] p-8 sm:p-12 pl-8 sm:pl-14 flex flex-col justify-center bg-white relative">
@@ -59,45 +64,36 @@ const WorkspaceForm = ({ error, formData, handleChange, handleSubmit, loading, l
                 </InputWrapper>
 
                 <InputWrapper label="Time Zone (IANA)" icon={Globe2}>
-                    <select
+                    <SearchableSelect
                         name="timeZone"
+                        options={timeZoneOptions}
                         value={formData.timeZone}
                         onChange={handleChange}
-                        className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all appearance-none font-medium"
-                    >
-                        {timeZones.map((tz) => (
-                            <option key={tz} value={tz}>{tz.replace(/_/g, ' ')}</option>
-                        ))}
-                    </select>
+                        placeholder="Search for a time zone..."
+                    />
                 </InputWrapper>
 
                 <div className="flex flex-col sm:flex-row gap-4 mb-2">
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0">
                         <InputWrapper label="Language (ISO-639)" icon={Languages}>
-                            <select
+                            <SearchableSelect
                                 name="language"
+                                options={languageOptions}
                                 value={formData.language}
                                 onChange={handleChange}
-                                className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all appearance-none font-medium"
-                            >
-                                {languages.map((lng) => (
-                                    <option key={lng.code} value={lng.code}>{lng.label}</option>
-                                ))}
-                            </select>
+                                placeholder="Search language..."
+                            />
                         </InputWrapper>
                     </div>
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0">
                         <InputWrapper label="Currency (ISO-4217)" icon={Coins}>
-                            <select
+                            <SearchableSelect
                                 name="currencyLocale"
+                                options={currencyOptions}
                                 value={formData.currencyLocale}
                                 onChange={handleChange}
-                                className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all appearance-none font-medium"
-                            >
-                                {currencies.map((cur) => (
-                                    <option key={cur.code} value={cur.code}>{cur.label}</option>
-                                ))}
-                            </select>
+                                placeholder="Search currency..."
+                            />
                         </InputWrapper>
                     </div>
                 </div>
