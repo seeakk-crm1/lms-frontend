@@ -70,7 +70,11 @@ const WorkspaceSetup = () => {
         try {
             const response = await api.post('/workspace/setup', formData);
             // Update global state without needing to relogin
-            updateUser({ isOnboarded: true, workspaceId: response.data.workspace._id, role: response.data.user.role });
+            updateUser({
+                isOnboarded: true,
+                workspaceId: response.data.workspace?.id || response.data.workspace?._id,
+                role: response.data.user?.role || null,
+            });
             toast.success("Workspace perfectly configured!", { id: toastId });
             navigate('/dashboard', { replace: true });
         } catch (err) {

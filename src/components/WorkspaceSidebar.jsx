@@ -3,6 +3,10 @@ import { motion } from 'framer-motion';
 import { Sparkles, LayoutGrid, CheckCircle2 } from 'lucide-react';
 
 const WorkspaceSidebar = ({ user }) => {
+    const firstName =
+        typeof user?.name === 'string' && user.name.trim()
+            ? user.name.split(' ')[0]
+            : 'User';
     return (
         <div className="md:w-[42%] bg-gradient-to-br from-[#e0fcf3] to-[#f4fefb] p-10 relative overflow-hidden flex flex-col justify-between hidden md:flex">
             <div className="relative z-10">
@@ -15,7 +19,7 @@ const WorkspaceSidebar = ({ user }) => {
                 </div>
 
                 <h2 className="text-3xl font-black text-gray-900 mb-4 tracking-tight leading-tight">
-                    Hi {user?.name?.split(' ')[0] || 'User'} <span className="inline-block animate-wave">👋</span>
+                    Hi {firstName} <span className="inline-block animate-wave">👋</span>
                 </h2>
                 <p className="text-gray-600 font-medium leading-relaxed max-w-[260px]">
                     Welcome to Seeakk. Let's get your workspace ready for peak productivity.
@@ -63,3 +67,4 @@ const WorkspaceSidebar = ({ user }) => {
 };
 
 export default WorkspaceSidebar;
+
