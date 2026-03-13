@@ -19,11 +19,29 @@ const sidebarMenus = [
         items: [
             {
                 icon: Users, label: 'Admin Management',
-                subItems: ['Users', 'Roles', 'Departments', 'Organization Chart', 'Roster Sheet']
+                subItems: [
+                    { label: 'Users', path: '/admin/users' },
+                    { label: 'Roles', path: '#' },
+                    { label: 'Departments', path: '#' },
+                    { label: 'Organization Chart', path: '#' },
+                    { label: 'Roster Sheet', path: '#' }
+                ]
             },
             {
                 icon: Settings, label: 'Master Configuration',
-                subItems: ['Lead Sources', 'Lead Stages', 'Stage Rules', 'Target Cycles', 'Lead Dynamic Forms', 'Office Locations', 'Lead Life Cycle', 'Calendar', 'Holiday List', 'Report Types', 'LOB Reasons']
+                subItems: [
+                    { label: 'Lead Sources', path: '#' },
+                    { label: 'Lead Stages', path: '#' },
+                    { label: 'Stage Rules', path: '#' },
+                    { label: 'Target Cycles', path: '#' },
+                    { label: 'Lead Dynamic Forms', path: '#' },
+                    { label: 'Office Locations', path: '#' },
+                    { label: 'Lead Life Cycle', path: '#' },
+                    { label: 'Calendar', path: '#' },
+                    { label: 'Holiday List', path: '#' },
+                    { label: 'Report Types', path: '#' },
+                    { label: 'LOB Reasons', path: '#' }
+                ]
             }
         ]
     },
@@ -32,7 +50,12 @@ const sidebarMenus = [
         items: [
             {
                 icon: Briefcase, label: 'Leads',
-                subItems: ['All Leads', 'Closed Leads', 'Bulk Assign', 'Pending Approval']
+                subItems: [
+                    { label: 'All Leads', path: '#' },
+                    { label: 'Closed Leads', path: '#' },
+                    { label: 'Bulk Assign', path: '#' },
+                    { label: 'Pending Approval', path: '#' }
+                ]
             },
             { icon: FileText, label: 'Reports', path: '/reports' },
             { icon: FileBarChart, label: 'LOB Analysis', path: '/lob-analysis' }
@@ -52,6 +75,7 @@ const MenuItem = ({ item, isCollapsed, isActive, setActiveMenu, activeMenu, togg
     const isExpanded = activeMenu === item.label;
     const hasSubItems = item.subItems && item.subItems.length > 0;
     const navigate = useNavigate();
+    const location = useLocation();
 
     // In collapsed mode, only the truly active route icon should be colored. 
     // In expanded mode, we also color the currently open accordion.
@@ -105,10 +129,14 @@ const MenuItem = ({ item, isCollapsed, isActive, setActiveMenu, activeMenu, togg
                     >
                         <div className="flex flex-col gap-1 mt-1 pl-10 pr-3">
                             {item.subItems.map((sub, idx) => (
-                                <a key={idx} href="#" className="flex items-center gap-2 text-xs font-medium text-gray-500 py-2 hover:text-emerald-600 transition-colors">
-                                    <div className="w-1 h-1 rounded-full bg-gray-300"></div>
-                                    {sub}
-                                </a>
+                                <Link 
+                                    key={idx} 
+                                    to={sub.path} 
+                                    className={`flex items-center gap-2 text-xs font-medium py-2 transition-colors ${location.pathname === sub.path ? 'text-emerald-600' : 'text-gray-500 hover:text-emerald-600'}`}
+                                >
+                                    <div className={`w-1 h-1 rounded-full ${location.pathname === sub.path ? 'bg-emerald-500' : 'bg-gray-300'}`}></div>
+                                    {sub.label}
+                                </Link>
                             ))}
                         </div>
                     </motion.div>
@@ -118,7 +146,7 @@ const MenuItem = ({ item, isCollapsed, isActive, setActiveMenu, activeMenu, togg
     );
 };
 
-const DashboardSidebar = ({ isCollapsed, toggleCollapsed, isMobile }) => {
+const DashboardSidebar = ({ isCollapsed, toggleCollapsed, isMobile = false }) => {
     const [activeMenu, setActiveMenu] = useState('Dashboard');
     const location = useLocation();
     const navigate = useNavigate();

@@ -17,6 +17,7 @@ import useAuthStore from './store/useAuthStore';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import WorkspaceSetup from './pages/WorkspaceSetup';
+import AdminUsersPage from './pages/AdminUsersPage';
 
 // Protect routes that require login AND onboarding
 const ProtectedRoute = ({ children }) => {
@@ -130,6 +131,12 @@ function App() {
         <Route path="/dashboard" element={
           <ProtectedRoute>
             <Dashboard />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/admin/users" element={
+          <ProtectedRoute>
+            <AdminUsersPage />
           </ProtectedRoute>
         } />
       </Routes>
