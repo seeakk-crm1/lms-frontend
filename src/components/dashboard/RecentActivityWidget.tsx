@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Zap, CornerDownRight, CheckCircle2 } from 'lucide-react';
 import useDashboardStore from '../../store/useDashboardStore';
 
-const RecentActivityWidget = () => {
+const RecentActivityWidget: React.FC = () => {
     const { activities, isLoading } = useDashboardStore();
 
     if (isLoading) {

@@ -1,8 +1,15 @@
-import React, { useMemo } from 'react';
-import { Building2, Users, Globe2, Languages, Coins, CheckCircle2, ChevronRight, Loader2, Sparkles } from 'lucide-react';
+import React, { ChangeEvent, FormEvent } from 'react';
+import { Building2, Users, Globe2, Languages, Coins, CheckCircle2, ChevronRight, Loader2, Sparkles, LucideIcon } from 'lucide-react';
 import SearchableSelect from './SearchableSelect';
+import { WorkspaceFormData, WorkspaceMetaLists } from '../pages/WorkspaceSetup';
 
-const InputWrapper = ({ label, icon: Icon, children }) => (
+interface InputWrapperProps {
+    label: string;
+    icon?: LucideIcon;
+    children: React.ReactNode;
+}
+
+const InputWrapper: React.FC<InputWrapperProps> = ({ label, icon: Icon, children }) => (
     <div className="mb-5">
         <label className="flex items-center gap-1.5 text-sm font-bold text-gray-700 mb-2">
             {Icon && <Icon size={16} className="text-gray-400" />}
@@ -12,15 +19,23 @@ const InputWrapper = ({ label, icon: Icon, children }) => (
     </div>
 );
 
-const WorkspaceForm = ({ formData, handleChange, handleSubmit, loading, lists }) => {
+interface WorkspaceFormProps {
+    formData: WorkspaceFormData;
+    handleChange: (e: ChangeEvent<HTMLInputElement | HTMLSelectElement> | { target: { name: string; value: any } }) => void;
+    handleSubmit: (e: FormEvent) => void;
+    loading: boolean;
+    lists: WorkspaceMetaLists;
+}
+
+const WorkspaceForm: React.FC<WorkspaceFormProps> = ({ formData, handleChange, handleSubmit, loading, lists }) => {
 
     const timeZones = lists?.timeZones || [];
     const languages = lists?.languages || [];
     const currencies = lists?.currencies || [];
 
     const timeZoneOptions = timeZones.map(tz => ({ value: tz, label: tz.replace(/_/g, ' ') }));
-    const languageOptions = languages.map(lng => ({ value: lng.code, label: lng.label }));
-    const currencyOptions = currencies.map(cur => ({ value: cur.code, label: cur.label }));
+    const languageOptions = languages.map(lng => ({ value: lng.code, label: (lng as any).label || (lng as any).name }));
+    const currencyOptions = currencies.map(cur => ({ value: cur.code, label: (cur as any).label || (cur as any).name }));
 
     return (
         <div className="md:w-[58%] p-8 sm:p-12 pl-8 sm:pl-14 flex flex-col justify-center bg-white relative">

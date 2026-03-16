@@ -1,13 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, FormEvent, ChangeEvent } from 'react';
 import { motion } from 'framer-motion';
 import { UserPlus, Phone, AlignLeft } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
-const QuickLeadWidget = () => {
+const QuickLeadWidget: React.FC = () => {
     const [name, setName] = useState('');
     const [phone, setPhone] = useState('');
 
-    const handleSave = (e) => {
+    const handleSave = (e: FormEvent) => {
         e.preventDefault();
         if (!name || !phone) {
             toast.error("Please fill in both fields");
@@ -48,7 +48,7 @@ const QuickLeadWidget = () => {
                     <input
                         type="text"
                         value={name}
-                        onChange={e => setName(e.target.value)}
+                        onChange={(e: ChangeEvent<HTMLInputElement>) => setName(e.target.value)}
                         placeholder="Full Name"
                         className="w-full pl-10 pr-4 py-2 bg-gray-50/50 border border-gray-200 rounded-xl text-sm font-bold placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 hover:border-gray-300 transition-all"
                     />
@@ -61,7 +61,7 @@ const QuickLeadWidget = () => {
                     <input
                         type="tel"
                         value={phone}
-                        onChange={e => setPhone(e.target.value)}
+                        onChange={(e: ChangeEvent<HTMLInputElement>) => setPhone(e.target.value)}
                         placeholder="Phone Number"
                         className="w-full pl-10 pr-4 py-2 bg-gray-50/50 border border-gray-200 rounded-xl text-sm font-bold placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 hover:border-gray-300 transition-all font-mono"
                     />

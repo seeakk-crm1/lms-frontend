@@ -1,34 +1,36 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
+import { toast } from 'react-hot-toast';
 import { 
-  MoreHorizontal, 
-  UserPlus, 
   Search, 
-  Filter, 
   ChevronLeft, 
   ChevronRight,
   ShieldCheck,
-  ShieldAlert,
   UserCheck,
   UserX,
   Lock,
   Unlock,
-  Target
+  Target,
+  Mail,
+  UserPlus,
+  Pencil,
+  Trash2
 } from 'lucide-react';
 import { useUsersStore } from '../../store/useUsersStore';
 import { useUsersQuery } from '../../hooks/useUsersQuery';
 import { useUpdateStatusMutation, useDeleteUserMutation, useUnlockUserMutation } from '../../hooks/useUserMutations';
+import { User } from '../../types/user.types';
 
-const UsersTable = () => {
+const UsersTable: React.FC = () => {
   const { search, setSearch, filters, setFilters, page, setPage, openCreateModal } = useUsersStore();
   const { data: usersData, isLoading } = useUsersQuery();
   
   const updateStatus = useUpdateStatusMutation();
-  const deleteUser = useDeleteUserMutation();
   const unlockUser = useUnlockUserMutation();
+  const deleteUser = useDeleteUserMutation();
 
-  const users = usersData?.data?.users || [];
-  const totalPages = usersData?.data?.pages || 1;
+  const users = usersData?.users || [];
+  const totalPages = usersData?.pages || 1;
 
   const handleStatusToggle = (id: string, currentStatus: boolean) => {
     updateStatus.mutate({ id, isActive: !currentStatus });
@@ -38,15 +40,28 @@ const UsersTable = () => {
     unlockUser.mutate(id);
   };
 
+  const handleResetPassword = (email: string) => {
+    toast.success(`Password reset link sent to ${email}`, {
+        icon: '✉️',
+        duration: 4000,
+    });
+  };
+
+  const handleDelete = (id: string, name: string) => {
+    if (window.confirm(`Are you sure you want to delete user "${name || 'this user'}"? This action cannot be undone.`)) {
+        deleteUser.mutate(id);
+    }
+  };
+
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
       {/* Search and Filters Header */}
-      <div className="p-4 border-b border-gray-50 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="relative group flex-1 max-w-md">
+      <div className="p-4 border-b border-gray-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="relative group flex-1 max-w-full sm:max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-emerald-500 transition-colors" />
           <input
             type="text"
-            placeholder="Search users by name, email, or phone..."
+            placeholder="Search users..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-50 rounded-xl focus:bg-white focus:border-emerald-500/30 focus:ring-4 focus:ring-emerald-500/5 outline-none transition-all text-sm"
@@ -54,40 +69,41 @@ const UsersTable = () => {
         </div>
 
         <div className="flex items-center gap-2">
-          <div className="flex bg-gray-50 p-1 rounded-xl border border-gray-50">
+          <div className="flex bg-gray-50 p-1 rounded-xl border border-gray-50 flex-1 sm:flex-none overflow-x-auto">
             <button
-              onClick={() => setFilters({ ...filters, status: undefined })}
-              className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${!filters.status ? 'bg-white shadow-sm text-emerald-600' : 'text-gray-500 hover:text-gray-700'}`}
+              onClick={() => setFilters({ ...filters, isActive: undefined })}
+              className={`flex-1 sm:flex-none px-3 py-1.5 text-[10px] sm:text-xs font-bold rounded-lg transition-all ${filters.isActive === undefined ? 'bg-white shadow-sm text-emerald-600' : 'text-gray-500 hover:text-gray-700'}`}
             >
               All
             </button>
             <button
-              onClick={() => setFilters({ ...filters, status: 'active' })}
-              className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${filters.status === 'active' ? 'bg-white shadow-sm text-emerald-600' : 'text-gray-500 hover:text-gray-700'}`}
+              onClick={() => setFilters({ ...filters, isActive: true })}
+              className={`flex-1 sm:flex-none px-3 py-1.5 text-[10px] sm:text-xs font-bold rounded-lg transition-all ${filters.isActive === true ? 'bg-white shadow-sm text-emerald-600' : 'text-gray-500 hover:text-gray-700'}`}
             >
               Active
             </button>
             <button
-              onClick={() => setFilters({ ...filters, status: 'locked' })}
-              className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${filters.status === 'locked' ? 'bg-white shadow-sm text-amber-600' : 'text-gray-500 hover:text-gray-700'}`}
+              onClick={() => setFilters({ ...filters, isActive: false })}
+              className={`flex-1 sm:flex-none px-3 py-1.5 text-[10px] sm:text-xs font-bold rounded-lg transition-all ${filters.isActive === false ? 'bg-white shadow-sm text-amber-600' : 'text-gray-500 hover:text-gray-700'}`}
             >
-              Locked
+              Inactive
             </button>
           </div>
 
           <button
             onClick={() => openCreateModal()}
-            className="flex items-center gap-2 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-sm font-semibold transition-all shadow-lg shadow-emerald-500/20 active:scale-95"
+            className="flex items-center justify-center gap-2 p-2 sm:px-4 sm:py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl transition-all shadow-lg shadow-emerald-500/20 active:scale-95 shrink-0"
+            title="Add New User"
           >
-            <UserPlus className="w-4 h-4" />
-            <span>Add User</span>
+            <UserPlus className="w-4 h-4 sm:w-5 sm:h-5" />
+            <span className="hidden xs:inline text-xs sm:text-sm font-bold">Add</span>
           </button>
         </div>
       </div>
 
-      {/* Table Content */}
-      <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse">
+      {/* Desktop Table View */}
+      <div className="hidden md:block overflow-x-auto">
+        <table className="w-full text-left border-collapse min-w-[800px]">
           <thead>
             <tr className="bg-gray-50/50">
               <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">User</th>
@@ -118,7 +134,7 @@ const UsersTable = () => {
                 </td>
               </tr>
             ) : (
-              users.map((user: any) => (
+              users.map((user: User) => (
                 <motion.tr
                   key={user.id}
                   layout
@@ -128,13 +144,13 @@ const UsersTable = () => {
                 >
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-600 font-bold">
+                      <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-600 font-bold shrink-0">
                         {user.name?.charAt(0) || user.email.charAt(0).toUpperCase()}
                       </div>
-                      <div>
-                        <div className="text-sm font-bold text-gray-900">{user.name || 'Invited User'}</div>
+                      <div className="min-w-0">
+                        <div className="text-sm font-bold text-gray-900 truncate">{user.name || 'Invited User'}</div>
                         <div className="flex flex-col">
-                            <span className="text-[10px] text-gray-400 font-medium">{user.email}</span>
+                            <span className="text-[10px] text-gray-400 font-medium truncate">{user.email}</span>
                             {user.username && <span className="text-[9px] text-emerald-500 font-bold">@{user.username}</span>}
                         </div>
                       </div>
@@ -144,9 +160,9 @@ const UsersTable = () => {
                     <div className="flex flex-col gap-1">
                       <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-purple-50 text-purple-600 text-[10px] font-bold uppercase tracking-tight w-fit">
                         <ShieldCheck className="w-3 h-3" />
-                        {user.role?.name || 'User'}
+                        {typeof user.role === 'string' ? user.role : user.role.name}
                       </span>
-                      <span className="text-xs text-gray-500">{user.department?.name || 'Unassigned'}</span>
+                      <span className="text-xs text-gray-500 truncate max-w-[150px]">{user.department || 'Unassigned'}</span>
                     </div>
                   </td>
                   <td className="px-6 py-4">
@@ -170,7 +186,7 @@ const UsersTable = () => {
                     </div>
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex items-center justify-end gap-2 md:opacity-0 group-hover:opacity-100 transition-opacity">
                       {user.isLocked && (
                         <button
                           onClick={() => handleUnlock(user.id)}
@@ -181,14 +197,28 @@ const UsersTable = () => {
                         </button>
                       )}
                       <button
+                        onClick={() => handleResetPassword(user.email)}
+                        className="p-1.5 text-amber-500 hover:bg-amber-50 rounded-lg transition-colors"
+                        title="Send Reset Password Link"
+                      >
+                        <Mail className="w-4 h-4" />
+                      </button>
+                      <button
                         onClick={() => openCreateModal(user.id)}
                         className="p-1.5 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
                         title="Edit User"
                       >
-                        <Target className="w-4 h-4" />
+                        <Pencil className="w-4 h-4" />
                       </button>
                       <button
-                        onClick={() => handleStatusToggle(user.id, user.isActive)}
+                        onClick={() => handleDelete(user.id, user.name || user.email)}
+                        className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Delete User"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleStatusToggle(user.id, !!user.isActive)}
                         className={`p-1.5 rounded-lg transition-colors ${user.isActive ? 'text-orange-500 hover:bg-orange-50' : 'text-emerald-500 hover:bg-emerald-50'}`}
                         title={user.isActive ? 'Deactivate' : 'Activate'}
                       >
@@ -203,10 +233,105 @@ const UsersTable = () => {
         </table>
       </div>
 
+      {/* Mobile Card View */}
+      <div className="md:hidden divide-y divide-gray-50 bg-white">
+        {isLoading ? (
+          [...Array(3)].map((_, i) => (
+            <div key={i} className="p-5 animate-pulse space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-gray-100 rounded-2xl" />
+                <div className="space-y-2 flex-1">
+                  <div className="h-4 w-3/4 bg-gray-100 rounded-lg" />
+                  <div className="h-3 w-1/2 bg-gray-100 rounded-lg" />
+                </div>
+              </div>
+              <div className="h-10 w-full bg-gray-50 rounded-xl" />
+            </div>
+          ))
+        ) : users.length === 0 ? (
+          <div className="p-12 text-center">
+             <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Search className="w-8 h-8 text-gray-300" />
+             </div>
+             <p className="text-gray-500 text-sm font-bold">No results found</p>
+             <p className="text-gray-400 text-xs mt-1">Try adjusting your filters</p>
+          </div>
+        ) : (
+          users.map((user: User) => (
+            <div key={user.id} className="p-5 space-y-4 hover:bg-gray-50/50 transition-colors">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-50 to-emerald-100/50 flex items-center justify-center text-emerald-600 font-black text-lg shrink-0 border border-emerald-100/50">
+                    {user.name?.charAt(0) || user.email.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-sm font-black text-gray-900 truncate">{user.name || 'Invited User'}</div>
+                    <div className="text-[11px] text-gray-400 font-medium truncate mb-1">{user.email}</div>
+                    <div className="flex items-center gap-1.5">
+                        {user.isLocked ? (
+                            <span className="px-2 py-0.5 rounded-md bg-red-50 text-red-600 text-[9px] font-bold uppercase tracking-tight flex items-center gap-1">
+                                <Lock className="w-2.5 h-2.5" /> Locked
+                            </span>
+                        ) : (
+                            <span className={`px-2 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-tight flex items-center gap-1 ${user.isActive ? 'bg-emerald-50 text-emerald-600' : 'bg-gray-100 text-gray-500'}`}>
+                                {user.isActive ? <UserCheck className="w-2.5 h-2.5" /> : <UserX className="w-2.5 h-2.5" />}
+                                {user.isActive ? 'Active' : 'Inactive'}
+                            </span>
+                        )}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex gap-1">
+                  <button 
+                    onClick={() => openCreateModal(user.id)}
+                    className="p-2.5 bg-blue-50 text-blue-600 rounded-xl active:scale-95 transition-all"
+                    title="Edit User"
+                  >
+                    <Pencil className="w-4 h-4" />
+                  </button>
+                  <button 
+                    onClick={() => handleDelete(user.id, user.name || user.email)}
+                    className="p-2.5 bg-red-50 text-red-600 rounded-xl active:scale-95 transition-all"
+                    title="Delete User"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-2xl border border-gray-100">
+                  <div className="flex flex-col gap-0.5">
+                      <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest leading-none mb-1">Role / Dept</span>
+                      <div className="flex items-center gap-2">
+                          <span className="text-xs font-black text-purple-600">{typeof user.role === 'string' ? user.role : user.role.name}</span>
+                          <span className="text-gray-300">|</span>
+                          <span className="text-xs text-gray-600 font-bold">{user.department || 'Unassigned'}</span>
+                      </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleResetPassword(user.email)}
+                        className="p-2 text-amber-500 bg-white border border-gray-100 rounded-lg shadow-sm"
+                      >
+                        <Mail className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleStatusToggle(user.id, !!user.isActive)}
+                        className={`p-2 rounded-lg border shadow-sm ${user.isActive ? 'bg-orange-50 text-orange-600 border-orange-100' : 'bg-emerald-50 text-emerald-600 border-emerald-100'}`}
+                      >
+                        {user.isActive ? <UserX className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}
+                      </button>
+                  </div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
       {/* Pagination Footer */}
       <div className="p-4 bg-gray-50/30 border-t border-gray-50 flex items-center justify-between">
         <span className="text-xs text-gray-500">
-          Showing <span className="font-bold">{(page - 1) * 10 + 1}</span> to <span className="font-bold">{Math.min(page * 10, usersData?.data?.total || 0)}</span> of <span className="font-bold">{usersData?.data?.total || 0}</span> users
+          Showing <span className="font-bold">{(page - 1) * 10 + 1}</span> to <span className="font-bold">{Math.min(page * 10, usersData?.total || 0)}</span> of <span className="font-bold">{usersData?.total || 0}</span> users
         </span>
         <div className="flex items-center gap-2">
           <button

@@ -1,0 +1,20 @@
+﻿src/components/dashboard/KPICards.tsx(56,25): error TS2322: Type '{ hidden: { opacity: number; y: number; }; show: { opacity: number; y: number; transition: { type: string; stiffness: number; damping: number; }; }; }' is not assignable to type 'Variants'.
+  Property 'show' is incompatible with index signature.
+    Type '{ opacity: number; y: number; transition: { type: string; stiffness: number; damping: number; }; }' is not assignable to type 'Variant'.
+      Type '{ opacity: number; y: number; transition: { type: string; stiffness: number; damping: number; }; }' is not assignable to type 'TargetAndTransition'.
+        Type '{ opacity: number; y: number; transition: { type: string; stiffness: number; damping: number; }; }' is not assignable to type '{ transition?: Transition<any> | undefined; transitionEnd?: ResolvedValues$1 | undefined; }'.
+          Types of property 'transition' are incompatible.
+            Type '{ type: string; stiffness: number; damping: number; }' is not assignable to type 'Transition<any> | undefined'.
+              Type '{ type: string; stiffness: number; damping: number; }' is not assignable to type 'TransitionWithValueOverrides<any>'.
+                Type '{ type: string; stiffness: number; damping: number; }' is not assignable to type 'ValueAnimationTransition<any>'.
+                  Types of property 'type' are incompatible.
+                    Type 'string' is not assignable to type 'AnimationGeneratorType | undefined'.
+src/components/WorkspaceForm.tsx(86,25): error TS2322: Type '(e: ChangeEvent<HTMLInputElement | HTMLSelectElement, Element>) => void' is not assignable to type '(e: { target: { name: string; value: string; }; }) => void'.
+  Types of parameters 'e' and 'e' are incompatible.
+    Type '{ target: { name: string; value: string; }; }' is missing the following properties from type 'ChangeEvent<HTMLInputElement | HTMLSelectElement, Element>': nativeEvent, currentTarget, bubbles, cancelable, and 10 more.
+src/components/WorkspaceForm.tsx(98,33): error TS2322: Type '(e: ChangeEvent<HTMLInputElement | HTMLSelectElement, Element>) => void' is not assignable to type '(e: { target: { name: string; value: string; }; }) => void'.
+  Types of parameters 'e' and 'e' are incompatible.
+    Type '{ target: { name: string; value: string; }; }' is missing the following properties from type 'ChangeEvent<HTMLInputElement | HTMLSelectElement, Element>': nativeEvent, currentTarget, bubbles, cancelable, and 10 more.
+src/components/WorkspaceForm.tsx(109,33): error TS2322: Type '(e: ChangeEvent<HTMLInputElement | HTMLSelectElement, Element>) => void' is not assignable to type '(e: { target: { name: string; value: string; }; }) => void'.
+  Types of parameters 'e' and 'e' are incompatible.
+    Type '{ target: { name: string; value: string; }; }' is missing the following properties from type 'ChangeEvent<HTMLInputElement | HTMLSelectElement, Element>': nativeEvent, currentTarget, bubbles, cancelable, and 10 more.

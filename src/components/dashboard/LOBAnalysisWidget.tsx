@@ -4,7 +4,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGri
 import { BriefcaseBusiness } from 'lucide-react';
 import useDashboardStore from '../../store/useDashboardStore';
 
-const LOBAnalysisWidget = () => {
+const LOBAnalysisWidget: React.FC = () => {
     const { lobData, isLoading } = useDashboardStore();
 
     if (isLoading) {

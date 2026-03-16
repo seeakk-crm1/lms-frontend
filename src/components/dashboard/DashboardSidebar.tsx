@@ -2,12 +2,29 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     LayoutDashboard, Users, UserCog, Settings, FileText, Calendar as CalendarIcon,
-    Briefcase, FileBarChart, Unplug, MapPin, ChevronDown, Activity, ChevronRight, LogOut
+    Briefcase, FileBarChart, Unplug, MapPin, ChevronDown, Activity, ChevronRight, LogOut, LucideIcon
 } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import useAuthStore from '../../store/useAuthStore';
 
-const sidebarMenus = [
+interface SubMenuItem {
+    label: string;
+    path: string;
+}
+
+interface SidebarItem {
+    icon: LucideIcon;
+    label: string;
+    path?: string;
+    subItems?: SubMenuItem[];
+}
+
+interface SidebarSection {
+    title: string;
+    items: SidebarItem[];
+}
+
+const sidebarMenus: SidebarSection[] = [
     {
         title: 'MAIN',
         items: [
@@ -71,7 +88,16 @@ const sidebarMenus = [
     }
 ];
 
-const MenuItem = ({ item, isCollapsed, isActive, setActiveMenu, activeMenu, toggleCollapsed }) => {
+interface MenuItemProps {
+    item: SidebarItem;
+    isCollapsed: boolean;
+    isActive: boolean;
+    setActiveMenu: (label: string | null) => void;
+    activeMenu: string | null;
+    toggleCollapsed?: () => void;
+}
+
+const MenuItem: React.FC<MenuItemProps> = ({ item, isCollapsed, isActive, setActiveMenu, activeMenu, toggleCollapsed }) => {
     const isExpanded = activeMenu === item.label;
     const hasSubItems = item.subItems && item.subItems.length > 0;
     const navigate = useNavigate();
@@ -128,7 +154,7 @@ const MenuItem = ({ item, isCollapsed, isActive, setActiveMenu, activeMenu, togg
                         className="overflow-hidden"
                     >
                         <div className="flex flex-col gap-1 mt-1 pl-10 pr-3">
-                            {item.subItems.map((sub, idx) => (
+                            {item.subItems!.map((sub, idx) => (
                                 <Link 
                                     key={idx} 
                                     to={sub.path} 
@@ -146,11 +172,17 @@ const MenuItem = ({ item, isCollapsed, isActive, setActiveMenu, activeMenu, togg
     );
 };
 
-const DashboardSidebar = ({ isCollapsed, toggleCollapsed, isMobile = false }) => {
-    const [activeMenu, setActiveMenu] = useState('Dashboard');
+interface DashboardSidebarProps {
+    isCollapsed: boolean;
+    toggleCollapsed: () => void;
+    isMobile?: boolean;
+}
+
+const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ isCollapsed, toggleCollapsed, isMobile = false }) => {
+    const [activeMenu, setActiveMenu] = useState<string | null>('Dashboard');
     const location = useLocation();
     const navigate = useNavigate();
-    const { logout } = useAuthStore();
+    const logout = useAuthStore((state) => state.logout);
 
     const handleLogout = () => {
         logout();

@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Calendar, Clock, Video, Phone } from 'lucide-react';
 import useDashboardStore from '../../store/useDashboardStore';
 
-const CalendarWidget = () => {
+const CalendarWidget: React.FC = () => {
     const { meetings, isLoading } = useDashboardStore();
 
     if (isLoading) {

@@ -1,11 +1,24 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo, ChangeEvent } from 'react';
 import { Check, ChevronDown, Search } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const SearchableSelect = ({ options, value, onChange, placeholder, name }) => {
+export interface Option {
+    value: string;
+    label: string;
+}
+
+interface SearchableSelectProps {
+    options: Option[];
+    value: string;
+    onChange: (e: { target: { name: string; value: string } }) => void;
+    placeholder: string;
+    name: string;
+}
+
+const SearchableSelect: React.FC<SearchableSelectProps> = ({ options, value, onChange, placeholder, name }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
-    const wrapperRef = useRef(null);
+    const wrapperRef = useRef<HTMLDivElement>(null);
 
     // Options are expected to be { value, label } objects
     const selectedOption = options.find(opt => opt.value === value);
@@ -19,8 +32,8 @@ const SearchableSelect = ({ options, value, onChange, placeholder, name }) => {
     }, [searchTerm, options]);
 
     useEffect(() => {
-        function handleClickOutside(event) {
-            if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
+        function handleClickOutside(event: MouseEvent) {
+            if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
                 setIsOpen(false);
             }
         }
@@ -59,7 +72,7 @@ const SearchableSelect = ({ options, value, onChange, placeholder, name }) => {
                                 className="w-full bg-transparent border-none focus:outline-none text-sm font-medium text-gray-700"
                                 placeholder={`Search...`}
                                 value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
+                                onChange={(e: ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
                                 onClick={(e) => e.stopPropagation()}
                                 autoFocus
                             />

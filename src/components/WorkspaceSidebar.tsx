@@ -1,10 +1,15 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, LayoutGrid, CheckCircle2 } from 'lucide-react';
+import { CheckCircle2, LayoutGrid } from 'lucide-react';
+import { User } from '../types/user.types';
 
-const WorkspaceSidebar = ({ user }) => {
+interface WorkspaceSidebarProps {
+    user: User | null;
+}
+
+const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({ user }) => {
     const firstName =
-        typeof user?.name === 'string' && user.name.trim()
+        user?.name && typeof user.name === 'string' && user.name.trim()
             ? user.name.split(' ')[0]
             : 'User';
     return (
@@ -67,4 +72,3 @@ const WorkspaceSidebar = ({ user }) => {
 };
 
 export default WorkspaceSidebar;
-

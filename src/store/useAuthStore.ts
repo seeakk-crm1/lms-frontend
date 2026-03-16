@@ -1,4 +1,15 @@
 import { create } from 'zustand';
+import { User } from '../types/user.types';
+
+interface AuthState {
+  user: User | null;
+  accessToken: string | null;
+  refreshToken: string | null;
+  isAuthenticated: boolean;
+  setAuth: (user: User | null, accessToken: string | null, refreshToken: string | null) => void;
+  updateUser: (updatedFields: Partial<User>) => void;
+  logout: () => Promise<void>;
+}
 
 // Increment this when user schema changes (e.g. MongoDB → PostgreSQL migration)
 // Forces all users to re-login and clears stale localStorage data
@@ -10,9 +21,9 @@ if (localStorage.getItem('storeVersion') !== STORE_VERSION) {
     localStorage.setItem('storeVersion', STORE_VERSION);
 }
 
-const useAuthStore = create((set) => {
+const useAuthStore = create<AuthState>((set) => {
     // Safely parse local storage state
-    let initialUser = null;
+    let initialUser: User | null = null;
     try {
         const storedUser = localStorage.getItem('user');
         if (storedUser) {
@@ -40,16 +51,16 @@ const useAuthStore = create((set) => {
             const user = rawUser ? {
                 ...rawUser,
                 role: typeof rawUser.role === 'object' && rawUser.role !== null
-                    ? rawUser.role.name || 'Administrator'
-                    : rawUser.role || 'Administrator'
+                    ? (rawUser.role as any).name || 'Administrator'
+                    : (rawUser.role as string) || 'Administrator'
             } : rawUser;
 
             if (accessToken) {
                 localStorage.setItem('accessToken', accessToken);
-                localStorage.setItem('refreshToken', refreshToken);
+                if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
                 localStorage.setItem('user', JSON.stringify(user));
             }
-            set({ user, accessToken, refreshToken, isAuthenticated: true });
+            set({ user, accessToken, refreshToken, isAuthenticated: !!accessToken });
         },
 
         updateUser: (updatedFields) => set((state) => {

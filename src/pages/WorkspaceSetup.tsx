@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, ChangeEvent, FormEvent } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
@@ -8,14 +8,29 @@ import api from '../services/api';
 import WorkspaceSidebar from '../components/WorkspaceSidebar';
 import WorkspaceForm from '../components/WorkspaceForm';
 
+export interface WorkspaceFormData {
+    companyName: string;
+    employeeCount: string;
+    timeZone: string;
+    language: string;
+    currencyLocale: string;
+    loadSampleData: boolean;
+}
+
+export interface WorkspaceMetaLists {
+    timeZones: string[];
+    languages: { code: string; name: string }[];
+    currencies: { code: string; name: string }[];
+}
+
 const WorkspaceSetup = () => {
     const { user, updateUser } = useAuthStore();
     const navigate = useNavigate();
 
     const [loading, setLoading] = useState(false);
-    const [metaLists, setMetaLists] = useState({ timeZones: [], languages: [], currencies: [] });
+    const [metaLists, setMetaLists] = useState<WorkspaceMetaLists>({ timeZones: [], languages: [], currencies: [] });
 
-    const [formData, setFormData] = useState({
+    const [formData, setFormData] = useState<WorkspaceFormData>({
         companyName: '',
         employeeCount: '',
         timeZone: '',
@@ -47,15 +62,24 @@ const WorkspaceSetup = () => {
         fetchMeta();
     }, []);
 
-    const handleChange = (e) => {
-        const { name, value, type, checked } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: type === 'checkbox' ? checked : value
-        }));
+    const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement> | { target: { name: string; value: any } }) => {
+        if ('nativeEvent' in e) {
+            const target = e.target as HTMLInputElement;
+            const { name, value, type, checked } = target;
+            setFormData(prev => ({
+                ...prev,
+                [name]: type === 'checkbox' ? checked : value
+            }));
+        } else {
+            const { name, value } = e.target;
+            setFormData(prev => ({
+                ...prev,
+                [name]: value
+            }));
+        }
     };
 
-    const handleSubmit = async (e) => {
+    const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
 
         if (!formData.companyName.trim() || !formData.employeeCount) {
@@ -77,7 +101,7 @@ const WorkspaceSetup = () => {
             });
             toast.success("Workspace perfectly configured!", { id: toastId });
             navigate('/dashboard', { replace: true });
-        } catch (err) {
+        } catch (err: any) {
             toast.error(err.response?.data?.message || "Failed to configure workspace", { id: toastId });
         } finally {
             setLoading(false);

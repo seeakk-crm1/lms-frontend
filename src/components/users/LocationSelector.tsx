@@ -10,16 +10,16 @@ interface LocationSelectorProps {
   maxSelections?: number;
 }
 
-const LocationNode = ({ 
-  location, 
-  selectedIds, 
-  toggleSelect, 
-  level = 0 
-}: { 
+const LocationNode: React.FC<{ 
   location: Location; 
   selectedIds: string[]; 
   toggleSelect: (id: string) => void; 
   level?: number 
+}> = ({ 
+  location, 
+  selectedIds, 
+  toggleSelect, 
+  level = 0 
 }) => {
   const [isExpanded, setIsExpanded] = useState(level < 1);
   const isSelected = selectedIds.includes(location.id);
@@ -81,7 +81,7 @@ const LocationNode = ({
   );
 };
 
-const LocationSelector = ({ locations, selectedIds, onSelect }: LocationSelectorProps) => {
+const LocationSelector: React.FC<LocationSelectorProps> = ({ locations, selectedIds, onSelect }) => {
   const [search, setSearch] = useState('');
 
   const toggleSelect = (id: string) => {
@@ -91,9 +91,6 @@ const LocationSelector = ({ locations, selectedIds, onSelect }: LocationSelector
       onSelect([...selectedIds, id]);
     }
   };
-
-  // Basic flat filtering for search (if needed, but tree search is complex)
-  // For now, we'll just show the tree.
 
   return (
     <div className="space-y-4">
@@ -133,6 +130,7 @@ const LocationSelector = ({ locations, selectedIds, onSelect }: LocationSelector
                             if(res) return res;
                         }
                     }
+                    return undefined;
                 };
                 const loc = flatFind(locations);
                 return loc ? (

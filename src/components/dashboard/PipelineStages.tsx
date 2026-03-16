@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import useDashboardStore from '../../store/useDashboardStore';
 
-const PipelineStages = () => {
+const PipelineStages: React.FC = () => {
     const { pipelineData, isLoading } = useDashboardStore();
 
     if (isLoading) {

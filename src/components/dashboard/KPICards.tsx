@@ -1,9 +1,9 @@
 import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { TrendingUp, Users, Target, CheckCircle2 } from 'lucide-react';
+import { motion, Variants } from 'framer-motion';
+import { TrendingUp, Users, Target, CheckCircle2, LucideIcon } from 'lucide-react';
 import useDashboardStore from '../../store/useDashboardStore';
 
-const iconMap = {
+const iconMap: Record<string, LucideIcon> = {
     Target, Users, CheckCircle2, TrendingUp
 };
 
@@ -15,12 +15,20 @@ const container = {
     }
 };
 
-const itemVariants = {
+const itemVariants: Variants = {
     hidden: { opacity: 0, y: 20 },
-    show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
+    show: { 
+        opacity: 1, 
+        y: 0, 
+        transition: { 
+            type: "spring", 
+            stiffness: 300, 
+            damping: 24 
+        } 
+    }
 };
 
-const KPICards = () => {
+const KPICards: React.FC = () => {
     const { kpiData, isLoading } = useDashboardStore();
 
     // Skeletons

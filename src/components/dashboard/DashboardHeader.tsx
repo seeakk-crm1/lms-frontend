@@ -1,17 +1,18 @@
 import React from 'react';
-import { Search, Bell, Moon, Sun, Plus, Menu } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Search, Bell, Menu, Plus } from 'lucide-react';
 import useAuthStore from '../../store/useAuthStore';
 
-const DashboardHeader = ({ setMobileMenuOpen }) => {
+interface DashboardHeaderProps {
+    setMobileMenuOpen: (open: boolean) => void;
+}
+
+const DashboardHeader: React.FC<DashboardHeaderProps> = ({ setMobileMenuOpen }) => {
     const { user } = useAuthStore();
     const displayName = typeof user?.name === 'string' && user.name.trim() ? user.name : 'Super Admin';
     const displayRole =
         typeof user?.role === 'string'
             ? user.role
-            : typeof user?.role?.name === 'string' && user.role.name.trim()
-                ? user.role.name
-                : 'Administrator';
+            : 'Administrator';
 
     return (
         <header className="h-16 sm:h-20 bg-white border-b border-gray-100 flex items-center justify-between px-4 sm:px-6 shrink-0 relative z-10 w-full transition-colors duration-300">

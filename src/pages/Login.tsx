@@ -3,10 +3,17 @@ import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, ArrowRight, TrendingUp, Users, Calendar, Search } from 'lucide-react';
 import { useMutation } from '@tanstack/react-query';
-import { GoogleLogin } from '@react-oauth/google';
+import { GoogleLogin, CredentialResponse } from '@react-oauth/google';
 import { toast } from 'react-hot-toast';
 import useAuthStore from '../store/useAuthStore';
 import api from '../services/api';
+import { User } from '../types/user.types';
+
+interface LoginResponse {
+    user: User;
+    accessToken: string;
+    refreshToken: string;
+}
 
 const Login = () => {
     const navigate = useNavigate();
@@ -15,7 +22,7 @@ const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
 
-    const loginMutation = useMutation({
+    const loginMutation = useMutation<LoginResponse, any, any>({
         mutationFn: async (credentials) => {
             const response = await api.post('/auth/login', credentials);
             return response.data;
@@ -29,17 +36,17 @@ const Login = () => {
                 navigate('/dashboard', { replace: true });
             }
         },
-        onError: (error) => {
+        onError: (error: any) => {
             toast.error(error.response?.data?.message || 'Login failed. Please try again.');
         }
     });
 
-    const handleLogin = (e) => {
+    const handleLogin = (e: React.FormEvent) => {
         e.preventDefault();
         loginMutation.mutate({ email, password });
     };
 
-    const googleLoginMutation = useMutation({
+    const googleLoginMutation = useMutation<LoginResponse, any, string>({
         mutationFn: async (token) => {
             const response = await api.post('/auth/google', { token });
             return response.data;
@@ -53,13 +60,15 @@ const Login = () => {
                 navigate('/dashboard', { replace: true });
             }
         },
-        onError: (error) => {
+        onError: (error: any) => {
             toast.error(error.response?.data?.message || 'Google login failed. Please try again.');
         }
     });
 
-    const handleGoogleSuccess = (credentialResponse) => {
-        googleLoginMutation.mutate(credentialResponse.credential);
+    const handleGoogleSuccess = (credentialResponse: CredentialResponse) => {
+        if (credentialResponse.credential) {
+            googleLoginMutation.mutate(credentialResponse.credential);
+        }
     };
 
     const handleGoogleError = () => {

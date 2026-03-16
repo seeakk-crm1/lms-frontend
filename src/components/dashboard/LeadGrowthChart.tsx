@@ -3,7 +3,7 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { motion } from 'framer-motion';
 import useDashboardStore from '../../store/useDashboardStore';
 
-const LeadGrowthChart = () => {
+const LeadGrowthChart: React.FC = () => {
     const { leadGrowthData, isLoading } = useDashboardStore();
     const [filter, setFilter] = useState('7 Days');
 

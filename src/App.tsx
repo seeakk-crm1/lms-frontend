@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, ReactNode } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // Components
@@ -19,28 +19,32 @@ import Dashboard from './pages/Dashboard';
 import WorkspaceSetup from './pages/WorkspaceSetup';
 import AdminUsersPage from './pages/AdminUsersPage';
 
+interface RouteProps {
+  children: ReactNode;
+}
+
 // Protect routes that require login AND onboarding
-const ProtectedRoute = ({ children }) => {
+const ProtectedRoute: React.FC<RouteProps> = ({ children }) => {
   const { isAuthenticated, user } = useAuthStore();
   if (!isAuthenticated) return <Navigate to="/login" replace />;
   if (user && !user.isOnboarded) return <Navigate to="/workspace/setup" replace />;
-  return children;
+  return <>{children}</>;
 };
 
 // Protect routes that require login but ONLY IF they aren't onboarded yet
-const OnboardingRoute = ({ children }) => {
+const OnboardingRoute: React.FC<RouteProps> = ({ children }) => {
   const { isAuthenticated, user } = useAuthStore();
   if (!isAuthenticated) return <Navigate to="/login" replace />;
   if (user && user.isOnboarded) return <Navigate to="/dashboard" replace />;
-  return children;
+  return <>{children}</>;
 };
 
 // Protect login page from authenticated users
-const PublicRoute = ({ children }) => {
+const PublicRoute: React.FC<RouteProps> = ({ children }) => {
   const { isAuthenticated, user } = useAuthStore();
   if (isAuthenticated && user?.isOnboarded) return <Navigate to="/dashboard" replace />;
   if (isAuthenticated && !user?.isOnboarded) return <Navigate to="/workspace/setup" replace />;
-  return children;
+  return <>{children}</>;
 };
 
 function App() {

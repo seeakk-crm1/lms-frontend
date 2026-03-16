@@ -1,7 +1,11 @@
-import axios from 'axios';
+import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import useAuthStore from '../store/useAuthStore';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
+interface CustomAxiosRequestConfig extends InternalAxiosRequestConfig {
+    _retry?: boolean;
+}
 
 const api = axios.create({
     baseURL: API_URL,
@@ -19,11 +23,13 @@ if (!deviceId) {
 
 // Add a request interceptor to attach the access token and device ID
 api.interceptors.request.use(
-    (config) => {
-        config.headers['x-device-id'] = deviceId;
-        const accessToken = localStorage.getItem('accessToken');
-        if (accessToken) {
-            config.headers.Authorization = `Bearer ${accessToken}`;
+    (config: InternalAxiosRequestConfig) => {
+        if (config.headers) {
+            config.headers['x-device-id'] = deviceId as string;
+            const accessToken = localStorage.getItem('accessToken');
+            if (accessToken) {
+                config.headers.Authorization = `Bearer ${accessToken}`;
+            }
         }
         return config;
     },
@@ -32,14 +38,14 @@ api.interceptors.request.use(
 
 // Lock flags to prevent parallel refreshes firing
 let isRefreshing = false;
-let failedQueue = [];
+let failedQueue: Array<{ resolve: (token: string) => void; reject: (error: any) => void }> = [];
 
-const processQueue = (error, token = null) => {
+const processQueue = (error: any, token: string | null = null) => {
     failedQueue.forEach((prom) => {
         if (error) {
             prom.reject(error);
         } else {
-            prom.resolve(token);
+            prom.resolve(token as string);
         }
     });
     failedQueue = [];
@@ -47,8 +53,12 @@ const processQueue = (error, token = null) => {
 
 api.interceptors.response.use(
     (response) => response,
-    async (error) => {
-        const originalRequest = error.config;
+    async (error: AxiosError) => {
+        const originalRequest = error.config as CustomAxiosRequestConfig;
+
+        if (!originalRequest || !originalRequest.url) {
+            return Promise.reject(error);
+        }
 
         // Skip interceptor if the failed call was the login or refresh call itself
         if (originalRequest.url.includes('/auth/login') || originalRequest.url.includes('/auth/refresh')) {
@@ -62,7 +72,9 @@ api.interceptors.response.use(
                     failedQueue.push({ resolve, reject });
                 })
                     .then((token) => {
-                        originalRequest.headers['Authorization'] = 'Bearer ' + token;
+                        if (originalRequest.headers) {
+                            originalRequest.headers['Authorization'] = 'Bearer ' + token;
+                        }
                         return api(originalRequest);
                     })
                     .catch((err) => {
@@ -85,7 +97,9 @@ api.interceptors.response.use(
                     .post(`${API_URL}/auth/refresh`, { refreshToken })
                     .then(({ data }) => {
                         useAuthStore.getState().setAuth(data.user, data.accessToken, data.refreshToken);
-                        originalRequest.headers['Authorization'] = 'Bearer ' + data.accessToken;
+                        if (originalRequest.headers) {
+                            originalRequest.headers['Authorization'] = 'Bearer ' + data.accessToken;
+                        }
                         processQueue(null, data.accessToken);
                         resolve(api(originalRequest)); // retry the original request
                     })

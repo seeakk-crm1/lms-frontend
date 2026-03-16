@@ -11,7 +11,7 @@ import LOBAnalysisWidget from '../components/dashboard/LOBAnalysisWidget';
 import CalendarWidget from '../components/dashboard/CalendarWidget';
 import useDashboardStore from '../store/useDashboardStore';
 
-const Dashboard = () => {
+const Dashboard: React.FC = () => {
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const { fetchDashboardData } = useDashboardStore();

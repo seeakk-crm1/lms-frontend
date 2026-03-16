@@ -1,14 +1,41 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, User, Target, Save, Loader2, Mail, Briefcase, Phone, Shield, MapPin, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
-import { useForm, FormProvider, Controller } from 'react-hook-form';
+import { X, User, Target, Save, Loader2, Shield, MapPin, Eye, EyeOff } from 'lucide-react';
+import { useForm, FormProvider, Controller, SubmitHandler } from 'react-hook-form';
 import { useUsersStore } from '../../store/useUsersStore';
 import { useUserDetailQuery, useRolesQuery, useDepartmentsQuery, useSupervisorsQuery, useOfficesQuery, useLocationTreeQuery, useAllLocationsQuery } from '../../hooks/useUsersQuery';
 import { useCreateUserMutation, useUpdateUserMutation, useAssignTargetMutation } from '../../hooks/useUserMutations';
 import TargetSettings from './TargetSettings';
 import LocationSelector from './LocationSelector';
 
-const CreateUserModal = () => {
+import { toast } from 'react-hot-toast';
+
+interface UserFormData {
+  name: string;
+  username: string;
+  email: string;
+  phone: string;
+  password?: string;
+  confirmPassword?: string;
+  roleId: string;
+  departmentId: string;
+  supervisorId: string;
+  officeId: string;
+  countryId: string;
+  stateId: string;
+  districtId: string;
+  isActive: boolean;
+  assignedLocationIds: string[];
+  // Target fields
+  targetTypeId?: string;
+  cycle?: 'MONTHLY' | 'WEEKLY' | 'QUARTERLY';
+  monthlyTargetLeads?: number;
+  dailyFollowupTarget?: number;
+  revenueTarget?: number;
+  startDate?: string;
+}
+
+const CreateUserModal: React.FC = () => {
   const { isCreateModalOpen, selectedUserId, closeCreateModal } = useUsersStore();
   const [activeTab, setActiveTab] = useState<'details' | 'access' | 'targets'>('details');
   const [showPassword, setShowPassword] = useState(false);
@@ -25,7 +52,7 @@ const CreateUserModal = () => {
   const updateUser = useUpdateUserMutation();
   const assignTarget = useAssignTargetMutation();
 
-  const methods = useForm({
+  const methods = useForm<UserFormData>({
     defaultValues: {
       name: '',
       username: '',
@@ -41,7 +68,7 @@ const CreateUserModal = () => {
       stateId: '',
       districtId: '',
       isActive: true,
-      assignedLocationIds: [] as string[],
+      assignedLocationIds: [],
       // Target defaults
       targetTypeId: '',
       cycle: 'MONTHLY',
@@ -56,14 +83,14 @@ const CreateUserModal = () => {
   const password = watch('password');
 
   useEffect(() => {
-    if (userDetail?.data?.user) {
-      const u = userDetail.data.user;
+    if (userDetail?.user) {
+      const u = userDetail.user;
       reset({
         name: u.name || '',
         username: u.username || '',
         email: u.email,
         phone: u.phone || '',
-        roleId: u.role?.id || '',
+        roleId: typeof u.role === 'string' ? u.role : u.role?.id || '',
         departmentId: u.department?.id || '',
         supervisorId: u.supervisor?.id || '',
         officeId: u.office?.id || '',
@@ -73,45 +100,67 @@ const CreateUserModal = () => {
         isActive: u.isActive,
         assignedLocationIds: u.assignedLocations?.map((l: any) => l.location.id) || [],
       });
-    } else {
-      reset();
+    } else if (isCreateModalOpen && !selectedUserId) {
+        reset({
+            name: '',
+            username: '',
+            email: '',
+            phone: '',
+            password: '',
+            confirmPassword: '',
+            roleId: '',
+            departmentId: '',
+            supervisorId: '',
+            officeId: '',
+            countryId: '',
+            stateId: '',
+            districtId: '',
+            isActive: true,
+            assignedLocationIds: [],
+        });
     }
-  }, [userDetail, reset, isCreateModalOpen]);
+  }, [userDetail, reset, isCreateModalOpen, selectedUserId]);
 
-  const onSubmit = async (data: any) => {
+  const onSubmit: SubmitHandler<UserFormData> = async (data) => {
+    const toastId = toast.loading(selectedUserId ? 'Updating profile...' : 'Creating account...');
     try {
       if (selectedUserId) {
         await updateUser.mutateAsync({ id: selectedUserId, payload: data });
         if (data.targetTypeId) {
           await assignTarget.mutateAsync({ userId: selectedUserId, payload: data });
         }
+        toast.success('User updated successfully!', { id: toastId });
       } else {
-        const newUser = await createUser.mutateAsync(data);
-        if (data.targetTypeId && newUser.data?.id) {
-          await assignTarget.mutateAsync({ userId: newUser.data.id, payload: data });
+        const newUserResponse = await createUser.mutateAsync(data);
+        const newUserId = newUserResponse?.id;
+        if (data.targetTypeId && newUserId) {
+          await assignTarget.mutateAsync({ userId: newUserId, payload: data });
         }
+        toast.success('User onboarded successfully!', { id: toastId });
       }
       closeCreateModal();
-    } catch (error) {
-      // Errors handled by mutation hooks
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Something went wrong', { id: toastId });
     }
   };
 
-  const countries = allLocationsData?.data?.locations?.filter((l: any) => l.type === 'COUNTRY') || [];
-  const states = allLocationsData?.data?.locations?.filter((l: any) => l.type === 'STATE') || [];
-  const districts = allLocationsData?.data?.locations?.filter((l: any) => l.type === 'DISTRICT') || [];
+  const countries = allLocationsData?.locations?.filter((l: any) => l.type === 'COUNTRY') || [];
+  const states = allLocationsData?.locations?.filter((l: any) => l.type === 'STATE') || [];
+  const districts = allLocationsData?.locations?.filter((l: any) => l.type === 'DISTRICT') || [];
 
   if (!isCreateModalOpen) return null;
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        onClick={closeCreateModal}
-        className="absolute inset-0 bg-gray-900/60 backdrop-blur-md"
-      />
+      <AnimatePresence>
+        <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={closeCreateModal}
+            className="absolute inset-0 bg-gray-900/60 backdrop-blur-md"
+        />
+      </AnimatePresence>
 
       <motion.div
         initial={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -133,25 +182,26 @@ const CreateUserModal = () => {
         </div>
 
         {/* Tabs */}
-        <div className="flex bg-gray-50/50 p-1.5 mx-6 mt-4 rounded-2xl border border-gray-100 shrink-0">
+        <div className="flex bg-gray-50/50 p-1 mx-4 sm:mx-6 mt-4 rounded-2xl border border-gray-100 shrink-0">
           {[
-            { id: 'details', label: 'Details', icon: User },
-            { id: 'access', label: 'Access Control', icon: Shield },
-            { id: 'targets', label: 'Targets', icon: Target },
+            { id: 'details', label: 'Details', fullLabel: 'Personal Details', icon: User },
+            { id: 'access', label: 'Access', fullLabel: 'Access Control', icon: Shield },
+            { id: 'targets', label: 'Targets', fullLabel: 'Target Settings', icon: Target },
           ].map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`flex-1 flex items-center justify-center gap-2 py-2 text-xs font-bold rounded-xl transition-all ${activeTab === tab.id ? 'bg-white shadow-sm text-emerald-600' : 'text-gray-500 hover:text-gray-700'}`}
+              className={`flex-1 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 py-2 sm:py-2.5 text-[10px] sm:text-xs font-bold rounded-xl transition-all ${activeTab === tab.id ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
             >
-              <tab.icon className="w-3.5 h-3.5" />
-              {tab.label}
+              <tab.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline">{tab.fullLabel}</span>
+              <span className="sm:hidden">{tab.label}</span>
             </button>
           ))}
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-6 custom-scrollbar">
           <FormProvider {...methods}>
             <form id="user-form" onSubmit={handleSubmit(onSubmit)}>
               {/* Tab: Details */}
@@ -160,7 +210,7 @@ const CreateUserModal = () => {
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Full Name</label>
                     <input {...methods.register('name', { required: 'Full name is required' })} className="w-full px-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl focus:bg-white focus:border-emerald-500 outline-none transition-all text-sm" placeholder="John Doe" />
-                    {errors.name && <p className="text-[10px] text-red-500 font-bold">{errors.name.message as string}</p>}
+                    {errors.name && <p className="text-[10px] text-red-500 font-bold">{errors.name.message}</p>}
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Username</label>
@@ -172,6 +222,7 @@ const CreateUserModal = () => {
                    <div className="space-y-1.5">
                     <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Email Address</label>
                     <input {...methods.register('email', { required: 'Email is required' })} className="w-full px-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl focus:bg-white focus:border-emerald-500 outline-none transition-all text-sm" placeholder="john@company.com" />
+                    {errors.email && <p className="text-[10px] text-red-500 font-bold">{errors.email.message}</p>}
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Phone</label>
@@ -191,6 +242,7 @@ const CreateUserModal = () => {
                       <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-9 text-gray-400">
                         {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
+                      {errors.password && <p className="text-[10px] text-red-500 font-bold">{errors.password.message}</p>}
                     </div>
                     <div className="space-y-1.5">
                       <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Confirm Password</label>
@@ -201,7 +253,7 @@ const CreateUserModal = () => {
                         })} 
                         className="w-full px-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl focus:bg-white focus:border-emerald-500 outline-none transition-all text-sm" 
                       />
-                      {errors.confirmPassword && <p className="text-[10px] text-red-500 font-bold">{errors.confirmPassword.message as string}</p>}
+                      {errors.confirmPassword && <p className="text-[10px] text-red-500 font-bold">{errors.confirmPassword.message}</p>}
                     </div>
                   </div>
                 )}
@@ -241,14 +293,14 @@ const CreateUserModal = () => {
                     <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Role</label>
                     <select {...methods.register('roleId')} className="w-full px-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl text-sm">
                       <option value="">Select Role</option>
-                      {rolesData?.data?.roles?.map((r: any) => <option key={r.id} value={r.id}>{r.name}</option>)}
+                      {rolesData?.roles?.map((r: any) => <option key={r.id} value={r.id}>{r.name}</option>)}
                     </select>
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Department</label>
                     <select {...methods.register('departmentId')} className="w-full px-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl text-sm">
                       <option value="">Select Department</option>
-                      {deptsData?.data?.departments?.map((d: any) => <option key={d.id} value={d.id}>{d.name}</option>)}
+                      {deptsData?.departments?.map((d: any) => <option key={d.id} value={d.id}>{d.name}</option>)}
                     </select>
                   </div>
                 </div>
@@ -258,14 +310,14 @@ const CreateUserModal = () => {
                     <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Supervisor</label>
                     <select {...methods.register('supervisorId')} className="w-full px-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl text-sm">
                       <option value="">Select Supervisor</option>
-                      {supervisorsData?.data?.supervisors?.map((s: any) => <option key={s.id} value={s.id}>{s.name} ({s.email})</option>)}
+                      {supervisorsData?.supervisors?.map((s: any) => <option key={s.id} value={s.id}>{s.name} ({s.email})</option>)}
                     </select>
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Reporting Office</label>
                     <select {...methods.register('officeId')} className="w-full px-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl text-sm">
                       <option value="">Select Office</option>
-                      {officesData?.data?.offices?.map((o: any) => <option key={o.id} value={o.id}>{o.name}</option>)}
+                      {officesData?.offices?.map((o: any) => <option key={o.id} value={o.id}>{o.name}</option>)}
                     </select>
                   </div>
                 </div>
@@ -300,7 +352,7 @@ const CreateUserModal = () => {
                     control={control}
                     render={({ field }) => (
                       <LocationSelector 
-                        locations={locationTreeData?.data?.tree || []} 
+                        locations={locationTreeData?.tree || []} 
                         selectedIds={field.value} 
                         onSelect={field.onChange} 
                       />
@@ -318,18 +370,22 @@ const CreateUserModal = () => {
         </div>
 
         {/* Footer */}
-        <div className="p-6 border-t border-gray-50 bg-gray-50/50 flex items-center justify-end gap-3 z-20">
-          <button type="button" onClick={closeCreateModal} className="px-6 py-2.5 text-sm font-bold text-gray-500 hover:text-gray-700 transition-colors">
+        <div className="p-4 sm:p-6 border-t border-gray-50 bg-gray-50/50 flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-3 z-20">
+          <button 
+            type="button" 
+            onClick={closeCreateModal} 
+            className="flex-1 sm:flex-none px-8 py-2.5 text-sm font-bold bg-[#7c3aed] hover:bg-[#6d28d9] text-white rounded-xl transition-all shadow-lg shadow-purple-500/20 active:scale-95"
+          >
             Cancel
           </button>
           <button
             form="user-form"
             type="submit"
             disabled={isSubmitting}
-            className="flex items-center gap-2 px-8 py-2.5 bg-emerald-500 hover:bg-emerald-600 disabled:bg-emerald-300 text-white rounded-xl text-sm font-bold transition-all shadow-lg shadow-emerald-500/20 active:scale-95"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-10 py-2.5 bg-[#0085FF] hover:bg-[#0070d6] disabled:bg-blue-300 text-white rounded-xl text-sm font-bold transition-all shadow-lg shadow-blue-500/20 active:scale-95"
           >
             {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            <span>{selectedUserId ? 'Save Profile' : 'Complete Onboarding'}</span>
+            <span>{selectedUserId ? 'Save Profile' : 'Create User'}</span>
           </button>
         </div>
       </motion.div>

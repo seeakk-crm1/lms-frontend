@@ -1,6 +1,60 @@
 import { create } from 'zustand';
 
-const useDashboardStore = create((set) => ({
+export interface KPIData {
+    title: string;
+    value: string;
+    growth: string;
+    trend: 'up' | 'down';
+    iconName: string;
+}
+
+export interface LeadGrowthData {
+    name: string;
+    leads: number;
+}
+
+export interface PipelineData {
+    name: string;
+    count: number;
+    percent: number;
+    color: string;
+}
+
+export interface Activity {
+    id: number;
+    user: string;
+    action: string;
+    target: string;
+    time: string;
+    avatar: string | null;
+    status: string;
+}
+
+export interface LOBData {
+    name: string;
+    lost: number;
+}
+
+export interface Meeting {
+    id: number;
+    title: string;
+    time: string;
+    type: string;
+}
+
+interface DashboardState {
+    isLoading: boolean;
+    kpiData: KPIData[];
+    leadGrowthData: LeadGrowthData[];
+    pipelineData: PipelineData[];
+    activities: Activity[];
+    lobData: LOBData[];
+    meetings: Meeting[];
+    error: string | null;
+    fetchDashboardData: () => Promise<void>;
+}
+
+const useDashboardStore = create<DashboardState>((set) => ({
     isLoading: true,
     kpiData: [],
     leadGrowthData: [],
