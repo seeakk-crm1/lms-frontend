@@ -126,16 +126,16 @@ const RoleModal: React.FC<RoleModalProps> = ({ isOpen, onClose, role, onDelete }
         className="relative w-full max-w-4xl bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
       >
         {/* Header */}
-        <div className="p-6 border-b border-gray-50 flex items-center justify-between bg-white sticky top-0 z-10">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shadow-sm">
-                <Shield className="w-6 h-6" />
+        <div className="p-4 md:p-6 border-b border-gray-50 flex items-center justify-between bg-white sticky top-0 z-10">
+          <div className="flex items-center gap-2 md:gap-3">
+            <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shadow-sm shrink-0">
+                <Shield className="w-5 h-5 md:w-6 md:h-6" />
             </div>
-            <div>
-                <h2 className="text-xl font-black text-gray-900">
-                    {role ? 'Edit Role Configuration' : 'Establish New Role'}
+            <div className="min-w-0">
+                <h2 className="text-base md:text-xl font-black text-gray-900 truncate">
+                    {role ? 'Edit Role' : 'Create Role'}
                 </h2>
-                <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">Access Control System</p>
+                <p className="text-[9px] md:text-xs text-gray-400 font-bold uppercase tracking-widest truncate">Access Control System</p>
             </div>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-xl transition-colors text-gray-400">
@@ -144,10 +144,10 @@ const RoleModal: React.FC<RoleModalProps> = ({ isOpen, onClose, role, onDelete }
         </div>
 
         {/* Navigation Tabs */}
-        <div className="px-6 pt-4 flex bg-white border-b border-gray-50 gap-8">
+        <div className="px-4 md:px-6 pt-4 flex bg-white border-b border-gray-50 gap-4 md:gap-8 overflow-x-auto no-scrollbar">
             <button 
                 onClick={() => setActiveTab('details')}
-                className={`pb-3 text-sm font-bold transition-all relative ${activeTab === 'details' ? 'text-emerald-600' : 'text-gray-400 hover:text-gray-600'}`}
+                className={`pb-3 text-xs md:text-sm font-bold transition-all relative shrink-0 ${activeTab === 'details' ? 'text-emerald-600' : 'text-gray-400 hover:text-gray-600'}`}
             >
                 1. Role Identity
                 {errors.name && <span className="ml-2 w-1.5 h-1.5 rounded-full bg-red-500 animate-ping absolute -top-1 -right-1" />}
@@ -155,10 +155,10 @@ const RoleModal: React.FC<RoleModalProps> = ({ isOpen, onClose, role, onDelete }
             </button>
             <button 
                 onClick={() => setActiveTab('permissions')}
-                className={`pb-3 text-sm font-bold transition-all relative ${activeTab === 'permissions' ? 'text-emerald-600' : 'text-gray-400 hover:text-gray-600'}`}
+                className={`pb-3 text-xs md:text-sm font-bold transition-all relative shrink-0 ${activeTab === 'permissions' ? 'text-emerald-600' : 'text-gray-400 hover:text-gray-600'}`}
             >
-                2. Permission Matrix
-                <span className={`ml-2 text-[10px] ${errors.permissions ? 'bg-red-100 text-red-600 animate-pulse' : 'bg-emerald-100 text-emerald-600'} px-1.5 py-0.5 rounded-full transition-colors`}>
+                2. Permissions
+                <span className={`ml-2 text-[9px] md:text-[10px] ${errors.permissions ? 'bg-red-100 text-red-600 animate-pulse' : 'bg-emerald-100 text-emerald-600'} px-1.5 py-0.5 rounded-full transition-colors`}>
                     {selectedPermissions.length}
                 </span>
                 {activeTab === 'permissions' && <motion.div layoutId="tab-underline" className="absolute bottom-0 left-0 right-0 h-1 bg-emerald-500 rounded-t-full" />}
@@ -166,14 +166,14 @@ const RoleModal: React.FC<RoleModalProps> = ({ isOpen, onClose, role, onDelete }
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 overflow-hidden flex flex-col md:flex-row">
-            <div className="flex-1 overflow-y-auto p-6 scroll-smooth custom-scrollbar">
-                <form id="role-form" onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-8">
+        <div className="flex-1 overflow-hidden flex flex-col lg:flex-row">
+            <div className="flex-1 overflow-y-auto p-4 md:p-6 scroll-smooth custom-scrollbar">
+                <form id="role-form" onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-6 md:space-y-8">
                     {/* Tab: Details */}
                     {activeTab === 'details' && (
-                        <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="space-y-6">
+                        <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="space-y-5 md:space-y-6">
                             <div className="space-y-1.5">
-                                <label className="text-xs font-bold text-gray-500 uppercase tracking-widest">Role Identification Name</label>
+                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Role Name</label>
                                 <input 
                                     {...register('name')} 
                                     className={`w-full px-4 py-3 bg-gray-50 border rounded-2xl focus:bg-white outline-none transition-all font-bold text-gray-900 ${errors.name ? 'border-red-300 focus:border-red-500' : 'border-gray-50 focus:border-emerald-500'}`} 
@@ -183,16 +183,16 @@ const RoleModal: React.FC<RoleModalProps> = ({ isOpen, onClose, role, onDelete }
                             </div>
 
                             <div className="space-y-1.5">
-                                <label className="text-xs font-bold text-gray-500 uppercase tracking-widest">Function Description (Optional)</label>
+                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Description</label>
                                 <textarea 
                                     {...register('description')} 
                                     rows={3}
                                     className="w-full px-4 py-3 bg-gray-50 border border-gray-50 rounded-2xl focus:bg-white focus:border-emerald-500 outline-none transition-all text-sm font-medium" 
-                                    placeholder="Define the scope and purpose of this role..."
+                                    placeholder="Define the scope of this role..."
                                 />
                             </div>
 
-                            <div className="flex items-center gap-4 p-4 bg-emerald-50/30 rounded-2xl border border-emerald-50">
+                            <div className="flex items-center gap-4 p-4 bg-emerald-50/20 rounded-2xl border border-emerald-50/50">
                                 <Controller
                                     name="status"
                                     control={control}
@@ -200,15 +200,15 @@ const RoleModal: React.FC<RoleModalProps> = ({ isOpen, onClose, role, onDelete }
                                         <button 
                                             type="button"
                                             onClick={() => field.onChange(field.value === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE')}
-                                            className={`w-14 h-7 rounded-full transition-all relative flex items-center px-1 ${field.value === 'ACTIVE' ? 'bg-emerald-500 shadow-lg shadow-emerald-500/30' : 'bg-gray-300'}`}
+                                            className={`w-12 h-6 md:w-14 md:h-7 rounded-full transition-all relative flex items-center px-1 shrink-0 ${field.value === 'ACTIVE' ? 'bg-emerald-500 shadow-lg shadow-emerald-500/30' : 'bg-gray-300'}`}
                                         >
-                                            <motion.div animate={{ x: field.value === 'ACTIVE' ? 28 : 0 }} className="w-5 h-5 bg-white rounded-full shadow-md shrink-0" />
+                                            <motion.div animate={{ x: field.value === 'ACTIVE' ? (window.innerWidth < 768 ? 24 : 28) : 0 }} className="w-4 h-4 md:w-5 md:h-5 bg-white rounded-full shadow-md shrink-0" />
                                         </button>
                                     )}
                                 />
                                 <div className="min-w-0">
-                                    <p className="text-sm font-black text-gray-900 leading-none">Operational Status</p>
-                                    <p className="text-[11px] text-gray-500 font-medium mt-1">Determine if this role is currently assignable to team members.</p>
+                                    <p className="text-xs md:text-sm font-black text-gray-900 leading-none">Status</p>
+                                    <p className="text-[10px] md:text-[11px] text-gray-400 font-bold mt-1">Role isActive</p>
                                 </div>
                             </div>
                         </motion.div>
@@ -217,10 +217,27 @@ const RoleModal: React.FC<RoleModalProps> = ({ isOpen, onClose, role, onDelete }
                     {/* Tab: Permissions */}
                     {activeTab === 'permissions' && (
                         <motion.div initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} className="space-y-6">
-                            <div className="flex items-center justify-between mb-4">
+                            {/* Mobile Templates list */}
+                            <div className="lg:hidden space-y-3 pb-2">
+                                <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Quick Templates</h3>
+                                <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+                                    {templates.map(t => (
+                                        <button
+                                            key={t.name}
+                                            type="button"
+                                            onClick={() => reset({ ...watch(), permissions: t.keys })}
+                                            className="px-3 py-2 bg-gray-50 border border-gray-100 rounded-xl text-[10px] font-black text-gray-600 whitespace-nowrap active:bg-emerald-50 active:text-emerald-600 transition-colors"
+                                        >
+                                            {t.name}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2 text-emerald-600">
-                                    <LayoutDashboard className="w-4 h-4" />
-                                    <span className="text-xs font-black uppercase tracking-widest">Permission Configuration</span>
+                                    <LayoutDashboard className="w-4 h-4 shrink-0" />
+                                    <span className="text-[10px] font-black uppercase tracking-widest">Access Matrix</span>
                                 </div>
                             </div>
                             
@@ -241,7 +258,7 @@ const RoleModal: React.FC<RoleModalProps> = ({ isOpen, onClose, role, onDelete }
             </div>
 
             {/* Sidebar / Summary Panel (Desktop Only) */}
-            <div className="hidden lg:flex w-72 bg-gray-50/50 border-l border-gray-50 flex-col p-6 space-y-6">
+            <div className="hidden lg:flex w-72 bg-gray-50/50 border-l border-gray-50 flex-col p-6 space-y-6 overflow-y-auto">
                 <div className="space-y-4">
                     <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Quick Templates</h3>
                     <div className="grid grid-cols-1 gap-2">

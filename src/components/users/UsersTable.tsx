@@ -1,5 +1,5 @@
-import React from 'react';
-import { motion } from 'framer-motion';
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-hot-toast';
 import { 
   Search, 
@@ -20,6 +20,7 @@ import { useUsersStore } from '../../store/useUsersStore';
 import { useUsersQuery } from '../../hooks/useUsersQuery';
 import { useUpdateStatusMutation, useDeleteUserMutation, useUnlockUserMutation } from '../../hooks/useUserMutations';
 import { User } from '../../types/user.types';
+import DeleteUserModal from './DeleteUserModal';
 
 const UsersTable: React.FC = () => {
   const { search, setSearch, filters, setFilters, page, setPage, openCreateModal } = useUsersStore();
@@ -29,8 +30,14 @@ const UsersTable: React.FC = () => {
   const unlockUser = useUnlockUserMutation();
   const deleteUser = useDeleteUserMutation();
 
+  const [deleteModal, setDeleteModal] = useState<{ open: boolean; userId: string; userName: string }>({
+    open: false,
+    userId: '',
+    userName: ''
+  });
+
   const users = usersData?.users || [];
-  const totalPages = usersData?.pages || 1;
+  const totalPages = usersData?.pagination?.totalPages || 1;
 
   const handleStatusToggle = (id: string, currentStatus: boolean) => {
     updateStatus.mutate({ id, isActive: !currentStatus });
@@ -48,8 +55,12 @@ const UsersTable: React.FC = () => {
   };
 
   const handleDelete = (id: string, name: string) => {
-    if (window.confirm(`Are you sure you want to delete user "${name || 'this user'}"? This action cannot be undone.`)) {
-        deleteUser.mutate(id);
+    setDeleteModal({ open: true, userId: id, userName: name });
+  };
+
+  const confirmDelete = () => {
+    if (deleteModal.userId) {
+      deleteUser.mutate(deleteModal.userId);
     }
   };
 
@@ -140,7 +151,8 @@ const UsersTable: React.FC = () => {
                   layout
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="hover:bg-gray-50/50 transition-colors group"
+                  onClick={() => openCreateModal(user.id)}
+                  className="hover:bg-gray-50/50 transition-colors group cursor-pointer"
                 >
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
@@ -189,7 +201,7 @@ const UsersTable: React.FC = () => {
                     <div className="flex items-center justify-end gap-2 md:opacity-0 group-hover:opacity-100 transition-opacity">
                       {user.isLocked && (
                         <button
-                          onClick={() => handleUnlock(user.id)}
+                          onClick={(e) => { e.stopPropagation(); handleUnlock(user.id); }}
                           className="p-1.5 text-amber-500 hover:bg-amber-50 rounded-lg transition-colors"
                           title="Unlock Account"
                         >
@@ -197,28 +209,28 @@ const UsersTable: React.FC = () => {
                         </button>
                       )}
                       <button
-                        onClick={() => handleResetPassword(user.email)}
+                        onClick={(e) => { e.stopPropagation(); handleResetPassword(user.email); }}
                         className="p-1.5 text-amber-500 hover:bg-amber-50 rounded-lg transition-colors"
                         title="Send Reset Password Link"
                       >
                         <Mail className="w-4 h-4" />
                       </button>
                       <button
-                        onClick={() => openCreateModal(user.id)}
+                        onClick={(e) => { e.stopPropagation(); openCreateModal(user.id); }}
                         className="p-1.5 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
                         title="Edit User"
                       >
                         <Pencil className="w-4 h-4" />
                       </button>
                       <button
-                        onClick={() => handleDelete(user.id, user.name || user.email)}
+                        onClick={(e) => { e.stopPropagation(); handleDelete(user.id, user.name || user.email); }}
                         className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                         title="Delete User"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
                       <button
-                        onClick={() => handleStatusToggle(user.id, !!user.isActive)}
+                        onClick={(e) => { e.stopPropagation(); handleStatusToggle(user.id, !!user.isActive); }}
                         className={`p-1.5 rounded-lg transition-colors ${user.isActive ? 'text-orange-500 hover:bg-orange-50' : 'text-emerald-500 hover:bg-emerald-50'}`}
                         title={user.isActive ? 'Deactivate' : 'Activate'}
                       >
@@ -258,7 +270,11 @@ const UsersTable: React.FC = () => {
           </div>
         ) : (
           users.map((user: User) => (
-            <div key={user.id} className="p-5 space-y-4 hover:bg-gray-50/50 transition-colors">
+            <div 
+                key={user.id} 
+                onClick={() => openCreateModal(user.id)}
+                className="p-5 space-y-4 hover:bg-gray-50/50 transition-colors cursor-pointer"
+            >
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-50 to-emerald-100/50 flex items-center justify-center text-emerald-600 font-black text-lg shrink-0 border border-emerald-100/50">
@@ -283,7 +299,7 @@ const UsersTable: React.FC = () => {
                 </div>
                 <div className="flex gap-1">
                   <button 
-                    onClick={() => openCreateModal(user.id)}
+                    onClick={(e) => { e.stopPropagation(); openCreateModal(user.id); }}
                     className="p-2.5 bg-blue-50 text-blue-600 rounded-xl active:scale-95 transition-all"
                     title="Edit User"
                   >
@@ -361,6 +377,13 @@ const UsersTable: React.FC = () => {
           </button>
         </div>
       </div>
+
+      <DeleteUserModal
+        isOpen={deleteModal.open}
+        onClose={() => setDeleteModal({ ...deleteModal, open: false })}
+        onConfirm={confirmDelete}
+        userName={deleteModal.userName}
+      />
     </div>
   );
 };

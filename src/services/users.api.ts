@@ -3,22 +3,22 @@ import { User, TargetSetting, TargetType } from '../types/user.types';
 
 export const getUsers = async (params: any) => {
   const { data } = await api.get('/admin/users', { params });
-  return data; // { success, message, data: { users, total, pages, currentPage } }
+  return data.data; // { users, pagination }
 };
 
 export const getUserById = async (id: string) => {
   const { data } = await api.get(`/admin/users/${id}`);
-  return data; // { success, message, data: { user } }
+  return data.data; // { user }
 };
 
 export const createUser = async (payload: any) => {
   const { data } = await api.post('/admin/users', payload);
-  return data;
+  return data.data; // { user, generatedPassword }
 };
 
 export const updateUser = async (id: string, payload: any) => {
   const { data } = await api.put(`/admin/users/${id}`, payload);
-  return data;
+  return data.data; // { user }
 };
 
 export const deleteUser = async (id: string) => {
@@ -65,30 +65,30 @@ export const unlockUser = async (userId: string) => {
 // Meta Data (Locations & Offices)
 export const getLocationTree = async () => {
   const { data } = await api.get('/admin/users/meta/locations/tree');
-  return data;
+  return data.data;
 };
 
 export const getAllLocations = async () => {
   const { data } = await api.get('/admin/users/meta/locations/all');
-  return data;
+  return data.data;
 };
 
 export const getOffices = async () => {
   const { data } = await api.get('/admin/users/meta/offices');
-  return data;
+  return data.data;
 };
 
 export const getRoles = async () => {
   const { data } = await api.get('/admin/users/meta/roles');
-  return data;
+  return data.data;
 };
 
 export const getDepartments = async () => {
   const { data } = await api.get('/admin/users/meta/departments');
-  return data;
+  return data.data;
 };
 
 export const getSupervisors = async () => {
   const { data } = await api.get('/admin/users/meta/supervisors');
-  return data;
+  return data.data;
 };

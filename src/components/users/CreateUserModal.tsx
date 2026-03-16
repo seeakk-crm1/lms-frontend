@@ -132,7 +132,7 @@ const CreateUserModal: React.FC = () => {
         toast.success('User updated successfully!', { id: toastId });
       } else {
         const newUserResponse = await createUser.mutateAsync(data);
-        const newUserId = newUserResponse?.id;
+        const newUserId = newUserResponse?.user?.id;
         if (data.targetTypeId && newUserId) {
           await assignTarget.mutateAsync({ userId: newUserId, payload: data });
         }
