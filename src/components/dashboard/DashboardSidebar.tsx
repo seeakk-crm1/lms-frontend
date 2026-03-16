@@ -38,7 +38,7 @@ const sidebarMenus: SidebarSection[] = [
                 icon: Users, label: 'Admin Management',
                 subItems: [
                     { label: 'Users', path: '/admin/users' },
-                    { label: 'Roles', path: '#' },
+                    { label: 'Roles', path: '/admin/roles' },
                     { label: 'Departments', path: '#' },
                     { label: 'Organization Chart', path: '#' },
                     { label: 'Roster Sheet', path: '#' }

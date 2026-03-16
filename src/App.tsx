@@ -18,6 +18,7 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import WorkspaceSetup from './pages/WorkspaceSetup';
 import AdminUsersPage from './pages/AdminUsersPage';
+import AdminRolesPage from './pages/AdminRolesPage';
 
 interface RouteProps {
   children: ReactNode;
@@ -141,6 +142,12 @@ function App() {
         <Route path="/admin/users" element={
           <ProtectedRoute>
             <AdminUsersPage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/admin/roles" element={
+          <ProtectedRoute>
+            <AdminRolesPage />
           </ProtectedRoute>
         } />
       </Routes>
