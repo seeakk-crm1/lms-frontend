@@ -39,7 +39,7 @@ const sidebarMenus: SidebarSection[] = [
                 subItems: [
                     { label: 'Users', path: '/admin/users' },
                     { label: 'Roles', path: '/admin/roles' },
-                    { label: 'Departments', path: '#' },
+                    { label: 'Departments', path: '/admin/departments' },
                     { label: 'Organization Chart', path: '#' },
                     { label: 'Roster Sheet', path: '#' }
                 ]
@@ -47,7 +47,7 @@ const sidebarMenus: SidebarSection[] = [
             {
                 icon: Settings, label: 'Master Configuration',
                 subItems: [
-                    { label: 'Lead Sources', path: '#' },
+                    { label: 'Lead Sources', path: '/admin/lead-source' },
                     { label: 'Lead Stages', path: '#' },
                     { label: 'Stage Rules', path: '#' },
                     { label: 'Target Cycles', path: '#' },

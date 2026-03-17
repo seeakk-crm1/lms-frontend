@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, User, Target, Save, Loader2, Shield, MapPin, Eye, EyeOff } from 'lucide-react';
 import { useForm, FormProvider, Controller, SubmitHandler } from 'react-hook-form';
 import { useUsersStore } from '../../store/useUsersStore';
-import { useUserDetailQuery, useRolesQuery, useDepartmentsQuery, useSupervisorsQuery, useOfficesQuery, useLocationTreeQuery, useAllLocationsQuery } from '../../hooks/useUsersQuery';
+import { useUserDetailQuery, useRolesQuery, useSupervisorsQuery, useOfficesQuery, useLocationTreeQuery, useAllLocationsQuery } from '../../hooks/useUsersQuery';
+import { useActiveDepartmentsQuery } from '../../hooks/useDepartmentsQuery';
 import { useCreateUserMutation, useUpdateUserMutation, useAssignTargetMutation } from '../../hooks/useUserMutations';
 import TargetSettings from './TargetSettings';
 import LocationSelector from './LocationSelector';
@@ -42,7 +43,7 @@ const CreateUserModal: React.FC = () => {
   
   const { data: userDetail } = useUserDetailQuery(selectedUserId);
   const { data: rolesData } = useRolesQuery();
-  const { data: deptsData } = useDepartmentsQuery();
+  const { data: deptsData } = useActiveDepartmentsQuery();
   const { data: supervisorsData } = useSupervisorsQuery();
   const { data: officesData } = useOfficesQuery();
   const { data: locationTreeData } = useLocationTreeQuery();
@@ -300,7 +301,7 @@ const CreateUserModal: React.FC = () => {
                     <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Department</label>
                     <select {...methods.register('departmentId')} className="w-full px-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl text-sm">
                       <option value="">Select Department</option>
-                      {deptsData?.departments?.map((d: any) => <option key={d.id} value={d.id}>{d.name}</option>)}
+                      {deptsData?.map((d: any) => <option key={d.id} value={d.id}>{d.name}</option>)}
                     </select>
                   </div>
                 </div>

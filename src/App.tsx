@@ -19,6 +19,8 @@ import Dashboard from './pages/Dashboard';
 import WorkspaceSetup from './pages/WorkspaceSetup';
 import AdminUsersPage from './pages/AdminUsersPage';
 import AdminRolesPage from './pages/AdminRolesPage';
+import AdminDepartmentsPage from './pages/AdminDepartmentsPage';
+import LeadSourceListPage from './pages/LeadSourceListPage';
 
 interface RouteProps {
   children: ReactNode;
@@ -148,6 +150,18 @@ function App() {
         <Route path="/admin/roles" element={
           <ProtectedRoute>
             <AdminRolesPage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/admin/departments" element={
+          <ProtectedRoute>
+            <AdminDepartmentsPage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/admin/lead-source" element={
+          <ProtectedRoute>
+            <LeadSourceListPage />
           </ProtectedRoute>
         } />
       </Routes>
