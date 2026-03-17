@@ -21,6 +21,8 @@ import AdminUsersPage from './pages/AdminUsersPage';
 import AdminRolesPage from './pages/AdminRolesPage';
 import AdminDepartmentsPage from './pages/AdminDepartmentsPage';
 import LeadSourceListPage from './pages/LeadSourceListPage';
+import LeadStagesListPage from './pages/LeadStagesListPage';
+import StageRulesPage from './pages/StageRulesPage';
 
 interface RouteProps {
   children: ReactNode;
@@ -162,6 +164,18 @@ function App() {
         <Route path="/admin/lead-source" element={
           <ProtectedRoute>
             <LeadSourceListPage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/admin/lead-stages" element={
+          <ProtectedRoute>
+            <LeadStagesListPage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/master/stage-rules" element={
+          <ProtectedRoute>
+            <StageRulesPage />
           </ProtectedRoute>
         } />
       </Routes>

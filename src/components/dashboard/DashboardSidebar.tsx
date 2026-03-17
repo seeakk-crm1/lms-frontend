@@ -48,8 +48,8 @@ const sidebarMenus: SidebarSection[] = [
                 icon: Settings, label: 'Master Configuration',
                 subItems: [
                     { label: 'Lead Sources', path: '/admin/lead-source' },
-                    { label: 'Lead Stages', path: '#' },
-                    { label: 'Stage Rules', path: '#' },
+                    { label: 'Lead Stages', path: '/admin/lead-stages' },
+                    { label: 'Stage Rules', path: '/master/stage-rules' },
                     { label: 'Target Cycles', path: '#' },
                     { label: 'Lead Dynamic Forms', path: '#' },
                     { label: 'Office Locations', path: '#' },
