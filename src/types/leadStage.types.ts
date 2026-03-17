@@ -3,6 +3,8 @@ export type LeadStageStatus = 'ACTIVE' | 'INACTIVE';
 export interface LeadStageRule {
   field: string;
   condition: string;
+  value?: string;
+  isMandatory?: boolean;
 }
 
 export interface LeadStage {
@@ -51,4 +53,3 @@ export interface CreateLeadStageInput {
 }
 
 export interface UpdateLeadStageInput extends Partial<CreateLeadStageInput> {}
-

@@ -124,7 +124,7 @@ const LeadStagesListPage: React.FC = () => {
                 animate={{ opacity: 1, scale: 1 }}
                 whileHover={{ y: -1 }}
                 onClick={openCreateModal}
-                className="flex items-center justify-center gap-2 px-8 py-3 bg-emerald-500 text-white rounded-2xl text-sm font-black shadow-xl shadow-emerald-500/20 hover:bg-emerald-600 transition-all active:scale-95"
+                className="w-full md:w-auto flex items-center justify-center gap-2 px-8 py-3 bg-emerald-500 text-white rounded-2xl text-sm font-black shadow-xl shadow-emerald-500/20 hover:bg-emerald-600 transition-all active:scale-95"
                 aria-label="Create lead stage"
               >
                 <Plus className="w-4 h-4" strokeWidth={3} />
@@ -187,4 +187,3 @@ const LeadStagesListPage: React.FC = () => {
 };
 
 export default LeadStagesListPage;
-

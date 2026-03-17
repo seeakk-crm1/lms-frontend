@@ -82,7 +82,7 @@ const LeadStagesTable: React.FC<LeadStagesTableProps> = ({
             />
           </div>
 
-          <div className="flex bg-gray-50 p-1 rounded-xl border border-gray-50">
+          <div className="flex flex-wrap bg-gray-50 p-1 rounded-xl border border-gray-50">
             <button
               onClick={handleFilterAll}
               className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
@@ -112,7 +112,7 @@ const LeadStagesTable: React.FC<LeadStagesTableProps> = ({
 
         <div className="px-3 py-2 rounded-xl border border-emerald-100 bg-emerald-50/40">
           <p className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">Pipeline Order</p>
-          <p className="text-sm font-black text-emerald-900 mt-1">{pipelineOrder || 'No stages yet'}</p>
+          <p className="text-sm font-black text-emerald-900 mt-1 break-words">{pipelineOrder || 'No stages yet'}</p>
         </div>
       </div>
 
@@ -238,13 +238,19 @@ const LeadStagesTable: React.FC<LeadStagesTableProps> = ({
                 </div>
                 <span className="text-[10px] font-black text-gray-500 bg-gray-100 px-2 py-1 rounded-lg">#{item.stageOrder}</span>
               </div>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-3 gap-2">
                 <button onClick={() => onEdit(item)} className="py-2 rounded-xl text-xs font-black text-blue-600 bg-blue-50">Edit</button>
                 <button
                   onClick={() => onToggleStatus(item)}
                   className="py-2 rounded-xl text-xs font-black text-emerald-600 bg-emerald-50"
                 >
                   {item.status === 'ACTIVE' ? 'Deactivate' : 'Activate'}
+                </button>
+                <button
+                  onClick={() => onDelete(item.id)}
+                  className="py-2 rounded-xl text-xs font-black text-red-600 bg-red-50"
+                >
+                  Delete
                 </button>
               </div>
             </div>
@@ -257,7 +263,8 @@ const LeadStagesTable: React.FC<LeadStagesTableProps> = ({
           Displaying <span className="text-gray-900 font-black">{safeFrom}-{safeTo}</span> of{' '}
           <span className="text-gray-900 font-black">{total}</span> Stages
         </span>
-        <div className="flex items-center gap-1">
+        <div className="w-full sm:w-auto overflow-x-auto">
+          <div className="flex items-center gap-1 min-w-max mx-auto">
           {pageButtons.map((value) => (
             <button
               key={value}
@@ -272,6 +279,7 @@ const LeadStagesTable: React.FC<LeadStagesTableProps> = ({
               {value}
             </button>
           ))}
+          </div>
         </div>
       </div>
     </div>
@@ -279,4 +287,3 @@ const LeadStagesTable: React.FC<LeadStagesTableProps> = ({
 };
 
 export default React.memo(LeadStagesTable);
-

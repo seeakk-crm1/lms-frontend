@@ -135,7 +135,7 @@ const LeadStageFormModal: React.FC<LeadStageFormModalProps> = ({
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[100] flex items-start sm:items-center justify-center p-2 sm:p-4 overflow-y-auto">
           <motion.button
             aria-label="Close modal overlay"
             initial={{ opacity: 0 }}
@@ -150,17 +150,17 @@ const LeadStageFormModal: React.FC<LeadStageFormModalProps> = ({
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 0.2 }}
-            className="relative w-full max-w-3xl bg-white rounded-3xl shadow-2xl overflow-hidden max-h-[92vh] flex flex-col"
+            className="relative w-full max-w-3xl bg-white rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden max-h-[96vh] sm:max-h-[92vh] flex flex-col mt-8 sm:mt-0"
             role="dialog"
             aria-modal="true"
             aria-labelledby="lead-stage-modal-title"
           >
-            <div className="p-6 border-b border-gray-50 flex items-center justify-between">
+            <div className="p-4 sm:p-6 border-b border-gray-50 flex items-center justify-between gap-3">
               <div>
-                <h2 id="lead-stage-modal-title" className="text-xl font-black text-gray-900">
+                <h2 id="lead-stage-modal-title" className="text-lg sm:text-xl font-black text-gray-900">
                   {title}
                 </h2>
-                <p className="text-xs text-gray-400 font-bold uppercase tracking-widest mt-1">Pipeline Configuration</p>
+                <p className="text-[11px] sm:text-xs text-gray-400 font-bold uppercase tracking-widest mt-1">Pipeline Configuration</p>
               </div>
               <button
                 type="button"
@@ -172,7 +172,7 @@ const LeadStageFormModal: React.FC<LeadStageFormModalProps> = ({
               </button>
             </div>
 
-            <form onSubmit={handleSubmit(formSubmit)} className="p-6 space-y-6 overflow-y-auto custom-scrollbar">
+            <form onSubmit={handleSubmit(formSubmit)} className="p-4 sm:p-6 space-y-5 sm:space-y-6 overflow-y-auto custom-scrollbar">
               {isSubmitting ? (
                 modalSkeleton
               ) : (
@@ -192,11 +192,11 @@ const LeadStageFormModal: React.FC<LeadStageFormModalProps> = ({
 
                     <div className="space-y-1.5">
                       <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Stage Color Picker</label>
-                      <div className="flex items-center gap-3 px-3 py-2.5 bg-gray-50 border border-gray-50 rounded-2xl">
+                      <div className="flex items-center gap-3 flex-wrap px-3 py-2.5 bg-gray-50 border border-gray-50 rounded-2xl">
                         <input type="color" {...register('color')} className="h-8 w-8 rounded-lg border border-gray-200 bg-transparent" />
                         <input
                           {...register('color')}
-                          className="flex-1 bg-transparent outline-none text-sm font-bold text-gray-700"
+                          className="flex-1 min-w-[120px] bg-transparent outline-none text-sm font-bold text-gray-700"
                           aria-label="Stage color hex code"
                         />
                         <span className="h-4 w-4 rounded-full border border-gray-200" style={{ backgroundColor: (leadStage?.color || '#10b981') as string }} />
@@ -261,7 +261,7 @@ const LeadStageFormModal: React.FC<LeadStageFormModalProps> = ({
                   </div>
 
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                       <div>
                         <h3 className="text-sm font-black text-gray-900">Stage Rules</h3>
                         <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Dynamic rule builder</p>
@@ -269,7 +269,7 @@ const LeadStageFormModal: React.FC<LeadStageFormModalProps> = ({
                       <button
                         type="button"
                         onClick={() => navigate('/master/stage-rules')}
-                        className="inline-flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-black text-blue-600 bg-blue-50 hover:bg-blue-100 transition-all"
+                        className="inline-flex w-full sm:w-auto justify-center items-center gap-1 px-3 py-2 rounded-xl text-xs font-black text-blue-600 bg-blue-50 hover:bg-blue-100 transition-all"
                       >
                         Add Stage Rules
                         <ArrowRight className="w-3.5 h-3.5" />
@@ -281,7 +281,7 @@ const LeadStageFormModal: React.FC<LeadStageFormModalProps> = ({
                         key={field.id}
                         initial={{ opacity: 0, y: 6 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] gap-2 p-3 rounded-2xl bg-gray-50 border border-gray-100"
+                        className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto] gap-2 p-3 rounded-2xl bg-gray-50 border border-gray-100"
                       >
                         <select
                           {...register(`rules.${index}.field` as const)}
@@ -311,7 +311,7 @@ const LeadStageFormModal: React.FC<LeadStageFormModalProps> = ({
                           type="button"
                           onClick={() => remove(index)}
                           disabled={fields.length === 1}
-                          className="px-3 py-2.5 rounded-xl bg-red-50 text-red-600 hover:bg-red-100 disabled:opacity-40 transition-all"
+                          className="px-3 py-2.5 rounded-xl bg-red-50 text-red-600 hover:bg-red-100 disabled:opacity-40 transition-all w-full sm:w-auto"
                           aria-label={`Remove rule ${index + 1}`}
                         >
                           <Trash2 className="w-4 h-4" />
@@ -329,7 +329,7 @@ const LeadStageFormModal: React.FC<LeadStageFormModalProps> = ({
                     <button
                       type="button"
                       onClick={() => append({ field: '', condition: '' })}
-                      className="inline-flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-black text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-all"
+                      className="inline-flex w-full sm:w-auto justify-center items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-black text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-all"
                     >
                       <Plus className="w-3.5 h-3.5" />
                       Add Stage Rule
@@ -342,7 +342,7 @@ const LeadStageFormModal: React.FC<LeadStageFormModalProps> = ({
                       name="status"
                       control={control}
                       render={({ field }) => (
-                        <div className="flex bg-gray-50 p-1 rounded-xl border border-gray-50 w-fit">
+                        <div className="flex bg-gray-50 p-1 rounded-xl border border-gray-50 w-full sm:w-fit">
                           <button
                             type="button"
                             onClick={() => field.onChange('ACTIVE')}
@@ -368,18 +368,18 @@ const LeadStageFormModal: React.FC<LeadStageFormModalProps> = ({
                 </>
               )}
 
-              <div className="pt-2 flex items-center gap-3">
+              <div className="pt-2 flex flex-col-reverse sm:flex-row items-center gap-3">
                 <button
                   type="button"
                   onClick={onClose}
-                  className="flex-1 py-3 text-sm font-black text-gray-500 hover:bg-gray-50 rounded-2xl transition-all focus:outline-none focus:ring-2 focus:ring-gray-300"
+                  className="w-full sm:flex-1 py-3 text-sm font-black text-gray-500 hover:bg-gray-50 rounded-2xl transition-all focus:outline-none focus:ring-2 focus:ring-gray-300"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="flex-1 py-3 bg-emerald-500 text-white rounded-2xl font-black text-sm flex items-center justify-center gap-2 shadow-xl shadow-emerald-500/20 hover:bg-emerald-600 disabled:opacity-60 transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+                  className="w-full sm:flex-1 py-3 bg-emerald-500 text-white rounded-2xl font-black text-sm flex items-center justify-center gap-2 shadow-xl shadow-emerald-500/20 hover:bg-emerald-600 disabled:opacity-60 transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
                 >
                   {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                   {submitText}
@@ -394,4 +394,3 @@ const LeadStageFormModal: React.FC<LeadStageFormModalProps> = ({
 };
 
 export default React.memo(LeadStageFormModal);
-
