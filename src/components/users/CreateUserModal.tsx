@@ -3,8 +3,15 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, User, Target, Save, Loader2, Shield, MapPin, Eye, EyeOff } from 'lucide-react';
 import { useForm, FormProvider, Controller, SubmitHandler } from 'react-hook-form';
 import { useUsersStore } from '../../store/useUsersStore';
-import { useUserDetailQuery, useRolesQuery, useSupervisorsQuery, useOfficesQuery, useLocationTreeQuery, useAllLocationsQuery } from '../../hooks/useUsersQuery';
-import { useActiveDepartmentsQuery } from '../../hooks/useDepartmentsQuery';
+import {
+  useUserDetailQuery,
+  useRolesQuery,
+  useSupervisorsQuery,
+  useOfficesQuery,
+  useLocationTreeQuery,
+  useAllLocationsQuery,
+  useDepartmentsQuery,
+} from '../../hooks/useUsersQuery';
 import { useCreateUserMutation, useUpdateUserMutation, useAssignTargetMutation } from '../../hooks/useUserMutations';
 import TargetSettings from './TargetSettings';
 import LocationSelector from './LocationSelector';
@@ -36,6 +43,22 @@ interface UserFormData {
   startDate?: string;
 }
 
+type CreateUserPayload = {
+  name: string;
+  username?: string;
+  email: string;
+  phone?: string;
+  password?: string;
+  roleId?: string;
+  departmentId?: string;
+  supervisorId?: string;
+  officeId?: string;
+  countryId?: string;
+  stateId?: string;
+  districtId?: string;
+  assignedLocationIds?: string[];
+};
+
 const CreateUserModal: React.FC = () => {
   const { isCreateModalOpen, selectedUserId, closeCreateModal } = useUsersStore();
   const [activeTab, setActiveTab] = useState<'details' | 'access' | 'targets'>('details');
@@ -43,7 +66,7 @@ const CreateUserModal: React.FC = () => {
   
   const { data: userDetail } = useUserDetailQuery(selectedUserId);
   const { data: rolesData } = useRolesQuery();
-  const { data: deptsData } = useActiveDepartmentsQuery();
+  const { data: deptsData } = useDepartmentsQuery();
   const { data: supervisorsData } = useSupervisorsQuery();
   const { data: officesData } = useOfficesQuery();
   const { data: locationTreeData } = useLocationTreeQuery();
@@ -52,6 +75,7 @@ const CreateUserModal: React.FC = () => {
   const createUser = useCreateUserMutation();
   const updateUser = useUpdateUserMutation();
   const assignTarget = useAssignTargetMutation();
+  const isMutationPending = createUser.isPending || updateUser.isPending || assignTarget.isPending;
 
   const methods = useForm<UserFormData>({
     defaultValues: {
@@ -82,6 +106,27 @@ const CreateUserModal: React.FC = () => {
 
   const { reset, handleSubmit, control, watch, formState: { isSubmitting, errors } } = methods;
   const password = watch('password');
+
+  const toOptional = (value?: string) => {
+    const next = (value || '').trim();
+    return next ? next : undefined;
+  };
+
+  const toCreatePayload = (data: UserFormData): CreateUserPayload => ({
+    name: data.name.trim(),
+    email: data.email.trim(),
+    username: toOptional(data.username),
+    phone: toOptional(data.phone),
+    password: toOptional(data.password),
+    roleId: toOptional(data.roleId),
+    departmentId: toOptional(data.departmentId),
+    supervisorId: toOptional(data.supervisorId),
+    officeId: toOptional(data.officeId),
+    countryId: toOptional(data.countryId),
+    stateId: toOptional(data.stateId),
+    districtId: toOptional(data.districtId),
+    assignedLocationIds: (data.assignedLocationIds || []).filter(Boolean),
+  });
 
   useEffect(() => {
     if (userDetail?.user) {
@@ -123,31 +168,112 @@ const CreateUserModal: React.FC = () => {
   }, [userDetail, reset, isCreateModalOpen, selectedUserId]);
 
   const onSubmit: SubmitHandler<UserFormData> = async (data) => {
+    if (isMutationPending) return;
     const toastId = toast.loading(selectedUserId ? 'Updating profile...' : 'Creating account...');
     try {
       if (selectedUserId) {
         await updateUser.mutateAsync({ id: selectedUserId, payload: data });
         if (data.targetTypeId) {
-          await assignTarget.mutateAsync({ userId: selectedUserId, payload: data });
+          try {
+            await assignTarget.mutateAsync({ userId: selectedUserId, payload: data });
+          } catch (targetError: any) {
+            toast.error(
+              targetError?.response?.data?.message || 'User updated, but target assignment failed.',
+              { id: toastId },
+            );
+            closeCreateModal();
+            return;
+          }
         }
         toast.success('User updated successfully!', { id: toastId });
       } else {
-        const newUserResponse = await createUser.mutateAsync(data);
+        const payload = toCreatePayload(data);
+        const newUserResponse = await createUser.mutateAsync(payload);
         const newUserId = newUserResponse?.user?.id;
         if (data.targetTypeId && newUserId) {
-          await assignTarget.mutateAsync({ userId: newUserId, payload: data });
+          try {
+            await assignTarget.mutateAsync({ userId: newUserId, payload: data });
+          } catch (targetError: any) {
+            toast.error(
+              targetError?.response?.data?.message || 'User created, but target assignment failed.',
+              { id: toastId },
+            );
+            closeCreateModal();
+            return;
+          }
         }
         toast.success('User onboarded successfully!', { id: toastId });
       }
       closeCreateModal();
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Something went wrong', { id: toastId });
+      const details = error?.response?.data?.errors;
+      const firstFieldError =
+        details && typeof details === 'object'
+          ? Object.values(details).flat().find(Boolean)
+          : null;
+      const isAuthError = error?.response?.status === 401;
+      const isConflictError = error?.response?.status === 409;
+      toast.error(
+        (isAuthError
+          ? 'Session expired. Please login again.'
+          : isConflictError
+            ? error?.response?.data?.message || 'Email or username already exists.'
+          : (firstFieldError as string) || error?.response?.data?.message) || 'Something went wrong',
+        { id: toastId },
+      );
     }
   };
+
+  const onInvalid = (formErrors: typeof errors) => {
+    const firstErrorField = Object.keys(formErrors)[0] as keyof UserFormData | undefined;
+    if (!firstErrorField) return;
+
+    const detailFields: Array<keyof UserFormData> = [
+      'name',
+      'username',
+      'email',
+      'phone',
+      'password',
+      'confirmPassword',
+      'countryId',
+      'stateId',
+      'districtId',
+    ];
+    const accessFields: Array<keyof UserFormData> = [
+      'roleId',
+      'departmentId',
+      'supervisorId',
+      'officeId',
+      'isActive',
+      'assignedLocationIds',
+    ];
+
+    if (detailFields.includes(firstErrorField)) {
+      setActiveTab('details');
+    } else if (accessFields.includes(firstErrorField)) {
+      setActiveTab('access');
+    } else {
+      setActiveTab('targets');
+    }
+
+    const message = (formErrors[firstErrorField]?.message as string) || 'Please fill required fields.';
+    toast.error(message);
+  };
+
+  const submitForm = handleSubmit(onSubmit, onInvalid);
 
   const countries = allLocationsData?.locations?.filter((l: any) => l.type === 'COUNTRY') || [];
   const states = allLocationsData?.locations?.filter((l: any) => l.type === 'STATE') || [];
   const districts = allLocationsData?.locations?.filter((l: any) => l.type === 'DISTRICT') || [];
+  const departments = Array.isArray(deptsData) ? deptsData : deptsData?.departments || [];
+  const safeRoles = (rolesData?.roles || []).map((role: any) => ({
+    value: role?.id || role?.name || '',
+    label: role?.name || role?.id || 'Unknown Role',
+  })).filter((role: { value: string }) => Boolean(role.value));
+  const safeDepartments = (departments || []).map((department: any) => ({
+    value: department?.id || department?.name || '',
+    label: department?.name || department?.id || 'Unknown Department',
+  })).filter((department: { value: string }) => Boolean(department.value));
 
   if (!isCreateModalOpen) return null;
 
@@ -204,7 +330,7 @@ const CreateUserModal: React.FC = () => {
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-6 custom-scrollbar">
           <FormProvider {...methods}>
-            <form id="user-form" onSubmit={handleSubmit(onSubmit)}>
+            <form id="user-form" onSubmit={submitForm}>
               {/* Tab: Details */}
               <div style={{ display: activeTab === 'details' ? 'block' : 'none' }} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -294,14 +420,14 @@ const CreateUserModal: React.FC = () => {
                     <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Role</label>
                     <select {...methods.register('roleId')} className="w-full px-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl text-sm">
                       <option value="">Select Role</option>
-                      {rolesData?.roles?.map((r: any) => <option key={r.id} value={r.id}>{r.name}</option>)}
+                      {safeRoles.map((r: any) => <option key={r.value} value={r.value}>{r.label}</option>)}
                     </select>
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Department</label>
                     <select {...methods.register('departmentId')} className="w-full px-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl text-sm">
                       <option value="">Select Department</option>
-                      {deptsData?.map((d: any) => <option key={d.id} value={d.id}>{d.name}</option>)}
+                      {safeDepartments.map((d: any) => <option key={d.value} value={d.value}>{d.label}</option>)}
                     </select>
                   </div>
                 </div>
@@ -380,12 +506,12 @@ const CreateUserModal: React.FC = () => {
             Cancel
           </button>
           <button
-            form="user-form"
-            type="submit"
-            disabled={isSubmitting}
+            type="button"
+            onClick={submitForm}
+            disabled={isSubmitting || isMutationPending}
             className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-10 py-2.5 bg-[#0085FF] hover:bg-[#0070d6] disabled:bg-blue-300 text-white rounded-xl text-sm font-bold transition-all shadow-lg shadow-blue-500/20 active:scale-95"
           >
-            {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            {isSubmitting || isMutationPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             <span>{selectedUserId ? 'Save Profile' : 'Create User'}</span>
           </button>
         </div>

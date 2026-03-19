@@ -40,8 +40,8 @@ const sidebarMenus: SidebarSection[] = [
                     { label: 'Users', path: '/admin/users' },
                     { label: 'Roles', path: '/admin/roles' },
                     { label: 'Departments', path: '/admin/departments' },
-                    { label: 'Organization Chart', path: '#' },
-                    { label: 'Roster Sheet', path: '#' }
+                    { label: 'Organization Chart', path: '/admin/organisation-chart' },
+                    { label: 'Roster Sheet', path: '/admin/roster' }
                 ]
             },
             {
@@ -49,7 +49,7 @@ const sidebarMenus: SidebarSection[] = [
                 subItems: [
                     { label: 'Lead Sources', path: '/admin/lead-source' },
                     { label: 'Lead Stages', path: '/admin/lead-stages' },
-                    { label: 'Stage Rules', path: '/master/stage-rules' },
+                    { label: 'Stage Rules', path: '/admin/stage-rules' },
                     { label: 'Target Cycles', path: '#' },
                     { label: 'Lead Dynamic Forms', path: '#' },
                     { label: 'Office Locations', path: '#' },

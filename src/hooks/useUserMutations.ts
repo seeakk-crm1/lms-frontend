@@ -10,9 +10,6 @@ export const useCreateUserMutation = () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
       toast.success(response.message || 'User created successfully');
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Failed to create user');
-    },
   });
 };
 
@@ -25,9 +22,6 @@ export const useUpdateUserMutation = () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
       queryClient.invalidateQueries({ queryKey: ['user', variables.id] });
       toast.success(response.message || 'User updated successfully');
-    },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Failed to update user');
     },
   });
 };
@@ -70,9 +64,6 @@ export const useAssignTargetMutation = () => {
       queryClient.invalidateQueries({ queryKey: ['user-targets', variables.userId] });
       toast.success(response.message || 'Target assigned');
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Failed to assign target');
-    },
   });
 };
 
@@ -87,5 +78,12 @@ export const useUnlockUserMutation = () => {
     onError: (error: any) => {
       toast.error(error.response?.data?.message || 'Failed to unlock user');
     },
+  });
+};
+
+export const useResetPasswordMutation = () => {
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload?: any }) =>
+      usersApi.resetPassword(id, payload ?? {}),
   });
 };

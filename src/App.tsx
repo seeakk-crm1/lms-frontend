@@ -22,7 +22,9 @@ import AdminRolesPage from './pages/AdminRolesPage';
 import AdminDepartmentsPage from './pages/AdminDepartmentsPage';
 import LeadSourceListPage from './pages/LeadSourceListPage';
 import LeadStagesListPage from './pages/LeadStagesListPage';
-import StageRulesPage from './pages/StageRulesPage';
+import StageRulesListPage from './pages/StageRulesListPage';
+import OrganisationChartPage from './modules/admin/organisation-chart/OrganisationChartPage';
+import RosterPage from './modules/admin/roster/RosterPage';
 
 interface RouteProps {
   children: ReactNode;
@@ -173,11 +175,25 @@ function App() {
           </ProtectedRoute>
         } />
 
-        <Route path="/master/stage-rules" element={
+        <Route path="/admin/stage-rules" element={
           <ProtectedRoute>
-            <StageRulesPage />
+            <StageRulesListPage />
           </ProtectedRoute>
         } />
+
+        <Route path="/admin/organisation-chart" element={
+          <ProtectedRoute>
+            <OrganisationChartPage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/admin/roster" element={
+          <ProtectedRoute>
+            <RosterPage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/master/stage-rules" element={<Navigate to="/admin/stage-rules" replace />} />
       </Routes>
     </>
   );

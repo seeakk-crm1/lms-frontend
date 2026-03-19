@@ -268,7 +268,7 @@ const LeadStageFormModal: React.FC<LeadStageFormModalProps> = ({
                       </div>
                       <button
                         type="button"
-                        onClick={() => navigate('/master/stage-rules')}
+                        onClick={() => navigate('/admin/stage-rules')}
                         className="inline-flex w-full sm:w-auto justify-center items-center gap-1 px-3 py-2 rounded-xl text-xs font-black text-blue-600 bg-blue-50 hover:bg-blue-100 transition-all"
                       >
                         Add Stage Rules

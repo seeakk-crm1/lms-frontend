@@ -18,7 +18,12 @@ import {
 } from 'lucide-react';
 import { useUsersStore } from '../../store/useUsersStore';
 import { useUsersQuery } from '../../hooks/useUsersQuery';
-import { useUpdateStatusMutation, useDeleteUserMutation, useUnlockUserMutation } from '../../hooks/useUserMutations';
+import {
+  useUpdateStatusMutation,
+  useDeleteUserMutation,
+  useUnlockUserMutation,
+  useResetPasswordMutation,
+} from '../../hooks/useUserMutations';
 import { User } from '../../types/user.types';
 import DeleteUserModal from './DeleteUserModal';
 
@@ -29,6 +34,7 @@ const UsersTable: React.FC = () => {
   const updateStatus = useUpdateStatusMutation();
   const unlockUser = useUnlockUserMutation();
   const deleteUser = useDeleteUserMutation();
+  const resetPassword = useResetPasswordMutation();
 
   const [deleteModal, setDeleteModal] = useState<{ open: boolean; userId: string; userName: string }>({
     open: false,
@@ -38,6 +44,23 @@ const UsersTable: React.FC = () => {
 
   const users = usersData?.users || [];
   const totalPages = usersData?.pagination?.totalPages || 1;
+  const totalUsers = usersData?.pagination?.total || 0;
+
+  const getRoleLabel = (user: User): string => {
+    if (typeof user.role === 'string') return user.role || 'Unassigned Role';
+    if (user.role && typeof user.role === 'object' && 'name' in user.role) {
+      return (user.role as any).name || 'Unassigned Role';
+    }
+    return 'Unassigned Role';
+  };
+
+  const getDepartmentLabel = (user: User): string => {
+    if (typeof user.department === 'string') return user.department || 'Unassigned';
+    if (user.department && typeof user.department === 'object' && 'name' in (user.department as any)) {
+      return (user.department as any).name || 'Unassigned';
+    }
+    return 'Unassigned';
+  };
 
   const handleStatusToggle = (id: string, currentStatus: boolean) => {
     updateStatus.mutate({ id, isActive: !currentStatus });
@@ -47,11 +70,18 @@ const UsersTable: React.FC = () => {
     unlockUser.mutate(id);
   };
 
-  const handleResetPassword = (email: string) => {
-    toast.success(`Password reset link sent to ${email}`, {
-        icon: '✉️',
-        duration: 4000,
-    });
+  const handleResetPassword = async (userId: string, email: string) => {
+    try {
+      const res: any = await resetPassword.mutateAsync({ id: userId, payload: {} });
+      const generatedPassword = res?.data?.generatedPassword;
+      if (generatedPassword) {
+        toast.success(`Password reset for ${email}. New password: ${generatedPassword}`, { duration: 7000 });
+        return;
+      }
+      toast.success(res?.message || `Password reset successfully for ${email}`);
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || 'Failed to reset password');
+    }
   };
 
   const handleDelete = (id: string, name: string) => {
@@ -172,9 +202,9 @@ const UsersTable: React.FC = () => {
                     <div className="flex flex-col gap-1">
                       <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-purple-50 text-purple-600 text-[10px] font-bold uppercase tracking-tight w-fit">
                         <ShieldCheck className="w-3 h-3" />
-                        {typeof user.role === 'string' ? user.role : user.role.name}
+                        {getRoleLabel(user)}
                       </span>
-                      <span className="text-xs text-gray-500 truncate max-w-[150px]">{user.department || 'Unassigned'}</span>
+                      <span className="text-xs text-gray-500 truncate max-w-[150px]">{getDepartmentLabel(user)}</span>
                     </div>
                   </td>
                   <td className="px-6 py-4">
@@ -209,7 +239,7 @@ const UsersTable: React.FC = () => {
                         </button>
                       )}
                       <button
-                        onClick={(e) => { e.stopPropagation(); handleResetPassword(user.email); }}
+                        onClick={(e) => { e.stopPropagation(); handleResetPassword(user.id, user.email); }}
                         className="p-1.5 text-amber-500 hover:bg-amber-50 rounded-lg transition-colors"
                         title="Send Reset Password Link"
                       >
@@ -319,14 +349,14 @@ const UsersTable: React.FC = () => {
                   <div className="flex flex-col gap-0.5">
                       <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest leading-none mb-1">Role / Dept</span>
                       <div className="flex items-center gap-2">
-                          <span className="text-xs font-black text-purple-600">{typeof user.role === 'string' ? user.role : user.role.name}</span>
+                          <span className="text-xs font-black text-purple-600">{getRoleLabel(user)}</span>
                           <span className="text-gray-300">|</span>
-                          <span className="text-xs text-gray-600 font-bold">{user.department || 'Unassigned'}</span>
+                          <span className="text-xs text-gray-600 font-bold">{getDepartmentLabel(user)}</span>
                       </div>
                   </div>
                   <div className="flex items-center gap-2">
                       <button
-                        onClick={() => handleResetPassword(user.email)}
+                        onClick={() => handleResetPassword(user.id, user.email)}
                         className="p-2 text-amber-500 bg-white border border-gray-100 rounded-lg shadow-sm"
                       >
                         <Mail className="w-4 h-4" />
@@ -347,7 +377,7 @@ const UsersTable: React.FC = () => {
       {/* Pagination Footer */}
       <div className="p-4 bg-gray-50/30 border-t border-gray-50 flex items-center justify-between">
         <span className="text-xs text-gray-500">
-          Showing <span className="font-bold">{(page - 1) * 10 + 1}</span> to <span className="font-bold">{Math.min(page * 10, usersData?.total || 0)}</span> of <span className="font-bold">{usersData?.total || 0}</span> users
+          Showing <span className="font-bold">{totalUsers === 0 ? 0 : (page - 1) * 10 + 1}</span> to <span className="font-bold">{Math.min(page * 10, totalUsers)}</span> of <span className="font-bold">{totalUsers}</span> users
         </span>
         <div className="flex items-center gap-2">
           <button
@@ -389,3 +419,5 @@ const UsersTable: React.FC = () => {
 };
 
 export default React.memo(UsersTable);
+
+

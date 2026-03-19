@@ -4,13 +4,13 @@ export interface User {
   email: string;
   username?: string;
   phone?: string;
-  role: string | { id: string; name: string };
+  role: string | { id?: string; name?: string } | null;
   isOnboarded: boolean;
   workspaceId?: string;
   isActive?: boolean;
-  department?: string;
-  supervisor?: string;
-  office?: string;
+  department?: string | { id?: string; name?: string } | null;
+  supervisor?: string | { id?: string; name?: string; email?: string } | null;
+  office?: string | { id?: string; name?: string } | null;
   assignedLocations?: any[];
   [key: string]: any;
 }
