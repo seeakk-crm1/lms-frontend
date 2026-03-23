@@ -50,7 +50,7 @@ const sidebarMenus: SidebarSection[] = [
                     { label: 'Lead Sources', path: '/admin/lead-source' },
                     { label: 'Lead Stages', path: '/admin/lead-stages' },
                     { label: 'Stage Rules', path: '/admin/stage-rules' },
-                    { label: 'Target Cycles', path: '#' },
+                    { label: 'Target Cycles', path: '/admin/target-cycles' },
                     { label: 'Lead Dynamic Forms', path: '#' },
                     { label: 'Office Locations', path: '#' },
                     { label: 'Lead Life Cycle', path: '#' },

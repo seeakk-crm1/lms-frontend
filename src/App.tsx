@@ -25,6 +25,7 @@ import LeadStagesListPage from './pages/LeadStagesListPage';
 import StageRulesListPage from './pages/StageRulesListPage';
 import OrganisationChartPage from './modules/admin/organisation-chart/OrganisationChartPage';
 import RosterPage from './modules/admin/roster/RosterPage';
+import TargetCyclePage from './modules/admin/target-cycle/TargetCyclePage';
 
 interface RouteProps {
   children: ReactNode;
@@ -190,6 +191,12 @@ function App() {
         <Route path="/admin/roster" element={
           <ProtectedRoute>
             <RosterPage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/admin/target-cycles" element={
+          <ProtectedRoute>
+            <TargetCyclePage />
           </ProtectedRoute>
         } />
 
