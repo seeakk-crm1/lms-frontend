@@ -53,7 +53,7 @@ const sidebarMenus: SidebarSection[] = [
                     { label: 'Target Cycles', path: '/admin/target-cycles' },
                     { label: 'Lead Dynamic Forms', path: '/admin/lead-dynamics' },
                     { label: 'Office Locations', path: '/admin/offices' },
-                    { label: 'Lead Life Cycle', path: '#' },
+                    { label: 'Lead Life Cycle', path: '/admin/lead-life-cycles' },
                     { label: 'Calendar', path: '#' },
                     { label: 'Holiday List', path: '#' },
                     { label: 'Report Types', path: '#' },

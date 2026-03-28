@@ -2,10 +2,13 @@ import api from './api';
 import { CreateLeadStageInput, LeadStageFilters, UpdateLeadStageInput } from '../types/leadStage.types';
 
 type ApiStageRule = {
-  field: string;
-  condition: string;
-  value?: string | null;
-  isMandatory?: boolean;
+  id: string;
+  name: string;
+  inputType: 'TEXT' | 'TEXTAREA' | 'RADIO' | 'SELECT';
+  sortOrder: number;
+  required: boolean;
+  status: 'ACTIVE' | 'INACTIVE';
+  stageId?: string | null;
 };
 
 type ApiLeadStage = {
@@ -24,32 +27,18 @@ type ApiLeadStage = {
 };
 
 const toApiPayload = (data: CreateLeadStageInput | UpdateLeadStageInput) => {
-  const { stageOrder, ...rest } = data;
+  const { stageOrder, ruleAssignments, ...rest } = data;
   return {
     ...rest,
     ...(stageOrder !== undefined ? { order: stageOrder } : {}),
-    ...(data.rules
-      ? {
-          rules: data.rules.map((rule) => ({
-            field: rule.field,
-            condition: rule.condition,
-            ...(rule.value !== undefined ? { value: rule.value } : {}),
-            ...(rule.isMandatory !== undefined ? { isMandatory: rule.isMandatory } : {}),
-          })),
-        }
-      : {}),
+    ...(ruleAssignments !== undefined ? { ruleAssignments } : {}),
   };
 };
 
 const mapFromApi = (item: ApiLeadStage) => ({
   ...item,
   stageOrder: item.order,
-  rules: (item.rules || []).map((rule) => ({
-    field: rule.field,
-    condition: rule.condition,
-    ...(rule.value !== undefined ? { value: rule.value } : {}),
-    ...(rule.isMandatory !== undefined ? { isMandatory: rule.isMandatory } : {}),
-  })),
+  rules: item.rules || [],
 });
 
 export const getLeadStages = async (params?: LeadStageFilters & { page?: number; limit?: number }) => {

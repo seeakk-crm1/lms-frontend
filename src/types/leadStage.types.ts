@@ -1,10 +1,18 @@
 export type LeadStageStatus = 'ACTIVE' | 'INACTIVE';
 
 export interface LeadStageRule {
-  field: string;
-  condition: string;
-  value?: string;
-  isMandatory?: boolean;
+  id: string;
+  name: string;
+  inputType: 'TEXT' | 'TEXTAREA' | 'RADIO' | 'SELECT';
+  sortOrder: number;
+  required: boolean;
+  status: LeadStageStatus;
+  stageId?: string | null;
+}
+
+export interface LeadStageRuleAssignment {
+  ruleId: string;
+  required: boolean;
 }
 
 export interface LeadStage {
@@ -48,7 +56,7 @@ export interface CreateLeadStageInput {
   isLOB: boolean;
   isClosed: boolean;
   stageOrder: number;
-  rules: LeadStageRule[];
+  ruleAssignments: LeadStageRuleAssignment[];
   status: LeadStageStatus;
 }
 

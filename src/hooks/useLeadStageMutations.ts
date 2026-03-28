@@ -30,7 +30,7 @@ export const useCreateLeadStageMutation = () => {
             isLOB: payload.isLOB,
             isClosed: payload.isClosed,
             stageOrder: payload.stageOrder,
-            rules: payload.rules,
+            rules: [],
             status: payload.status,
             createdBy: 'You',
             createdAt: new Date().toISOString(),
@@ -112,4 +112,3 @@ export const useDeleteLeadStageMutation = () => {
     },
   });
 };
-

@@ -1,16 +1,14 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Controller, useFieldArray, useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ArrowRight, Loader2, Plus, Save, Trash2, X } from 'lucide-react';
+import { ArrowRight, Check, ChevronDown, Loader2, Save, Search, X } from 'lucide-react';
 import { z } from 'zod';
 import { useNavigate } from 'react-router-dom';
-import { CreateLeadStageInput, LeadStage } from '../../../types/leadStage.types';
-
-const stageRuleSchema = z.object({
-  field: z.string().min(1, 'Field is required'),
-  condition: z.string().min(1, 'Condition is required'),
-});
+import { CreateLeadStageInput, LeadStage, LeadStageRuleAssignment } from '../../../types/leadStage.types';
+import { useQuery } from '@tanstack/react-query';
+import { getStageRules } from '../../../services/stageRule.api';
+import type { StageRule } from '../../../types/stageRule.types';
 
 const leadStageSchema = z.object({
   name: z.string().trim().min(2, 'Lead stage name must be at least 2 characters'),
@@ -20,8 +18,15 @@ const leadStageSchema = z.object({
   isClosed: z.boolean(),
   stageOrder: z.number().int().min(1, 'Stage order must be greater than 0'),
   status: z.enum(['ACTIVE', 'INACTIVE']),
-  rules: z.array(stageRuleSchema),
+  ruleAssignments: z.array(
+    z.object({
+      ruleId: z.string().trim().min(1, 'Rule is required'),
+      required: z.boolean(),
+    }),
+  ),
 });
+
+type LeadStageFormValues = z.infer<typeof leadStageSchema>;
 
 interface LeadStageFormModalProps {
   isOpen: boolean;
@@ -33,9 +38,6 @@ interface LeadStageFormModalProps {
   onClose: () => void;
   onSubmit: (data: CreateLeadStageInput) => Promise<void> | void;
 }
-
-const ruleFieldOptions = ['Customer Comment', 'Next Follow-up Date', 'LOB Reason', 'Escalation Note', 'Amount'];
-const conditionOptions = ['Mandatory', 'Optional', 'Equals', 'Not Empty', 'Greater Than'];
 
 const ToggleField: React.FC<{
   label: string;
@@ -74,13 +76,27 @@ const LeadStageFormModal: React.FC<LeadStageFormModalProps> = ({
   onSubmit,
 }) => {
   const navigate = useNavigate();
+  const [isRulesDropdownOpen, setIsRulesDropdownOpen] = useState(false);
+  const [ruleSearchTerm, setRuleSearchTerm] = useState('');
+  const activeStageRulesQuery = useQuery({
+    queryKey: ['stage-rules', 'active-for-lead-stage-modal'],
+    queryFn: async () => {
+      const response = await getStageRules({ search: '', page: 1, limit: 100, status: 'ACTIVE' });
+      return response.data || [];
+    },
+    staleTime: 60_000,
+    gcTime: 300_000,
+    refetchOnWindowFocus: false,
+  });
   const {
     register,
     control,
     reset,
     handleSubmit,
+    watch,
+    setValue,
     formState: { errors },
-  } = useForm<CreateLeadStageInput>({
+  } = useForm<LeadStageFormValues>({
     resolver: zodResolver(leadStageSchema),
     defaultValues: {
       name: '',
@@ -90,13 +106,8 @@ const LeadStageFormModal: React.FC<LeadStageFormModalProps> = ({
       isClosed: false,
       stageOrder: 1,
       status: 'ACTIVE',
-      rules: [{ field: '', condition: '' }],
+      ruleAssignments: [],
     },
-  });
-
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name: 'rules',
   });
 
   useEffect(() => {
@@ -109,15 +120,90 @@ const LeadStageFormModal: React.FC<LeadStageFormModalProps> = ({
       isClosed: leadStage?.isClosed || false,
       stageOrder: leadStage?.stageOrder || 1,
       status: leadStage?.status || 'ACTIVE',
-      rules: leadStage?.rules?.length ? leadStage.rules : [{ field: '', condition: '' }],
+      ruleAssignments:
+        leadStage?.rules?.map((rule) => ({
+          ruleId: rule.id,
+          required: rule.required,
+        })) || [],
     });
   }, [isOpen, leadStage, reset]);
 
-  const formSubmit = async (data: CreateLeadStageInput) => {
+  const selectedRuleAssignments = watch('ruleAssignments');
+  const activeStageRules = activeStageRulesQuery.data || [];
+
+  useEffect(() => {
+    if (!isOpen) {
+      setIsRulesDropdownOpen(false);
+      setRuleSearchTerm('');
+    }
+  }, [isOpen]);
+
+  const selectedRules = useMemo(
+    () =>
+      selectedRuleAssignments
+        .map((assignment) => {
+          const rule = activeStageRules.find((entry: StageRule) => entry.id === assignment.ruleId);
+          if (!rule) return null;
+
+          return {
+            ...rule,
+            assignmentRequired: assignment.required,
+          };
+        })
+        .filter(Boolean) as Array<StageRule & { assignmentRequired: boolean }>,
+    [activeStageRules, selectedRuleAssignments],
+  );
+
+  const filteredStageRules = useMemo(() => {
+    const normalizedSearch = ruleSearchTerm.trim().toLowerCase();
+    if (!normalizedSearch) return activeStageRules;
+
+    return activeStageRules.filter((rule: StageRule) => {
+      const searchable = [rule.name, rule.inputType, String(rule.sortOrder), rule.required ? 'required' : 'optional']
+        .join(' ')
+        .toLowerCase();
+      return searchable.includes(normalizedSearch);
+    });
+  }, [activeStageRules, ruleSearchTerm]);
+
+  const updateSelectedRuleAssignments = useCallback(
+    (nextAssignments: LeadStageRuleAssignment[]) => {
+      const dedupedAssignments = Array.from(
+        new Map(nextAssignments.map((assignment) => [assignment.ruleId, assignment])).values(),
+      );
+
+      setValue('ruleAssignments', dedupedAssignments, {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+    },
+    [setValue],
+  );
+
+  const toggleRuleSelection = useCallback(
+    (ruleId: string) => {
+      const nextAssignments = selectedRuleAssignments.some((entry) => entry.ruleId === ruleId)
+        ? selectedRuleAssignments.filter((entry) => entry.ruleId !== ruleId)
+        : [...selectedRuleAssignments, { ruleId, required: false }];
+      updateSelectedRuleAssignments(nextAssignments);
+    },
+    [selectedRuleAssignments, updateSelectedRuleAssignments],
+  );
+
+  const updateRuleRequirement = useCallback(
+    (ruleId: string, required: boolean) => {
+      updateSelectedRuleAssignments(
+        selectedRuleAssignments.map((entry) => (entry.ruleId === ruleId ? { ...entry, required } : entry)),
+      );
+    },
+    [selectedRuleAssignments, updateSelectedRuleAssignments],
+  );
+
+  const formSubmit = async (data: LeadStageFormValues) => {
     await onSubmit({
       ...data,
       name: data.name.trim(),
-      rules: data.rules.map((rule) => ({ field: rule.field.trim(), condition: rule.condition.trim() })),
+      ruleAssignments: Array.from(new Map(data.ruleAssignments.map((rule) => [rule.ruleId, rule])).values()),
     });
   };
 
@@ -260,80 +346,201 @@ const LeadStageFormModal: React.FC<LeadStageFormModalProps> = ({
                     </div>
                   </div>
 
-                  <div className="space-y-3">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                      <div>
-                        <h3 className="text-sm font-black text-gray-900">Stage Rules</h3>
-                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Dynamic rule builder</p>
-                      </div>
-                      <button
-                        type="button"
+                    <div className="space-y-3">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div>
+                          <h3 className="text-sm font-black text-gray-900">Stage Rules</h3>
+                          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Connect existing rules to this stage</p>
+                        </div>
+                        <button
+                          type="button"
                         onClick={() => navigate('/admin/stage-rules')}
                         className="inline-flex w-full sm:w-auto justify-center items-center gap-1 px-3 py-2 rounded-xl text-xs font-black text-blue-600 bg-blue-50 hover:bg-blue-100 transition-all"
                       >
-                        Add Stage Rules
-                        <ArrowRight className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-
-                    {fields.map((field, index) => (
-                      <motion.div
-                        key={field.id}
-                        initial={{ opacity: 0, y: 6 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto] gap-2 p-3 rounded-2xl bg-gray-50 border border-gray-100"
-                      >
-                        <select
-                          {...register(`rules.${index}.field` as const)}
-                          className="px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm font-semibold text-gray-700 outline-none focus:ring-2 focus:ring-emerald-500/20"
-                          aria-label={`Rule field ${index + 1}`}
-                        >
-                          <option value="">Select field</option>
-                          {ruleFieldOptions.map((option) => (
-                            <option key={option} value={option}>
-                              {option}
-                            </option>
-                          ))}
-                        </select>
-                        <select
-                          {...register(`rules.${index}.condition` as const)}
-                          className="px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm font-semibold text-gray-700 outline-none focus:ring-2 focus:ring-emerald-500/20"
-                          aria-label={`Rule condition ${index + 1}`}
-                        >
-                          <option value="">Select condition</option>
-                          {conditionOptions.map((option) => (
-                            <option key={option} value={option}>
-                              {option}
-                            </option>
-                          ))}
-                        </select>
-                        <button
-                          type="button"
-                          onClick={() => remove(index)}
-                          disabled={fields.length === 1}
-                          className="px-3 py-2.5 rounded-xl bg-red-50 text-red-600 hover:bg-red-100 disabled:opacity-40 transition-all w-full sm:w-auto"
-                          aria-label={`Remove rule ${index + 1}`}
-                        >
-                          <Trash2 className="w-4 h-4" />
+                          Add Stage Rules
+                          <ArrowRight className="w-3.5 h-3.5" />
                         </button>
-                        <div className="md:col-span-3">
-                          {(errors.rules?.[index]?.field || errors.rules?.[index]?.condition) && (
-                            <p className="text-[10px] text-red-500 font-bold">
-                              {errors.rules?.[index]?.field?.message || errors.rules?.[index]?.condition?.message}
-                            </p>
-                          )}
-                        </div>
-                      </motion.div>
-                    ))}
+                      </div>
 
-                    <button
-                      type="button"
-                      onClick={() => append({ field: '', condition: '' })}
-                      className="inline-flex w-full sm:w-auto justify-center items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-black text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-all"
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                      Add Stage Rule
-                    </button>
+                    {activeStageRulesQuery.isLoading ? (
+                      <div className="space-y-2" aria-hidden="true">
+                        <div className="h-12 w-full rounded-2xl shimmer-bg" />
+                        <div className="h-12 w-full rounded-2xl shimmer-bg" />
+                      </div>
+                    ) : activeStageRulesQuery.data && activeStageRulesQuery.data.length > 0 ? (
+                      <div className="space-y-3">
+                        <div className="relative">
+                          <button
+                            type="button"
+                            onClick={() => setIsRulesDropdownOpen((current) => !current)}
+                            className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500/30 ${
+                              isRulesDropdownOpen
+                                ? 'border-emerald-300 bg-white shadow-lg shadow-emerald-100/40'
+                                : 'border-gray-200 bg-gray-50 hover:border-emerald-200 hover:bg-white'
+                            }`}
+                            aria-expanded={isRulesDropdownOpen}
+                            aria-haspopup="listbox"
+                          >
+                            <div className="min-w-0">
+                              <p className="text-sm font-black text-gray-900">
+                                {selectedRules.length > 0
+                                  ? `${selectedRules.length} stage rule${selectedRules.length > 1 ? 's' : ''} selected`
+                                  : 'Select stage rules'}
+                              </p>
+                              <p className="mt-1 text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                                Search and attach existing rules to this stage
+                              </p>
+                            </div>
+                            <ChevronDown
+                              className={`h-4 w-4 shrink-0 text-gray-400 transition-transform ${isRulesDropdownOpen ? 'rotate-180' : ''}`}
+                            />
+                          </button>
+
+                          <AnimatePresence>
+                            {isRulesDropdownOpen ? (
+                              <motion.div
+                                initial={{ opacity: 0, y: 8 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: 4 }}
+                                transition={{ duration: 0.18 }}
+                                className="absolute z-20 mt-2 w-full overflow-hidden rounded-2xl border border-emerald-100 bg-white shadow-2xl shadow-emerald-100/30"
+                              >
+                                <div className="border-b border-gray-100 p-3">
+                                  <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2">
+                                    <Search className="h-4 w-4 text-gray-400" />
+                                    <input
+                                      value={ruleSearchTerm}
+                                      onChange={(event) => setRuleSearchTerm(event.target.value)}
+                                      placeholder="Search rules by name, type, or order"
+                                      className="w-full bg-transparent text-sm font-semibold text-gray-700 outline-none placeholder:text-gray-400"
+                                    />
+                                  </div>
+                                </div>
+
+                                <div className="max-h-72 overflow-y-auto p-2">
+                                  {filteredStageRules.length > 0 ? (
+                                    filteredStageRules.map((rule: StageRule) => {
+                                      const selected = selectedRuleAssignments.some((entry) => entry.ruleId === rule.id);
+                                      return (
+                                        <button
+                                          key={rule.id}
+                                          type="button"
+                                          onClick={() => toggleRuleSelection(rule.id)}
+                                          className={`mb-2 flex w-full items-start gap-3 rounded-2xl border p-3 text-left transition-all last:mb-0 ${
+                                            selected
+                                              ? 'border-emerald-200 bg-emerald-50/50'
+                                              : 'border-transparent bg-gray-50 hover:border-emerald-100 hover:bg-white'
+                                          }`}
+                                        >
+                                          <span
+                                            className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border ${
+                                              selected
+                                                ? 'border-emerald-500 bg-emerald-500 text-white'
+                                                : 'border-gray-300 bg-white text-transparent'
+                                            }`}
+                                          >
+                                            <Check className="h-3.5 w-3.5" />
+                                          </span>
+                                          <div className="min-w-0 flex-1">
+                                            <div className="flex flex-wrap items-center gap-2">
+                                              <p className="text-sm font-black text-gray-900">{rule.name}</p>
+                                              <span className="rounded-lg bg-white px-2 py-1 text-[10px] font-black uppercase tracking-widest text-gray-500">
+                                                {rule.inputType}
+                                              </span>
+                                              <span className="rounded-lg bg-white px-2 py-1 text-[10px] font-black uppercase tracking-widest text-gray-500">
+                                                #{rule.sortOrder}
+                                              </span>
+                                              {rule.required ? (
+                                                <span className="rounded-lg bg-red-50 px-2 py-1 text-[10px] font-black uppercase tracking-widest text-red-600">
+                                                  Required
+                                                </span>
+                                              ) : null}
+                                            </div>
+                                          </div>
+                                        </button>
+                                      );
+                                    })
+                                  ) : (
+                                    <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 px-4 py-6 text-center">
+                                      <p className="text-sm font-black text-gray-700">No matching stage rules</p>
+                                      <p className="mt-1 text-[11px] font-bold uppercase tracking-widest text-gray-400">
+                                        Try a different keyword
+                                      </p>
+                                    </div>
+                                  )}
+                                </div>
+                              </motion.div>
+                            ) : null}
+                          </AnimatePresence>
+                        </div>
+
+                        {selectedRules.length > 0 ? (
+                          <div className="space-y-3">
+                            {selectedRules.map((rule) => (
+                              <motion.div
+                                key={rule.id}
+                                initial={{ opacity: 0, scale: 0.96 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                className="flex flex-col gap-3 rounded-2xl border border-emerald-200 bg-emerald-50/60 p-3 sm:flex-row sm:items-center sm:justify-between"
+                              >
+                                <div className="min-w-0">
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    <span className="text-sm font-black text-emerald-800">{rule.name}</span>
+                                    <span className="rounded-full bg-white px-2 py-0.5 text-[10px] uppercase tracking-widest text-emerald-600">
+                                      {rule.inputType}
+                                    </span>
+                                    <span className="rounded-full bg-white px-2 py-0.5 text-[10px] uppercase tracking-widest text-gray-500">
+                                      #{rule.sortOrder}
+                                    </span>
+                                  </div>
+                                  <p className="mt-1 text-[10px] font-bold uppercase tracking-widest text-emerald-700/70">
+                                    Choose whether this rule is optional or mandatory for this stage
+                                  </p>
+                                </div>
+
+                                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                                  <select
+                                    value={rule.assignmentRequired ? 'MANDATORY' : 'OPTIONAL'}
+                                    onChange={(event) => updateRuleRequirement(rule.id, event.target.value === 'MANDATORY')}
+                                    className="min-w-[160px] rounded-xl border border-emerald-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 outline-none transition-all focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+                                    aria-label={`${rule.name} requirement`}
+                                  >
+                                    <option value="OPTIONAL">Optional</option>
+                                    <option value="MANDATORY">Mandatory</option>
+                                  </select>
+                                  <button
+                                    type="button"
+                                    onClick={() => toggleRuleSelection(rule.id)}
+                                    className="inline-flex items-center justify-center rounded-xl border border-rose-100 bg-white px-3 py-2 text-sm font-bold text-rose-500 transition-all hover:border-rose-200 hover:bg-rose-50"
+                                    aria-label={`Remove ${rule.name}`}
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </button>
+                                </div>
+                              </motion.div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 px-4 py-4">
+                            <p className="text-sm font-black text-gray-700">No rules selected yet</p>
+                            <p className="mt-1 text-[11px] font-bold uppercase tracking-widest text-gray-400">
+                              Use the dropdown above to attach one or more rules
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 px-4 py-6 text-center">
+                        <p className="text-sm font-black text-gray-700">No stage rules available</p>
+                        <p className="mt-1 text-[11px] font-bold uppercase tracking-widest text-gray-400">
+                          Create rules first, then connect them here
+                        </p>
+                      </div>
+                    )}
+
+                    {errors.ruleAssignments ? (
+                      <p className="text-[10px] text-red-500 font-bold">{errors.ruleAssignments.message}</p>
+                    ) : null}
                   </div>
 
                   <div className="space-y-1.5">

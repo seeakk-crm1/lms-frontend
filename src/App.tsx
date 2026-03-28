@@ -28,6 +28,7 @@ import RosterPage from './modules/admin/roster/RosterPage';
 import TargetCyclePage from './modules/admin/target-cycle/TargetCyclePage';
 import LeadDynamicsPage from './modules/admin/lead-dynamics/LeadDynamicsPage';
 import OfficePage from './pages/admin/office/OfficePage';
+import LeadLifeCyclePage from './pages/admin/lead-life-cycle/LeadLifeCyclePage';
 
 interface RouteProps {
   children: ReactNode;
@@ -211,6 +212,12 @@ function App() {
         <Route path="/admin/offices" element={
           <ProtectedRoute>
             <OfficePage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/admin/lead-life-cycles" element={
+          <ProtectedRoute>
+            <LeadLifeCyclePage />
           </ProtectedRoute>
         } />
 
