@@ -1,13 +1,20 @@
 import React, { useCallback, useMemo } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { motion } from 'framer-motion';
-import { AlertTriangle, Loader2, Save } from 'lucide-react';
+import { AlertTriangle, FileImage, Loader2, Save, ShieldCheck, Upload } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import OptionBuilder from './OptionBuilder';
 import type { LeadDynamicField, LeadDynamicsFormValues, LeadDynamicsInputType } from './types';
 
 const optionTypeSet = new Set<LeadDynamicsInputType>(['SELECT', 'RADIO', 'CHECKBOX']);
+const previewWithCustomLayout = new Set<LeadDynamicsInputType>([
+  'TEXTAREA',
+  'SELECT',
+  'RADIO',
+  'CHECKBOX',
+  'FILE',
+]);
 
 const optionSchema = z.object({
   value: z.string().trim().min(1, 'Option value is required'),
@@ -266,6 +273,23 @@ const LeadDynamicsForm: React.FC<Props> = ({
             <option value="FILE">FILE</option>
             <option value="DATETIME">DATETIME</option>
           </select>
+          <div className="mt-2 min-h-[34px]">
+            {values.inputType === 'FILE' ? (
+              <div className="rounded-xl border border-emerald-100 bg-emerald-50/70 px-3 py-2">
+                <p className="text-[11px] font-black uppercase tracking-widest text-emerald-600">
+                  File Upload Field
+                </p>
+                <p className="mt-1 text-[11px] font-semibold leading-5 text-emerald-800/80">
+                  Leads will upload a document or image here. The app should save only the final
+                  secure file URL from S3 or Cloudinary, not a local file path.
+                </p>
+              </div>
+            ) : (
+              <p className="text-[11px] font-semibold text-gray-500">
+                Pick the best input format for how your team will capture this lead detail.
+              </p>
+            )}
+          </div>
         </div>
       </div>
 
@@ -406,10 +430,67 @@ const LeadDynamicsForm: React.FC<Props> = ({
             ))}
           </div>
         ) : null}
-        {!['TEXTAREA', 'SELECT', 'RADIO', 'CHECKBOX'].includes(values.inputType) ? (
+        {values.inputType === 'FILE' ? (
+          <div className="rounded-2xl border border-dashed border-emerald-200 bg-gradient-to-br from-white via-emerald-50/60 to-teal-50/50 p-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div className="flex items-start gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-600">
+                  <Upload className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-sm font-black text-gray-800">Upload supporting file</p>
+                  <p className="mt-1 text-xs font-semibold leading-5 text-gray-500">
+                    Drag and drop a file here, or browse from your device. Uploaded files should
+                    resolve to a secure HTTPS URL before saving.
+                  </p>
+                </div>
+              </div>
+              <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white/90 px-3 py-1.5 text-[11px] font-black uppercase tracking-widest text-emerald-700">
+                <ShieldCheck className="h-3.5 w-3.5" />
+                URL Validated
+              </div>
+            </div>
+
+            <div className="mt-4 grid gap-3 lg:grid-cols-[minmax(0,1fr)_220px]">
+              <div className="flex min-h-[116px] items-center justify-center rounded-2xl border border-dashed border-emerald-200 bg-white/90 px-4 py-6 text-center">
+                <div className="space-y-2">
+                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
+                    <FileImage className="h-5 w-5" />
+                  </div>
+                  <p className="text-sm font-black text-gray-700">Drop file to upload</p>
+                  <p className="text-xs font-semibold text-gray-500">
+                    PNG, JPG, PDF, DOCX or any supported CRM attachment
+                  </p>
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-gray-200 bg-white/90 p-3">
+                <p className="text-[11px] font-black uppercase tracking-widest text-gray-400">
+                  Stored Value
+                </p>
+                <code className="mt-2 block rounded-xl bg-gray-950 px-3 py-2 text-[11px] font-semibold text-emerald-300 break-all">
+                  https://files.seeakk.com/leads/proof-of-visit.pdf
+                </code>
+                <p className="mt-2 text-[11px] font-semibold leading-5 text-gray-500">
+                  Backend accepts only uploaded file URLs, which keeps lead submissions auditable
+                  and safe across devices.
+                </p>
+              </div>
+            </div>
+          </div>
+        ) : null}
+        {!previewWithCustomLayout.has(values.inputType) ? (
           <input
             disabled
-            type={values.inputType === 'NUMBER' ? 'number' : values.inputType === 'DATE' ? 'date' : 'text'}
+            type={
+              values.inputType === 'NUMBER'
+                ? 'number'
+                : values.inputType === 'DATE'
+                  ? 'date'
+                  : values.inputType === 'DATETIME'
+                    ? 'datetime-local'
+                    : 'text'
+            }
             placeholder={`Preview ${values.inputType.toLowerCase()} input`}
             className="w-full rounded-xl border border-gray-200 bg-white/80 px-3 py-2 text-sm"
           />
