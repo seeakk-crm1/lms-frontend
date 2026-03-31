@@ -29,6 +29,8 @@ import TargetCyclePage from './modules/admin/target-cycle/TargetCyclePage';
 import LeadDynamicsPage from './modules/admin/lead-dynamics/LeadDynamicsPage';
 import OfficePage from './pages/admin/office/OfficePage';
 import LeadLifeCyclePage from './pages/admin/lead-life-cycle/LeadLifeCyclePage';
+import CalendarPage from './pages/calendar/CalendarPage';
+import TodayFollowUps from './pages/calendar/TodayFollowUps';
 
 interface RouteProps {
   children: ReactNode;
@@ -218,6 +220,18 @@ function App() {
         <Route path="/admin/lead-life-cycles" element={
           <ProtectedRoute>
             <LeadLifeCyclePage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/calendar" element={
+          <ProtectedRoute>
+            <CalendarPage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/calendar/today" element={
+          <ProtectedRoute>
+            <TodayFollowUps />
           </ProtectedRoute>
         } />
 

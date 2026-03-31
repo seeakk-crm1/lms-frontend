@@ -54,7 +54,7 @@ const sidebarMenus: SidebarSection[] = [
                     { label: 'Lead Dynamic Forms', path: '/admin/lead-dynamics' },
                     { label: 'Office Locations', path: '/admin/offices' },
                     { label: 'Lead Life Cycle', path: '/admin/lead-life-cycles' },
-                    { label: 'Calendar', path: '#' },
+                    { label: 'Calendar', path: '/calendar' },
                     { label: 'Holiday List', path: '#' },
                     { label: 'Report Types', path: '#' },
                     { label: 'LOB Reasons', path: '#' }
@@ -71,7 +71,8 @@ const sidebarMenus: SidebarSection[] = [
                     { label: 'All Leads', path: '#' },
                     { label: 'Closed Leads', path: '#' },
                     { label: 'Bulk Assign', path: '#' },
-                    { label: 'Pending Approval', path: '#' }
+                    { label: 'Pending Approval', path: '#' },
+                    { label: "Today's Follow-ups", path: '/calendar/today' }
                 ]
             },
             { icon: FileText, label: 'Reports', path: '/reports' },

@@ -9,6 +9,7 @@ interface CustomAxiosRequestConfig extends InternalAxiosRequestConfig {
 
 const api = axios.create({
     baseURL: API_URL,
+    withCredentials: true,
     headers: {
         'Content-Type': 'application/json',
     },
@@ -94,7 +95,7 @@ api.interceptors.response.use(
 
             return new Promise(function (resolve, reject) {
                 axios
-                    .post(`${API_URL}/auth/refresh`, { refreshToken })
+                    .post(`${API_URL}/auth/refresh`, { refreshToken }, { withCredentials: true })
                     .then(({ data }) => {
                         useAuthStore.getState().setAuth(data.user, data.accessToken, data.refreshToken);
                         if (originalRequest.headers) {

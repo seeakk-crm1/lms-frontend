@@ -44,7 +44,7 @@ const LOBAnalysisWidget: React.FC = () => {
             </div>
 
             <div className="flex-1 w-full min-h-[200px] relative z-10 pt-2">
-                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+                <ResponsiveContainer width="99%" height="100%">
                     <BarChart data={lobData} margin={{ top: 0, right: 0, left: -25, bottom: 0 }} barSize={32}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
                         <XAxis
