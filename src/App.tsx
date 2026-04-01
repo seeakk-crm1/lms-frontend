@@ -31,6 +31,7 @@ import OfficePage from './pages/admin/office/OfficePage';
 import LeadLifeCyclePage from './pages/admin/lead-life-cycle/LeadLifeCyclePage';
 import CalendarPage from './pages/calendar/CalendarPage';
 import TodayFollowUps from './pages/calendar/TodayFollowUps';
+import LeadsPage from './pages/leads/LeadsPage';
 
 interface RouteProps {
   children: ReactNode;
@@ -232,6 +233,12 @@ function App() {
         <Route path="/calendar/today" element={
           <ProtectedRoute>
             <TodayFollowUps />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/leads" element={
+          <ProtectedRoute>
+            <LeadsPage />
           </ProtectedRoute>
         } />
 
