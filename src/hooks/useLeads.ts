@@ -98,20 +98,39 @@ export const useCreateLeadMutation = () => {
       const response = await createLead(payload as LeadCreatePayload);
       const lead = response.data;
       const dynamicPayload = toDynamicPayload(dynamicValues);
+      let dynamicValuesSaved = true;
 
       if (dynamicPayload.length > 0) {
-        await saveLeadDynamicValues(lead.id, dynamicPayload);
+        try {
+          await saveLeadDynamicValues(lead.id, dynamicPayload);
+        } catch (error) {
+          dynamicValuesSaved = false;
+          console.error('Lead created but dynamic values failed to save', error);
+        }
       }
 
-      return response;
+      return {
+        ...response,
+        dynamicValuesSaved,
+      };
     },
-    onSuccess: () => {
+    onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: ['leads'] });
       queryClient.invalidateQueries({ queryKey: ['followups'] });
+      if (response.dynamicValuesSaved === false) {
+        toast.success('Lead created successfully. Advanced fields can be updated again if needed.');
+        return;
+      }
       toast.success('Lead created successfully');
     },
     onError: (error: any) => {
-      toast.error(error?.response?.data?.message || 'Failed to create lead');
+      const status = error?.response?.status;
+      const message = error?.response?.data?.message;
+      if (status === 409) {
+        toast.error(message || 'A lead with the same contact details already exists.');
+        return;
+      }
+      toast.error(message || 'Failed to create lead');
     },
   });
 };
@@ -123,21 +142,40 @@ export const useUpdateLeadMutation = () => {
     mutationFn: async ({ id, payload, dynamicValues }: LeadMutationInput) => {
       const response = await updateLead(id as string, payload as LeadUpdatePayload);
       const dynamicPayload = toDynamicPayload(dynamicValues);
+      let dynamicValuesSaved = true;
 
       if (dynamicPayload.length > 0) {
-        await saveLeadDynamicValues(id as string, dynamicPayload);
+        try {
+          await saveLeadDynamicValues(id as string, dynamicPayload);
+        } catch (error) {
+          dynamicValuesSaved = false;
+          console.error('Lead updated but dynamic values failed to save', error);
+        }
       }
 
-      return response;
+      return {
+        ...response,
+        dynamicValuesSaved,
+      };
     },
-    onSuccess: (_data, variables) => {
+    onSuccess: (response, variables) => {
       queryClient.invalidateQueries({ queryKey: ['leads'] });
       queryClient.invalidateQueries({ queryKey: ['lead', variables.id] });
       queryClient.invalidateQueries({ queryKey: ['followups'] });
+      if (response.dynamicValuesSaved === false) {
+        toast.success('Lead updated successfully. Advanced fields can be updated again if needed.');
+        return;
+      }
       toast.success('Lead updated successfully');
     },
     onError: (error: any) => {
-      toast.error(error?.response?.data?.message || 'Failed to update lead');
+      const status = error?.response?.status;
+      const message = error?.response?.data?.message;
+      if (status === 409) {
+        toast.error(message || 'Another lead already uses the same contact details.');
+        return;
+      }
+      toast.error(message || 'Failed to update lead');
     },
   });
 };

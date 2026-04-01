@@ -8,6 +8,7 @@ import useLeadStore from '../../store/leadStore';
 import type { LeadListItem } from '../../types/lead.types';
 import LeadFilters from './components/LeadFilters';
 import LeadsTable from './components/LeadsTable';
+import DeleteLeadModal from './components/DeleteLeadModal';
 
 const LeadFormDrawer = lazy(() => import('./components/LeadFormDrawer'));
 
@@ -16,6 +17,10 @@ const LeadsPage: React.FC = () => {
   const [, setMobileMenuOpen] = useState(false);
   const [showFilters, setShowFilters] = useState(true);
   const [searchDraft, setSearchDraft] = useState('');
+  const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; lead: LeadListItem | null }>({
+    isOpen: false,
+    lead: null,
+  });
 
   const {
     leads,
@@ -76,13 +81,22 @@ const LeadsPage: React.FC = () => {
   }, [exportMutation, filters.assignedTo, filters.source, filters.stage, filters.status, search]);
 
   const handleDelete = useCallback(
-    async (lead: LeadListItem) => {
-      const confirmed = window.confirm(`Archive ${lead.name}? This keeps the audit trail but removes it from the active list.`);
-      if (!confirmed) return;
-      await deleteMutation.mutateAsync(lead.id);
+    (lead: LeadListItem) => {
+      setDeleteModal({ isOpen: true, lead });
     },
-    [deleteMutation],
+    [],
   );
+
+  const closeDeleteModal = useCallback(() => {
+    if (deleteMutation.isPending) return;
+    setDeleteModal({ isOpen: false, lead: null });
+  }, [deleteMutation.isPending]);
+
+  const confirmDelete = useCallback(async () => {
+    if (!deleteModal.lead) return;
+    await deleteMutation.mutateAsync(deleteModal.lead.id);
+    setDeleteModal({ isOpen: false, lead: null });
+  }, [deleteModal.lead, deleteMutation]);
 
   const stats = useMemo(
     () => [
@@ -223,6 +237,14 @@ const LeadsPage: React.FC = () => {
           onClose={closeDrawer}
         />
       </Suspense>
+
+      <DeleteLeadModal
+        isOpen={deleteModal.isOpen}
+        leadName={deleteModal.lead?.name || 'this lead'}
+        isDeleting={deleteMutation.isPending}
+        onClose={closeDeleteModal}
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 };
