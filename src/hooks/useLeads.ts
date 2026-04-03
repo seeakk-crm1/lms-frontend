@@ -5,6 +5,7 @@ import {
   changeLeadStage,
   createLead,
   deleteLead,
+  extendLeadSla,
   exportLeads,
   getActiveLeadDynamicFields,
   getLeadById,
@@ -214,6 +215,28 @@ export const useDeleteLeadMutation = () => {
     },
     onError: (error: any) => {
       toast.error(error?.response?.data?.message || 'Failed to archive lead');
+    },
+  });
+};
+
+export const useExtendLeadSlaMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: string;
+      payload: Parameters<typeof extendLeadSla>[1];
+    }) => extendLeadSla(id, payload),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['leads'] });
+      queryClient.invalidateQueries({ queryKey: ['lead', variables.id] });
+      toast.success('Lead lifecycle timer extended');
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || 'Failed to extend lead lifecycle timer');
     },
   });
 };

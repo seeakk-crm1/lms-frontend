@@ -69,8 +69,8 @@ const sidebarMenus: SidebarSection[] = [
                 icon: Briefcase, label: 'Leads',
                 subItems: [
                     { label: 'All Leads', path: '/leads' },
-                    { label: 'Closed Leads', path: '#' },
-                    { label: 'Bulk Assign', path: '#' },
+                    { label: 'Closed Leads', path: '/leads/closed' },
+                    { label: 'Bulk Assign', path: '/leads/bulk-assign' },
                     { label: 'Pending Approval', path: '#' },
                     { label: "Today's Follow-ups", path: '/calendar/today' }
                 ]

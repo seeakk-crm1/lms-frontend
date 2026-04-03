@@ -64,6 +64,8 @@ export const useCreateLifeCycleMutation = () => {
               fromStageId: transition.fromStageId,
               toStageId: transition.toStageId,
               numberOfDays: transition.numberOfDays,
+              expiryAction: transition.expiryAction,
+              warningDays: transition.warningDays,
               sortOrder: transition.sortOrder ?? index + 1,
             })),
           },
@@ -79,6 +81,7 @@ export const useCreateLifeCycleMutation = () => {
     },
     onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: ['lead-life-cycles'] });
+      queryClient.invalidateQueries({ queryKey: ['lead-meta'] });
       toast.success(response?.message || 'Lead life cycle created successfully');
     },
   });
@@ -107,6 +110,8 @@ export const useUpdateLifeCycleMutation = () => {
                     fromStageId: transition.fromStageId,
                     toStageId: transition.toStageId,
                     numberOfDays: transition.numberOfDays,
+                    expiryAction: transition.expiryAction,
+                    warningDays: transition.warningDays,
                     sortOrder: transition.sortOrder ?? index + 1,
                   })),
                   updatedAt: new Date().toISOString(),
@@ -124,6 +129,7 @@ export const useUpdateLifeCycleMutation = () => {
     },
     onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: ['lead-life-cycles'] });
+      queryClient.invalidateQueries({ queryKey: ['lead-meta'] });
       toast.success(response?.message || 'Lead life cycle updated successfully');
     },
   });
@@ -150,6 +156,7 @@ export const useDeleteLifeCycleMutation = () => {
     },
     onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: ['lead-life-cycles'] });
+      queryClient.invalidateQueries({ queryKey: ['lead-meta'] });
       toast.success(response?.message || 'Lead life cycle deleted successfully');
     },
   });

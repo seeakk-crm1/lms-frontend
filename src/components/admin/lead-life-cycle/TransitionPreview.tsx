@@ -6,6 +6,8 @@ interface PreviewRow {
   fromStageId: string;
   toStageId: string;
   numberOfDays: number;
+  expiryAction: 'AUTO_LOB' | 'WARN_AND_CHOOSE';
+  warningDays: number;
   sortOrder: number;
 }
 
@@ -37,6 +39,11 @@ const TransitionPreview: React.FC<Props> = ({ transitions, stageOptions }) => {
               <GitBranch className="h-3.5 w-3.5" />
               {(stageMap.get(transition.fromStageId) || 'Unknown') + ' -> ' + (stageMap.get(transition.toStageId) || 'Unknown')}
               <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-[10px]">{transition.numberOfDays}d</span>
+              <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-600">
+                {transition.expiryAction === 'AUTO_LOB'
+                  ? 'Auto move to LOB'
+                  : `Warn ${transition.warningDays}d early + allow extension`}
+              </span>
             </span>
           ))}
       </div>

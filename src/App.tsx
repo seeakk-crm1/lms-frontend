@@ -32,6 +32,8 @@ import LeadLifeCyclePage from './pages/admin/lead-life-cycle/LeadLifeCyclePage';
 import CalendarPage from './pages/calendar/CalendarPage';
 import TodayFollowUps from './pages/calendar/TodayFollowUps';
 import LeadsPage from './pages/leads/LeadsPage';
+import ClosedLeadsPage from './pages/leads/ClosedLeadsPage';
+import BulkAssignPage from './pages/leads/BulkAssignPage';
 
 interface RouteProps {
   children: ReactNode;
@@ -239,6 +241,18 @@ function App() {
         <Route path="/leads" element={
           <ProtectedRoute>
             <LeadsPage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/leads/closed" element={
+          <ProtectedRoute>
+            <ClosedLeadsPage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/leads/bulk-assign" element={
+          <ProtectedRoute>
+            <BulkAssignPage />
           </ProtectedRoute>
         } />
 

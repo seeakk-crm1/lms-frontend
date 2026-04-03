@@ -1,14 +1,16 @@
 import React, { Suspense, lazy, useCallback, useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Download, Filter, Plus, TrendingUp } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 import DashboardHeader from '../../components/dashboard/DashboardHeader';
 import DashboardSidebar from '../../components/dashboard/DashboardSidebar';
-import { useDeleteLeadMutation, useExportLeads, useLeadMetaQuery, useLeadsQuery } from '../../hooks/useLeads';
+import { useChangeLeadStageMutation, useDeleteLeadMutation, useExportLeads, useExtendLeadSlaMutation, useLeadMetaQuery, useLeadsQuery } from '../../hooks/useLeads';
 import useLeadStore from '../../store/leadStore';
 import type { LeadListItem } from '../../types/lead.types';
 import LeadFilters from './components/LeadFilters';
 import LeadsTable from './components/LeadsTable';
 import DeleteLeadModal from './components/DeleteLeadModal';
+import LeadSlaDecisionModal from './components/LeadSlaDecisionModal';
 
 const LeadFormDrawer = lazy(() => import('./components/LeadFormDrawer'));
 
@@ -21,6 +23,8 @@ const LeadsPage: React.FC = () => {
     isOpen: false,
     lead: null,
   });
+  const [dismissedSlaLeadIds, setDismissedSlaLeadIds] = useState<string[]>([]);
+  const [slaModalLead, setSlaModalLead] = useState<LeadListItem | null>(null);
 
   const {
     leads,
@@ -42,6 +46,8 @@ const LeadsPage: React.FC = () => {
   const { data: meta } = useLeadMetaQuery();
   const exportMutation = useExportLeads();
   const deleteMutation = useDeleteLeadMutation();
+  const changeStageMutation = useChangeLeadStageMutation();
+  const extendLeadSlaMutation = useExtendLeadSlaMutation();
 
   useEffect(() => {
     setSearchDraft(search);
@@ -57,6 +63,17 @@ const LeadsPage: React.FC = () => {
     setLeads(data.leads || []);
     setPagination(data.pagination || {});
   }, [data, setLeads, setPagination]);
+
+  useEffect(() => {
+    const candidate = leads.find(
+      (lead) =>
+        lead.slaAction === 'WARN_AND_CHOOSE' &&
+        lead.slaState === 'WARNING' &&
+        !dismissedSlaLeadIds.includes(lead.id),
+    );
+
+    setSlaModalLead(candidate || null);
+  }, [dismissedSlaLeadIds, leads]);
 
   const totalLeads = data?.pagination?.total || 0;
   const dueTodayCount = useMemo(
@@ -108,6 +125,51 @@ const LeadsPage: React.FC = () => {
   );
 
   const tableLoading = isLoading || isFetching;
+  const lobStageId = useMemo(
+    () => meta?.stages?.find((stage) => stage.isLOB)?.id || '',
+    [meta?.stages],
+  );
+
+  const closeSlaModal = useCallback(() => {
+    if (slaModalLead?.id) {
+      setDismissedSlaLeadIds((current) => (current.includes(slaModalLead.id) ? current : [...current, slaModalLead.id]));
+    }
+    setSlaModalLead(null);
+  }, [slaModalLead?.id]);
+
+  const handleExtendLeadSla = useCallback(
+    async (extraDays: number) => {
+      if (!slaModalLead) return;
+      await extendLeadSlaMutation.mutateAsync({
+        id: slaModalLead.id,
+        payload: { extraDays },
+      });
+      setDismissedSlaLeadIds((current) => (current.includes(slaModalLead.id) ? current : [...current, slaModalLead.id]));
+      setSlaModalLead(null);
+    },
+    [extendLeadSlaMutation, slaModalLead],
+  );
+
+  const handleMoveLeadToLob = useCallback(
+    async (payload: { reasonId: string; remarks: string }) => {
+      if (!slaModalLead) return;
+      if (!lobStageId) {
+        toast.error('LOB stage is not configured for this workspace yet.');
+        return;
+      }
+      await changeStageMutation.mutateAsync({
+        id: slaModalLead.id,
+        payload: {
+          stageId: lobStageId,
+          reasonId: payload.reasonId,
+          remarks: payload.remarks,
+        },
+      });
+      setDismissedSlaLeadIds((current) => (current.includes(slaModalLead.id) ? current : [...current, slaModalLead.id]));
+      setSlaModalLead(null);
+    },
+    [changeStageMutation, lobStageId, slaModalLead],
+  );
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-gray-50 font-sans text-gray-900 selection:bg-emerald-200 selection:text-emerald-900">
@@ -244,6 +306,15 @@ const LeadsPage: React.FC = () => {
         isDeleting={deleteMutation.isPending}
         onClose={closeDeleteModal}
         onConfirm={confirmDelete}
+      />
+
+      <LeadSlaDecisionModal
+        isOpen={Boolean(slaModalLead)}
+        lead={slaModalLead}
+        isSubmitting={changeStageMutation.isPending || extendLeadSlaMutation.isPending}
+        onClose={closeSlaModal}
+        onExtend={handleExtendLeadSla}
+        onMoveToLob={handleMoveLeadToLob}
       />
     </div>
   );

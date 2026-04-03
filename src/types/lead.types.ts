@@ -10,13 +10,22 @@ export interface LeadListItem {
   email: string | null;
   phone: string | null;
   expectedRevenue: number | null;
+  generatedRevenue?: number | null;
   assignedToId: string | null;
   stageId: string | null;
   lifecycleId: string | null;
   sourceId: string | null;
   nextFollowUpAt: string | null;
+  stageEnteredAt?: string | null;
+  stageExpiresAt?: string | null;
+  slaAction?: 'AUTO_LOB' | 'WARN_AND_CHOOSE' | null;
+  slaWarningDays?: number | null;
+  slaState?: 'ON_TRACK' | 'WARNING' | 'EXPIRED' | null;
   isClosed: boolean;
   isLOB: boolean;
+  closedAt?: string | null;
+  closedById?: string | null;
+  closureType?: LeadClosureType | null;
   workspaceId: string;
   createdById: string;
   deletedAt: string | null;
@@ -27,6 +36,7 @@ export interface LeadListItem {
   lifecycle: Pick<LeadLifeCycle, 'id' | 'name' | 'isDefault'> | null;
   source: Pick<LeadSource, 'id' | 'name' | 'status'> | null;
   createdBy: Pick<User, 'id' | 'email' | 'name' | 'username'> & { displayName?: string };
+  closedBy?: (Pick<User, 'id' | 'email' | 'name' | 'username'> & { displayName?: string }) | null;
   lobLogs: Array<{
     id: string;
     reasonId: string;
@@ -52,6 +62,28 @@ export interface LeadFilters {
   status?: 'OPEN' | 'CLOSED' | 'LOB' | 'ACTIVE';
   createdFrom?: string;
   createdTo?: string;
+}
+
+export type LeadClosureType = 'WON' | 'LOST' | 'CANCELLED';
+
+export interface ClosedLeadFilters {
+  assignedTo?: string;
+  source?: string;
+  closureType?: LeadClosureType;
+  dateFrom?: string;
+  dateTo?: string;
+  minRevenue?: string;
+  maxRevenue?: string;
+}
+
+export interface ClosedLeadListResponse {
+  data: LeadListItem[];
+  pagination: LeadPagination;
+}
+
+export interface UpdateClosedLeadPayload {
+  generatedRevenue: number;
+  closureType: LeadClosureType;
 }
 
 export interface ListLeadsResponse {
@@ -96,6 +128,73 @@ export interface LeadUpdatePayload {
   isClosed?: boolean;
   reasonId?: string | null;
   remarks?: string | null;
+}
+
+export interface ExtendLeadSlaPayload {
+  extraDays: number;
+}
+
+export interface BulkAssignFilters {
+  stageId?: string;
+  assignedTo?: string;
+  lifecycleId?: string;
+  sourceId?: string;
+  followupDateFrom?: string;
+  followupDateTo?: string;
+  createdDateFrom?: string;
+  createdDateTo?: string;
+}
+
+export type BulkAssignAssignmentType = 'SINGLE' | 'ROUND_ROBIN';
+
+export interface BulkAssignPreviewLead {
+  id: string;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  createdAt: string;
+  nextFollowUpAt: string | null;
+  assignedTo: { id: string; label: string } | null;
+  stage: { id: string; name: string } | null;
+  source: { id: string; name: string } | null;
+  lifecycle: { id: string; name: string } | null;
+}
+
+export interface BulkAssignPreviewResponse {
+  success: boolean;
+  count: number;
+  sampleLeads: BulkAssignPreviewLead[];
+}
+
+export interface BulkAssignPayload {
+  filters: BulkAssignFilters;
+  assignmentType: BulkAssignAssignmentType;
+  assignTo?: string;
+  assignToIds?: string[];
+}
+
+export interface BulkAssignProgress {
+  current: number;
+  total: number;
+  status: 'IDLE' | 'PREPARING' | 'IN_PROGRESS' | 'COMPLETED' | 'PARTIAL' | 'FAILED';
+  transport: 'SYNC_READY_FOR_WEBSOCKET';
+}
+
+export interface BulkAssignResultSummary {
+  updatedCount: number;
+  failedCount: number;
+  failedLeadIds: string[];
+  assignmentType: BulkAssignAssignmentType;
+}
+
+export interface BulkAssignResponse {
+  success: boolean;
+  message: string;
+  updated_count: number;
+  failed_count: number;
+  failed_lead_ids: string[];
+  assignment_type: BulkAssignAssignmentType;
+  progress: BulkAssignProgress;
 }
 
 export interface LeadDynamicValuePayload {
