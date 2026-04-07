@@ -1,9 +1,13 @@
 import api from './api';
 import { getLifeCycles } from './admin/lead-life-cycle/leadLifeCycleService';
+import { getLOBReasons } from './lobReasons.api';
 import { getLeadSources } from './leadSource.api';
 import { getLeadStages } from './leadStage.api';
 import { getUsers } from './users.api';
 import type {
+  LeadApprovalActionPayload,
+  LeadApprovalFilters,
+  LeadApprovalListResponse,
   BulkAssignFilters,
   BulkAssignPayload,
   BulkAssignPreviewResponse,
@@ -94,6 +98,32 @@ export const bulkAssignLeads = async (payload: BulkAssignPayload): Promise<BulkA
   return response.data;
 };
 
+export const getLeadApprovals = async (params: {
+  page: number;
+  limit: number;
+  search?: string;
+  status?: LeadApprovalFilters['status'];
+  dateFrom?: string;
+  dateTo?: string;
+}): Promise<LeadApprovalListResponse> => {
+  const response = await api.get('/approvals', {
+    params: {
+      page: params.page,
+      limit: params.limit,
+      search: params.search || undefined,
+      status: params.status || undefined,
+      dateFrom: params.dateFrom || undefined,
+      dateTo: params.dateTo || undefined,
+    },
+  });
+  return response.data;
+};
+
+export const updateLeadApproval = async (id: string, payload: LeadApprovalActionPayload) => {
+  const response = await api.patch(`/approvals/${id}`, payload);
+  return response.data;
+};
+
 export const assignLead = async (id: string, payload: { assignedToId: string | null }) => {
   const response = await api.patch(`/leads/${id}/assign`, payload);
   return response.data;
@@ -177,13 +207,22 @@ const mapLifeCycleOptions = (lifeCycles: LeadLifeCycle[]) =>
     transitions: lifeCycle.transitions,
   }));
 
+const mapLOBReasonOptions = (reasons: Array<{ id: string; name: string; status: string }>) =>
+  reasons
+    .filter((reason) => reason.status === 'ACTIVE')
+    .map((reason) => ({
+      id: reason.id,
+      label: reason.name,
+    }));
+
 export const getLeadMeta = async () => {
-  const [usersResult, sourcesResult, stagesResult, lifeCyclesResult, dynamicFieldsResult] = await Promise.allSettled([
+  const [usersResult, sourcesResult, stagesResult, lifeCyclesResult, dynamicFieldsResult, lobReasonsResult] = await Promise.allSettled([
     getUsers({ page: 1, limit: 100, isActive: true }),
     getLeadSources({ page: 1, limit: 100, search: '', status: 'ACTIVE' }),
     getLeadStages({ page: 1, limit: 100, search: '', status: 'ACTIVE' }),
     getLifeCycles({ page: 1, limit: 100 }),
     getActiveLeadDynamicFields(),
+    getLOBReasons({ page: 1, limit: 100, status: 'ACTIVE' }),
   ]);
 
   const usersData = getSettledValue(usersResult, { users: [] as any[] });
@@ -193,12 +232,14 @@ export const getLeadMeta = async () => {
     data: { lifeCycles: [] as LeadLifeCycle[] },
   });
   const dynamicFields = getSettledValue(dynamicFieldsResult, [] as LeadDynamicField[]);
+  const lobReasonsData = getSettledValue(lobReasonsResult, { data: [] as Array<{ id: string; name: string; status: string }> });
 
   return {
     users: mapUserOptions(usersData?.users || []),
     sources: mapSourceOptions(sourcesData?.data || []),
     stages: mapStageOptions(stagesData?.data || []),
     lifeCycles: mapLifeCycleOptions(lifeCyclesData?.data?.lifeCycles || []),
+    lobReasons: mapLOBReasonOptions(lobReasonsData?.data || []),
     dynamicFields,
   };
 };

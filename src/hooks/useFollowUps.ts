@@ -7,6 +7,7 @@ import {
   completeFollowUp,
   createFollowUp,
   getCalendarData,
+  getFollowUpLeads,
   getFollowUpUsers,
   getTodayFollowUps,
 } from '../services/followupService';
@@ -84,6 +85,15 @@ export const useFollowUpUsersQuery = () =>
     queryFn: getFollowUpUsers,
     staleTime: 300_000,
     gcTime: 600_000,
+    refetchOnWindowFocus: false,
+  });
+
+export const useFollowUpLeadsQuery = () =>
+  useQuery({
+    queryKey: ['followups', 'leads'],
+    queryFn: getFollowUpLeads,
+    staleTime: 120_000,
+    gcTime: 300_000,
     refetchOnWindowFocus: false,
   });
 

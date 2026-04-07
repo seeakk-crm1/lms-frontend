@@ -1,12 +1,14 @@
 import React, { memo, useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AlertTriangle } from 'lucide-react';
+import SearchableSelect from '../../../components/SearchableSelect';
 
 interface LOBModalProps {
   isOpen: boolean;
   isSubmitting?: boolean;
   initialReasonId?: string;
   initialRemarks?: string;
+  lobReasonOptions: Array<{ value: string; label: string }>;
   onClose: () => void;
   onConfirm: (payload: { reasonId: string; remarks: string }) => void;
 }
@@ -19,6 +21,7 @@ const LOBModal: React.FC<LOBModalProps> = ({
   isSubmitting = false,
   initialReasonId = '',
   initialRemarks = '',
+  lobReasonOptions,
   onClose,
   onConfirm,
 }) => {
@@ -75,12 +78,12 @@ const LOBModal: React.FC<LOBModalProps> = ({
             <div className="space-y-4 px-5 py-5 sm:px-6">
               <div>
                 <label className="mb-2 block text-sm font-black text-gray-900">LOB Reason</label>
-                <input
-                  type="text"
+                <SearchableSelect
+                  options={lobReasonOptions}
                   value={reasonId}
                   onChange={(event) => setReasonId(event.target.value)}
-                  className={inputClassName}
-                  placeholder="Enter loss reason reference"
+                  placeholder={lobReasonOptions.length ? 'Select LOB reason' : 'No active LOB reasons'}
+                  name="reasonId"
                 />
               </div>
 

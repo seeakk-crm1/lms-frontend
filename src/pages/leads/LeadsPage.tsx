@@ -2,6 +2,7 @@ import React, { Suspense, lazy, useCallback, useEffect, useMemo, useState } from
 import { motion } from 'framer-motion';
 import { Download, Filter, Plus, TrendingUp } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { useLocation, useNavigate } from 'react-router-dom';
 import DashboardHeader from '../../components/dashboard/DashboardHeader';
 import DashboardSidebar from '../../components/dashboard/DashboardSidebar';
 import { useChangeLeadStageMutation, useDeleteLeadMutation, useExportLeads, useExtendLeadSlaMutation, useLeadMetaQuery, useLeadsQuery } from '../../hooks/useLeads';
@@ -15,6 +16,8 @@ import LeadSlaDecisionModal from './components/LeadSlaDecisionModal';
 const LeadFormDrawer = lazy(() => import('./components/LeadFormDrawer'));
 
 const LeadsPage: React.FC = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [, setMobileMenuOpen] = useState(false);
   const [showFilters, setShowFilters] = useState(true);
@@ -75,6 +78,15 @@ const LeadsPage: React.FC = () => {
     setSlaModalLead(candidate || null);
   }, [dismissedSlaLeadIds, leads]);
 
+  useEffect(() => {
+    if (!location.state || !(location.state as { openCreateLead?: boolean }).openCreateLead) {
+      return;
+    }
+
+    openCreateDrawer();
+    navigate(location.pathname, { replace: true, state: {} });
+  }, [location.pathname, location.state, navigate, openCreateDrawer]);
+
   const totalLeads = data?.pagination?.total || 0;
   const dueTodayCount = useMemo(
     () =>
@@ -128,6 +140,10 @@ const LeadsPage: React.FC = () => {
   const lobStageId = useMemo(
     () => meta?.stages?.find((stage) => stage.isLOB)?.id || '',
     [meta?.stages],
+  );
+  const lobReasonOptions = useMemo(
+    () => (meta?.lobReasons || []).map((reason) => ({ value: reason.id, label: reason.label })),
+    [meta?.lobReasons],
   );
 
   const closeSlaModal = useCallback(() => {
@@ -312,6 +328,7 @@ const LeadsPage: React.FC = () => {
         isOpen={Boolean(slaModalLead)}
         lead={slaModalLead}
         isSubmitting={changeStageMutation.isPending || extendLeadSlaMutation.isPending}
+        lobReasonOptions={lobReasonOptions}
         onClose={closeSlaModal}
         onExtend={handleExtendLeadSla}
         onMoveToLob={handleMoveLeadToLob}

@@ -55,8 +55,8 @@ const sidebarMenus: SidebarSection[] = [
                     { label: 'Office Locations', path: '/admin/offices' },
                     { label: 'Lead Life Cycle', path: '/admin/lead-life-cycles' },
                     { label: 'Calendar', path: '/calendar' },
-                    { label: 'Holiday List', path: '#' },
-                    { label: 'Report Types', path: '#' },
+                    { label: 'Holiday List', path: '/admin/holidays' },
+                    { label: 'Report Types', path: '/admin/report-types' },
                     { label: 'LOB Reasons', path: '#' }
                 ]
             }
@@ -71,8 +71,7 @@ const sidebarMenus: SidebarSection[] = [
                     { label: 'All Leads', path: '/leads' },
                     { label: 'Closed Leads', path: '/leads/closed' },
                     { label: 'Bulk Assign', path: '/leads/bulk-assign' },
-                    { label: 'Pending Approval', path: '#' },
-                    { label: "Today's Follow-ups", path: '/calendar/today' }
+                    { label: 'Pending Approval', path: '/leads/pending-approval' },
                 ]
             },
             { icon: FileText, label: 'Reports', path: '/reports' },

@@ -92,3 +92,9 @@ export interface FollowUpUserOption {
   id: string;
   label: string;
 }
+
+export interface FollowUpLeadOption {
+  id: string;
+  label: string;
+  subtitle?: string;
+}

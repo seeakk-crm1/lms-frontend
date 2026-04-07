@@ -29,11 +29,16 @@ import TargetCyclePage from './modules/admin/target-cycle/TargetCyclePage';
 import LeadDynamicsPage from './modules/admin/lead-dynamics/LeadDynamicsPage';
 import OfficePage from './pages/admin/office/OfficePage';
 import LeadLifeCyclePage from './pages/admin/lead-life-cycle/LeadLifeCyclePage';
+import HolidayPage from './pages/admin/holidays/HolidayPage';
 import CalendarPage from './pages/calendar/CalendarPage';
 import TodayFollowUps from './pages/calendar/TodayFollowUps';
 import LeadsPage from './pages/leads/LeadsPage';
 import ClosedLeadsPage from './pages/leads/ClosedLeadsPage';
 import BulkAssignPage from './pages/leads/BulkAssignPage';
+import PendingApprovalPage from './pages/admin/PendingApprovalPage';
+import LocationsPage from './modules/locations/LocationsPage';
+import ReportTypePage from './modules/report-types/pages/ReportTypePage';
+import ReportsPage from './modules/reports/ReportsPage';
 
 interface RouteProps {
   children: ReactNode;
@@ -238,6 +243,24 @@ function App() {
           </ProtectedRoute>
         } />
 
+        <Route path="/admin/holidays" element={
+          <ProtectedRoute>
+            <HolidayPage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/admin/report-types" element={
+          <ProtectedRoute>
+            <ReportTypePage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/reports" element={
+          <ProtectedRoute>
+            <ReportsPage />
+          </ProtectedRoute>
+        } />
+
         <Route path="/leads" element={
           <ProtectedRoute>
             <LeadsPage />
@@ -253,6 +276,18 @@ function App() {
         <Route path="/leads/bulk-assign" element={
           <ProtectedRoute>
             <BulkAssignPage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/leads/pending-approval" element={
+          <ProtectedRoute>
+            <PendingApprovalPage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/locations" element={
+          <ProtectedRoute>
+            <LocationsPage />
           </ProtectedRoute>
         } />
 

@@ -197,6 +197,66 @@ export interface BulkAssignResponse {
   progress: BulkAssignProgress;
 }
 
+export type LeadApprovalStatus = 'PENDING' | 'APPROVED' | 'DENIED';
+export type LeadApprovalAction = 'APPROVE' | 'DENY';
+
+export interface LeadApprovalActor {
+  id: string;
+  name?: string | null;
+  username?: string | null;
+  email?: string | null;
+  displayName?: string;
+}
+
+export interface LeadApprovalListItem {
+  id: string;
+  status: LeadApprovalStatus;
+  comment?: string | null;
+  requestData?: Record<string, unknown> | null;
+  approvedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  lead: {
+    id: string;
+    name: string;
+    email?: string | null;
+    phone?: string | null;
+    approvalState?: 'NONE' | 'PENDING';
+  } | null;
+  fromStage: {
+    id: string;
+    name: string;
+  } | null;
+  toStage: {
+    id: string;
+    name: string;
+    isLOB?: boolean;
+    isClosed?: boolean;
+  } | null;
+  requestedBy: LeadApprovalActor | null;
+  assignedTo: LeadApprovalActor | null;
+  approvedBy?: LeadApprovalActor | null;
+}
+
+export interface LeadApprovalFilters {
+  search?: string;
+  status?: LeadApprovalStatus | '';
+  dateFrom?: string;
+  dateTo?: string;
+}
+
+export interface LeadApprovalListResponse {
+  success: boolean;
+  message: string;
+  data: LeadApprovalListItem[];
+  pagination: LeadPagination;
+}
+
+export interface LeadApprovalActionPayload {
+  action: LeadApprovalAction;
+  comment: string;
+}
+
 export interface LeadDynamicValuePayload {
   fieldId: string;
   value: string;
@@ -234,5 +294,6 @@ export interface LeadMetaOptions {
   sources: LeadOption[];
   stages: Array<LeadOption & { color?: string; isLOB?: boolean; isClosed?: boolean }>;
   lifeCycles: Array<LeadOption & { isDefault?: boolean; transitions?: LeadLifeCycle['transitions'] }>;
+  lobReasons: LeadOption[];
   dynamicFields: LeadDynamicField[];
 }

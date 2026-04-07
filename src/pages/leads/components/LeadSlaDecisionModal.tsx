@@ -1,12 +1,14 @@
 import React, { memo, useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AlarmClock, AlertTriangle, ArrowRightCircle } from 'lucide-react';
+import SearchableSelect from '../../../components/SearchableSelect';
 import type { LeadListItem } from '../../../types/lead.types';
 
 interface LeadSlaDecisionModalProps {
   isOpen: boolean;
   lead: LeadListItem | null;
   isSubmitting?: boolean;
+  lobReasonOptions: Array<{ value: string; label: string }>;
   onClose: () => void;
   onExtend: (extraDays: number) => void;
   onMoveToLob: (payload: { reasonId: string; remarks: string }) => void;
@@ -19,6 +21,7 @@ const LeadSlaDecisionModal: React.FC<LeadSlaDecisionModalProps> = ({
   isOpen,
   lead,
   isSubmitting = false,
+  lobReasonOptions,
   onClose,
   onExtend,
   onMoveToLob,
@@ -139,12 +142,12 @@ const LeadSlaDecisionModal: React.FC<LeadSlaDecisionModalProps> = ({
                 <div className="mt-4 space-y-4">
                   <div>
                     <label className="mb-2 block text-sm font-black text-slate-900">LOB Reason</label>
-                    <input
-                      type="text"
+                    <SearchableSelect
+                      options={lobReasonOptions}
                       value={reasonId}
                       onChange={(event) => setReasonId(event.target.value)}
-                      className={inputClassName}
-                      placeholder="Enter reason reference"
+                      placeholder={lobReasonOptions.length ? 'Select LOB reason' : 'No active LOB reasons'}
+                      name="reasonId"
                     />
                   </div>
 

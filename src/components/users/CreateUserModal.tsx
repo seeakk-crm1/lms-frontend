@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, User, Target, Save, Loader2, Shield } from 'lucide-react';
 import { useForm, FormProvider, SubmitHandler } from 'react-hook-form';
@@ -337,9 +337,25 @@ const CreateUserModal: React.FC = () => {
 
   const submitForm = handleSubmit(onSubmit, onInvalid);
 
-  const countries = allLocationsData?.locations?.filter((l: any) => l.type === 'COUNTRY') || [];
-  const states = allLocationsData?.locations?.filter((l: any) => l.type === 'STATE') || [];
-  const districts = allLocationsData?.locations?.filter((l: any) => l.type === 'DISTRICT') || [];
+  const allLocations = allLocationsData?.locations || [];
+  const countries = useMemo(
+    () => allLocations.filter((location: any) => location.type === 'COUNTRY'),
+    [allLocations],
+  );
+  const states = useMemo(
+    () =>
+      allLocations.filter(
+        (location: any) => location.type === 'STATE' && (!countryId || location.parentId === countryId),
+      ),
+    [allLocations, countryId],
+  );
+  const districts = useMemo(
+    () =>
+      allLocations.filter(
+        (location: any) => location.type === 'DISTRICT' && (!stateId || location.parentId === stateId),
+      ),
+    [allLocations, stateId],
+  );
   const departments = Array.isArray(deptsData) ? deptsData : deptsData?.departments || [];
   const safeRoles = (rolesData?.roles || []).map((role: any) => ({
     value: role?.id || role?.name || '',

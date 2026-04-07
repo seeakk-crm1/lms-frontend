@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { AnimatePresence, motion } from 'framer-motion';
 import { CalendarPlus, Loader2, Plus, X } from 'lucide-react';
+import SearchableSelect from '../../components/SearchableSelect';
 import DashboardSidebar from '../../components/dashboard/DashboardSidebar';
 import DashboardHeader from '../../components/dashboard/DashboardHeader';
 import CalendarHeader from '../../components/calendar/CalendarHeader';
@@ -13,6 +14,7 @@ import {
   useCalendarQuery,
   useCompleteFollowUpMutation,
   useCreateFollowUpMutation,
+  useFollowUpLeadsQuery,
   useFollowUpUsersQuery,
 } from '../../hooks/useFollowUps';
 import useFollowupStore from '../../store/followupStore';
@@ -37,6 +39,7 @@ const CalendarPage: React.FC = () => {
 
   const calendarQuery = useCalendarQuery();
   const usersQuery = useFollowUpUsersQuery();
+  const leadsQuery = useFollowUpLeadsQuery();
   const createMutation = useCreateFollowUpMutation();
   const completeMutation = useCompleteFollowUpMutation();
 
@@ -44,6 +47,8 @@ const CalendarPage: React.FC = () => {
     register,
     handleSubmit,
     reset,
+    setValue,
+    watch,
     formState: { errors },
   } = useForm<ScheduleFormValues>({
     resolver: zodResolver(scheduleSchema),
@@ -158,13 +163,25 @@ const CalendarPage: React.FC = () => {
 
               <form onSubmit={handleSubmit(onScheduleFollowUp)} className="grid gap-4 p-5">
                 <div>
-                  <label className="text-[11px] font-black uppercase tracking-widest text-gray-400">Lead ID</label>
-                  <input
-                    {...register('leadId')}
-                    placeholder="Enter lead id"
-                    className="mt-1.5 w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-semibold text-gray-800 outline-none focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-500/20"
-                  />
+                  <label className="text-[11px] font-black uppercase tracking-widest text-gray-400">Lead</label>
+                  <div className="mt-1.5">
+                    <SearchableSelect
+                      options={(leadsQuery.data || []).map((lead) => ({
+                        value: lead.id,
+                        label: lead.subtitle ? `${lead.label} • ${lead.subtitle}` : lead.label,
+                      }))}
+                      value={watch('leadId')}
+                      onChange={(event) => setValue('leadId', event.target.value, { shouldValidate: true, shouldDirty: true })}
+                      placeholder={leadsQuery.isLoading ? 'Loading leads...' : 'Search and select a lead'}
+                      name="leadId"
+                    />
+                  </div>
                   {errors.leadId ? <p className="mt-1 text-[11px] font-bold text-red-600">{errors.leadId.message}</p> : null}
+                  {!errors.leadId ? (
+                    <p className="mt-1 text-[11px] font-semibold text-gray-500">
+                      Pick the lead by name, email, or phone. The system will submit the correct lead ID automatically.
+                    </p>
+                  ) : null}
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-2">

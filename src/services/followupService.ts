@@ -1,4 +1,5 @@
 import api from './api';
+import { getLeads } from './leads.api';
 import { getUsers } from './users.api';
 import type {
   CalendarQueryParams,
@@ -6,6 +7,7 @@ import type {
   CompleteFollowUpInput,
   CreateFollowUpInput,
   FollowUp,
+  FollowUpLeadOption,
   FollowUpHistoryResponse,
   FollowUpUserOption,
   TodayFollowUpsResponse,
@@ -54,5 +56,20 @@ export const getFollowUpUsers = async (): Promise<FollowUpUserOption[]> => {
   return users.map((user: any) => ({
     id: user.id,
     label: user.name || user.username || user.email,
+  }));
+};
+
+export const getFollowUpLeads = async (): Promise<FollowUpLeadOption[]> => {
+  const response = await getLeads({
+    page: 1,
+    limit: 200,
+    status: 'ACTIVE',
+  });
+
+  const leads = response?.leads || [];
+  return leads.map((lead: any) => ({
+    id: lead.id,
+    label: lead.name || lead.email || lead.phone || lead.id,
+    subtitle: [lead.email, lead.phone].filter(Boolean).join(' • ') || undefined,
   }));
 };

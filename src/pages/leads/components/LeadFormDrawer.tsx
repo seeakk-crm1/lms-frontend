@@ -81,6 +81,8 @@ const buildAllowedStageMap = (lifeCycle: any) => {
   return map;
 };
 
+const getSelectOptions = (items: LeadOption[]) => items.map((item) => ({ value: item.id, label: item.label }));
+
 const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onClose }) => {
   const { data: meta, isLoading: metaLoading } = useLeadMetaQuery();
   const { data: leadDetails, isLoading: leadLoading } = useLeadDetailQuery(lead?.id, isOpen && mode === 'edit');
@@ -118,6 +120,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
 
   const stageOptions = meta?.stages || [];
   const lifeCycleOptions = meta?.lifeCycles || [];
+  const lobReasonOptions = getSelectOptions(meta?.lobReasons || []);
   const activeLifeCycle = lifeCycleOptions.find((item) => item.id === formValues.lifecycleId) || lifeCycleOptions.find((item) => item.isDefault);
   const stageTransitionMap = useMemo(() => buildAllowedStageMap(activeLifeCycle), [activeLifeCycle]);
 
@@ -175,8 +178,6 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
       },
     }));
   };
-
-  const getSelectOptions = (items: LeadOption[]) => items.map((item) => ({ value: item.id, label: item.label }));
 
   const handleLobConfirm = ({ reasonId, remarks }: { reasonId: string; remarks: string }) => {
     setFormValues((current) => ({
@@ -510,12 +511,12 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
                         <div className="mt-4 grid gap-4 md:grid-cols-2">
                           <div>
                             <label className="mb-2 block text-sm font-black text-gray-900">LOB Reason</label>
-                            <input
-                              type="text"
+                            <SearchableSelect
+                              options={lobReasonOptions}
                               value={formValues.reasonId}
                               onChange={(event) => handleFieldChange('reasonId', event.target.value)}
-                              className={inputClassName}
-                              placeholder="Reason identifier"
+                              placeholder={lobReasonOptions.length ? 'Select LOB reason' : 'No active LOB reasons'}
+                              name="reasonId"
                             />
                           </div>
                           <div>
@@ -566,6 +567,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
         isSubmitting={changeStageMutation.isPending || updateMutation.isPending}
         initialReasonId={formValues.reasonId}
         initialRemarks={formValues.remarks}
+        lobReasonOptions={lobReasonOptions}
         onClose={handleLobClose}
         onConfirm={handleLobConfirm}
       />
