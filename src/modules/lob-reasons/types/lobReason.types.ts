@@ -22,6 +22,12 @@ export interface LOBReason {
   updatedBy?: LOBReasonActor | null;
 }
 
+export interface ActiveLOBReasonOption {
+  id: string;
+  name: string;
+  status: LOBReasonStatus;
+}
+
 export interface LOBReasonListResponse {
   data: LOBReason[];
   pagination: {

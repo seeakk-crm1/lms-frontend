@@ -5,7 +5,7 @@ import { toast } from 'react-hot-toast';
 import { useLocation, useNavigate } from 'react-router-dom';
 import DashboardHeader from '../../components/dashboard/DashboardHeader';
 import DashboardSidebar from '../../components/dashboard/DashboardSidebar';
-import { useChangeLeadStageMutation, useDeleteLeadMutation, useExportLeads, useExtendLeadSlaMutation, useLeadMetaQuery, useLeadsQuery } from '../../hooks/useLeads';
+import { useChangeLeadStageMutation, useDeleteLeadMutation, useExportLeads, useExtendLeadSlaMutation, useLeadMetaQuery, useLeadsQuery, usePermanentDeleteLeadMutation } from '../../hooks/useLeads';
 import useLeadStore from '../../store/leadStore';
 import type { LeadListItem } from '../../types/lead.types';
 import LeadFilters from './components/LeadFilters';
@@ -49,6 +49,7 @@ const LeadsPage: React.FC = () => {
   const { data: meta } = useLeadMetaQuery();
   const exportMutation = useExportLeads();
   const deleteMutation = useDeleteLeadMutation();
+  const permanentDeleteMutation = usePermanentDeleteLeadMutation();
   const changeStageMutation = useChangeLeadStageMutation();
   const extendLeadSlaMutation = useExtendLeadSlaMutation();
 
@@ -117,15 +118,21 @@ const LeadsPage: React.FC = () => {
   );
 
   const closeDeleteModal = useCallback(() => {
-    if (deleteMutation.isPending) return;
+    if (deleteMutation.isPending || permanentDeleteMutation.isPending) return;
     setDeleteModal({ isOpen: false, lead: null });
-  }, [deleteMutation.isPending]);
+  }, [deleteMutation.isPending, permanentDeleteMutation.isPending]);
 
-  const confirmDelete = useCallback(async () => {
+  const confirmArchive = useCallback(async () => {
     if (!deleteModal.lead) return;
     await deleteMutation.mutateAsync(deleteModal.lead.id);
     setDeleteModal({ isOpen: false, lead: null });
   }, [deleteModal.lead, deleteMutation]);
+
+  const confirmPermanentDelete = useCallback(async () => {
+    if (!deleteModal.lead) return;
+    await permanentDeleteMutation.mutateAsync(deleteModal.lead.id);
+    setDeleteModal({ isOpen: false, lead: null });
+  }, [deleteModal.lead, permanentDeleteMutation]);
 
   const stats = useMemo(
     () => [
@@ -319,9 +326,11 @@ const LeadsPage: React.FC = () => {
       <DeleteLeadModal
         isOpen={deleteModal.isOpen}
         leadName={deleteModal.lead?.name || 'this lead'}
-        isDeleting={deleteMutation.isPending}
+        isArchiving={deleteMutation.isPending}
+        isPermanentlyDeleting={permanentDeleteMutation.isPending}
         onClose={closeDeleteModal}
-        onConfirm={confirmDelete}
+        onArchive={confirmArchive}
+        onPermanentDelete={confirmPermanentDelete}
       />
 
       <LeadSlaDecisionModal

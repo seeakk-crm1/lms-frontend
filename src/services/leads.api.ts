@@ -1,6 +1,6 @@
 import api from './api';
 import { getLifeCycles } from './admin/lead-life-cycle/leadLifeCycleService';
-import { getLOBReasons } from './lobReasons.api';
+import { getActiveLOBReasons } from './lobReasons.api';
 import { getLeadSources } from './leadSource.api';
 import { getLeadStages } from './leadStage.api';
 import { getUsers } from './users.api';
@@ -69,6 +69,11 @@ export const updateLead = async (id: string, payload: LeadUpdatePayload) => {
 
 export const deleteLead = async (id: string) => {
   const response = await api.delete(`/leads/${id}`);
+  return response.data;
+};
+
+export const permanentlyDeleteLead = async (id: string) => {
+  const response = await api.delete(`/leads/${id}/permanent`);
   return response.data;
 };
 
@@ -222,7 +227,7 @@ export const getLeadMeta = async () => {
     getLeadStages({ page: 1, limit: 100, search: '', status: 'ACTIVE' }),
     getLifeCycles({ page: 1, limit: 100 }),
     getActiveLeadDynamicFields(),
-    getLOBReasons({ page: 1, limit: 100, status: 'ACTIVE' }),
+    getActiveLOBReasons(),
   ]);
 
   const usersData = getSettledValue(usersResult, { users: [] as any[] });

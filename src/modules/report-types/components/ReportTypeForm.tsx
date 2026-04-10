@@ -161,7 +161,6 @@ const ReportTypeForm: React.FC<ReportTypeFormProps> = ({ initialValue, onSubmit,
           />
           {errors.baseDataSource ? <span className="block text-xs font-bold text-rose-500">{errors.baseDataSource.message}</span> : null}
         </div>
-
       </div>
 
       <label className="relative block">
@@ -203,7 +202,7 @@ const ReportTypeForm: React.FC<ReportTypeFormProps> = ({ initialValue, onSubmit,
           control={control}
           name="status"
           render={({ field }) => (
-            <div className="flex flex-wrap gap-3">
+            <div className="grid gap-3 sm:flex sm:flex-wrap">
               {statusOptions.map((option) => {
                 const active = selectedStatus === option.value;
                 return (

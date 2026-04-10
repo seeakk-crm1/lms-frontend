@@ -78,7 +78,7 @@ const LOBReasonForm: React.FC<LOBReasonFormProps> = ({ initialValue, onSubmit, o
           control={control}
           name="status"
           render={({ field }) => (
-            <div className="flex flex-wrap gap-3">
+            <div className="grid gap-3 sm:flex sm:flex-wrap">
               {statusOptions.map((option) => {
                 const active = selectedStatus === option.value;
                 return (

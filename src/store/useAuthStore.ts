@@ -8,6 +8,7 @@ interface AuthState {
   isAuthenticated: boolean;
   setAuth: (user: User | null, accessToken: string | null, refreshToken: string | null) => void;
   updateUser: (updatedFields: Partial<User>) => void;
+  clearAuth: () => void;
   logout: () => Promise<void>;
 }
 
@@ -40,6 +41,13 @@ const useAuthStore = create<AuthState>((set) => {
         localStorage.removeItem('user');
     }
 
+    const clearAuthState = () => {
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('user');
+        set({ user: null, accessToken: null, refreshToken: null, isAuthenticated: false });
+    };
+
     return {
         user: initialUser,
         accessToken: localStorage.getItem('accessToken') || null,
@@ -70,13 +78,13 @@ const useAuthStore = create<AuthState>((set) => {
             return { user: newUser };
         }),
 
+        clearAuth: () => {
+            clearAuthState();
+        },
+
         logout: async () => {
-            // Unconditionally wipe client data for safety
             const currentRefreshToken = localStorage.getItem('refreshToken');
-            localStorage.removeItem('accessToken');
-            localStorage.removeItem('refreshToken');
-            localStorage.removeItem('user');
-            set({ user: null, accessToken: null, refreshToken: null, isAuthenticated: false });
+            clearAuthState();
 
             // Fire and forget logout to clear session at Redis DB
             if (currentRefreshToken) {

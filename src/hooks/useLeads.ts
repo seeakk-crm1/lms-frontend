@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-hot-toast';
 import useLeadStore from '../store/leadStore';
+import useAuthStore from '../store/useAuthStore';
 import {
   changeLeadStage,
   createLead,
@@ -11,6 +12,7 @@ import {
   getLeadById,
   getLeadMeta,
   getLeads,
+  permanentlyDeleteLead,
   saveLeadDynamicValues,
   updateLead,
 } from '../services/leads.api';
@@ -30,6 +32,40 @@ type LeadMutationInput = {
 
 const toDynamicPayload = (values?: LeadDynamicValuePayload[]) =>
   values?.filter((item) => item.value.trim().length > 0) || [];
+
+const patchLeadInListResponse = (
+  previous: ListLeadsResponse | undefined,
+  nextLead: LeadMutationResponse['data'],
+): ListLeadsResponse | undefined => {
+  if (!previous) return previous;
+
+  const leadExists = previous.leads.some((lead) => lead.id === nextLead.id);
+  if (!leadExists) return previous;
+
+  return {
+    ...previous,
+    leads: previous.leads.map((lead) => (lead.id === nextLead.id ? nextLead : lead)),
+  };
+};
+
+const removeLeadFromListResponse = (
+  previous: ListLeadsResponse | undefined,
+  leadId: string,
+): ListLeadsResponse | undefined => {
+  if (!previous) return previous;
+
+  const nextLeads = previous.leads.filter((lead) => lead.id !== leadId);
+  if (nextLeads.length === previous.leads.length) return previous;
+
+  return {
+    ...previous,
+    leads: nextLeads,
+    pagination: {
+      ...previous.pagination,
+      total: Math.max(0, previous.pagination.total - 1),
+    },
+  };
+};
 
 export const useLeadsQuery = () => {
   const { filters, search, pagination } = useLeadStore();
@@ -71,25 +107,48 @@ export const useLeadDetailQuery = (leadId?: string, enabled = true) =>
     staleTime: 60_000,
     gcTime: 300_000,
     refetchOnWindowFocus: false,
+    retry: (failureCount, error: any) => {
+      const status = error?.response?.status;
+      if (status === 401 || status === 403 || status === 404) return false;
+      return failureCount < 2;
+    },
   });
 
-export const useLeadMetaQuery = () =>
-  useQuery({
+export const useLeadMetaQuery = (enabled = true) => {
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+
+  return useQuery({
     queryKey: ['lead-meta'],
     queryFn: getLeadMeta,
+    enabled: enabled && isAuthenticated,
     staleTime: 5 * 60_000,
     gcTime: 10 * 60_000,
     refetchOnWindowFocus: false,
+    retry: (failureCount, error: any) => {
+      const status = error?.response?.status;
+      if (status === 401 || status === 403) return false;
+      return failureCount < 2;
+    },
   });
+};
 
-export const useDynamicFieldsQuery = () =>
-  useQuery({
+export const useDynamicFieldsQuery = (enabled = true) => {
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+
+  return useQuery({
     queryKey: ['lead-dynamics', 'active'],
     queryFn: getActiveLeadDynamicFields,
+    enabled: enabled && isAuthenticated,
     staleTime: 5 * 60_000,
     gcTime: 10 * 60_000,
     refetchOnWindowFocus: false,
+    retry: (failureCount, error: any) => {
+      const status = error?.response?.status;
+      if (status === 401 || status === 403) return false;
+      return failureCount < 2;
+    },
   });
+};
 
 export const useCreateLeadMutation = () => {
   const queryClient = useQueryClient();
@@ -160,6 +219,13 @@ export const useUpdateLeadMutation = () => {
       };
     },
     onSuccess: (response, variables) => {
+      queryClient.setQueriesData<ListLeadsResponse>({ queryKey: ['leads'] }, (previous) =>
+        patchLeadInListResponse(previous, response.data),
+      );
+      queryClient.setQueryData(['lead', variables.id], {
+        ...response,
+        data: response.data,
+      });
       queryClient.invalidateQueries({ queryKey: ['leads'] });
       queryClient.invalidateQueries({ queryKey: ['lead', variables.id] });
       queryClient.invalidateQueries({ queryKey: ['followups'] });
@@ -193,12 +259,30 @@ export const useChangeLeadStageMutation = () => {
       payload: Parameters<typeof changeLeadStage>[1];
     }) => changeLeadStage(id, payload),
     onSuccess: (_data, variables) => {
+      const nextLead = _data?.approvalRequired ? _data?.data?.lead : _data?.data;
+
+      if (nextLead?.id) {
+        queryClient.setQueriesData<ListLeadsResponse>({ queryKey: ['leads'] }, (previous) =>
+          patchLeadInListResponse(previous, nextLead),
+        );
+        queryClient.setQueryData(['lead', variables.id], nextLead);
+      }
       queryClient.invalidateQueries({ queryKey: ['leads'] });
       queryClient.invalidateQueries({ queryKey: ['lead', variables.id] });
       queryClient.invalidateQueries({ queryKey: ['followups'] });
-      toast.success('Lead stage updated');
+      queryClient.invalidateQueries({ queryKey: ['lead-approvals'] });
+
+      if (_data?.approvalRequired) {
+        toast.success(_data?.message || 'Approval request created successfully');
+        return;
+      }
+
+      toast.success(_data?.message || 'Lead stage updated');
     },
     onError: (error: any) => {
+      if (error?.response?.status === 409) {
+        queryClient.invalidateQueries({ queryKey: ['lead-approvals'] });
+      }
       toast.error(error?.response?.data?.message || 'Failed to update lead stage');
     },
   });
@@ -209,12 +293,36 @@ export const useDeleteLeadMutation = () => {
 
   return useMutation({
     mutationFn: (id: string) => deleteLead(id),
-    onSuccess: () => {
+    onSuccess: (_response, leadId) => {
+      queryClient.setQueriesData<ListLeadsResponse>({ queryKey: ['leads'] }, (previous) =>
+        removeLeadFromListResponse(previous, leadId),
+      );
+      queryClient.removeQueries({ queryKey: ['lead', leadId] });
       queryClient.invalidateQueries({ queryKey: ['leads'] });
       toast.success('Lead archived successfully');
     },
     onError: (error: any) => {
       toast.error(error?.response?.data?.message || 'Failed to archive lead');
+    },
+  });
+};
+
+export const usePermanentDeleteLeadMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => permanentlyDeleteLead(id),
+    onSuccess: (_response, leadId) => {
+      queryClient.setQueriesData<ListLeadsResponse>({ queryKey: ['leads'] }, (previous) =>
+        removeLeadFromListResponse(previous, leadId),
+      );
+      queryClient.removeQueries({ queryKey: ['lead', leadId] });
+      queryClient.invalidateQueries({ queryKey: ['leads'] });
+      queryClient.invalidateQueries({ queryKey: ['followups'] });
+      toast.success('Lead permanently deleted successfully');
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || 'Failed to permanently delete lead');
     },
   });
 };

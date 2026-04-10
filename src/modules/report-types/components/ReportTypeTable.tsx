@@ -74,7 +74,7 @@ const RowActions: React.FC<{
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 8 }}
-            className="absolute right-0 top-12 z-20 min-w-[200px] overflow-hidden rounded-2xl border border-gray-100 bg-white p-2 shadow-[0_20px_60px_-24px_rgba(15,23,42,0.35)]"
+            className="absolute right-0 top-12 z-20 min-w-[180px] max-w-[calc(100vw-3rem)] overflow-hidden rounded-2xl border border-gray-100 bg-white p-2 shadow-[0_20px_60px_-24px_rgba(15,23,42,0.35)]"
           >
             {items.map((item) => (
               <button
@@ -179,12 +179,14 @@ const ReportTypeTable: React.FC<ReportTypeTableProps> = ({ rows, loading, canMan
             animate={{ opacity: 1, y: 0 }}
             className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm"
           >
-            <div className="flex items-start justify-between gap-4">
-              <div>
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div className="min-w-0">
                 <div className="text-lg font-black text-gray-900">{row.name}</div>
-                <div className="mt-1 text-sm font-semibold text-gray-400">{row.baseDataSource}</div>
+                <div className="mt-1 break-words text-sm font-semibold text-gray-400">{row.baseDataSource}</div>
               </div>
-              <RowActions row={row} canManage={canManage} onEdit={onEdit} onToggleStatus={onToggleStatus} onDelete={onDelete} onRun={onRun} />
+              <div className="self-end sm:self-start">
+                <RowActions row={row} canManage={canManage} onEdit={onEdit} onToggleStatus={onToggleStatus} onDelete={onDelete} onRun={onRun} />
+              </div>
             </div>
             <div className="mt-4 flex flex-wrap items-center gap-2">
               <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-black text-gray-600">{row.module}</span>

@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-hot-toast';
 import { getLeadApprovals, updateLeadApproval } from '../services/leads.api';
@@ -7,7 +8,7 @@ import type { LeadApprovalActionPayload, LeadApprovalListResponse } from '../typ
 export const useApprovalsQuery = () => {
   const { filters, pagination, setApprovals, setPagination, setLoading } = useApprovalStore();
 
-  return useQuery<LeadApprovalListResponse, Error>({
+  const query = useQuery<LeadApprovalListResponse, Error>({
     queryKey: ['lead-approvals', filters, pagination.page, pagination.limit],
     queryFn: () =>
       getLeadApprovals({
@@ -27,19 +28,24 @@ export const useApprovalsQuery = () => {
       if (status === 401 || status === 403 || status === 422) return false;
       return failureCount < 2;
     },
-    onSuccess: (response) => {
-      setApprovals(response.data || []);
-      setPagination(response.pagination || {});
-      setLoading(false);
-    },
-    onError: () => {
-      setApprovals([]);
-      setLoading(false);
-    },
-    onSettled: () => {
-      setLoading(false);
-    },
   });
+
+  useEffect(() => {
+    setLoading(query.isPending);
+  }, [query.isPending, setLoading]);
+
+  useEffect(() => {
+    if (!query.data) return;
+    setApprovals(query.data.data || []);
+    setPagination(query.data.pagination || {});
+  }, [query.data, setApprovals, setPagination]);
+
+  useEffect(() => {
+    if (!query.isError) return;
+    setApprovals([]);
+  }, [query.isError, setApprovals]);
+
+  return query;
 };
 
 export const useApprovalActionMutation = () => {

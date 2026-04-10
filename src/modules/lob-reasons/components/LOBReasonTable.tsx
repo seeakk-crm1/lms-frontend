@@ -1,6 +1,6 @@
 import React, { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { MoreHorizontal, PencilLine, Power, Trash2 } from 'lucide-react';
+import { MoreHorizontal, PencilLine, Power } from 'lucide-react';
 import StatusBadge from './StatusBadge';
 import type { LOBReason } from '../types/lobReason.types';
 
@@ -10,7 +10,6 @@ interface LOBReasonTableProps {
   canManage: boolean;
   onEdit: (item: LOBReason) => void;
   onToggleStatus: (item: LOBReason) => void;
-  onDelete: (item: LOBReason) => void;
 }
 
 const formatDate = (value: string) =>
@@ -27,8 +26,7 @@ const RowActions: React.FC<{
   canManage: boolean;
   onEdit: (item: LOBReason) => void;
   onToggleStatus: (item: LOBReason) => void;
-  onDelete: (item: LOBReason) => void;
-}> = ({ row, canManage, onEdit, onToggleStatus, onDelete }) => {
+}> = ({ row, canManage, onEdit, onToggleStatus }) => {
   const [open, setOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
@@ -46,9 +44,8 @@ const RowActions: React.FC<{
     () => [
       { label: 'Edit', icon: PencilLine, onClick: () => onEdit(row), show: canManage },
       { label: row.status === 'ACTIVE' ? 'Deactivate' : 'Activate', icon: Power, onClick: () => onToggleStatus(row), show: canManage },
-      { label: 'Delete', icon: Trash2, onClick: () => onDelete(row), show: canManage, destructive: true },
     ].filter((item) => item.show),
-    [canManage, onDelete, onEdit, onToggleStatus, row],
+    [canManage, onEdit, onToggleStatus, row],
   );
 
   if (!items.length) return null;
@@ -70,7 +67,7 @@ const RowActions: React.FC<{
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 8 }}
-            className="absolute right-0 top-12 z-20 min-w-[200px] overflow-hidden rounded-2xl border border-gray-100 bg-white p-2 shadow-[0_20px_60px_-24px_rgba(15,23,42,0.35)]"
+            className="absolute right-0 top-12 z-20 min-w-[180px] max-w-[calc(100vw-3rem)] overflow-hidden rounded-2xl border border-gray-100 bg-white p-2 shadow-[0_20px_60px_-24px_rgba(15,23,42,0.35)]"
           >
             {items.map((item) => (
               <button
@@ -103,7 +100,7 @@ const TableSkeleton = () => (
   </div>
 );
 
-const LOBReasonTable: React.FC<LOBReasonTableProps> = ({ rows, loading, canManage, onEdit, onToggleStatus, onDelete }) => {
+const LOBReasonTable: React.FC<LOBReasonTableProps> = ({ rows, loading, canManage, onEdit, onToggleStatus }) => {
   if (loading) {
     return <TableSkeleton />;
   }
@@ -148,7 +145,7 @@ const LOBReasonTable: React.FC<LOBReasonTableProps> = ({ rows, loading, canManag
                   {resolveActorLabel(row.createdBy)}
                 </td>
                 <td className="rounded-r-3xl border-y border-r border-gray-100 bg-white px-4 py-4 shadow-sm transition-colors group-hover:bg-emerald-50/30">
-                  <RowActions row={row} canManage={canManage} onEdit={onEdit} onToggleStatus={onToggleStatus} onDelete={onDelete} />
+                  <RowActions row={row} canManage={canManage} onEdit={onEdit} onToggleStatus={onToggleStatus} />
                 </td>
               </motion.tr>
             ))}
@@ -159,14 +156,16 @@ const LOBReasonTable: React.FC<LOBReasonTableProps> = ({ rows, loading, canManag
       <div className="grid gap-4 lg:hidden">
         {rows.map((row) => (
           <motion.div key={row.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
-            <div className="flex items-start justify-between gap-4">
-              <div>
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div className="min-w-0">
                 <div className="text-lg font-black text-gray-900">{row.name}</div>
                 <div className="mt-3">
                   <StatusBadge status={row.status} />
                 </div>
               </div>
-              <RowActions row={row} canManage={canManage} onEdit={onEdit} onToggleStatus={onToggleStatus} onDelete={onDelete} />
+              <div className="self-end sm:self-start">
+                <RowActions row={row} canManage={canManage} onEdit={onEdit} onToggleStatus={onToggleStatus} />
+              </div>
             </div>
             <div className="mt-4 grid gap-3 text-sm font-semibold text-gray-500 sm:grid-cols-2">
               <div>

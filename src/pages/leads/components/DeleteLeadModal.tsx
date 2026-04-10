@@ -5,18 +5,24 @@ import { AlertTriangle, Archive, Trash2, X } from 'lucide-react';
 interface DeleteLeadModalProps {
   isOpen: boolean;
   leadName: string;
-  isDeleting: boolean;
+  isArchiving: boolean;
+  isPermanentlyDeleting: boolean;
   onClose: () => void;
-  onConfirm: () => void;
+  onArchive: () => void;
+  onPermanentDelete: () => void;
 }
 
 const DeleteLeadModal: React.FC<DeleteLeadModalProps> = ({
   isOpen,
   leadName,
-  isDeleting,
+  isArchiving,
+  isPermanentlyDeleting,
   onClose,
-  onConfirm,
+  onArchive,
+  onPermanentDelete,
 }) => {
+  const isBusy = isArchiving || isPermanentlyDeleting;
+
   return (
     <AnimatePresence>
       {isOpen ? (
@@ -40,9 +46,9 @@ const DeleteLeadModal: React.FC<DeleteLeadModalProps> = ({
                 <button
                   type="button"
                   onClick={onClose}
-                  disabled={isDeleting}
+                  disabled={isBusy}
                   className="rounded-xl p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-50"
-                  aria-label="Close archive lead modal"
+                  aria-label="Close lead removal modal"
                 >
                   <X className="h-5 w-5" />
                 </button>
@@ -50,38 +56,55 @@ const DeleteLeadModal: React.FC<DeleteLeadModalProps> = ({
 
               <div className="space-y-3">
                 <h2 id="delete-lead-title" className="text-2xl font-black tracking-tight text-gray-900">
-                  Archive Lead?
+                  Archive Or Delete Lead?
                 </h2>
                 <p className="text-sm font-semibold leading-relaxed text-gray-500">
-                  Are you sure you want to archive <span className="font-black text-rose-600">"{leadName}"</span>?
-                  The lead will be removed from the active list, while history and audit trail stay preserved.
+                  Choose how you want to remove <span className="font-black text-rose-600">"{leadName}"</span>.
+                  Archive keeps history and audit visibility. Permanent delete removes the lead and related records for good.
                 </p>
               </div>
 
-              <div className="mt-8 flex gap-3 rounded-2xl border border-amber-100 bg-amber-50 p-4">
-                <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
-                <p className="text-[11px] font-bold leading-normal text-amber-700">
-                  This is a soft delete. Archived leads are hidden from active workflows, but existing references remain for reporting and traceability.
-                </p>
+              <div className="mt-8 space-y-3">
+                <div className="flex gap-3 rounded-2xl border border-emerald-100 bg-emerald-50 p-4">
+                  <Archive className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
+                  <p className="text-[11px] font-bold leading-normal text-emerald-700">
+                    Archive is the safer option. The lead disappears from active workflows, but history and audit trail stay preserved.
+                  </p>
+                </div>
+                <div className="flex gap-3 rounded-2xl border border-amber-100 bg-amber-50 p-4">
+                  <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
+                  <p className="text-[11px] font-bold leading-normal text-amber-700">
+                    Permanent delete is irreversible. This will remove the lead and associated records that should no longer be retained.
+                  </p>
+                </div>
               </div>
 
               <div className="mt-10 flex flex-col gap-3 sm:flex-row">
                 <button
                   type="button"
                   onClick={onClose}
-                  disabled={isDeleting}
+                  disabled={isBusy}
                   className="flex-1 py-3 text-sm font-black text-gray-500 transition-colors hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Cancel
                 </button>
                 <button
                   type="button"
-                  onClick={onConfirm}
-                  disabled={isDeleting}
-                  className="flex flex-[2] items-center justify-center gap-2 rounded-2xl bg-rose-500 py-4 text-sm font-black text-white shadow-xl shadow-rose-500/20 transition-all hover:bg-rose-600 active:scale-95 disabled:cursor-not-allowed disabled:bg-rose-300"
+                  onClick={onArchive}
+                  disabled={isBusy}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-emerald-500 py-4 text-sm font-black text-white shadow-xl shadow-emerald-500/20 transition-all hover:bg-emerald-600 active:scale-95 disabled:cursor-not-allowed disabled:bg-emerald-300"
+                >
+                  <Archive className="h-4 w-4" />
+                  <span>{isArchiving ? 'Archiving…' : 'Archive Lead'}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={onPermanentDelete}
+                  disabled={isBusy}
+                  className="flex flex-[1.2] items-center justify-center gap-2 rounded-2xl bg-rose-500 py-4 text-sm font-black text-white shadow-xl shadow-rose-500/20 transition-all hover:bg-rose-600 active:scale-95 disabled:cursor-not-allowed disabled:bg-rose-300"
                 >
                   <Trash2 className="h-4 w-4" />
-                  <span>{isDeleting ? 'Archiving…' : 'Archive Lead'}</span>
+                  <span>{isPermanentlyDeleting ? 'Deleting…' : 'Permanent Delete'}</span>
                 </button>
               </div>
             </div>

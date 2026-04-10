@@ -14,6 +14,9 @@ const normalizeRole = (role: unknown) =>
   String(typeof role === 'object' && role !== null ? (role as { name?: string }).name || '' : role || '')
     .toLowerCase()
     .trim();
+    
+const normalizeRoleKey = (role: unknown) =>
+  normalizeRole(role).replace(/[\s_-]+/g, '');
 
 const statusOrder: Record<string, number> = {
   PENDING: 0,
@@ -55,7 +58,7 @@ const PendingApprovalPage: React.FC = () => {
     return () => window.clearTimeout(timer);
   }, [searchDraft, setFilters]);
 
-  const roleKey = normalizeRole(user?.role);
+  const roleKey = normalizeRoleKey(user?.role);
   const canAct = ['admin', 'manager', 'superadmin'].includes(roleKey);
 
   const sortedApprovals = useMemo(() => {
@@ -150,12 +153,12 @@ const PendingApprovalPage: React.FC = () => {
       <main className="relative flex h-full flex-1 flex-col overflow-hidden">
         <DashboardHeader setMobileMenuOpen={setMobileMenuOpen} />
 
-        <div className="relative flex-1 overflow-x-hidden overflow-y-auto custom-scrollbar p-4 md:p-8">
+        <div className="relative flex-1 overflow-x-hidden overflow-y-auto custom-scrollbar p-4 sm:p-5 md:p-8">
           <div className="absolute right-0 top-0 -z-10 h-[460px] w-[720px] bg-gradient-to-bl from-amber-50 via-transparent to-transparent" />
 
           <div className="mx-auto max-w-[1520px] space-y-6 md:space-y-8">
-            <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
-              <motion.div initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }}>
+            <div className="flex flex-col gap-5 2xl:flex-row 2xl:items-end 2xl:justify-between">
+              <motion.div initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} className="2xl:max-w-[40rem]">
                 <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-amber-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.26em] text-amber-600">
                   <ShieldCheck className="h-3.5 w-3.5" />
                   <span>Governed Pipeline Control</span>
@@ -166,45 +169,47 @@ const PendingApprovalPage: React.FC = () => {
                 </p>
               </motion.div>
 
-              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                <label className="relative min-w-[220px]">
+              <div className="grid gap-3 md:grid-cols-2 2xl:min-w-0 2xl:flex-1 2xl:grid-cols-[minmax(260px,1.35fr)_minmax(180px,0.9fr)_minmax(180px,0.9fr)_minmax(180px,0.9fr)] 2xl:items-end">
+                <label className="relative md:col-span-2 2xl:col-span-1 2xl:min-w-0">
                   <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                   <input
                     value={searchDraft}
                     onChange={(event) => setSearchDraft(event.target.value)}
                     placeholder="Search lead or approver"
-                    className="w-full rounded-2xl border border-gray-200 bg-white py-3 pl-11 pr-4 text-sm font-semibold text-gray-900 shadow-sm outline-none transition-all placeholder:text-gray-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
+                    className="w-full min-w-0 rounded-2xl border border-gray-200 bg-white py-3 pl-11 pr-4 text-sm font-semibold text-gray-900 shadow-sm outline-none transition-all placeholder:text-gray-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
                     aria-label="Search approvals"
                   />
                 </label>
 
-                <select
-                  value={filters.status || ''}
-                  onChange={(event) => handleFilterChange('status', event.target.value)}
-                  className="rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 shadow-sm outline-none transition-all focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
-                  aria-label="Filter by status"
-                >
-                  <option value="">All Statuses</option>
-                  <option value="PENDING">Pending</option>
-                  <option value="APPROVED">Approved</option>
-                  <option value="DENIED">Denied</option>
-                </select>
+                <div className="grid gap-3 sm:grid-cols-2 md:col-span-2 2xl:col-span-3 2xl:grid-cols-3">
+                  <select
+                    value={filters.status || ''}
+                    onChange={(event) => handleFilterChange('status', event.target.value)}
+                    className="min-w-0 rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 shadow-sm outline-none transition-all focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
+                    aria-label="Filter by status"
+                  >
+                    <option value="">All Statuses</option>
+                    <option value="PENDING">Pending</option>
+                    <option value="APPROVED">Approved</option>
+                    <option value="DENIED">Denied</option>
+                  </select>
 
-                <input
-                  type="date"
-                  value={filters.dateFrom || ''}
-                  onChange={(event) => handleFilterChange('dateFrom', event.target.value)}
-                  className="rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 shadow-sm outline-none transition-all focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
-                  aria-label="Filter from date"
-                />
+                  <input
+                    type="date"
+                    value={filters.dateFrom || ''}
+                    onChange={(event) => handleFilterChange('dateFrom', event.target.value)}
+                    className="min-w-0 rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 shadow-sm outline-none transition-all focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
+                    aria-label="Filter from date"
+                  />
 
-                <input
-                  type="date"
-                  value={filters.dateTo || ''}
-                  onChange={(event) => handleFilterChange('dateTo', event.target.value)}
-                  className="rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 shadow-sm outline-none transition-all focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
-                  aria-label="Filter to date"
-                />
+                  <input
+                    type="date"
+                    value={filters.dateTo || ''}
+                    onChange={(event) => handleFilterChange('dateTo', event.target.value)}
+                    className="min-w-0 rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 shadow-sm outline-none transition-all focus:border-amber-400 focus:ring-2 focus:ring-amber-100 sm:col-span-2 md:col-span-1"
+                    aria-label="Filter to date"
+                  />
+                </div>
               </div>
             </div>
 
@@ -251,7 +256,7 @@ const PendingApprovalPage: React.FC = () => {
               ))}
             </div>
 
-            <div className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm">
+            <div className="rounded-3xl border border-gray-100 bg-white p-4 shadow-sm sm:p-5 md:p-6">
               <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                 <div>
                   <h2 className="text-xl font-black text-gray-900">Approval Queue</h2>

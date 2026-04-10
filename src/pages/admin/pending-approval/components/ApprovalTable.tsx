@@ -141,8 +141,8 @@ const ApprovalTable: React.FC<ApprovalTableProps> = ({
           </div>
         ) : (
           items.map((approval) => (
-            <div key={approval.id} className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
-              <div className="flex items-start justify-between gap-3">
+            <div key={approval.id} className="rounded-3xl border border-gray-100 bg-white p-4 shadow-sm sm:p-5">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                   <div className="text-lg font-black text-gray-900">{approval.lead?.name || 'Unknown lead'}</div>
                   <div className="mt-1 text-sm font-semibold text-gray-500">
@@ -152,7 +152,7 @@ const ApprovalTable: React.FC<ApprovalTableProps> = ({
                 <StatusBadge status={approval.status} />
               </div>
 
-              <div className="mt-4 grid gap-3 text-sm font-semibold text-gray-600">
+              <div className="mt-4 grid gap-3 text-sm font-semibold text-gray-600 sm:grid-cols-2">
                 <div>
                   <span className="text-[11px] font-black uppercase tracking-[0.18em] text-gray-400">Assignee</span>
                   <div className="mt-1 text-gray-900">{approval.assignedTo?.displayName || approval.assignedTo?.name || 'Open queue'}</div>
@@ -167,12 +167,12 @@ const ApprovalTable: React.FC<ApprovalTableProps> = ({
                 </div>
               </div>
 
-              <div className="mt-4 flex items-center gap-2">
+              <div className="mt-4 flex flex-col gap-2 sm:flex-row">
                 <button
                   type="button"
                   onClick={() => onReview(approval)}
                   disabled={!canAct || approval.status !== 'PENDING'}
-                  className={`flex-1 rounded-2xl px-4 py-3 text-sm font-black transition-all ${
+                  className={`w-full rounded-2xl px-4 py-3 text-sm font-black transition-all sm:flex-1 ${
                     canAct && approval.status === 'PENDING'
                       ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20'
                       : 'cursor-not-allowed bg-gray-100 text-gray-400'
@@ -183,7 +183,7 @@ const ApprovalTable: React.FC<ApprovalTableProps> = ({
                 <button
                   type="button"
                   onClick={() => onHistory(approval)}
-                  className="rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-black text-gray-700 transition-colors hover:bg-gray-50"
+                  className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-black text-gray-700 transition-colors hover:bg-gray-50 sm:w-auto"
                 >
                   History
                 </button>
@@ -193,11 +193,11 @@ const ApprovalTable: React.FC<ApprovalTableProps> = ({
         )}
       </div>
 
-      <div className="flex flex-col gap-3 border-t border-gray-100 bg-gray-50/60 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 border-t border-gray-100 bg-gray-50/60 px-4 py-4 sm:px-5 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-xs font-black uppercase tracking-[0.2em] text-gray-400">
           Showing <span className="text-gray-900">{rangeStart}-{rangeEnd}</span> of <span className="text-gray-900">{total}</span> approval requests
         </p>
-        <div className="flex items-center gap-2 self-end sm:self-auto">
+        <div className="flex w-full items-center justify-between gap-2 sm:w-auto sm:justify-end sm:self-auto">
           <button
             type="button"
             onClick={() => onPageChange(page - 1)}
@@ -208,20 +208,22 @@ const ApprovalTable: React.FC<ApprovalTableProps> = ({
             <ChevronLeft className="h-4 w-4" />
           </button>
 
-          {pageNumbers.map((item) => (
-            <button
-              key={item}
-              type="button"
-              onClick={() => onPageChange(item)}
-              className={`inline-flex h-10 w-10 items-center justify-center rounded-2xl text-sm font-black transition-all ${
-                item === page
-                  ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/20'
-                  : 'border border-gray-200 bg-white text-gray-500 hover:bg-gray-50'
-              }`}
-            >
-              {item}
-            </button>
-          ))}
+          <div className="flex items-center gap-2">
+            {pageNumbers.map((item) => (
+              <button
+                key={item}
+                type="button"
+                onClick={() => onPageChange(item)}
+                className={`inline-flex h-10 min-w-10 items-center justify-center rounded-2xl px-3 text-sm font-black transition-all ${
+                  item === page
+                    ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/20'
+                    : 'border border-gray-200 bg-white text-gray-500 hover:bg-gray-50'
+                }`}
+              >
+                {item}
+              </button>
+            ))}
+          </div>
 
           <button
             type="button"

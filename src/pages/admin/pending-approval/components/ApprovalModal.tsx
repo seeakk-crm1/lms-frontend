@@ -39,25 +39,25 @@ const ApprovalModal: React.FC<ApprovalModalProps> = ({ approval, isSubmitting, c
   return (
     <AnimatePresence>
       {isOpen ? (
-        <div className="fixed inset-0 z-[150] flex items-center justify-center bg-gray-900/60 p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[150] flex items-end justify-center bg-gray-900/60 p-0 backdrop-blur-sm sm:items-center sm:p-4">
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 18 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 18 }}
-            className="w-full max-w-2xl overflow-hidden rounded-[32px] bg-white shadow-2xl"
+            className="flex h-full w-full flex-col overflow-hidden rounded-t-[28px] bg-white shadow-2xl sm:h-auto sm:max-h-[92vh] sm:max-w-2xl sm:rounded-[32px]"
             role="dialog"
             aria-modal="true"
             aria-labelledby="lead-approval-modal-title"
           >
-            <div className="border-b border-gray-100 p-8">
+            <div className="border-b border-gray-100 p-4 sm:p-6 lg:p-8">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-50 text-amber-600">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 sm:h-12 sm:w-12">
                     <ShieldAlert className="h-6 w-6" />
                   </div>
                   <div>
                     <p className="text-[11px] font-black uppercase tracking-[0.24em] text-gray-400">Lead Stage Approval</p>
-                    <h2 id="lead-approval-modal-title" className="text-2xl font-black tracking-tight text-gray-900">
+                    <h2 id="lead-approval-modal-title" className="text-xl font-black tracking-tight text-gray-900 sm:text-2xl">
                       Lead Stage Approval Required
                     </h2>
                   </div>
@@ -94,7 +94,7 @@ const ApprovalModal: React.FC<ApprovalModalProps> = ({ approval, isSubmitting, c
                 </div>
               </div>
 
-              <div className="mt-5 grid gap-3 rounded-2xl border border-gray-100 bg-white p-4 md:grid-cols-3">
+              <div className="mt-5 grid gap-3 rounded-2xl border border-gray-100 bg-white p-4 sm:grid-cols-2 md:grid-cols-3">
                 <div>
                   <div className="text-[11px] font-black uppercase tracking-[0.18em] text-gray-400">From Stage</div>
                   <div className="mt-2 text-sm font-black text-gray-900">{approval.fromStage?.name || 'Unknown'}</div>
@@ -112,7 +112,7 @@ const ApprovalModal: React.FC<ApprovalModalProps> = ({ approval, isSubmitting, c
               </div>
             </div>
 
-            <div className="space-y-6 p-8">
+            <div className="flex-1 space-y-5 overflow-y-auto p-4 sm:space-y-6 sm:p-6 lg:p-8">
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="rounded-2xl border border-gray-100 bg-gray-50/70 p-4">
                   <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.18em] text-gray-400">
@@ -164,7 +164,7 @@ const ApprovalModal: React.FC<ApprovalModalProps> = ({ approval, isSubmitting, c
                   type="button"
                   onClick={onClose}
                   disabled={isSubmitting}
-                  className="flex-1 py-3 text-sm font-black text-gray-500 transition-colors hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="order-3 flex-1 rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-black text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-50 sm:order-1 sm:border-transparent sm:bg-transparent sm:px-0"
                 >
                   {showActionButtons ? 'Cancel' : 'Close'}
                 </button>
@@ -175,7 +175,7 @@ const ApprovalModal: React.FC<ApprovalModalProps> = ({ approval, isSubmitting, c
                       type="button"
                       onClick={() => handleAction('DENY')}
                       disabled={isSubmitting}
-                      className="flex flex-1 items-center justify-center rounded-2xl bg-rose-500 px-5 py-4 text-sm font-black text-white shadow-lg shadow-rose-500/20 transition-all hover:bg-rose-600 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-rose-300"
+                      className="order-1 flex w-full items-center justify-center rounded-2xl bg-rose-500 px-5 py-4 text-sm font-black text-white shadow-lg shadow-rose-500/20 transition-all hover:bg-rose-600 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-rose-300 sm:order-2 sm:flex-1"
                     >
                       {isSubmitting ? 'Processing…' : 'Deny'}
                     </button>
@@ -183,7 +183,7 @@ const ApprovalModal: React.FC<ApprovalModalProps> = ({ approval, isSubmitting, c
                       type="button"
                       onClick={() => handleAction('APPROVE')}
                       disabled={isSubmitting}
-                      className="flex flex-[1.2] items-center justify-center rounded-2xl bg-emerald-500 px-5 py-4 text-sm font-black text-white shadow-lg shadow-emerald-500/20 transition-all hover:bg-emerald-600 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-emerald-300"
+                      className="order-2 flex w-full items-center justify-center rounded-2xl bg-emerald-500 px-5 py-4 text-sm font-black text-white shadow-lg shadow-emerald-500/20 transition-all hover:bg-emerald-600 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-emerald-300 sm:order-3 sm:flex-[1.2]"
                     >
                       {isSubmitting ? 'Processing…' : 'Approve'}
                     </button>

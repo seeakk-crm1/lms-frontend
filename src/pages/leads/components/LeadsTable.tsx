@@ -1,7 +1,7 @@
 import React, { memo, useMemo } from 'react';
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Pencil, Trash2 } from 'lucide-react';
+import { Archive, ChevronLeft, ChevronRight, Pencil } from 'lucide-react';
 import type { LeadListItem } from '../../../types/lead.types';
 import FollowUpBadge from './FollowUpBadge';
 
@@ -148,10 +148,10 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
                       <button
                         type="button"
                         onClick={() => onDelete(lead)}
-                        className="rounded-2xl bg-rose-50 p-2 text-rose-600 transition-all hover:bg-rose-100"
+                        className="rounded-2xl bg-amber-50 p-2 text-amber-600 transition-all hover:bg-amber-100"
                         aria-label={`Archive ${lead.name}`}
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Archive className="h-4 w-4" />
                       </button>
                     </div>
                   </td>

@@ -7,10 +7,9 @@ import SearchableSelect from '../../../components/SearchableSelect';
 import useAuthStore from '../../../store/useAuthStore';
 import { useCreateLOBReason } from '../hooks/useCreateLOBReason';
 import { useLOBReasonsQuery } from '../hooks/useLOBReasonsQuery';
-import { useDeleteLOBReason, useToggleLOBReason } from '../hooks/useToggleLOBReason';
+import { useToggleLOBReason } from '../hooks/useToggleLOBReason';
 import { useUpdateLOBReason } from '../hooks/useUpdateLOBReason';
 import useLOBStore from '../store/lobReasonStore';
-import DeleteLOBReasonModal from '../components/DeleteLOBReasonModal';
 import LOBReasonTable from '../components/LOBReasonTable';
 import type { LOBReason, LOBReasonPayload, LOBReasonStatus } from '../types/lobReason.types';
 
@@ -34,17 +33,16 @@ const LOBReasonsPage: React.FC = () => {
   const [searchDraft, setSearchDraft] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalReason, setModalReason] = useState<LOBReason | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<LOBReason | null>(null);
 
   const { user } = useAuthStore();
-  const { search, status, setSearch, setStatus, resetFilters } = useLOBStore();
+  const { search, status, page, setSearch, setStatus, resetFilters, setPage } = useLOBStore();
   const reasonsQuery = useLOBReasonsQuery();
   const createMutation = useCreateLOBReason();
   const updateMutation = useUpdateLOBReason();
   const toggleMutation = useToggleLOBReason();
-  const deleteMutation = useDeleteLOBReason();
 
-  const canManage = ['admin', 'superadmin'].includes(roleKey(user?.role));
+  const normalizedRole = roleKey(user?.role);
+  const canManage = ['admin', 'superadmin'].includes(normalizedRole);
 
   useEffect(() => {
     setSearchDraft(search);
@@ -126,7 +124,7 @@ const LOBReasonsPage: React.FC = () => {
                       setModalReason(null);
                       setIsModalOpen(true);
                     }}
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-500 px-5 py-3 text-sm font-black text-white shadow-[0_18px_40px_-18px_rgba(16,185,129,0.8)] transition-all hover:bg-emerald-600 sm:w-auto"
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-500 px-5 py-3 text-sm font-black text-white shadow-[0_18px_40px_-18px_rgba(16,185,129,0.8)] transition-all hover:bg-emerald-600 sm:col-span-2 xl:col-span-1"
                   >
                     <Plus className="h-4 w-4" />
                     Create Reason
@@ -154,7 +152,7 @@ const LOBReasonsPage: React.FC = () => {
                     setSearchDraft('');
                     resetFilters();
                   }}
-                  className="text-sm font-black text-gray-500 transition-colors hover:text-gray-900"
+                  className="rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-black text-gray-700 shadow-sm transition-colors hover:bg-gray-50"
                 >
                   Reset
                 </button>
@@ -174,22 +172,47 @@ const LOBReasonsPage: React.FC = () => {
                 </div>
               </div>
 
-              <LOBReasonTable
-                rows={rows}
-                loading={reasonsQuery.isLoading}
-                canManage={canManage}
-                onEdit={(item) => {
-                  setModalReason(item);
-                  setIsModalOpen(true);
-                }}
-                onToggleStatus={(item) =>
-                  toggleMutation.mutate({
-                    id: item.id,
-                    status: item.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE',
-                  })
-                }
-                onDelete={(item) => setDeleteTarget(item)}
-              />
+                <LOBReasonTable
+                  rows={rows}
+                  loading={reasonsQuery.isLoading}
+                  canManage={canManage}
+                  onEdit={(item) => {
+                    setModalReason(item);
+                    setIsModalOpen(true);
+                  }}
+                  onToggleStatus={(item) =>
+                    toggleMutation.mutate({
+                      id: item.id,
+                      status: item.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE',
+                    })
+                  }
+                />
+
+                {pagination && pagination.totalPages > 1 ? (
+                  <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="text-sm font-semibold text-gray-500">
+                      Page {pagination.page} of {pagination.totalPages}
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
+                      <button
+                        type="button"
+                        disabled={page <= 1}
+                        onClick={() => setPage(page - 1)}
+                        className="rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-black text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        Previous
+                      </button>
+                      <button
+                        type="button"
+                        disabled={page >= pagination.totalPages}
+                        onClick={() => setPage(page + 1)}
+                        className="rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-black text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
             </section>
           </div>
         </div>
@@ -207,18 +230,6 @@ const LOBReasonsPage: React.FC = () => {
           isSubmitting={createMutation.isPending || updateMutation.isPending}
         />
       </Suspense>
-
-      <DeleteLOBReasonModal
-        open={Boolean(deleteTarget)}
-        reason={deleteTarget}
-        isDeleting={deleteMutation.isPending}
-        onClose={() => setDeleteTarget(null)}
-        onConfirm={async () => {
-          if (!deleteTarget) return;
-          await deleteMutation.mutateAsync(deleteTarget.id);
-          setDeleteTarget(null);
-        }}
-      />
     </div>
   );
 };

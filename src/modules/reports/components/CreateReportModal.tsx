@@ -21,6 +21,8 @@ interface CreateReportModalProps {
 
 type DraftFilterState = Record<AllowedReportFilterKey, { scalar: string; from: string; to: string }>;
 
+const EMPTY_ALLOWED_FILTERS: AllowedReportFilterKey[] = [];
+
 const filterLabels: Record<AllowedReportFilterKey, string> = {
   stage: 'Stage',
   assignee: 'Assignee',
@@ -57,7 +59,10 @@ const CreateReportModal: React.FC<CreateReportModalProps> = ({
     [reportTypeId, reportTypes],
   );
 
-  const allowedFilters = selectedReportType?.allowedFilters || [];
+  const allowedFilters = useMemo(
+    () => (selectedReportType?.allowedFilters ? [...selectedReportType.allowedFilters] : EMPTY_ALLOWED_FILTERS),
+    [selectedReportType?.allowedFilters],
+  );
 
   useEffect(() => {
     if (!open) return;
@@ -98,9 +103,23 @@ const CreateReportModal: React.FC<CreateReportModalProps> = ({
   }, [open, report]);
 
   useEffect(() => {
-    setFilterDraft((current) =>
-      Object.fromEntries(Object.entries(current).filter(([key]) => allowedFilters.includes(key as AllowedReportFilterKey))) as DraftFilterState,
-    );
+    setFilterDraft((current) => {
+      const next = Object.fromEntries(
+        Object.entries(current).filter(([key]) => allowedFilters.includes(key as AllowedReportFilterKey)),
+      ) as DraftFilterState;
+
+      const currentKeys = Object.keys(current).sort();
+      const nextKeys = Object.keys(next).sort();
+
+      if (
+        currentKeys.length === nextKeys.length &&
+        currentKeys.every((key, index) => key === nextKeys[index])
+      ) {
+        return current;
+      }
+
+      return next;
+    });
   }, [allowedFilters]);
 
   const handleSubmit = async () => {

@@ -84,7 +84,7 @@ const buildAllowedStageMap = (lifeCycle: any) => {
 const getSelectOptions = (items: LeadOption[]) => items.map((item) => ({ value: item.id, label: item.label }));
 
 const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onClose }) => {
-  const { data: meta, isLoading: metaLoading } = useLeadMetaQuery();
+  const { data: meta, isLoading: metaLoading } = useLeadMetaQuery(isOpen);
   const { data: leadDetails, isLoading: leadLoading } = useLeadDetailQuery(lead?.id, isOpen && mode === 'edit');
   const setDynamicFields = useLeadStore((state) => state.setDynamicFields);
   const createMutation = useCreateLeadMutation();
@@ -234,6 +234,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
 
     const dynamicPayload = buildDynamicPayload(formValues.dynamicValues, meta?.dynamicFields || []);
     const stageChanged = mode === 'edit' && Boolean(formValues.stageId) && formValues.stageId !== previousStageId;
+    const shouldUseStageTransitionFlow = stageChanged && Boolean(previousStageId);
 
     try {
       if (mode === 'create') {
@@ -247,17 +248,17 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
             phone: formValues.phone.trim() || null,
             expectedRevenue: formValues.expectedRevenue ? Number(formValues.expectedRevenue) : null,
             assignedToId: formValues.assignedToId || null,
-            stageId: stageChanged ? undefined : formValues.stageId || null,
+            stageId: shouldUseStageTransitionFlow ? undefined : formValues.stageId || null,
             lifecycleId: formValues.lifecycleId || null,
             sourceId: formValues.sourceId || null,
             nextFollowUpAt: formValues.nextFollowUpAt ? new Date(formValues.nextFollowUpAt).toISOString() : null,
-            reasonId: stageChanged ? undefined : formValues.reasonId.trim() || null,
-            remarks: stageChanged ? undefined : formValues.remarks.trim() || null,
+            reasonId: shouldUseStageTransitionFlow ? undefined : formValues.reasonId.trim() || null,
+            remarks: shouldUseStageTransitionFlow ? undefined : formValues.remarks.trim() || null,
           },
           dynamicValues: dynamicPayload,
         });
 
-        if (stageChanged) {
+        if (shouldUseStageTransitionFlow) {
           await changeStageMutation.mutateAsync({
             id: lead.id,
             payload: {

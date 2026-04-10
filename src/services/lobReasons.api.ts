@@ -1,5 +1,10 @@
 import api from './api';
-import type { LOBReasonListResponse, LOBReasonPayload, LOBReasonStatus } from '../modules/lob-reasons/types/lobReason.types';
+import type {
+  ActiveLOBReasonOption,
+  LOBReasonListResponse,
+  LOBReasonPayload,
+  LOBReasonStatus,
+} from '../modules/lob-reasons/types/lobReason.types';
 
 export const getLOBReasons = async (params: {
   page?: number;
@@ -21,6 +26,11 @@ export const getLOBReasons = async (params: {
 
 export const createLOBReason = async (payload: LOBReasonPayload) => {
   const response = await api.post('/lob-reasons', payload);
+  return response.data;
+};
+
+export const getActiveLOBReasons = async (): Promise<{ success: boolean; data: ActiveLOBReasonOption[] }> => {
+  const response = await api.get('/lob-reasons/active');
   return response.data;
 };
 

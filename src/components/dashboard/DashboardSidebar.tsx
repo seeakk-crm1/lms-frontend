@@ -57,7 +57,7 @@ const sidebarMenus: SidebarSection[] = [
                     { label: 'Calendar', path: '/calendar' },
                     { label: 'Holiday List', path: '/admin/holidays' },
                     { label: 'Report Types', path: '/admin/report-types' },
-                    { label: 'LOB Reasons', path: '#' }
+                    { label: 'LOB Reasons', path: '/admin/lob-reasons' }
                 ]
             }
         ]

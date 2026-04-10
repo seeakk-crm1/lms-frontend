@@ -39,6 +39,8 @@ import PendingApprovalPage from './pages/admin/PendingApprovalPage';
 import LocationsPage from './modules/locations/LocationsPage';
 import ReportTypePage from './modules/report-types/pages/ReportTypePage';
 import ReportsPage from './modules/reports/ReportsPage';
+import LOBAnalysisPage from './modules/lob-analysis/LOBAnalysisPage';
+import LOBReasonsPage from './modules/lob-reasons/pages/LOBReasonsPage';
 
 interface RouteProps {
   children: ReactNode;
@@ -255,9 +257,21 @@ function App() {
           </ProtectedRoute>
         } />
 
+        <Route path="/admin/lob-reasons" element={
+          <ProtectedRoute>
+            <LOBReasonsPage />
+          </ProtectedRoute>
+        } />
+
         <Route path="/reports" element={
           <ProtectedRoute>
             <ReportsPage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/lob-analysis" element={
+          <ProtectedRoute>
+            <LOBAnalysisPage />
           </ProtectedRoute>
         } />
 

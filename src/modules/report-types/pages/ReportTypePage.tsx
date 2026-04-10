@@ -75,29 +75,46 @@ const ResultTable: React.FC<{ rows: Array<Record<string, unknown>> }> = ({ rows 
   }
 
   return (
-    <div className="overflow-x-auto rounded-3xl border border-gray-100">
-      <table className="min-w-full bg-white">
-        <thead className="bg-gray-50">
-          <tr className="text-left text-[11px] font-black uppercase tracking-[0.18em] text-gray-400">
-            {columns.map((column) => (
-              <th key={column} className="px-4 py-3">
-                {column}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row, rowIndex) => (
-            <tr key={rowIndex} className="border-t border-gray-100 text-sm font-semibold text-gray-700">
+    <div>
+      <div className="hidden overflow-x-auto rounded-3xl border border-gray-100 md:block">
+        <table className="min-w-full bg-white">
+          <thead className="bg-gray-50">
+            <tr className="text-left text-[11px] font-black uppercase tracking-[0.18em] text-gray-400">
               {columns.map((column) => (
-                <td key={column} className="px-4 py-3">
-                  {String(row[column] ?? '-')}
-                </td>
+                <th key={column} className="px-4 py-3">
+                  {column}
+                </th>
               ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {rows.map((row, rowIndex) => (
+              <tr key={rowIndex} className="border-t border-gray-100 text-sm font-semibold text-gray-700">
+                {columns.map((column) => (
+                  <td key={column} className="px-4 py-3">
+                    {String(row[column] ?? '-')}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="grid gap-4 md:hidden">
+        {rows.map((row, rowIndex) => (
+          <div key={rowIndex} className="rounded-3xl border border-gray-100 bg-white p-4 shadow-sm">
+            <div className="grid gap-3">
+              {columns.map((column) => (
+                <div key={column}>
+                  <div className="text-[11px] font-black uppercase tracking-[0.18em] text-gray-400">{column}</div>
+                  <div className="mt-1 text-sm font-semibold text-gray-700 break-words">{String(row[column] ?? '-')}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
@@ -310,7 +327,7 @@ const ReportTypePage: React.FC = () => {
                       setModalReportType(null);
                       setIsModalOpen(true);
                     }}
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-500 px-5 py-3 text-sm font-black text-white shadow-[0_18px_40px_-18px_rgba(16,185,129,0.8)] transition-all hover:bg-emerald-600 sm:w-auto"
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-500 px-5 py-3 text-sm font-black text-white shadow-[0_18px_40px_-18px_rgba(16,185,129,0.8)] transition-all hover:bg-emerald-600 sm:col-span-2 xl:col-span-1"
                   >
                     <Plus className="h-4 w-4" />
                     Add Report Type
@@ -340,7 +357,7 @@ const ReportTypePage: React.FC = () => {
               ) : null}
             </div>
 
-            <div className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm">
+            <div className="rounded-3xl border border-gray-100 bg-white p-4 shadow-sm sm:p-6">
               <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <h2 className="text-xl font-black text-gray-900">Report Types</h2>
@@ -392,7 +409,7 @@ const ReportTypePage: React.FC = () => {
                   <div className="text-sm font-semibold text-gray-500">
                     Page {pagination.page} of {pagination.totalPages}
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
                     <button
                       type="button"
                       disabled={page <= 1}
@@ -415,7 +432,7 @@ const ReportTypePage: React.FC = () => {
             </div>
 
             <div className="grid gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
-              <div className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm">
+              <div className="rounded-3xl border border-gray-100 bg-white p-4 shadow-sm sm:p-6">
                 <div className="mb-4 flex items-center gap-2">
                   <Sparkles className="h-4 w-4 text-emerald-500" />
                   <span className="text-[11px] font-black uppercase tracking-[0.22em] text-emerald-600">Report Usage Flow</span>
@@ -538,7 +555,7 @@ const ReportTypePage: React.FC = () => {
                 )}
               </div>
 
-              <div className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm">
+              <div className="rounded-3xl border border-gray-100 bg-white p-4 shadow-sm sm:p-6">
                 <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <h3 className="text-xl font-black text-gray-900">Generated Results</h3>
