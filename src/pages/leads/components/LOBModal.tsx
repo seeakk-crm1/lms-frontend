@@ -37,8 +37,8 @@ const LOBModal: React.FC<LOBModalProps> = ({
   }, [initialReasonId, initialRemarks, isOpen]);
 
   const handleConfirm = () => {
-    if (!reasonId.trim() || !remarks.trim()) {
-      setError('LOB reason and remarks are both required.');
+    if (!reasonId.trim()) {
+      setError('LOB reason is required.');
       return;
     }
 
@@ -71,7 +71,7 @@ const LOBModal: React.FC<LOBModalProps> = ({
               </div>
               <h3 className="text-xl font-black text-gray-900">Capture the LOB context before moving ahead</h3>
               <p className="mt-1 text-sm font-semibold text-gray-500">
-                This stage change is treated as a final pipeline event, so we need a reason and remarks for the audit trail.
+                This stage change is treated as a final pipeline event, so we need a reason for the audit trail. Remarks are optional but recommended.
               </p>
             </div>
 
@@ -88,7 +88,7 @@ const LOBModal: React.FC<LOBModalProps> = ({
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-black text-gray-900">Remarks</label>
+                <label className="mb-2 block text-sm font-black text-gray-900">Remarks <span className="text-xs font-semibold text-gray-400">(Optional)</span></label>
                 <textarea
                   rows={4}
                   value={remarks}

@@ -48,6 +48,40 @@ const patchLeadInListResponse = (
   };
 };
 
+const insertLeadIntoListResponse = (
+  previous: ListLeadsResponse | undefined,
+  nextLead: LeadMutationResponse['data'],
+): ListLeadsResponse | undefined => {
+  if (!previous) return previous;
+  if (previous.leads.some((lead) => lead.id === nextLead.id)) {
+    return patchLeadInListResponse(previous, nextLead);
+  }
+
+  const nextLeads = [nextLead, ...previous.leads];
+  const trimmedLeads = nextLeads.slice(0, previous.pagination.limit);
+
+  return {
+    ...previous,
+    leads: trimmedLeads,
+    pagination: {
+      ...previous.pagination,
+      total: previous.pagination.total + 1,
+      totalPages: Math.max(1, Math.ceil((previous.pagination.total + 1) / previous.pagination.limit)),
+      hasNext: previous.pagination.total + 1 > previous.pagination.limit ? true : previous.pagination.hasNext,
+    },
+  };
+};
+
+const queryLooksUnfiltered = (queryKey: readonly unknown[]) => {
+  const [, search, filters, page] = queryKey;
+
+  if (search) return false;
+  if (page !== 1) return false;
+  if (!filters || typeof filters !== 'object' || Array.isArray(filters)) return true;
+
+  return Object.values(filters).every((value) => value === undefined || value === '');
+};
+
 const removeLeadFromListResponse = (
   previous: ListLeadsResponse | undefined,
   leadId: string,
@@ -175,6 +209,14 @@ export const useCreateLeadMutation = () => {
       };
     },
     onSuccess: (response) => {
+      queryClient
+        .getQueriesData<ListLeadsResponse>({ queryKey: ['leads'] })
+        .forEach(([queryKey]) => {
+          if (!Array.isArray(queryKey) || !queryLooksUnfiltered(queryKey)) return;
+          queryClient.setQueryData<ListLeadsResponse>(queryKey, (previous) =>
+            insertLeadIntoListResponse(previous, response.data),
+          );
+        });
       queryClient.invalidateQueries({ queryKey: ['leads'] });
       queryClient.invalidateQueries({ queryKey: ['followups'] });
       if (response.dynamicValuesSaved === false) {

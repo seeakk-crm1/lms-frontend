@@ -70,6 +70,27 @@ const buildDynamicPayload = (
     })
     .filter((item) => item.value.length > 0);
 
+const getMissingRequiredDynamicField = (
+  values: Record<string, string | string[]>,
+  fields: LeadDynamicField[],
+): LeadDynamicField | null => {
+  for (const field of fields) {
+    if (!field.isRequired) continue;
+
+    const rawValue = values[field.id];
+    if (Array.isArray(rawValue)) {
+      if (rawValue.length === 0) return field;
+      continue;
+    }
+
+    if (!rawValue || rawValue.trim().length === 0) {
+      return field;
+    }
+  }
+
+  return null;
+};
+
 const buildAllowedStageMap = (lifeCycle: any) => {
   const map = new Map<string, Set<string>>();
   const transitions = lifeCycle?.transitions || [];
@@ -211,10 +232,18 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
     }
 
     const selectedStage = stageOptions.find((item) => item.id === formValues.stageId);
-    if (isLobStageOption(selectedStage) && (!formValues.reasonId.trim() || !formValues.remarks.trim())) {
+    if (isLobStageOption(selectedStage) && !formValues.reasonId.trim()) {
       setPendingStageId(formValues.stageId);
       setLobModalOpen(true);
       return;
+    }
+
+    if (mode === 'create') {
+      const missingRequiredField = getMissingRequiredDynamicField(formValues.dynamicValues, meta?.dynamicFields || []);
+      if (missingRequiredField) {
+        toast.error(`${missingRequiredField.name} is required.`);
+        return;
+      }
     }
 
     const payload = {
@@ -521,7 +550,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
                             />
                           </div>
                           <div>
-                            <label className="mb-2 block text-sm font-black text-gray-900">Remarks</label>
+                            <label className="mb-2 block text-sm font-black text-gray-900">Remarks <span className="text-xs font-semibold text-gray-400">(Optional)</span></label>
                             <textarea
                               rows={4}
                               value={formValues.remarks}
