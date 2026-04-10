@@ -54,10 +54,10 @@ const sidebarMenus: SidebarSection[] = [
                     { label: 'Lead Dynamic Forms', path: '/admin/lead-dynamics' },
                     { label: 'Office Locations', path: '/admin/offices' },
                     { label: 'Lead Life Cycle', path: '/admin/lead-life-cycles' },
-                    { label: 'Calendar', path: '#' },
-                    { label: 'Holiday List', path: '#' },
-                    { label: 'Report Types', path: '#' },
-                    { label: 'LOB Reasons', path: '#' }
+                    { label: 'Calendar', path: '/calendar' },
+                    { label: 'Holiday List', path: '/admin/holidays' },
+                    { label: 'Report Types', path: '/admin/report-types' },
+                    { label: 'LOB Reasons', path: '/admin/lob-reasons' }
                 ]
             }
         ]
@@ -68,10 +68,10 @@ const sidebarMenus: SidebarSection[] = [
             {
                 icon: Briefcase, label: 'Leads',
                 subItems: [
-                    { label: 'All Leads', path: '#' },
-                    { label: 'Closed Leads', path: '#' },
-                    { label: 'Bulk Assign', path: '#' },
-                    { label: 'Pending Approval', path: '#' }
+                    { label: 'All Leads', path: '/leads' },
+                    { label: 'Closed Leads', path: '/leads/closed' },
+                    { label: 'Bulk Assign', path: '/leads/bulk-assign' },
+                    { label: 'Pending Approval', path: '/leads/pending-approval' },
                 ]
             },
             { icon: FileText, label: 'Reports', path: '/reports' },

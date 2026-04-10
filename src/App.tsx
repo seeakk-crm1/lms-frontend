@@ -29,6 +29,18 @@ import TargetCyclePage from './modules/admin/target-cycle/TargetCyclePage';
 import LeadDynamicsPage from './modules/admin/lead-dynamics/LeadDynamicsPage';
 import OfficePage from './pages/admin/office/OfficePage';
 import LeadLifeCyclePage from './pages/admin/lead-life-cycle/LeadLifeCyclePage';
+import HolidayPage from './pages/admin/holidays/HolidayPage';
+import CalendarPage from './pages/calendar/CalendarPage';
+import TodayFollowUps from './pages/calendar/TodayFollowUps';
+import LeadsPage from './pages/leads/LeadsPage';
+import ClosedLeadsPage from './pages/leads/ClosedLeadsPage';
+import BulkAssignPage from './pages/leads/BulkAssignPage';
+import PendingApprovalPage from './pages/admin/PendingApprovalPage';
+import LocationsPage from './modules/locations/LocationsPage';
+import ReportTypePage from './modules/report-types/pages/ReportTypePage';
+import ReportsPage from './modules/reports/ReportsPage';
+import LOBAnalysisPage from './modules/lob-analysis/LOBAnalysisPage';
+import LOBReasonsPage from './modules/lob-reasons/pages/LOBReasonsPage';
 
 interface RouteProps {
   children: ReactNode;
@@ -218,6 +230,78 @@ function App() {
         <Route path="/admin/lead-life-cycles" element={
           <ProtectedRoute>
             <LeadLifeCyclePage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/calendar" element={
+          <ProtectedRoute>
+            <CalendarPage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/calendar/today" element={
+          <ProtectedRoute>
+            <TodayFollowUps />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/admin/holidays" element={
+          <ProtectedRoute>
+            <HolidayPage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/admin/report-types" element={
+          <ProtectedRoute>
+            <ReportTypePage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/admin/lob-reasons" element={
+          <ProtectedRoute>
+            <LOBReasonsPage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/reports" element={
+          <ProtectedRoute>
+            <ReportsPage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/lob-analysis" element={
+          <ProtectedRoute>
+            <LOBAnalysisPage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/leads" element={
+          <ProtectedRoute>
+            <LeadsPage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/leads/closed" element={
+          <ProtectedRoute>
+            <ClosedLeadsPage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/leads/bulk-assign" element={
+          <ProtectedRoute>
+            <BulkAssignPage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/leads/pending-approval" element={
+          <ProtectedRoute>
+            <PendingApprovalPage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/locations" element={
+          <ProtectedRoute>
+            <LocationsPage />
           </ProtectedRoute>
         } />
 

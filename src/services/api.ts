@@ -9,6 +9,7 @@ interface CustomAxiosRequestConfig extends InternalAxiosRequestConfig {
 
 const api = axios.create({
     baseURL: API_URL,
+    withCredentials: true,
     headers: {
         'Content-Type': 'application/json',
     },
@@ -39,6 +40,7 @@ api.interceptors.request.use(
 // Lock flags to prevent parallel refreshes firing
 let isRefreshing = false;
 let failedQueue: Array<{ resolve: (token: string) => void; reject: (error: any) => void }> = [];
+let isRedirectingToLogin = false;
 
 const processQueue = (error: any, token: string | null = null) => {
     failedQueue.forEach((prom) => {
@@ -49,6 +51,27 @@ const processQueue = (error: any, token: string | null = null) => {
         }
     });
     failedQueue = [];
+};
+
+const redirectToLogin = () => {
+    if (typeof window === 'undefined' || isRedirectingToLogin) return;
+    isRedirectingToLogin = true;
+
+    const currentPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    const alreadyOnLogin = window.location.pathname === '/login';
+
+    if (alreadyOnLogin) {
+        isRedirectingToLogin = false;
+        return;
+    }
+
+    const next = encodeURIComponent(currentPath);
+    window.location.replace(`/login?next=${next}&reason=session-expired`);
+};
+
+const clearExpiredSession = () => {
+    useAuthStore.getState().clearAuth();
+    redirectToLogin();
 };
 
 api.interceptors.response.use(
@@ -88,13 +111,13 @@ api.interceptors.response.use(
             const refreshToken = localStorage.getItem('refreshToken');
 
             if (!refreshToken) {
-                useAuthStore.getState().logout();
+                clearExpiredSession();
                 return Promise.reject(error);
             }
 
             return new Promise(function (resolve, reject) {
                 axios
-                    .post(`${API_URL}/auth/refresh`, { refreshToken })
+                    .post(`${API_URL}/auth/refresh`, { refreshToken }, { withCredentials: true })
                     .then(({ data }) => {
                         useAuthStore.getState().setAuth(data.user, data.accessToken, data.refreshToken);
                         if (originalRequest.headers) {
@@ -106,7 +129,7 @@ api.interceptors.response.use(
                     .catch((err) => {
                         // Refresh token failed -> Force full logout
                         processQueue(err, null);
-                        useAuthStore.getState().logout();
+                        clearExpiredSession();
                         reject(err);
                     })
                     .finally(() => {

@@ -47,8 +47,8 @@ const Login = () => {
     };
 
     const googleLoginMutation = useMutation<LoginResponse, any, string>({
-        mutationFn: async (token) => {
-            const response = await api.post('/auth/google', { token });
+        mutationFn: async (credential) => {
+            const response = await api.post('/auth/google', { credential });
             return response.data;
         },
         onSuccess: (data) => {
@@ -68,7 +68,10 @@ const Login = () => {
     const handleGoogleSuccess = (credentialResponse: CredentialResponse) => {
         if (credentialResponse.credential) {
             googleLoginMutation.mutate(credentialResponse.credential);
+            return;
         }
+
+        toast.error('Google did not return a credential token.');
     };
 
     const handleGoogleError = () => {

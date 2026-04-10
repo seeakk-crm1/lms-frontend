@@ -4,6 +4,8 @@ export interface LeadLifeCycleTransition {
   fromStageId: string;
   toStageId: string;
   numberOfDays: number;
+  expiryAction: 'AUTO_LOB' | 'WARN_AND_CHOOSE';
+  warningDays: number;
   sortOrder: number;
   workspaceId?: string;
   createdAt?: string;
@@ -56,6 +58,8 @@ export interface LeadLifeCycleFormValues {
     fromStageId: string;
     toStageId: string;
     numberOfDays: number;
+    expiryAction: 'AUTO_LOB' | 'WARN_AND_CHOOSE';
+    warningDays: number;
     sortOrder?: number;
   }>;
 }

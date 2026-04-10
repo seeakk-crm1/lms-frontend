@@ -19,6 +19,8 @@ const transitionSchema = z
       .number()
       .int('Days must be a whole number')
       .min(1, 'Number of days must be greater than 0'),
+    expiryAction: z.enum(['AUTO_LOB', 'WARN_AND_CHOOSE']),
+    warningDays: z.number().int('Warning days must be a whole number').min(0, 'Warning days must be zero or greater'),
     sortOrder: z.number().int().min(1).optional(),
   })
   .superRefine((value, ctx) => {
@@ -27,6 +29,13 @@ const transitionSchema = z
         code: z.ZodIssueCode.custom,
         message: 'From Stage and To Stage must be different',
         path: ['toStageId'],
+      });
+    }
+    if (value.warningDays >= value.numberOfDays) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Warning must be earlier than the expiry day',
+        path: ['warningDays'],
       });
     }
   });
@@ -75,7 +84,7 @@ interface Props {
   onSubmit: (payload: LeadLifeCycleFormValues) => Promise<void> | void;
 }
 
-const getDefaults = (initialData: LeadLifeCycle | null): LeadLifeCycleFormValues => ({
+const getDefaults = (initialData: LeadLifeCycle | null): LeadLifeCycleFormSchemaValues => ({
   name: initialData?.name || '',
   isDefault: initialData?.isDefault || false,
   transitions:
@@ -87,9 +96,11 @@ const getDefaults = (initialData: LeadLifeCycle | null): LeadLifeCycleFormValues
             fromStageId: transition.fromStageId,
             toStageId: transition.toStageId,
             numberOfDays: transition.numberOfDays,
+            expiryAction: transition.expiryAction,
+            warningDays: transition.warningDays ?? 0,
             sortOrder: transition.sortOrder || index + 1,
           }))
-      : [{ fromStageId: '', toStageId: '', numberOfDays: 1, sortOrder: 1 }],
+      : [{ fromStageId: '', toStageId: '', numberOfDays: 1, expiryAction: 'AUTO_LOB', warningDays: 0, sortOrder: 1 }],
 });
 
 const LeadLifeCycleForm: React.FC<Props> = ({
@@ -137,7 +148,7 @@ const LeadLifeCycleForm: React.FC<Props> = ({
 
   const normalizedPreview = useMemo(
     () =>
-      (watchedTransitions || []).map((transition: LeadLifeCycleFormValues['transitions'][number], index: number) => ({
+      (watchedTransitions || []).map((transition: LeadLifeCycleFormSchemaValues['transitions'][number], index: number) => ({
         ...transition,
         sortOrder: transition.sortOrder ?? index + 1,
       })),
@@ -162,6 +173,8 @@ const LeadLifeCycleForm: React.FC<Props> = ({
             fromStageId: transition.fromStageId,
             toStageId: transition.toStageId,
             numberOfDays: Number(transition.numberOfDays),
+            expiryAction: transition.expiryAction,
+            warningDays: Number(transition.warningDays),
             sortOrder: transition.sortOrder || index + 1,
           })),
         };
@@ -199,6 +212,14 @@ const LeadLifeCycleForm: React.FC<Props> = ({
             />
             Set as default life cycle
           </label>
+
+          <div className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3">
+            <p className="text-[10px] font-black uppercase tracking-widest text-amber-700">On Expiry</p>
+            <p className="mt-1 text-sm font-black text-amber-900">Choose what should happen for each stage</p>
+            <p className="mt-1 text-[11px] font-semibold text-amber-800/80">
+              You can auto-move expired leads to LOB, or warn the user first and allow them to extend the deadline.
+            </p>
+          </div>
         </div>
       </div>
 
@@ -219,6 +240,8 @@ const LeadLifeCycleForm: React.FC<Props> = ({
                 fromStageId: '',
                 toStageId: '',
                 numberOfDays: 1,
+                expiryAction: 'AUTO_LOB',
+                warningDays: 0,
                 sortOrder: (watchedTransitions?.length || 0) + 1,
               })
             }
@@ -251,7 +274,7 @@ const LeadLifeCycleForm: React.FC<Props> = ({
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -8 }}
                   layout
-                  className="grid grid-cols-1 gap-3 rounded-xl border border-gray-100 bg-gray-50/50 p-3 md:grid-cols-12"
+                  className="grid grid-cols-1 gap-3 rounded-xl border border-gray-100 bg-gray-50/50 p-3 md:grid-cols-14"
                 >
                   <div className="md:col-span-4">
                     <label className="text-[11px] font-bold text-gray-500">From Stage</label>
@@ -305,6 +328,37 @@ const LeadLifeCycleForm: React.FC<Props> = ({
                     />
                     {rowError?.numberOfDays?.message ? (
                       <p className="mt-1 text-[10px] font-bold text-red-600">{rowError.numberOfDays.message}</p>
+                    ) : null}
+                  </div>
+
+                  <div className="md:col-span-3">
+                    <label className="text-[11px] font-bold text-gray-500">On Expiry</label>
+                    <select
+                      {...register(`transitions.${index}.expiryAction`)}
+                      className={`mt-1.5 w-full rounded-lg border bg-white px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500/20 ${
+                        rowError?.expiryAction ? 'border-red-200' : 'border-gray-200'
+                      }`}
+                    >
+                      <option value="AUTO_LOB">Move to LOB automatically</option>
+                      <option value="WARN_AND_CHOOSE">Warn and allow extension</option>
+                    </select>
+                    {rowError?.expiryAction?.message ? (
+                      <p className="mt-1 text-[10px] font-bold text-red-600">{rowError.expiryAction.message}</p>
+                    ) : null}
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="text-[11px] font-bold text-gray-500">Warn Before</label>
+                    <input
+                      type="number"
+                      min={0}
+                      {...register(`transitions.${index}.warningDays`, { valueAsNumber: true })}
+                      className={`mt-1.5 w-full rounded-lg border bg-white px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500/20 ${
+                        rowError?.warningDays ? 'border-red-200' : 'border-gray-200'
+                      }`}
+                    />
+                    {rowError?.warningDays?.message ? (
+                      <p className="mt-1 text-[10px] font-bold text-red-600">{rowError.warningDays.message}</p>
                     ) : null}
                   </div>
 

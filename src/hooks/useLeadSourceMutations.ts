@@ -54,6 +54,7 @@ export const useCreateLeadSourceMutation = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['lead-sources'] });
+      queryClient.invalidateQueries({ queryKey: ['lead-meta'] });
       toast.success('Lead source created successfully');
     },
   });
@@ -94,6 +95,7 @@ export const useUpdateLeadSourceMutation = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['lead-sources'] });
+      queryClient.invalidateQueries({ queryKey: ['lead-meta'] });
       toast.success('Lead source updated successfully');
     },
   });
@@ -130,6 +132,7 @@ export const useToggleLeadSourceStatus = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['lead-sources'] });
+      queryClient.invalidateQueries({ queryKey: ['lead-meta'] });
       toast.success('Lead source status updated');
     },
   });

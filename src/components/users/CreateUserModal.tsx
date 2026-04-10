@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, User, Target, Save, Loader2, Shield, MapPin, Eye, EyeOff } from 'lucide-react';
-import { useForm, FormProvider, Controller, SubmitHandler } from 'react-hook-form';
+import { X, User, Target, Save, Loader2, Shield } from 'lucide-react';
+import { useForm, FormProvider, SubmitHandler } from 'react-hook-form';
 import { useUsersStore } from '../../store/useUsersStore';
 import {
   useUserDetailQuery,
@@ -13,35 +13,61 @@ import {
   useDepartmentsQuery,
 } from '../../hooks/useUsersQuery';
 import { useCreateUserMutation, useUpdateUserMutation, useAssignTargetMutation } from '../../hooks/useUserMutations';
-import TargetSettings from './TargetSettings';
-import LocationSelector from './LocationSelector';
+import { DEFAULT_PHONE_COUNTRY, PHONE_COUNTRIES, type PhoneCountry } from '../../constants/phoneCountries';
+import CreateUserDetailsTab from './CreateUserDetailsTab';
+import CreateUserAccessTab from './CreateUserAccessTab';
+import CreateUserTargetsTab from './CreateUserTargetsTab';
+import type { UserFormData } from './CreateUserModal.types';
 
 import { toast } from 'react-hot-toast';
 
-interface UserFormData {
-  name: string;
-  username: string;
-  email: string;
-  phone: string;
-  password?: string;
-  confirmPassword?: string;
-  roleId: string;
-  departmentId: string;
-  supervisorId: string;
-  officeId: string;
-  countryId: string;
-  stateId: string;
-  districtId: string;
-  isActive: boolean;
-  assignedLocationIds: string[];
-  // Target fields
-  targetTypeId?: string;
-  cycle?: 'MONTHLY' | 'WEEKLY' | 'QUARTERLY';
-  monthlyTargetLeads?: number;
-  dailyFollowupTarget?: number;
-  revenueTarget?: number;
-  startDate?: string;
-}
+const findPhoneCountryByDialCode = (value?: string): PhoneCountry => {
+  const trimmed = (value || '').trim();
+  const sortedCountries = [...PHONE_COUNTRIES].sort((left, right) => right.dialCode.length - left.dialCode.length);
+  const match = sortedCountries.find((country) => trimmed.startsWith(country.dialCode));
+  return match || DEFAULT_PHONE_COUNTRY;
+};
+
+const toPhoneDigits = (value: string): string => value.replace(/\D/g, '');
+
+const normalizePhoneDigitsForCountry = (value: string, country: PhoneCountry): string => {
+  let digits = toPhoneDigits(value);
+  const dialCodeDigits = country.dialCode.replace('+', '');
+
+  if (digits.startsWith(dialCodeDigits)) {
+    digits = digits.slice(dialCodeDigits.length);
+  }
+
+  if (country.iso === 'IN' && digits.length > 10 && digits.startsWith('0')) {
+    digits = digits.slice(1);
+  }
+
+  return digits.slice(0, country.maxDigits);
+};
+
+const toE164PhoneNumber = (digits: string, country: PhoneCountry): string =>
+  digits ? `${country.dialCode}${digits}` : '';
+
+const formatPhoneInputValue = (value: string, country: PhoneCountry): string => {
+  const digits = normalizePhoneDigitsForCountry(value, country);
+  return country.format(digits);
+};
+
+const getPhoneValidationMessage = (value: string, country: PhoneCountry): string | true => {
+  const trimmed = value.trim();
+  if (!trimmed) return true;
+
+  const digits = normalizePhoneDigitsForCountry(trimmed, country);
+  if (!digits) return 'Enter a phone number.';
+  if (digits.length < country.minDigits) {
+    return `Enter a valid ${country.name} phone number.`;
+  }
+  if (digits.length > country.maxDigits) {
+    return `Phone number is too long for ${country.name}.`;
+  }
+
+  return true;
+};
 
 type CreateUserPayload = {
   name: string;
@@ -63,6 +89,7 @@ const CreateUserModal: React.FC = () => {
   const { isCreateModalOpen, selectedUserId, closeCreateModal } = useUsersStore();
   const [activeTab, setActiveTab] = useState<'details' | 'access' | 'targets'>('details');
   const [showPassword, setShowPassword] = useState(false);
+  const [selectedPhoneCountry, setSelectedPhoneCountry] = useState<PhoneCountry>(DEFAULT_PHONE_COUNTRY);
   
   const { data: userDetail } = useUserDetailQuery(selectedUserId);
   const { data: rolesData } = useRolesQuery();
@@ -104,8 +131,33 @@ const CreateUserModal: React.FC = () => {
     }
   });
 
-  const { reset, handleSubmit, control, watch, formState: { isSubmitting, errors } } = methods;
-  const password = watch('password');
+  const { reset, handleSubmit, watch, setFocus, setValue, clearErrors, formState: { isSubmitting, errors } } = methods;
+  const countryId = watch('countryId');
+  const stateId = watch('stateId');
+
+  const getFieldClassName = (hasError?: boolean) =>
+    `w-full px-4 py-2.5 rounded-xl outline-none transition-all text-sm ${
+      hasError
+        ? 'bg-rose-50 border border-rose-300 text-rose-900 placeholder:text-rose-300 focus:bg-white focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10'
+        : 'bg-gray-50 border border-gray-100 text-gray-900 focus:bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10'
+    }`;
+
+  const getSelectClassName = (hasError?: boolean) =>
+    `w-full px-4 py-2.5 rounded-xl text-sm outline-none transition-all ${
+      hasError
+        ? 'bg-rose-50 border border-rose-300 text-rose-900 focus:bg-white focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10'
+        : 'bg-gray-50 border border-gray-100 text-gray-900 focus:bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10'
+    }`;
+
+  const renderFieldError = (message?: string) =>
+    message ? <p className="text-[11px] text-rose-500 font-bold leading-relaxed">{message}</p> : null;
+
+  const detailsTabErrorCount = ['name', 'username', 'email', 'phone', 'password', 'confirmPassword', 'countryId', 'stateId', 'districtId'].filter(
+    (key) => Boolean(errors[key as keyof typeof errors]),
+  ).length;
+  const accessTabErrorCount = ['roleId', 'departmentId', 'supervisorId', 'officeId', 'assignedLocationIds'].filter(
+    (key) => Boolean(errors[key as keyof typeof errors]),
+  ).length;
 
   const toOptional = (value?: string) => {
     const next = (value || '').trim();
@@ -131,6 +183,7 @@ const CreateUserModal: React.FC = () => {
   useEffect(() => {
     if (userDetail?.user) {
       const u = userDetail.user;
+      setSelectedPhoneCountry(findPhoneCountryByDialCode(u.phone || ''));
       reset({
         name: u.name || '',
         username: u.username || '',
@@ -147,6 +200,7 @@ const CreateUserModal: React.FC = () => {
         assignedLocationIds: u.assignedLocations?.map((l: any) => l.location.id) || [],
       });
     } else if (isCreateModalOpen && !selectedUserId) {
+        setSelectedPhoneCountry(DEFAULT_PHONE_COUNTRY);
         reset({
             name: '',
             username: '',
@@ -166,6 +220,26 @@ const CreateUserModal: React.FC = () => {
         });
     }
   }, [userDetail, reset, isCreateModalOpen, selectedUserId]);
+
+  useEffect(() => {
+    if (!isCreateModalOpen || selectedUserId) return;
+    setSelectedPhoneCountry(DEFAULT_PHONE_COUNTRY);
+  }, [isCreateModalOpen, selectedUserId]);
+
+  useEffect(() => {
+    if (!countryId) {
+      setValue('stateId', '');
+      setValue('districtId', '');
+      clearErrors(['stateId', 'districtId']);
+    }
+  }, [clearErrors, countryId, setValue]);
+
+  useEffect(() => {
+    if (!stateId) {
+      setValue('districtId', '');
+      clearErrors('districtId');
+    }
+  }, [clearErrors, setValue, stateId]);
 
   const onSubmit: SubmitHandler<UserFormData> = async (data) => {
     if (isMutationPending) return;
@@ -257,14 +331,31 @@ const CreateUserModal: React.FC = () => {
     }
 
     const message = (formErrors[firstErrorField]?.message as string) || 'Please fill required fields.';
+    setTimeout(() => setFocus(firstErrorField), 0);
     toast.error(message);
   };
 
   const submitForm = handleSubmit(onSubmit, onInvalid);
 
-  const countries = allLocationsData?.locations?.filter((l: any) => l.type === 'COUNTRY') || [];
-  const states = allLocationsData?.locations?.filter((l: any) => l.type === 'STATE') || [];
-  const districts = allLocationsData?.locations?.filter((l: any) => l.type === 'DISTRICT') || [];
+  const allLocations = allLocationsData?.locations || [];
+  const countries = useMemo(
+    () => allLocations.filter((location: any) => location.type === 'COUNTRY'),
+    [allLocations],
+  );
+  const states = useMemo(
+    () =>
+      allLocations.filter(
+        (location: any) => location.type === 'STATE' && (!countryId || location.parentId === countryId),
+      ),
+    [allLocations, countryId],
+  );
+  const districts = useMemo(
+    () =>
+      allLocations.filter(
+        (location: any) => location.type === 'DISTRICT' && (!stateId || location.parentId === stateId),
+      ),
+    [allLocations, stateId],
+  );
   const departments = Array.isArray(deptsData) ? deptsData : deptsData?.departments || [];
   const safeRoles = (rolesData?.roles || []).map((role: any) => ({
     value: role?.id || role?.name || '',
@@ -278,7 +369,7 @@ const CreateUserModal: React.FC = () => {
   if (!isCreateModalOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4">
       <AnimatePresence>
         <motion.div
             initial={{ opacity: 0 }}
@@ -293,7 +384,7 @@ const CreateUserModal: React.FC = () => {
         initial={{ opacity: 0, scale: 0.9, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.9, y: 20 }}
-        className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+        className="relative w-full max-w-2xl bg-white rounded-[28px] sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[94vh] sm:max-h-[90vh]"
       >
         {/* Header */}
         <div className="p-6 border-b border-gray-50 flex items-center justify-between bg-white sticky top-0 z-10">
@@ -309,7 +400,7 @@ const CreateUserModal: React.FC = () => {
         </div>
 
         {/* Tabs */}
-        <div className="flex bg-gray-50/50 p-1 mx-4 sm:mx-6 mt-4 rounded-2xl border border-gray-100 shrink-0">
+        <div className="flex bg-gray-50/50 p-1 mx-4 sm:mx-6 mt-4 rounded-2xl border border-gray-100 shrink-0 overflow-x-auto">
           {[
             { id: 'details', label: 'Details', fullLabel: 'Personal Details', icon: User },
             { id: 'access', label: 'Access', fullLabel: 'Access Control', icon: Shield },
@@ -323,6 +414,16 @@ const CreateUserModal: React.FC = () => {
               <tab.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               <span className="hidden sm:inline">{tab.fullLabel}</span>
               <span className="sm:hidden">{tab.label}</span>
+              {tab.id === 'details' && detailsTabErrorCount > 0 ? (
+                <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-rose-100 px-1.5 py-0.5 text-[10px] font-black text-rose-600">
+                  {detailsTabErrorCount}
+                </span>
+              ) : null}
+              {tab.id === 'access' && accessTabErrorCount > 0 ? (
+                <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-rose-100 px-1.5 py-0.5 text-[10px] font-black text-rose-600">
+                  {accessTabErrorCount}
+                </span>
+              ) : null}
             </button>
           ))}
         </div>
@@ -333,164 +434,43 @@ const CreateUserModal: React.FC = () => {
             <form id="user-form" onSubmit={submitForm}>
               {/* Tab: Details */}
               <div style={{ display: activeTab === 'details' ? 'block' : 'none' }} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Full Name</label>
-                    <input {...methods.register('name', { required: 'Full name is required' })} className="w-full px-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl focus:bg-white focus:border-emerald-500 outline-none transition-all text-sm" placeholder="John Doe" />
-                    {errors.name && <p className="text-[10px] text-red-500 font-bold">{errors.name.message}</p>}
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Username</label>
-                    <input {...methods.register('username')} className="w-full px-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl focus:bg-white focus:border-emerald-500 outline-none transition-all text-sm" placeholder="johndoe123" />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Email Address</label>
-                    <input {...methods.register('email', { required: 'Email is required' })} className="w-full px-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl focus:bg-white focus:border-emerald-500 outline-none transition-all text-sm" placeholder="john@company.com" />
-                    {errors.email && <p className="text-[10px] text-red-500 font-bold">{errors.email.message}</p>}
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Phone</label>
-                    <input {...methods.register('phone')} className="w-full px-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl focus:bg-white focus:border-emerald-500 outline-none transition-all text-sm" placeholder="+1 (555) 000-0000" />
-                  </div>
-                </div>
-
-                {!selectedUserId && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-1.5 relative">
-                      <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Password</label>
-                      <input 
-                        type={showPassword ? 'text' : 'password'}
-                        {...methods.register('password', { required: !selectedUserId ? 'Password is required' : false })} 
-                        className="w-full px-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl focus:bg-white focus:border-emerald-500 outline-none transition-all text-sm" 
-                      />
-                      <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-9 text-gray-400">
-                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
-                      {errors.password && <p className="text-[10px] text-red-500 font-bold">{errors.password.message}</p>}
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Confirm Password</label>
-                      <input 
-                        type={showPassword ? 'text' : 'password'}
-                        {...methods.register('confirmPassword', { 
-                          validate: (val) => val === password || 'Passwords do not match'
-                        })} 
-                        className="w-full px-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl focus:bg-white focus:border-emerald-500 outline-none transition-all text-sm" 
-                      />
-                      {errors.confirmPassword && <p className="text-[10px] text-red-500 font-bold">{errors.confirmPassword.message}</p>}
-                    </div>
-                  </div>
-                )}
-
-                <div className="h-px bg-gray-100 my-2" />
-                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Permanent Address</p>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-gray-400 uppercase">Country</label>
-                    <select {...methods.register('countryId')} className="w-full px-3 py-2 bg-gray-50 border border-gray-100 rounded-lg text-xs">
-                        <option value="">Select Country</option>
-                        {countries.map((l: any) => <option key={l.id} value={l.id}>{l.name}</option>)}
-                    </select>
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-gray-400 uppercase">State</label>
-                    <select {...methods.register('stateId')} className="w-full px-3 py-2 bg-gray-50 border border-gray-100 rounded-lg text-xs">
-                        <option value="">Select State</option>
-                        {states.map((l: any) => <option key={l.id} value={l.id}>{l.name}</option>)}
-                    </select>
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-gray-400 uppercase">District</label>
-                    <select {...methods.register('districtId')} className="w-full px-3 py-2 bg-gray-50 border border-gray-100 rounded-lg text-xs">
-                        <option value="">Select District</option>
-                        {districts.map((l: any) => <option key={l.id} value={l.id}>{l.name}</option>)}
-                    </select>
-                  </div>
-                </div>
+                <CreateUserDetailsTab
+                  countries={countries}
+                  states={states}
+                  districts={districts}
+                  selectedUserId={selectedUserId}
+                  selectedPhoneCountry={selectedPhoneCountry}
+                  setSelectedPhoneCountry={setSelectedPhoneCountry}
+                  showPassword={showPassword}
+                  setShowPassword={setShowPassword}
+                  detailsTabErrorCount={detailsTabErrorCount}
+                  getFieldClassName={getFieldClassName}
+                  getSelectClassName={getSelectClassName}
+                  renderFieldError={renderFieldError}
+                  normalizePhoneDigitsForCountry={normalizePhoneDigitsForCountry}
+                  toE164PhoneNumber={toE164PhoneNumber}
+                  formatPhoneInputValue={formatPhoneInputValue}
+                  getPhoneValidationMessage={getPhoneValidationMessage}
+                />
               </div>
 
               {/* Tab: Access */}
               <div style={{ display: activeTab === 'access' ? 'block' : 'none' }} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Role</label>
-                    <select {...methods.register('roleId')} className="w-full px-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl text-sm">
-                      <option value="">Select Role</option>
-                      {safeRoles.map((r: any) => <option key={r.value} value={r.value}>{r.label}</option>)}
-                    </select>
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Department</label>
-                    <select {...methods.register('departmentId')} className="w-full px-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl text-sm">
-                      <option value="">Select Department</option>
-                      {safeDepartments.map((d: any) => <option key={d.value} value={d.value}>{d.label}</option>)}
-                    </select>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Supervisor</label>
-                    <select {...methods.register('supervisorId')} className="w-full px-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl text-sm">
-                      <option value="">Select Supervisor</option>
-                      {supervisorsData?.supervisors?.map((s: any) => <option key={s.id} value={s.id}>{s.name} ({s.email})</option>)}
-                    </select>
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Reporting Office</label>
-                    <select {...methods.register('officeId')} className="w-full px-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl text-sm">
-                      <option value="">Select Office</option>
-                      {officesData?.offices?.map((o: any) => <option key={o.id} value={o.id}>{o.name}</option>)}
-                    </select>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-2xl border border-gray-100">
-                    <Controller
-                        name="isActive"
-                        control={control}
-                        render={({ field }) => (
-                            <button 
-                                type="button"
-                                onClick={() => field.onChange(!field.value)}
-                                className={`w-12 h-6 rounded-full transition-colors relative ${field.value ? 'bg-emerald-500' : 'bg-gray-300'}`}
-                            >
-                                <motion.div animate={{ x: field.value ? 24 : 4 }} className="absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm" />
-                            </button>
-                        )}
-                    />
-                    <div>
-                        <p className="text-sm font-bold text-gray-700">Account Active</p>
-                        <p className="text-[10px] text-gray-500">Enable or disable user access immediately</p>
-                    </div>
-                </div>
-
-                <div className="space-y-3">
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-2">
-                    <MapPin className="w-4 h-4" />
-                    Assigned Visibility Boundary
-                  </label>
-                  <Controller
-                    name="assignedLocationIds"
-                    control={control}
-                    render={({ field }) => (
-                      <LocationSelector 
-                        locations={locationTreeData?.tree || []} 
-                        selectedIds={field.value} 
-                        onSelect={field.onChange} 
-                      />
-                    )}
-                  />
-                </div>
+                <CreateUserAccessTab
+                  safeRoles={safeRoles}
+                  safeDepartments={safeDepartments}
+                  supervisorsData={supervisorsData}
+                  officesData={officesData}
+                  locationTreeData={locationTreeData}
+                  accessTabErrorCount={accessTabErrorCount}
+                  getSelectClassName={getSelectClassName}
+                  renderFieldError={renderFieldError}
+                />
               </div>
 
               {/* Tab: Targets */}
               <div style={{ display: activeTab === 'targets' ? 'block' : 'none' }}>
-                <TargetSettings />
+                <CreateUserTargetsTab />
               </div>
             </form>
           </FormProvider>
