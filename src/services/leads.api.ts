@@ -142,6 +142,13 @@ export const exportLeads = async (params: Record<string, unknown>) => {
   return response;
 };
 
+export const bulkDeleteLeads = async (ids: string[], permanent: boolean = false) => {
+  const response = await api.delete('/leads/bulk', {
+    data: { ids, permanent },
+  });
+  return response.data;
+};
+
 export const getClosedLeads = async (params: Record<string, unknown>): Promise<ClosedLeadListResponse> => {
   const response = await api.get('/leads/closed', { params });
   return response.data;
@@ -230,14 +237,14 @@ export const getLeadMeta = async () => {
     getActiveLOBReasons(),
   ]);
 
-  const usersData = getSettledValue(usersResult, { users: [] as any[] });
-  const sourcesData = getSettledValue(sourcesResult, { data: [] as LeadSource[] });
-  const stagesData = getSettledValue(stagesResult, { data: [] as LeadStage[] });
+  const usersData = getSettledValue(usersResult, { users: [] } as any);
+  const sourcesData = getSettledValue(sourcesResult, { data: [] } as any);
+  const stagesData = getSettledValue(stagesResult, { data: [] } as any);
   const lifeCyclesData = getSettledValue(lifeCyclesResult, {
-    data: { lifeCycles: [] as LeadLifeCycle[] },
-  });
-  const dynamicFields = getSettledValue(dynamicFieldsResult, [] as LeadDynamicField[]);
-  const lobReasonsData = getSettledValue(lobReasonsResult, { data: [] as Array<{ id: string; name: string; status: string }> });
+    data: { lifeCycles: [] },
+  } as any);
+  const dynamicFields = getSettledValue(dynamicFieldsResult, [] as any);
+  const lobReasonsData = getSettledValue(lobReasonsResult, { data: [] } as any);
 
   return {
     users: mapUserOptions(usersData?.users || []),

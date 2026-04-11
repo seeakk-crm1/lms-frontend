@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { fetchImportStatus, ImportStatusResponse } from "./import.service";
 import { CheckCircle2, XCircle, Loader2, Download, AlertTriangle } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface ProgressTrackerProps {
   jobId: string;
@@ -8,8 +9,14 @@ interface ProgressTrackerProps {
 }
 
 export default function ProgressTracker({ jobId, onClear }: ProgressTrackerProps) {
+  const queryClient = useQueryClient();
   const [progress, setProgress] = useState<ImportStatusResponse['data'] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [cacheSynced, setCacheSynced] = useState(false);
+
+  useEffect(() => {
+    setCacheSynced(false);
+  }, [jobId]);
 
   useEffect(() => {
     if (!jobId) return;
@@ -48,6 +55,15 @@ export default function ProgressTracker({ jobId, onClear }: ProgressTrackerProps
       clearInterval(interval);
     }
   }, [jobId]);
+
+  useEffect(() => {
+    if (!progress || cacheSynced || progress.status !== 'COMPLETED') return;
+
+    queryClient.invalidateQueries({ queryKey: ['leads'] });
+    queryClient.invalidateQueries({ queryKey: ['lead-meta'] });
+    queryClient.invalidateQueries({ queryKey: ['lead-sources'] });
+    setCacheSynced(true);
+  }, [cacheSynced, progress, queryClient]);
 
   if (error) {
     return (

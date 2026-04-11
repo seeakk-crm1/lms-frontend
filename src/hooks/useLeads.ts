@@ -13,6 +13,7 @@ import {
   getLeadMeta,
   getLeads,
   permanentlyDeleteLead,
+  bulkDeleteLeads,
   saveLeadDynamicValues,
   updateLead,
 } from '../services/leads.api';
@@ -365,6 +366,43 @@ export const usePermanentDeleteLeadMutation = () => {
     },
     onError: (error: any) => {
       toast.error(error?.response?.data?.message || 'Failed to permanently delete lead');
+    },
+  });
+};
+
+export const useBulkDeleteLeadsMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ ids, permanent }: { ids: string[]; permanent?: boolean }) =>
+      bulkDeleteLeads(ids, permanent),
+    onSuccess: (_, variables) => {
+      // Manually filter out the deleted IDs from the cache to ensure UI is correct
+      // even if the server's Redis cache for the list hasn't fully propagated yet.
+      queryClient.setQueriesData<ListLeadsResponse>({ queryKey: ['leads'] }, (previous) => {
+        if (!previous) return previous;
+        const nextLeads = previous.leads.filter((lead) => !variables.ids.includes(lead.id));
+        if (nextLeads.length === previous.leads.length) return previous;
+
+        return {
+          ...previous,
+          leads: nextLeads,
+          pagination: {
+            ...previous.pagination,
+            total: Math.max(0, previous.pagination.total - (previous.leads.length - nextLeads.length)),
+          },
+        };
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['leads'] });
+      queryClient.invalidateQueries({ queryKey: ['followups'] });
+      
+      const count = variables.ids.length;
+      const action = variables.permanent ? 'permanently deleted' : 'archived';
+      toast.success(`${count} leads ${action} successfully`);
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || 'Failed to perform bulk operation');
     },
   });
 };
