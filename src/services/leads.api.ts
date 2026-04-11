@@ -47,8 +47,8 @@ const mapAssignmentPayloadToApi = (payload: BulkAssignPayload) => ({
   assign_to_ids: payload.assignToIds?.length ? payload.assignToIds : undefined,
 });
 
-export const getLeads = async (params: Record<string, unknown>): Promise<ListLeadsResponse> => {
-  const response = await api.get('/leads', { params });
+export const getLeads = async (params: Record<string, unknown>, signal?: AbortSignal): Promise<ListLeadsResponse> => {
+  const response = await api.get('/leads', { params, signal });
   return response.data;
 };
 

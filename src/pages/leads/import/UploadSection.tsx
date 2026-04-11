@@ -49,51 +49,58 @@ export default function UploadSection({ onUploadStart, isUploading }: UploadSect
   };
 
   return (
-    <div className="bg-white border rounded-xl shadow-sm p-6 relative overflow-hidden">
+    <div className="rounded-3xl border border-gray-100 bg-white p-8 shadow-sm relative overflow-hidden">
       {isUploading && (
-        <div className="absolute inset-0 bg-white/60 backdrop-blur-sm z-10 flex items-center justify-center">
-          <p className="font-semibold text-gray-700 bg-white px-4 py-2 rounded-lg shadow-sm border border-gray-200 flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-blue-500 animate-ping"></span>
-            Import currently in progress
+        <div className="absolute inset-0 bg-white/70 backdrop-blur-md z-10 flex items-center justify-center rounded-3xl">
+          <p className="font-bold text-gray-900 bg-white px-6 py-3 rounded-2xl shadow-xl border border-gray-100 flex items-center gap-3">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
+            Import currently in progress...
           </p>
         </div>
       )}
 
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-semibold text-gray-800">Upload Leads</h3>
+      <div className="mb-6 flex items-center gap-2">
+        <UploadCloud className="h-5 w-5 text-emerald-500" />
+        <h3 className="text-sm font-black uppercase tracking-[0.2em] text-gray-900">Upload Data</h3>
       </div>
 
       <div 
         {...getRootProps()} 
-        className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
-          isDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2'
+        className={`border-2 border-dashed rounded-2xl p-10 text-center cursor-pointer transition-all duration-300 ${
+          isDragActive 
+            ? 'border-emerald-500 bg-emerald-50/50 scale-[1.02]' 
+            : 'border-gray-200 hover:border-emerald-400 hover:bg-gray-50 focus:outline-none focus:ring-4 focus:ring-emerald-500/10'
         }`}
       >
         <input {...getInputProps()} />
-        <div className="flex flex-col items-center justify-center gap-3">
+        <div className="flex flex-col items-center justify-center gap-4">
           {file ? (
-            <div className="flex flex-col items-center text-green-600">
-               <FileType className="w-10 h-10 mb-2" />
-               <p className="font-medium">{file.name}</p>
-               <p className="text-xs text-green-500">{(file.size / 1024).toFixed(2)} KB</p>
+            <div className="flex flex-col items-center">
+               <div className="h-16 w-16 rounded-full bg-emerald-100 flex items-center justify-center mb-3">
+                 <FileType className="w-8 h-8 text-emerald-600" />
+               </div>
+               <p className="text-base font-black text-gray-900">{file.name}</p>
+               <p className="mt-1 text-sm font-semibold text-emerald-600">{(file.size / 1024).toFixed(2)} KB</p>
             </div>
           ) : (
             <>
-              <UploadCloud className="w-10 h-10 text-gray-400" />
-              <div className="text-sm text-gray-600">
-                <span className="text-blue-500 font-semibold">Click to upload</span> or drag and drop
+              <div className="h-16 w-16 rounded-full bg-gray-50 flex items-center justify-center mb-1 transition-transform group-hover:scale-110">
+                <UploadCloud className="w-8 h-8 text-gray-400" />
               </div>
-              <p className="text-xs text-gray-500">CSV or Excel (max. 10MB)</p>
+              <div className="text-base text-gray-600 font-semibold mt-2">
+                <span className="text-emerald-500 font-black">Click to select</span> or drag and drop here
+              </div>
+              <p className="text-sm font-medium text-gray-400 mt-1">Accepts CSV or Excel files (max 10MB)</p>
             </>
           )}
         </div>
       </div>
 
-      <div className="mt-6 flex justify-between items-center">
+      <div className="mt-8 flex flex-col sm:flex-row justify-between items-center gap-4">
         <a
           href="/templates/lead_template.csv"
           download="lead_template.csv"
-          className="flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium shadow-sm transition-all text-blue-700 bg-blue-50 border border-blue-200 hover:bg-blue-100 hover:shadow-md"
+          className="flex w-full sm:w-auto items-center justify-center gap-2 px-6 py-3 rounded-2xl text-sm font-black transition-all text-emerald-700 bg-emerald-50 hover:bg-emerald-100"
         >
           <DownloadCloud className="w-4 h-4" />
           Download Template
@@ -101,13 +108,15 @@ export default function UploadSection({ onUploadStart, isUploading }: UploadSect
         <button
           onClick={handleUpload}
           disabled={!file || loading}
-          className={`flex items-center gap-2 px-6 py-2.5 rounded-lg font-medium shadow-sm transition-all text-white
-            ${(!file || loading) ? 'bg-gray-300 cursor-not-allowed text-gray-500' : 'bg-blue-600 hover:bg-blue-700 hover:shadow-md'}`
+          className={`flex w-full sm:w-auto items-center justify-center gap-2 px-8 py-3 rounded-2xl text-sm font-black transition-all
+            ${(!file || loading) 
+              ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+              : 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/25 hover:bg-emerald-600 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-emerald-500/30'}`
           }
         >
           {loading ? (
             <>
-              <svg className="animate-spin h-5 w-5 mr-2" viewBox="0 0 24 24">
+              <svg className="animate-spin h-4 w-4 mr-1 text-white" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
               </svg>
@@ -116,7 +125,7 @@ export default function UploadSection({ onUploadStart, isUploading }: UploadSect
           ) : (
              <>
                <UploadCloud className="w-4 h-4" />
-               Start Upload
+               Start Import Process
              </>
           )}
         </button>

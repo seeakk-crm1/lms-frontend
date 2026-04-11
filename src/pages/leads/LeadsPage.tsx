@@ -233,14 +233,7 @@ const LeadsPage: React.FC = () => {
                 animate={{ opacity: 1, y: 0 }}
                 className="flex flex-col gap-3 sm:flex-row sm:flex-wrap xl:justify-end"
               >
-                <a
-                  href="/templates/lead_template.csv"
-                  download="lead_template.csv"
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-black text-gray-700 shadow-sm transition-all hover:border-emerald-200 hover:text-emerald-600"
-                >
-                  <Download className="h-4 w-4" />
-                  <span>Get Template</span>
-                </a>
+
 
                 <button
                   type="button"

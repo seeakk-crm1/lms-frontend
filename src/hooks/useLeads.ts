@@ -106,7 +106,7 @@ export const useLeadsQuery = () => {
 
   return useQuery<ListLeadsResponse, Error>({
     queryKey: ['leads', search, filters, pagination.page, pagination.limit],
-    queryFn: () =>
+    queryFn: ({ signal }) =>
       getLeads({
         page: pagination.page,
         limit: pagination.limit,
@@ -117,7 +117,7 @@ export const useLeadsQuery = () => {
         status: filters.status || undefined,
         createdFrom: filters.createdFrom || undefined,
         createdTo: filters.createdTo || undefined,
-      }),
+      }, signal),
     staleTime: 60_000,
     gcTime: 300_000,
     refetchOnWindowFocus: false,
