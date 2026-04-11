@@ -25,3 +25,7 @@ export const toggleLeadSourceStatus = async (id: string) => {
   return response.data.data;
 };
 
+export const deleteLeadSource = async (id: string) => {
+  const response = await api.delete(`/master/lead-sources/${id}`);
+  return response.data;
+};

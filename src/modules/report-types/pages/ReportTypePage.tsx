@@ -1,6 +1,7 @@
 import React, { Suspense, lazy, useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { BarChart3, Filter, LayoutList, Plus, Search, Sparkles } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 import DashboardHeader from '../../../components/dashboard/DashboardHeader';
 import DashboardSidebar from '../../../components/dashboard/DashboardSidebar';
 import SearchableSelect from '../../../components/SearchableSelect';
@@ -165,6 +166,22 @@ const ReportTypePage: React.FC = () => {
   );
 
   const handleSave = async (payload: ReportTypePayload) => {
+    if (createMutation.isPending || updateMutation.isPending) {
+      return;
+    }
+
+    const normalizedName = payload.name.trim().toLowerCase();
+    const duplicate = rows.find(
+      (item) =>
+        item.name.trim().toLowerCase() === normalizedName &&
+        item.id !== modalReportType?.id,
+    );
+
+    if (duplicate) {
+      toast.error(`Report type "${payload.name.trim()}" already exists.`);
+      return;
+    }
+
     try {
       if (modalReportType?.id) {
         await updateMutation.mutateAsync({ id: modalReportType.id, payload });

@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { createLeadSource, toggleLeadSourceStatus, updateLeadSource } from '../services/leadSource.api';
+import { createLeadSource, deleteLeadSource, toggleLeadSourceStatus, updateLeadSource } from '../services/leadSource.api';
 import {
   CreateLeadSourceInput,
   LeadSource,
@@ -134,6 +134,47 @@ export const useToggleLeadSourceStatus = () => {
       queryClient.invalidateQueries({ queryKey: ['lead-sources'] });
       queryClient.invalidateQueries({ queryKey: ['lead-meta'] });
       toast.success('Lead source status updated');
+    },
+  });
+};
+
+export const useDeleteLeadSourceMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => deleteLeadSource(id),
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: ['lead-sources'] });
+      const previous = queryClient.getQueriesData<ListLeadSourcesResponse>({ queryKey: ['lead-sources'] });
+
+      queryClient.setQueriesData<ListLeadSourcesResponse>({ queryKey: ['lead-sources'] }, (oldData) => {
+        if (!oldData) return oldData;
+
+        const nextData = oldData.data.filter((item) => item.id !== id);
+        return {
+          ...oldData,
+          data: nextData,
+          pagination: {
+            ...oldData.pagination,
+            total: Math.max(0, oldData.pagination.total - (oldData.data.length - nextData.length)),
+          },
+        };
+      });
+
+      return { previous };
+    },
+    onError: (error: any, _variables, context) => {
+      if (context?.previous) {
+        context.previous.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
+      }
+      toast.error(error?.response?.data?.message || 'Failed to delete lead source');
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['lead-sources'] });
+      queryClient.invalidateQueries({ queryKey: ['lead-meta'] });
+      toast.success('Lead source deleted successfully');
     },
   });
 };

@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Calendar, CheckCircle2, Pencil, Search, User, XCircle } from 'lucide-react';
+import { Calendar, CheckCircle2, Pencil, Search, Trash2, User, XCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { LeadSource } from '../../../types/leadSource.types';
 
@@ -18,6 +18,7 @@ interface LeadSourceTableProps {
   onPageChange: (page: number) => void;
   onEdit: (item: LeadSource) => void;
   onToggleStatus: (id: string) => void;
+  onDelete: (item: LeadSource) => void;
 }
 
 const LeadSourceTable: React.FC<LeadSourceTableProps> = ({
@@ -34,6 +35,7 @@ const LeadSourceTable: React.FC<LeadSourceTableProps> = ({
   onPageChange,
   onEdit,
   onToggleStatus,
+  onDelete,
 }) => {
   const pageButtons = useMemo(() => Array.from({ length: totalPages }, (_, index) => index + 1), [totalPages]);
 
@@ -175,6 +177,13 @@ const LeadSourceTable: React.FC<LeadSourceTableProps> = ({
                       >
                         {item.status === 'ACTIVE' ? 'Deactivate' : 'Activate'}
                       </button>
+                      <button
+                        onClick={() => onDelete(item)}
+                        className="p-2 text-red-500 bg-red-50 hover:bg-red-100 rounded-xl transition-all hover:shadow-md focus:outline-none focus:ring-2 focus:ring-red-500/30"
+                        aria-label={`Delete ${item.name}`}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
                   </td>
                 </motion.tr>
@@ -214,7 +223,7 @@ const LeadSourceTable: React.FC<LeadSourceTableProps> = ({
                   {item.status}
                 </span>
               </div>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-3 gap-2">
                 <button
                   onClick={() => onEdit(item)}
                   className="py-2 rounded-xl text-xs font-black text-blue-600 bg-blue-50 hover:bg-blue-100"
@@ -228,6 +237,13 @@ const LeadSourceTable: React.FC<LeadSourceTableProps> = ({
                   aria-label={`${item.status === 'ACTIVE' ? 'Deactivate' : 'Activate'} ${item.name}`}
                 >
                   {item.status === 'ACTIVE' ? 'Deactivate' : 'Activate'}
+                </button>
+                <button
+                  onClick={() => onDelete(item)}
+                  className="py-2 rounded-xl text-xs font-black text-red-600 bg-red-50 hover:bg-red-100"
+                  aria-label={`Delete ${item.name}`}
+                >
+                  Delete
                 </button>
               </div>
             </div>
@@ -262,4 +278,3 @@ const LeadSourceTable: React.FC<LeadSourceTableProps> = ({
 };
 
 export default React.memo(LeadSourceTable);
-

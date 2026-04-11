@@ -40,8 +40,9 @@ export const useActiveReportTypesQuery = () =>
   useQuery({
     queryKey: ['report-types', 'active', 'reports-page'],
     queryFn: getActiveReportTypes,
-    staleTime: 5 * 60_000,
+    staleTime: 60_000,
     refetchOnWindowFocus: false,
+    refetchOnMount: 'always',
     retry: shouldRetry,
   });
 
