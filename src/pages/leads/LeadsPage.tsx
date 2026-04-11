@@ -1,6 +1,6 @@
 import React, { Suspense, lazy, useCallback, useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Download, Filter, Plus, TrendingUp } from 'lucide-react';
+import { Download, Filter, Plus, TrendingUp, Upload } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useLocation, useNavigate } from 'react-router-dom';
 import DashboardHeader from '../../components/dashboard/DashboardHeader';
@@ -109,6 +109,14 @@ const LeadsPage: React.FC = () => {
       status: filters.status || undefined,
     });
   }, [exportMutation, filters.assignedTo, filters.source, filters.stage, filters.status, search]);
+
+  const handleImportClick = useCallback(() => {
+    navigate('/leads/import');
+  }, [navigate]);
+
+  const handleImportFileChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    // Unused now since Import redirects to its own page, but keeping to avoid TS errors if leftover
+  }, []);
 
   const handleDelete = useCallback(
     (lead: LeadListItem) => {
@@ -225,6 +233,24 @@ const LeadsPage: React.FC = () => {
                 animate={{ opacity: 1, y: 0 }}
                 className="flex flex-col gap-3 sm:flex-row sm:flex-wrap xl:justify-end"
               >
+                <a
+                  href="/templates/lead_template.csv"
+                  download="lead_template.csv"
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-black text-gray-700 shadow-sm transition-all hover:border-emerald-200 hover:text-emerald-600"
+                >
+                  <Download className="h-4 w-4" />
+                  <span>Get Template</span>
+                </a>
+
+                <button
+                  type="button"
+                  onClick={handleImportClick}
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-black text-gray-700 shadow-sm transition-all hover:border-emerald-200 hover:text-emerald-600"
+                >
+                  <Upload className="h-4 w-4" />
+                  <span>Import</span>
+                </button>
+
                 <button
                   type="button"
                   onClick={handleExport}

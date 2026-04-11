@@ -22,22 +22,7 @@ if (!deviceId) {
     localStorage.setItem('deviceId', deviceId);
 }
 
-// Add a request interceptor to attach the access token and device ID
-api.interceptors.request.use(
-    (config: InternalAxiosRequestConfig) => {
-        if (config.headers) {
-            config.headers['x-device-id'] = deviceId as string;
-            const accessToken = localStorage.getItem('accessToken');
-            if (accessToken) {
-                config.headers.Authorization = `Bearer ${accessToken}`;
-            }
-        }
-        return config;
-    },
-    (error) => Promise.reject(error)
-);
-
-// Lock flags to prevent parallel refreshes firing
+// Lock flags to prevent parallel refreshes
 let isRefreshing = false;
 let failedQueue: Array<{ resolve: (token: string) => void; reject: (error: any) => void }> = [];
 let isRedirectingToLogin = false;
@@ -74,6 +59,81 @@ const clearExpiredSession = () => {
     redirectToLogin();
 };
 
+const isTokenExpired = (token: string): boolean => {
+    try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        // Consider token expired if it expires within the next 15 seconds
+        return (payload.exp * 1000) < (Date.now() + 15000);
+    } catch {
+        return true;
+    }
+};
+
+const executeRefresh = async (): Promise<string> => {
+    if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+            failedQueue.push({ resolve, reject });
+        });
+    }
+
+    const refreshToken = localStorage.getItem('refreshToken');
+    if (!refreshToken) {
+        clearExpiredSession();
+        throw new Error('No refresh token available');
+    }
+
+    isRefreshing = true;
+    try {
+        const { data } = await axios.post(`${API_URL}/auth/refresh`, { refreshToken }, { withCredentials: true });
+        useAuthStore.getState().setAuth(data.user, data.accessToken, data.refreshToken);
+        processQueue(null, data.accessToken);
+        return data.accessToken;
+    } catch (err) {
+        processQueue(err, null);
+        clearExpiredSession();
+        throw err;
+    } finally {
+        isRefreshing = false;
+    }
+};
+
+// Add a request interceptor to attach tokens AND proactively refresh
+api.interceptors.request.use(
+    async (config: InternalAxiosRequestConfig) => {
+        if (!config.headers) return config;
+        
+        config.headers['x-device-id'] = deviceId as string;
+        
+        // Skip proactive refresh for auth endpoints
+        if (config.url?.includes('/auth/login') || config.url?.includes('/auth/refresh')) {
+            return config;
+        }
+
+        let accessToken = localStorage.getItem('accessToken');
+        const refreshToken = localStorage.getItem('refreshToken');
+
+        // PROACTIVE REFRESH: If token is expired prior to request, refresh it now!
+        // This explicitly prevents the backend from ever returning a 401.
+        if (accessToken && refreshToken && isTokenExpired(accessToken)) {
+            try {
+                accessToken = await executeRefresh();
+            } catch (err) {
+                // If refresh fails, let the request proceed without token
+                // It will fail, but the session is already cleared and redirecting
+                accessToken = null;
+            }
+        }
+
+        if (accessToken) {
+            config.headers.Authorization = `Bearer ${accessToken}`;
+        }
+        
+        return config;
+    },
+    (error) => Promise.reject(error)
+);
+
+// Add a response interceptor for fallback coverage
 api.interceptors.response.use(
     (response) => response,
     async (error: AxiosError) => {
@@ -83,59 +143,22 @@ api.interceptors.response.use(
             return Promise.reject(error);
         }
 
-        // Skip interceptor if the failed call was the login or refresh call itself
         if (originalRequest.url.includes('/auth/login') || originalRequest.url.includes('/auth/refresh')) {
             return Promise.reject(error);
         }
 
+        // FALLBACK: If somehow the backend still returns 401
         if (error.response?.status === 401 && !originalRequest._retry) {
-            if (isRefreshing) {
-                // If it's already busy refreshing, place failed requests inside the queue
-                return new Promise(function (resolve, reject) {
-                    failedQueue.push({ resolve, reject });
-                })
-                    .then((token) => {
-                        if (originalRequest.headers) {
-                            originalRequest.headers['Authorization'] = 'Bearer ' + token;
-                        }
-                        return api(originalRequest);
-                    })
-                    .catch((err) => {
-                        return Promise.reject(err);
-                    });
-            }
-
             originalRequest._retry = true;
-            isRefreshing = true;
-
-            const refreshToken = localStorage.getItem('refreshToken');
-
-            if (!refreshToken) {
-                clearExpiredSession();
-                return Promise.reject(error);
+            try {
+                const newAccessToken = await executeRefresh();
+                if (originalRequest.headers) {
+                    originalRequest.headers['Authorization'] = `Bearer ${newAccessToken}`;
+                }
+                return api(originalRequest);
+            } catch (err) {
+                return Promise.reject(err);
             }
-
-            return new Promise(function (resolve, reject) {
-                axios
-                    .post(`${API_URL}/auth/refresh`, { refreshToken }, { withCredentials: true })
-                    .then(({ data }) => {
-                        useAuthStore.getState().setAuth(data.user, data.accessToken, data.refreshToken);
-                        if (originalRequest.headers) {
-                            originalRequest.headers['Authorization'] = 'Bearer ' + data.accessToken;
-                        }
-                        processQueue(null, data.accessToken);
-                        resolve(api(originalRequest)); // retry the original request
-                    })
-                    .catch((err) => {
-                        // Refresh token failed -> Force full logout
-                        processQueue(err, null);
-                        clearExpiredSession();
-                        reject(err);
-                    })
-                    .finally(() => {
-                        isRefreshing = false; // Release the lock
-                    });
-            });
         }
 
         return Promise.reject(error);

@@ -137,22 +137,30 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
                   </td>
                   <td className="px-6 py-5">
                     <div className="flex items-center justify-end gap-2 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100">
-                      <button
-                        type="button"
-                        onClick={() => onEdit(lead)}
-                        className="rounded-2xl bg-blue-50 p-2 text-blue-600 transition-all hover:bg-blue-100"
-                        aria-label={`Edit ${lead.name}`}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => onDelete(lead)}
-                        className="rounded-2xl bg-amber-50 p-2 text-amber-600 transition-all hover:bg-amber-100"
-                        aria-label={`Archive ${lead.name}`}
-                      >
-                        <Archive className="h-4 w-4" />
-                      </button>
+                      {lead.deletedAt ? (
+                        <span className="rounded-full bg-gray-100 px-3 py-1 text-[11px] font-black uppercase tracking-wider text-gray-500">
+                          Archived
+                        </span>
+                      ) : (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => onEdit(lead)}
+                            className="rounded-2xl bg-blue-50 p-2 text-blue-600 transition-all hover:bg-blue-100"
+                            aria-label={`Edit ${lead.name}`}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => onDelete(lead)}
+                            className="rounded-2xl bg-amber-50 p-2 text-amber-600 transition-all hover:bg-amber-100"
+                            aria-label={`Archive ${lead.name}`}
+                          >
+                            <Archive className="h-4 w-4" />
+                          </button>
+                        </>
+                      )}
                     </div>
                   </td>
                 </motion.tr>

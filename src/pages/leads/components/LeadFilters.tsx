@@ -17,6 +17,7 @@ const statusOptions = [
   { value: 'OPEN', label: 'Open' },
   { value: 'CLOSED', label: 'Closed' },
   { value: 'LOB', label: 'LOB' },
+  { value: 'ARCHIVED', label: 'Archived' },
 ];
 
 const LeadFilters: React.FC<LeadFiltersProps> = ({
