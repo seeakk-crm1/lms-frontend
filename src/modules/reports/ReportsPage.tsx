@@ -167,12 +167,14 @@ const ReportsPage: React.FC = () => {
   const openCreate = () => {
     setModalMode('create');
     setSelected(null);
+    reportTypesQuery.refetch();
     setIsModalOpen(true);
   };
 
   const openEdit = (report: SavedReport) => {
     setModalMode('edit');
     setSelected(report);
+    reportTypesQuery.refetch();
     setIsModalOpen(true);
   };
 

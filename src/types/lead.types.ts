@@ -59,7 +59,7 @@ export interface LeadFilters {
   stage?: string;
   assignedTo?: string;
   source?: string;
-  status?: 'OPEN' | 'CLOSED' | 'LOB' | 'ACTIVE';
+  status?: 'OPEN' | 'CLOSED' | 'LOB' | 'ACTIVE' | 'ARCHIVED';
   createdFrom?: string;
   createdTo?: string;
 }

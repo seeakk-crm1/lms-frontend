@@ -1,11 +1,11 @@
 import React, { Suspense, lazy, useCallback, useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Download, Filter, Plus, TrendingUp } from 'lucide-react';
+import { Download, Filter, Plus, TrendingUp, Upload } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useLocation, useNavigate } from 'react-router-dom';
 import DashboardHeader from '../../components/dashboard/DashboardHeader';
 import DashboardSidebar from '../../components/dashboard/DashboardSidebar';
-import { useChangeLeadStageMutation, useDeleteLeadMutation, useExportLeads, useExtendLeadSlaMutation, useLeadMetaQuery, useLeadsQuery, usePermanentDeleteLeadMutation } from '../../hooks/useLeads';
+import { useChangeLeadStageMutation, useDeleteLeadMutation, useExportLeads, useExtendLeadSlaMutation, useLeadMetaQuery, useLeadsQuery, usePermanentDeleteLeadMutation, useBulkDeleteLeadsMutation } from '../../hooks/useLeads';
 import useLeadStore from '../../store/leadStore';
 import type { LeadListItem } from '../../types/lead.types';
 import LeadFilters from './components/LeadFilters';
@@ -22,9 +22,14 @@ const LeadsPage: React.FC = () => {
   const [, setMobileMenuOpen] = useState(false);
   const [showFilters, setShowFilters] = useState(true);
   const [searchDraft, setSearchDraft] = useState('');
-  const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; lead: LeadListItem | null }>({
+  const [deleteModal, setDeleteModal] = useState<{ 
+    isOpen: boolean; 
+    lead: LeadListItem | null;
+    isBulk?: boolean;
+  }>({
     isOpen: false,
     lead: null,
+    isBulk: false,
   });
   const [dismissedSlaLeadIds, setDismissedSlaLeadIds] = useState<string[]>([]);
   const [slaModalLead, setSlaModalLead] = useState<LeadListItem | null>(null);
@@ -50,6 +55,7 @@ const LeadsPage: React.FC = () => {
   const exportMutation = useExportLeads();
   const deleteMutation = useDeleteLeadMutation();
   const permanentDeleteMutation = usePermanentDeleteLeadMutation();
+  const bulkDeleteMutation = useBulkDeleteLeadsMutation();
   const changeStageMutation = useChangeLeadStageMutation();
   const extendLeadSlaMutation = useExtendLeadSlaMutation();
 
@@ -110,29 +116,96 @@ const LeadsPage: React.FC = () => {
     });
   }, [exportMutation, filters.assignedTo, filters.source, filters.stage, filters.status, search]);
 
+  const handleImportClick = useCallback(() => {
+    navigate('/leads/import');
+  }, [navigate]);
+
+  const handleImportFileChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    // Unused now since Import redirects to its own page, but keeping to avoid TS errors if leftover
+  }, []);
+
+  const [selectedLeadIds, setSelectedLeadIds] = useState<string[]>([]);
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+
+  // Selection should persist across pages, only reset manually or after a successful action
+  useEffect(() => {
+    if (leads.length === 0 && !isLoading) {
+      setSelectedLeadIds([]);
+      setIsSelectionMode(false);
+    }
+  }, [leads.length, isLoading]);
+
+  const handleToggleSelectionMode = useCallback(() => {
+    setIsSelectionMode((prev) => {
+      if (prev) {
+        setSelectedLeadIds([]);
+      }
+      return !prev;
+    });
+  }, []);
+
+  const handleToggleSelection = useCallback((id: string) => {
+    setSelectedLeadIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  }, []);
+
+  const handleSelectAll = useCallback(() => {
+    const pageIds = (leads || []).map((l) => l.id);
+    const allSelected = pageIds.length > 0 && pageIds.every((id) => selectedLeadIds.includes(id));
+    if (allSelected) {
+      setSelectedLeadIds((prev) => prev.filter((id) => !pageIds.includes(id)));
+    } else {
+      setSelectedLeadIds((prev) => Array.from(new Set([...prev, ...pageIds])));
+    }
+  }, [leads, selectedLeadIds]);
+
+  const handleBulkDeleteOpen = useCallback(() => {
+    if (selectedLeadIds.length === 0) return;
+    setDeleteModal({
+      isOpen: true,
+      lead: null,
+      isBulk: true,
+    });
+  }, [selectedLeadIds.length]);
+
   const handleDelete = useCallback(
     (lead: LeadListItem) => {
-      setDeleteModal({ isOpen: true, lead });
+      setDeleteModal({ isOpen: true, lead, isBulk: false });
     },
     [],
   );
 
   const closeDeleteModal = useCallback(() => {
-    if (deleteMutation.isPending || permanentDeleteMutation.isPending) return;
-    setDeleteModal({ isOpen: false, lead: null });
-  }, [deleteMutation.isPending, permanentDeleteMutation.isPending]);
+    if (deleteMutation.isPending || permanentDeleteMutation.isPending || bulkDeleteMutation.isPending) return;
+    setDeleteModal({ isOpen: false, lead: null, isBulk: false });
+  }, [deleteMutation.isPending, permanentDeleteMutation.isPending, bulkDeleteMutation.isPending]);
 
   const confirmArchive = useCallback(async () => {
-    if (!deleteModal.lead) return;
-    await deleteMutation.mutateAsync(deleteModal.lead.id);
-    setDeleteModal({ isOpen: false, lead: null });
-  }, [deleteModal.lead, deleteMutation]);
+    if (deleteModal.isBulk) {
+      if (selectedLeadIds.length === 0) return;
+      await bulkDeleteMutation.mutateAsync({ ids: selectedLeadIds, permanent: false });
+      setSelectedLeadIds([]);
+      setIsSelectionMode(false);
+      setDeleteModal({ isOpen: false, lead: null, isBulk: false });
+    } else if (deleteModal.lead) {
+      await deleteMutation.mutateAsync(deleteModal.lead.id);
+      setDeleteModal({ isOpen: false, lead: null, isBulk: false });
+    }
+  }, [deleteModal, selectedLeadIds, bulkDeleteMutation, deleteMutation]);
 
   const confirmPermanentDelete = useCallback(async () => {
-    if (!deleteModal.lead) return;
-    await permanentDeleteMutation.mutateAsync(deleteModal.lead.id);
-    setDeleteModal({ isOpen: false, lead: null });
-  }, [deleteModal.lead, permanentDeleteMutation]);
+    if (deleteModal.isBulk) {
+      if (selectedLeadIds.length === 0) return;
+      await bulkDeleteMutation.mutateAsync({ ids: selectedLeadIds, permanent: true });
+      setSelectedLeadIds([]);
+      setIsSelectionMode(false);
+      setDeleteModal({ isOpen: false, lead: null, isBulk: false });
+    } else if (deleteModal.lead) {
+      await permanentDeleteMutation.mutateAsync(deleteModal.lead.id);
+      setDeleteModal({ isOpen: false, lead: null, isBulk: false });
+    }
+  }, [deleteModal, selectedLeadIds, bulkDeleteMutation, permanentDeleteMutation]);
 
   const stats = useMemo(
     () => [
@@ -215,8 +288,24 @@ const LeadsPage: React.FC = () => {
                   <span>Pipeline Control Room</span>
                 </div>
                 <h1 className="text-3xl font-black tracking-tight text-gray-900 md:text-4xl">All Leads</h1>
-                <p className="mt-2 text-sm font-semibold text-gray-500">
-                  Total Count: <span className="font-black text-gray-900">{totalLeads}</span>
+                <p className="mt-2 text-sm font-semibold text-gray-500 flex items-center gap-4">
+                  <span>Total Count: <span className="font-black text-gray-900">{totalLeads}</span></span>
+                  {selectedLeadIds.length > 0 && (
+                    <motion.span 
+                      initial={{ opacity: 0, scale: 0.9 }} 
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="inline-flex items-center gap-3 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-100"
+                    >
+                      <span className="text-xs font-black text-indigo-700">{selectedLeadIds.length} Selected</span>
+                      <button 
+                        onClick={handleBulkDeleteOpen}
+                        disabled={bulkDeleteMutation.isPending}
+                        className="text-xs font-bold text-rose-600 hover:text-rose-700 transition-colors disabled:opacity-50"
+                      >
+                        {bulkDeleteMutation.isPending ? 'Processing...' : 'Delete Selected'}
+                      </button>
+                    </motion.span>
+                  )}
                 </p>
               </motion.div>
 
@@ -225,6 +314,29 @@ const LeadsPage: React.FC = () => {
                 animate={{ opacity: 1, y: 0 }}
                 className="flex flex-col gap-3 sm:flex-row sm:flex-wrap xl:justify-end"
               >
+
+
+                <button
+                  type="button"
+                  onClick={handleToggleSelectionMode}
+                  className={`inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3 text-sm font-black shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500
+                    ${isSelectionMode 
+                      ? 'bg-emerald-100 text-emerald-700 border border-emerald-200 hover:bg-emerald-200' 
+                      : 'border border-gray-200 bg-white text-gray-700 hover:border-emerald-200 hover:text-emerald-600'
+                    }`}
+                >
+                  <span>{isSelectionMode ? 'Cancel Selection' : 'Select'}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleImportClick}
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-black text-gray-700 shadow-sm transition-all hover:border-emerald-200 hover:text-emerald-600"
+                >
+                  <Upload className="h-4 w-4" />
+                  <span>Import</span>
+                </button>
+
                 <button
                   type="button"
                   onClick={handleExport}
@@ -306,7 +418,12 @@ const LeadsPage: React.FC = () => {
               limit={pagination.limit}
               total={pagination.total}
               totalPages={pagination.totalPages}
+              isSelectionMode={isSelectionMode}
+              selectedIds={selectedLeadIds}
+              onToggleSelection={handleToggleSelection}
+              onSelectAll={handleSelectAll}
               onPageChange={(value) => setPagination({ page: value })}
+              onLimitChange={(value) => setPagination({ limit: value, page: 1 })}
               onEdit={openEditDrawer}
               onDelete={handleDelete}
             />
@@ -325,9 +442,9 @@ const LeadsPage: React.FC = () => {
 
       <DeleteLeadModal
         isOpen={deleteModal.isOpen}
-        leadName={deleteModal.lead?.name || 'this lead'}
-        isArchiving={deleteMutation.isPending}
-        isPermanentlyDeleting={permanentDeleteMutation.isPending}
+        leadName={deleteModal.isBulk ? `${selectedLeadIds.length} selected leads` : deleteModal.lead?.name || 'this lead'}
+        isArchiving={!!(deleteMutation.isPending || (deleteModal.isBulk && bulkDeleteMutation.isPending))}
+        isPermanentlyDeleting={!!(permanentDeleteMutation.isPending || (deleteModal.isBulk && bulkDeleteMutation.isPending))}
         onClose={closeDeleteModal}
         onArchive={confirmArchive}
         onPermanentDelete={confirmPermanentDelete}

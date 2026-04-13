@@ -13,6 +13,7 @@ import {
   getLeadMeta,
   getLeads,
   permanentlyDeleteLead,
+  bulkDeleteLeads,
   saveLeadDynamicValues,
   updateLead,
 } from '../services/leads.api';
@@ -48,6 +49,40 @@ const patchLeadInListResponse = (
   };
 };
 
+const insertLeadIntoListResponse = (
+  previous: ListLeadsResponse | undefined,
+  nextLead: LeadMutationResponse['data'],
+): ListLeadsResponse | undefined => {
+  if (!previous) return previous;
+  if (previous.leads.some((lead) => lead.id === nextLead.id)) {
+    return patchLeadInListResponse(previous, nextLead);
+  }
+
+  const nextLeads = [nextLead, ...previous.leads];
+  const trimmedLeads = nextLeads.slice(0, previous.pagination.limit);
+
+  return {
+    ...previous,
+    leads: trimmedLeads,
+    pagination: {
+      ...previous.pagination,
+      total: previous.pagination.total + 1,
+      totalPages: Math.max(1, Math.ceil((previous.pagination.total + 1) / previous.pagination.limit)),
+      hasNext: previous.pagination.total + 1 > previous.pagination.limit ? true : previous.pagination.hasNext,
+    },
+  };
+};
+
+const queryLooksUnfiltered = (queryKey: readonly unknown[]) => {
+  const [, search, filters, page] = queryKey;
+
+  if (search) return false;
+  if (page !== 1) return false;
+  if (!filters || typeof filters !== 'object' || Array.isArray(filters)) return true;
+
+  return Object.values(filters).every((value) => value === undefined || value === '');
+};
+
 const removeLeadFromListResponse = (
   previous: ListLeadsResponse | undefined,
   leadId: string,
@@ -72,7 +107,7 @@ export const useLeadsQuery = () => {
 
   return useQuery<ListLeadsResponse, Error>({
     queryKey: ['leads', search, filters, pagination.page, pagination.limit],
-    queryFn: () =>
+    queryFn: ({ signal }) =>
       getLeads({
         page: pagination.page,
         limit: pagination.limit,
@@ -83,7 +118,7 @@ export const useLeadsQuery = () => {
         status: filters.status || undefined,
         createdFrom: filters.createdFrom || undefined,
         createdTo: filters.createdTo || undefined,
-      }),
+      }, signal),
     staleTime: 60_000,
     gcTime: 300_000,
     refetchOnWindowFocus: false,
@@ -175,6 +210,14 @@ export const useCreateLeadMutation = () => {
       };
     },
     onSuccess: (response) => {
+      queryClient
+        .getQueriesData<ListLeadsResponse>({ queryKey: ['leads'] })
+        .forEach(([queryKey]) => {
+          if (!Array.isArray(queryKey) || !queryLooksUnfiltered(queryKey)) return;
+          queryClient.setQueryData<ListLeadsResponse>(queryKey, (previous) =>
+            insertLeadIntoListResponse(previous, response.data),
+          );
+        });
       queryClient.invalidateQueries({ queryKey: ['leads'] });
       queryClient.invalidateQueries({ queryKey: ['followups'] });
       if (response.dynamicValuesSaved === false) {
@@ -222,10 +265,7 @@ export const useUpdateLeadMutation = () => {
       queryClient.setQueriesData<ListLeadsResponse>({ queryKey: ['leads'] }, (previous) =>
         patchLeadInListResponse(previous, response.data),
       );
-      queryClient.setQueryData(['lead', variables.id], {
-        ...response,
-        data: response.data,
-      });
+      queryClient.setQueryData(['lead', variables.id], response.data);
       queryClient.invalidateQueries({ queryKey: ['leads'] });
       queryClient.invalidateQueries({ queryKey: ['lead', variables.id] });
       queryClient.invalidateQueries({ queryKey: ['followups'] });
@@ -239,7 +279,7 @@ export const useUpdateLeadMutation = () => {
       const status = error?.response?.status;
       const message = error?.response?.data?.message;
       if (status === 409) {
-        toast.error(message || 'Another lead already uses the same contact details.');
+        toast.error(message || 'Request could not be completed due to a conflicting lead update.');
         return;
       }
       toast.error(message || 'Failed to update lead');
@@ -271,6 +311,7 @@ export const useChangeLeadStageMutation = () => {
       queryClient.invalidateQueries({ queryKey: ['lead', variables.id] });
       queryClient.invalidateQueries({ queryKey: ['followups'] });
       queryClient.invalidateQueries({ queryKey: ['lead-approvals'] });
+      queryClient.invalidateQueries({ queryKey: ['closed-leads'] });
 
       if (_data?.approvalRequired) {
         toast.success(_data?.message || 'Approval request created successfully');
@@ -323,6 +364,43 @@ export const usePermanentDeleteLeadMutation = () => {
     },
     onError: (error: any) => {
       toast.error(error?.response?.data?.message || 'Failed to permanently delete lead');
+    },
+  });
+};
+
+export const useBulkDeleteLeadsMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ ids, permanent }: { ids: string[]; permanent?: boolean }) =>
+      bulkDeleteLeads(ids, permanent),
+    onSuccess: (_, variables) => {
+      // Manually filter out the deleted IDs from the cache to ensure UI is correct
+      // even if the server's Redis cache for the list hasn't fully propagated yet.
+      queryClient.setQueriesData<ListLeadsResponse>({ queryKey: ['leads'] }, (previous) => {
+        if (!previous) return previous;
+        const nextLeads = previous.leads.filter((lead) => !variables.ids.includes(lead.id));
+        if (nextLeads.length === previous.leads.length) return previous;
+
+        return {
+          ...previous,
+          leads: nextLeads,
+          pagination: {
+            ...previous.pagination,
+            total: Math.max(0, previous.pagination.total - (previous.leads.length - nextLeads.length)),
+          },
+        };
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['leads'] });
+      queryClient.invalidateQueries({ queryKey: ['followups'] });
+      
+      const count = variables.ids.length;
+      const action = variables.permanent ? 'permanently deleted' : 'archived';
+      toast.success(`${count} leads ${action} successfully`);
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || 'Failed to perform bulk operation');
     },
   });
 };

@@ -4,16 +4,18 @@ import { Activity, CheckCircle, Plus, Settings2 } from 'lucide-react';
 import DashboardSidebar from '../components/dashboard/DashboardSidebar';
 import DashboardHeader from '../components/dashboard/DashboardHeader';
 import CreateLeadSourceModal from '../components/admin/lead-source/CreateLeadSourceModal';
+import DeleteLeadSourceModal from '../components/admin/lead-source/DeleteLeadSourceModal';
 import EditLeadSourceModal from '../components/admin/lead-source/EditLeadSourceModal';
 import LeadSourceTable from '../components/admin/lead-source/LeadSourceTable';
 import useLeadSourceStore from '../store/leadSourceStore';
 import { useLeadSourcesQuery } from '../hooks/useLeadSourcesQuery';
-import { useToggleLeadSourceStatus } from '../hooks/useLeadSourceMutations';
+import { useDeleteLeadSourceMutation, useToggleLeadSourceStatus } from '../hooks/useLeadSourceMutations';
 import { LeadSource } from '../types/leadSource.types';
 
 const LeadSourceListPage: React.FC = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [, setMobileMenuOpen] = useState(false);
+  const [deleteCandidate, setDeleteCandidate] = useState<LeadSource | null>(null);
 
   const {
     search,
@@ -32,6 +34,7 @@ const LeadSourceListPage: React.FC = () => {
   const [searchDraft, setSearchDraft] = useState(search);
   const { data, isLoading, isFetching } = useLeadSourcesQuery();
   const toggleStatusMutation = useToggleLeadSourceStatus();
+  const deleteLeadSourceMutation = useDeleteLeadSourceMutation();
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -85,6 +88,16 @@ const LeadSourceListPage: React.FC = () => {
     },
     [toggleStatusMutation],
   );
+
+  const handleDeleteIntent = useCallback((item: LeadSource) => {
+    setDeleteCandidate(item);
+  }, []);
+
+  const handleDeleteConfirm = useCallback(async () => {
+    if (!deleteCandidate) return;
+    await deleteLeadSourceMutation.mutateAsync(deleteCandidate.id);
+    setDeleteCandidate(null);
+  }, [deleteCandidate, deleteLeadSourceMutation]);
 
   const handleStatusFilter = useCallback(
     (status?: 'ACTIVE' | 'INACTIVE') => {
@@ -177,6 +190,7 @@ const LeadSourceListPage: React.FC = () => {
               onPageChange={(value) => setPagination({ page: value })}
               onEdit={handleEdit}
               onToggleStatus={handleToggleStatus}
+              onDelete={handleDeleteIntent}
             />
           </div>
         </div>
@@ -188,6 +202,18 @@ const LeadSourceListPage: React.FC = () => {
         isOpen={uiState.isEditModalOpen}
         onClose={closeEditModal}
         leadSource={selectedLeadSource}
+      />
+
+      <DeleteLeadSourceModal
+        isOpen={Boolean(deleteCandidate)}
+        sourceName={deleteCandidate?.name || 'this lead source'}
+        isDeleting={deleteLeadSourceMutation.isPending}
+        onClose={() => {
+          if (!deleteLeadSourceMutation.isPending) {
+            setDeleteCandidate(null);
+          }
+        }}
+        onConfirm={handleDeleteConfirm}
       />
     </div>
   );

@@ -34,6 +34,7 @@ import CalendarPage from './pages/calendar/CalendarPage';
 import TodayFollowUps from './pages/calendar/TodayFollowUps';
 import LeadsPage from './pages/leads/LeadsPage';
 import ClosedLeadsPage from './pages/leads/ClosedLeadsPage';
+import LeadImportPage from './pages/leads/import/LeadImportPage';
 import BulkAssignPage from './pages/leads/BulkAssignPage';
 import PendingApprovalPage from './pages/admin/PendingApprovalPage';
 import LocationsPage from './modules/locations/LocationsPage';
@@ -278,6 +279,12 @@ function App() {
         <Route path="/leads" element={
           <ProtectedRoute>
             <LeadsPage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/leads/import" element={
+          <ProtectedRoute>
+            <LeadImportPage />
           </ProtectedRoute>
         } />
 

@@ -55,8 +55,8 @@ const LeadSlaDecisionModal: React.FC<LeadSlaDecisionModalProps> = ({
   };
 
   const handleMoveToLob = () => {
-    if (!reasonId.trim() || !remarks.trim()) {
-      setError('LOB reason and remarks are required before moving this lead to LOB.');
+    if (!reasonId.trim()) {
+      setError('LOB reason is required before moving this lead to LOB.');
       return;
     }
 
@@ -152,7 +152,7 @@ const LeadSlaDecisionModal: React.FC<LeadSlaDecisionModalProps> = ({
                   </div>
 
                   <div>
-                    <label className="mb-2 block text-sm font-black text-slate-900">Remarks</label>
+                    <label className="mb-2 block text-sm font-black text-slate-900">Remarks <span className="text-xs font-semibold text-slate-400">(Optional)</span></label>
                     <textarea
                       rows={4}
                       value={remarks}

@@ -54,9 +54,18 @@ const CreateReportModal: React.FC<CreateReportModalProps> = ({
   const [isActive, setIsActive] = useState(true);
   const [filterDraft, setFilterDraft] = useState<DraftFilterState>({} as DraftFilterState);
 
+  const availableReportTypes = useMemo(() => {
+    if (!report?.reportType) return reportTypes;
+
+    const exists = reportTypes.some((item) => item.id === report.reportType!.id);
+    if (exists) return reportTypes;
+
+    return [report.reportType, ...reportTypes];
+  }, [report, reportTypes]);
+
   const selectedReportType = useMemo(
-    () => reportTypes.find((item) => item.id === reportTypeId) || null,
-    [reportTypeId, reportTypes],
+    () => availableReportTypes.find((item) => item.id === reportTypeId) || null,
+    [availableReportTypes, reportTypeId],
   );
 
   const allowedFilters = useMemo(
@@ -211,7 +220,13 @@ const CreateReportModal: React.FC<CreateReportModalProps> = ({
                 <label>
                   <span className="mb-2 block text-[11px] font-black uppercase tracking-[0.18em] text-gray-400">Report Type</span>
                   <SearchableSelect
-                    options={reportTypes.map((item) => ({ value: item.id, label: item.name }))}
+                    options={availableReportTypes.map((item) => ({
+                      value: item.id,
+                      label:
+                        mode === 'edit' && report?.reportType?.id === item.id && item.status !== 'ACTIVE'
+                          ? `${item.name} (${item.status.toLowerCase()})`
+                          : item.name,
+                    }))}
                     value={reportTypeId}
                     onChange={(event) => setReportTypeId(event.target.value)}
                     placeholder="Choose report type"
