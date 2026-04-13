@@ -265,10 +265,7 @@ export const useUpdateLeadMutation = () => {
       queryClient.setQueriesData<ListLeadsResponse>({ queryKey: ['leads'] }, (previous) =>
         patchLeadInListResponse(previous, response.data),
       );
-      queryClient.setQueryData(['lead', variables.id], {
-        ...response,
-        data: response.data,
-      });
+      queryClient.setQueryData(['lead', variables.id], response.data);
       queryClient.invalidateQueries({ queryKey: ['leads'] });
       queryClient.invalidateQueries({ queryKey: ['lead', variables.id] });
       queryClient.invalidateQueries({ queryKey: ['followups'] });
@@ -282,7 +279,7 @@ export const useUpdateLeadMutation = () => {
       const status = error?.response?.status;
       const message = error?.response?.data?.message;
       if (status === 409) {
-        toast.error(message || 'Another lead already uses the same contact details.');
+        toast.error(message || 'Request could not be completed due to a conflicting lead update.');
         return;
       }
       toast.error(message || 'Failed to update lead');
@@ -314,6 +311,7 @@ export const useChangeLeadStageMutation = () => {
       queryClient.invalidateQueries({ queryKey: ['lead', variables.id] });
       queryClient.invalidateQueries({ queryKey: ['followups'] });
       queryClient.invalidateQueries({ queryKey: ['lead-approvals'] });
+      queryClient.invalidateQueries({ queryKey: ['closed-leads'] });
 
       if (_data?.approvalRequired) {
         toast.success(_data?.message || 'Approval request created successfully');

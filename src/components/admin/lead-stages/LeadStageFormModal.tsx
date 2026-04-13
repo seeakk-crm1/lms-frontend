@@ -45,15 +45,24 @@ const ToggleField: React.FC<{
   value: boolean;
   onChange: (value: boolean) => void;
   ariaLabel: string;
-}> = React.memo(({ label, description, value, onChange, ariaLabel }) => (
+  disabled?: boolean;
+}> = React.memo(({ label, description, value, onChange, ariaLabel, disabled = false }) => (
   <div className="flex items-center gap-4 p-4 bg-emerald-50/20 rounded-2xl border border-emerald-50/50">
     <button
       type="button"
-      onClick={() => onChange(!value)}
+      onClick={() => {
+        if (disabled) return;
+        onChange(!value);
+      }}
       aria-label={ariaLabel}
       aria-pressed={value}
+      disabled={disabled}
       className={`w-14 h-7 rounded-full transition-all relative flex items-center px-1 shrink-0 ${
-        value ? 'bg-emerald-500 shadow-lg shadow-emerald-500/30' : 'bg-gray-300'
+        disabled
+          ? 'cursor-not-allowed opacity-60'
+          : value
+            ? 'bg-emerald-500 shadow-lg shadow-emerald-500/30'
+            : 'bg-gray-300'
       }`}
     >
       <motion.div animate={{ x: value ? 28 : 0 }} transition={{ duration: 0.2 }} className="w-5 h-5 bg-white rounded-full shadow-md" />
@@ -129,6 +138,8 @@ const LeadStageFormModal: React.FC<LeadStageFormModalProps> = ({
   }, [isOpen, leadStage, reset]);
 
   const selectedRuleAssignments = watch('ruleAssignments');
+  const isClosedStage = watch('isClosed');
+  const isLOBStage = watch('isLOB');
   const activeStageRules = activeStageRulesQuery.data || [];
 
   useEffect(() => {
@@ -310,10 +321,11 @@ const LeadStageFormModal: React.FC<LeadStageFormModalProps> = ({
                         render={({ field }) => (
                           <ToggleField
                             label="Approval Required"
-                            description="Enable approval workflow"
+                            description="Require review before lead enters this stage"
                             value={field.value}
                             onChange={field.onChange}
                             ariaLabel="Toggle approval required"
+                            disabled={false}
                           />
                         )}
                       />
@@ -323,9 +335,12 @@ const LeadStageFormModal: React.FC<LeadStageFormModalProps> = ({
                         render={({ field }) => (
                           <ToggleField
                             label="Is LOB"
-                            description="Mark as loss-of-business stage"
+                            description="Mark as loss-of-business (Lost)"
                             value={field.value}
-                            onChange={field.onChange}
+                            onChange={(val) => {
+                              field.onChange(val);
+                              if (val) setValue('isClosed', false, { shouldDirty: true });
+                            }}
                             ariaLabel="Toggle LOB stage"
                           />
                         )}
@@ -336,9 +351,12 @@ const LeadStageFormModal: React.FC<LeadStageFormModalProps> = ({
                         render={({ field }) => (
                           <ToggleField
                             label="Closed Status"
-                            description="Consider stage as closed outcome"
+                            description="Mark as successful outcome (Won)"
                             value={field.value}
-                            onChange={field.onChange}
+                            onChange={(val) => {
+                              field.onChange(val);
+                              if (val) setValue('isLOB', false, { shouldDirty: true });
+                            }}
                             ariaLabel="Toggle closed status"
                           />
                         )}

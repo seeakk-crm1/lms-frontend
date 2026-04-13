@@ -29,7 +29,7 @@ const EditLeadStageModal: React.FC<EditLeadStageModalProps> = ({ isOpen, onClose
     <LeadStageFormModal
       isOpen={isOpen}
       mode="edit"
-      title="Add Lead Stage"
+      title="Edit Lead Stage"
       submitText="Update Lead Stage"
       leadStage={leadStage}
       isSubmitting={updateLeadStage.isPending}

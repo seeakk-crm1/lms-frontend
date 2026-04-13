@@ -116,6 +116,8 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
   const [lobModalOpen, setLobModalOpen] = useState(false);
   const [pendingStageId, setPendingStageId] = useState<string | null>(null);
   const [previousStageId, setPreviousStageId] = useState<string>('');
+  const hydratedLead = leadDetails?.id ? (leadDetails as LeadListItem) : lead;
+  const currentStageId = hydratedLead?.stageId || previousStageId || '';
 
   useEffect(() => {
     if (!meta?.dynamicFields) return;
@@ -125,43 +127,22 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
   useEffect(() => {
     if (!isOpen) return;
 
-    if (mode === 'edit' && (leadDetails || lead)) {
-      setFormValues(fromLeadToForm((leadDetails || lead) as LeadListItem));
-      setPreviousStageId((leadDetails || lead)?.stageId || '');
+    if (mode === 'edit' && hydratedLead && !isBusy) {
+      setFormValues(fromLeadToForm(hydratedLead));
+      setPreviousStageId(hydratedLead.stageId || '');
       return;
     }
 
-    const defaultLifecycle = meta?.lifeCycles?.find((item) => item.isDefault);
     setFormValues({
       ...createEmptyLeadFormValues(),
-      lifecycleId: defaultLifecycle?.id || '',
     });
     setPreviousStageId('');
-  }, [isOpen, lead, leadDetails, meta?.lifeCycles, mode]);
+  }, [hydratedLead, isOpen, mode]);
 
   const stageOptions = meta?.stages || [];
   const lifeCycleOptions = meta?.lifeCycles || [];
+  const dynamicFields = (meta?.dynamicFields as LeadDynamicField[]) || [];
   const lobReasonOptions = getSelectOptions(meta?.lobReasons || []);
-  const activeLifeCycle = lifeCycleOptions.find((item) => item.id === formValues.lifecycleId) || lifeCycleOptions.find((item) => item.isDefault);
-  const stageTransitionMap = useMemo(() => buildAllowedStageMap(activeLifeCycle), [activeLifeCycle]);
-
-  const allowedStages = useMemo(() => {
-    if (mode === 'create' || !previousStageId || stageTransitionMap.size === 0) {
-      return stageOptions;
-    }
-
-    const allowedIds = stageTransitionMap.get(previousStageId);
-    if (!allowedIds || allowedIds.size === 0) {
-      return stageOptions;
-    }
-
-    return stageOptions.filter((stage) => stage.id === previousStageId || allowedIds.has(stage.id));
-  }, [mode, previousStageId, stageOptions, stageTransitionMap]);
-
-  const disabledStageIds = useMemo(() => {
-    const allowed = new Set(allowedStages.map((item) => item.id));
-    return new Set(stageOptions.filter((item) => !allowed.has(item.id)).map((item) => item.id));
-  }, [allowedStages, stageOptions]);
 
   const isBusy =
     metaLoading ||
@@ -170,7 +151,28 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
     updateMutation.isPending ||
     changeStageMutation.isPending;
 
-  const handleFieldChange = (field: keyof LeadFormValues, value: string) => {
+  const activeLifeCycle = lifeCycleOptions.find((item) => item.id === formValues.lifecycleId) || lifeCycleOptions.find((item) => item.isDefault);
+  const stageTransitionMap = useMemo(() => buildAllowedStageMap(activeLifeCycle), [activeLifeCycle]);
+
+  const allowedStages = useMemo(() => {
+    if (mode === 'create' || !currentStageId || stageTransitionMap.size === 0) {
+      return stageOptions;
+    }
+
+    const allowedIds = stageTransitionMap.get(currentStageId);
+    if (!allowedIds || allowedIds.size === 0) {
+      return stageOptions;
+    }
+
+    return stageOptions.filter((stage) => stage.id === currentStageId || allowedIds.has(stage.id));
+  }, [currentStageId, mode, stageOptions, stageTransitionMap]);
+
+  const disabledStageIds = useMemo(() => {
+    const allowed = new Set(allowedStages.map((item) => item.id));
+    return new Set(stageOptions.filter((item) => !allowed.has(item.id)).map((item) => item.id));
+  }, [allowedStages, stageOptions]);
+
+  const handleFieldChange = (field: keyof LeadFormValues, value: any) => {
     if (field === 'stageId') {
       const nextStage = stageOptions.find((item) => item.id === value);
       if (disabledStageIds.has(value)) {
@@ -219,7 +221,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
     event.preventDefault();
 
     if (!formValues.name.trim()) {
-      toast.error('Lead name is required.');
+      toast.error('Lead name is required');
       return;
     }
 
@@ -261,9 +263,10 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
       remarks: formValues.remarks.trim() || undefined,
     };
 
+    const targetStageId = formValues.stageId;
     const dynamicPayload = buildDynamicPayload(formValues.dynamicValues, meta?.dynamicFields || []);
-    const stageChanged = mode === 'edit' && Boolean(formValues.stageId) && formValues.stageId !== previousStageId;
-    const shouldUseStageTransitionFlow = stageChanged && Boolean(previousStageId);
+    const stageChanged = mode === 'edit' && Boolean(targetStageId) && targetStageId !== currentStageId;
+    const shouldUseStageTransitionFlow = stageChanged && Boolean(currentStageId);
 
     try {
       if (mode === 'create') {
@@ -277,7 +280,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
             phone: formValues.phone.trim() || null,
             expectedRevenue: formValues.expectedRevenue ? Number(formValues.expectedRevenue) : null,
             assignedToId: formValues.assignedToId || null,
-            stageId: shouldUseStageTransitionFlow ? undefined : formValues.stageId || null,
+            stageId: shouldUseStageTransitionFlow ? undefined : targetStageId || null,
             lifecycleId: formValues.lifecycleId || null,
             sourceId: formValues.sourceId || null,
             nextFollowUpAt: formValues.nextFollowUpAt ? new Date(formValues.nextFollowUpAt).toISOString() : null,
@@ -291,7 +294,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
           await changeStageMutation.mutateAsync({
             id: lead.id,
             payload: {
-              stageId: formValues.stageId,
+              stageId: targetStageId,
               reasonId: formValues.reasonId.trim() || undefined,
               remarks: formValues.remarks.trim() || undefined,
             },
@@ -368,7 +371,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
 
                       <div className="grid gap-4 md:grid-cols-2">
                         <div className="md:col-span-2">
-                          <label className="mb-2 block text-sm font-black text-gray-900">Lead Name</label>
+                          <label className="mb-2 block text-sm font-black text-gray-900">Lead Name <span className="text-red-500">*</span></label>
                           <input
                             type="text"
                             value={formValues.name}
@@ -520,7 +523,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
                         </div>
 
                         <div className="grid gap-4 md:grid-cols-2">
-                          {meta.dynamicFields.map((field) => (
+                          {dynamicFields.map((field) => (
                             <DynamicFieldRenderer
                               key={field.id}
                               field={field}

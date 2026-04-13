@@ -207,6 +207,7 @@ const mapStageOptions = (stages: LeadStage[]) =>
       id: stage.id,
       label: stage.name,
       color: stage.color,
+      isApprovalRequired: stage.isApprovalRequired,
       isLOB: stage.isLOB,
       isClosed: stage.isClosed,
     }));

@@ -54,9 +54,16 @@ export const useApprovalActionMutation = () => {
   return useMutation({
     mutationFn: ({ id, payload }: { id: string; payload: LeadApprovalActionPayload }) => updateLeadApproval(id, payload),
     onSuccess: (response) => {
+      const nextLead = response?.data?.lead;
+
+      if (nextLead?.id) {
+        queryClient.setQueryData(['lead', nextLead.id], nextLead);
+      }
+
       queryClient.invalidateQueries({ queryKey: ['lead-approvals'] });
       queryClient.invalidateQueries({ queryKey: ['leads'] });
       queryClient.invalidateQueries({ queryKey: ['lead'] });
+      queryClient.invalidateQueries({ queryKey: ['closed-leads'] });
       toast.success(response?.message || 'Approval processed successfully');
     },
     onError: (error: any) => {
