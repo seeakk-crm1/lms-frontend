@@ -8,14 +8,27 @@ import DeleteLeadSourceModal from '../components/admin/lead-source/DeleteLeadSou
 import EditLeadSourceModal from '../components/admin/lead-source/EditLeadSourceModal';
 import LeadSourceTable from '../components/admin/lead-source/LeadSourceTable';
 import useLeadSourceStore from '../store/leadSourceStore';
+import useAuthStore from '../store/useAuthStore';
 import { useLeadSourcesQuery } from '../hooks/useLeadSourcesQuery';
 import { useDeleteLeadSourceMutation, useToggleLeadSourceStatus } from '../hooks/useLeadSourceMutations';
 import { LeadSource } from '../types/leadSource.types';
+
+const roleKey = (role: unknown) =>
+  String(typeof role === 'object' && role !== null ? (role as { name?: string }).name || '' : role || '')
+    .toLowerCase()
+    .trim()
+    .replace(/[\s_-]+/g, '');
+
+const permissionSet = (permissions: unknown): Set<string> => {
+  if (!Array.isArray(permissions)) return new Set();
+  return new Set(permissions.map((permission) => String(permission)));
+};
 
 const LeadSourceListPage: React.FC = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [, setMobileMenuOpen] = useState(false);
   const [deleteCandidate, setDeleteCandidate] = useState<LeadSource | null>(null);
+  const { user } = useAuthStore();
 
   const {
     search,
@@ -35,6 +48,13 @@ const LeadSourceListPage: React.FC = () => {
   const { data, isLoading, isFetching } = useLeadSourcesQuery();
   const toggleStatusMutation = useToggleLeadSourceStatus();
   const deleteLeadSourceMutation = useDeleteLeadSourceMutation();
+  const normalizedRole = roleKey(user?.role);
+  const permissions = useMemo(() => permissionSet(user?.permissions), [user?.permissions]);
+  const isAdminRole = ['admin', 'administrator', 'superadmin'].includes(normalizedRole);
+  const canView = isAdminRole || permissions.has('LEAD_SOURCES_VIEW') || permissions.has('SYSTEM_CONFIG');
+  const canCreate = isAdminRole || permissions.has('LEAD_SOURCES_CREATE') || permissions.has('SYSTEM_CONFIG');
+  const canEdit = isAdminRole || permissions.has('LEAD_SOURCES_EDIT') || permissions.has('SYSTEM_CONFIG');
+  const canDelete = isAdminRole || permissions.has('LEAD_SOURCES_DELETE') || permissions.has('SYSTEM_CONFIG');
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -70,28 +90,34 @@ const LeadSourceListPage: React.FC = () => {
     [activeCount, total],
   );
 
-  const openCreateModal = useCallback(() => setUIState({ isCreateModalOpen: true }), [setUIState]);
+  const openCreateModal = useCallback(() => {
+    if (!canCreate) return;
+    setUIState({ isCreateModalOpen: true });
+  }, [canCreate, setUIState]);
   const closeCreateModal = useCallback(() => setUIState({ isCreateModalOpen: false }), [setUIState]);
   const closeEditModal = useCallback(() => setUIState({ isEditModalOpen: false }), [setUIState]);
 
   const handleEdit = useCallback(
     (item: LeadSource) => {
+      if (!canEdit) return;
       setSelectedLeadSource(item);
       setUIState({ isEditModalOpen: true });
     },
-    [setSelectedLeadSource, setUIState],
+    [canEdit, setSelectedLeadSource, setUIState],
   );
 
   const handleToggleStatus = useCallback(
     (id: string) => {
+      if (!canEdit) return;
       toggleStatusMutation.mutate(id);
     },
-    [toggleStatusMutation],
+    [canEdit, toggleStatusMutation],
   );
 
   const handleDeleteIntent = useCallback((item: LeadSource) => {
+    if (!canDelete) return;
     setDeleteCandidate(item);
-  }, []);
+  }, [canDelete]);
 
   const handleDeleteConfirm = useCallback(async () => {
     if (!deleteCandidate) return;
@@ -135,18 +161,26 @@ const LeadSourceListPage: React.FC = () => {
                 </p>
               </motion.div>
 
-              <motion.button
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                whileHover={{ y: -1 }}
-                onClick={openCreateModal}
-                className="flex items-center justify-center gap-2 px-8 py-3 bg-emerald-500 text-white rounded-2xl text-sm font-black shadow-xl shadow-emerald-500/20 hover:bg-emerald-600 transition-all active:scale-95"
-                aria-label="Create lead source"
-              >
-                <Plus className="w-4 h-4" strokeWidth={3} />
-                <span>Create Lead Source</span>
-              </motion.button>
+              {canCreate ? (
+                <motion.button
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  whileHover={{ y: -1 }}
+                  onClick={openCreateModal}
+                  className="flex items-center justify-center gap-2 px-8 py-3 bg-emerald-500 text-white rounded-2xl text-sm font-black shadow-xl shadow-emerald-500/20 hover:bg-emerald-600 transition-all active:scale-95"
+                  aria-label="Create lead source"
+                >
+                  <Plus className="w-4 h-4" strokeWidth={3} />
+                  <span>Create Lead Source</span>
+                </motion.button>
+              ) : null}
             </div>
+
+            {!canView ? (
+              <div className="rounded-3xl border border-red-100 bg-red-50 px-6 py-8 text-sm font-semibold text-red-700 shadow-sm">
+                Access denied. You do not have permission to view lead sources.
+              </div>
+            ) : null}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
               {stats.map((stat, index) => (
@@ -179,6 +213,8 @@ const LeadSourceListPage: React.FC = () => {
             <LeadSourceTable
               items={records}
               isLoading={tableLoading}
+              canEdit={canEdit}
+              canDelete={canDelete}
               search={searchDraft}
               status={filters.status}
               page={pagination.page}
@@ -196,25 +232,29 @@ const LeadSourceListPage: React.FC = () => {
         </div>
       </main>
 
-      <CreateLeadSourceModal isOpen={uiState.isCreateModalOpen} onClose={closeCreateModal} />
+      {canCreate ? <CreateLeadSourceModal isOpen={uiState.isCreateModalOpen} onClose={closeCreateModal} /> : null}
 
-      <EditLeadSourceModal
-        isOpen={uiState.isEditModalOpen}
-        onClose={closeEditModal}
-        leadSource={selectedLeadSource}
-      />
+      {canEdit ? (
+        <EditLeadSourceModal
+          isOpen={uiState.isEditModalOpen}
+          onClose={closeEditModal}
+          leadSource={selectedLeadSource}
+        />
+      ) : null}
 
-      <DeleteLeadSourceModal
-        isOpen={Boolean(deleteCandidate)}
-        sourceName={deleteCandidate?.name || 'this lead source'}
-        isDeleting={deleteLeadSourceMutation.isPending}
-        onClose={() => {
-          if (!deleteLeadSourceMutation.isPending) {
-            setDeleteCandidate(null);
-          }
-        }}
-        onConfirm={handleDeleteConfirm}
-      />
+      {canDelete ? (
+        <DeleteLeadSourceModal
+          isOpen={Boolean(deleteCandidate)}
+          sourceName={deleteCandidate?.name || 'this lead source'}
+          isDeleting={deleteLeadSourceMutation.isPending}
+          onClose={() => {
+            if (!deleteLeadSourceMutation.isPending) {
+              setDeleteCandidate(null);
+            }
+          }}
+          onConfirm={handleDeleteConfirm}
+        />
+      ) : null}
     </div>
   );
 };

@@ -1,7 +1,7 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import useAuthStore from '../store/useAuthStore';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL || 'https://backend-26l2.onrender.com/api';
 
 interface CustomAxiosRequestConfig extends InternalAxiosRequestConfig {
     _retry?: boolean;
@@ -59,6 +59,12 @@ const clearExpiredSession = () => {
     redirectToLogin();
 };
 
+const isRefreshAuthFailure = (error: unknown): boolean => {
+    if (!axios.isAxiosError(error)) return false;
+    const status = error.response?.status;
+    return status === 400 || status === 401 || status === 403;
+};
+
 const isTokenExpired = (token: string): boolean => {
     try {
         const payload = JSON.parse(atob(token.split('.')[1]));
@@ -90,7 +96,9 @@ const executeRefresh = async (): Promise<string> => {
         return data.accessToken;
     } catch (err) {
         processQueue(err, null);
-        clearExpiredSession();
+        if (isRefreshAuthFailure(err)) {
+            clearExpiredSession();
+        }
         throw err;
     } finally {
         isRefreshing = false;
@@ -118,9 +126,9 @@ api.interceptors.request.use(
             try {
                 accessToken = await executeRefresh();
             } catch (err) {
-                // If refresh fails, let the request proceed without token
-                // It will fail, but the session is already cleared and redirecting
-                accessToken = null;
+                // If refresh fails because of a transient network/server issue,
+                // keep the current token and let the request attempt once.
+                accessToken = localStorage.getItem('accessToken');
             }
         }
 
@@ -157,6 +165,9 @@ api.interceptors.response.use(
                 }
                 return api(originalRequest);
             } catch (err) {
+                if (!isRefreshAuthFailure(err)) {
+                    return Promise.reject(error);
+                }
                 return Promise.reject(err);
             }
         }
