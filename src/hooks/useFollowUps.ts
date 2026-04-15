@@ -7,6 +7,7 @@ import {
   completeFollowUp,
   createFollowUp,
   getCalendarData,
+  getFollowUpReminderAlerts,
   getFollowUpLeads,
   getFollowUpUsers,
   getTodayFollowUps,
@@ -76,6 +77,24 @@ export const useTodayFollowUpsQuery = () => {
     gcTime: 180_000,
     refetchOnWindowFocus: true,
     placeholderData: (previousData) => previousData,
+  });
+};
+
+export const useFollowUpReminderAlertsQuery = () => {
+  const { selectedUser } = useFollowupStore();
+
+  return useQuery({
+    queryKey: ['followups', 'alerts', selectedUser],
+    queryFn: () =>
+      getFollowUpReminderAlerts({
+        ...(selectedUser ? { userId: selectedUser } : {}),
+        minutesAhead: 15,
+        includePastMinutes: 5,
+      }),
+    staleTime: 20_000,
+    gcTime: 120_000,
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: true,
   });
 };
 

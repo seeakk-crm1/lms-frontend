@@ -57,6 +57,34 @@ export interface TodayFollowUpsResponse {
   };
 }
 
+export interface FollowUpReminderItem {
+  id: string;
+  leadId: string;
+  leadName: string;
+  userId: string;
+  type: FollowUpType;
+  description: string | null;
+  scheduledAt: string;
+  minutesUntil: number;
+  user: FollowUpUser;
+}
+
+export interface FollowUpReminderAlertsResponse {
+  success: boolean;
+  message: string;
+  data: {
+    timeZone: string;
+    generatedAt: string;
+    window: {
+      start: string;
+      end: string;
+      minutesAhead: number;
+      includePastMinutes: number;
+    };
+    items: FollowUpReminderItem[];
+  };
+}
+
 export interface FollowUpHistoryResponse {
   success: boolean;
   message: string;
