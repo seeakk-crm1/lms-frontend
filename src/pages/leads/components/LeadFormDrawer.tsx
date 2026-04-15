@@ -447,6 +447,8 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
                             value={formValues.lifecycleId}
                             options={getSelectOptions(meta?.lifeCycles || [])}
                             placeholder="Select lifecycle"
+                            allowClear
+                            clearLabel="No lifecycle"
                             onChange={(event) => handleFieldChange('lifecycleId', event.target.value)}
                           />
                         </div>

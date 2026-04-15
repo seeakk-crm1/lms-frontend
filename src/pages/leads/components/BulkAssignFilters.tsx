@@ -73,6 +73,8 @@ const BulkAssignFilters: React.FC<BulkAssignFiltersProps> = ({
           value={filters.lifecycleId || ''}
           options={(meta?.lifeCycles || []).map((item) => ({ value: item.id, label: item.label }))}
           placeholder="Select Lead Life Cycle"
+          allowClear
+          clearLabel="All life cycles"
           onChange={(event) => onFilterChange({ lifecycleId: event.target.value || undefined })}
         />
 
