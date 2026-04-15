@@ -7,6 +7,7 @@ import type {
   CompleteFollowUpInput,
   CreateFollowUpInput,
   FollowUp,
+  FollowUpReminderAlertsResponse,
   FollowUpLeadOption,
   FollowUpHistoryResponse,
   FollowUpUserOption,
@@ -22,6 +23,15 @@ export const getTodayFollowUps = async (userId?: string) => {
   const response = await api.get<TodayFollowUpsResponse>('/followups/today', {
     params: userId ? { userId } : undefined,
   });
+  return response.data;
+};
+
+export const getFollowUpReminderAlerts = async (params?: {
+  userId?: string;
+  minutesAhead?: number;
+  includePastMinutes?: number;
+}) => {
+  const response = await api.get<FollowUpReminderAlertsResponse>('/followups/alerts', { params });
   return response.data;
 };
 

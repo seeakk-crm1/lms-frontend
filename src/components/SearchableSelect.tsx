@@ -13,9 +13,19 @@ interface SearchableSelectProps {
     onChange: (e: { target: { name: string; value: string } }) => void;
     placeholder: string;
     name: string;
+    allowClear?: boolean;
+    clearLabel?: string;
 }
 
-const SearchableSelect: React.FC<SearchableSelectProps> = ({ options, value, onChange, placeholder, name }) => {
+const SearchableSelect: React.FC<SearchableSelectProps> = ({
+    options,
+    value,
+    onChange,
+    placeholder,
+    name,
+    allowClear = false,
+    clearLabel = 'None',
+}) => {
     const [isOpen, setIsOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const wrapperRef = useRef<HTMLDivElement>(null);
@@ -30,6 +40,18 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({ options, value, onC
             opt.value.toLowerCase().includes(searchTerm.toLowerCase())
         );
     }, [searchTerm, options]);
+
+    const clearOption = useMemo<Option | null>(() => {
+        if (!allowClear) return null;
+        return { value: '', label: clearLabel };
+    }, [allowClear, clearLabel]);
+
+    const visibleOptions = useMemo(() => {
+        const base = filteredOptions;
+        if (!clearOption) return base;
+        // Show clear option first (especially helpful after selection)
+        return [clearOption, ...base];
+    }, [clearOption, filteredOptions]);
 
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
@@ -78,10 +100,10 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({ options, value, onC
                             />
                         </div>
                         <div className="overflow-y-auto p-1 flex-1" style={{ scrollbarWidth: 'thin' }}>
-                            {filteredOptions.length > 0 ? (
-                                filteredOptions.map((opt) => (
+                            {visibleOptions.length > 0 ? (
+                                visibleOptions.map((opt) => (
                                     <div
-                                        key={opt.value}
+                                        key={`${opt.value || '__clear__'}:${opt.label}`}
                                         className={`px-3 py-2.5 my-0.5 text-sm rounded-lg cursor-pointer flex justify-between items-center transition-colors ${value === opt.value ? 'bg-emerald-50 text-emerald-700 font-bold' : 'text-gray-700 hover:bg-gray-100 font-medium'}`}
                                         onClick={() => {
                                             onChange({ target: { name, value: opt.value } });

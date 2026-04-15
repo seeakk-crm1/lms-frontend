@@ -14,6 +14,7 @@ import Footer from './components/Footer';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import useAuthStore from './store/useAuthStore';
+import FollowUpReminderListener from './components/calendar/FollowUpReminderListener';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import WorkspaceSetup from './pages/WorkspaceSetup';
@@ -73,6 +74,7 @@ const PublicRoute: React.FC<RouteProps> = ({ children }) => {
 
 function App() {
   const [loading, setLoading] = useState(true);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -83,6 +85,7 @@ function App() {
 
   return (
     <>
+      {isAuthenticated ? <FollowUpReminderListener /> : null}
       <Toaster
         position="top-center"
         toastOptions={{

@@ -177,7 +177,7 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
                     </span>
                   </td>
                   <td className="px-6 py-5 text-sm font-semibold text-gray-600">
-                    {lead.lifecycle?.name || 'Default'}
+                    {lead.lifecycle?.name || 'No lifecycle'}
                   </td>
                   <td className="px-6 py-5 text-sm font-semibold text-gray-600">
                     {lead.source?.name || 'Unknown'}
