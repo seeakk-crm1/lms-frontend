@@ -151,7 +151,8 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
     updateMutation.isPending ||
     changeStageMutation.isPending;
 
-  const activeLifeCycle = lifeCycleOptions.find((item) => item.id === formValues.lifecycleId) || lifeCycleOptions.find((item) => item.isDefault);
+  // Apply lifecycle transition constraints only when user explicitly selects a lifecycle.
+  const activeLifeCycle = lifeCycleOptions.find((item) => item.id === formValues.lifecycleId);
   const stageTransitionMap = useMemo(() => buildAllowedStageMap(activeLifeCycle), [activeLifeCycle]);
 
   const allowedStages = useMemo(() => {

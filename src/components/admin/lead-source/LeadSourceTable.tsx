@@ -42,6 +42,7 @@ const LeadSourceTable: React.FC<LeadSourceTableProps> = ({
   onDelete,
 }) => {
   const pageButtons = useMemo(() => Array.from({ length: totalPages }, (_, index) => index + 1), [totalPages]);
+  const isTempId = useCallback((id: string) => id.startsWith('temp-'), []);
 
   const safeFrom = total === 0 ? 0 : (page - 1) * limit + 1;
   const safeTo = Math.min(page * limit, total);
@@ -163,10 +164,16 @@ const LeadSourceTable: React.FC<LeadSourceTableProps> = ({
                   <td className="px-6 py-4 text-[11px] font-bold text-gray-500">{format(new Date(item.updatedAt), 'MMM dd, yyyy p')}</td>
                   <td className="px-6 py-4 text-right">
                     <div className="inline-flex items-center gap-2">
+                      {isTempId(item.id) ? (
+                        <span className="px-3 py-2 rounded-xl text-[11px] font-black text-gray-500 bg-gray-100">
+                          Saving...
+                        </span>
+                      ) : null}
                       {canEdit ? (
                         <button
+                          disabled={isTempId(item.id)}
                           onClick={() => onEdit(item)}
-                          className="p-2 text-blue-500 bg-blue-50 hover:bg-blue-100 rounded-xl transition-all hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                          className="p-2 text-blue-500 bg-blue-50 hover:bg-blue-100 rounded-xl transition-all hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500/30 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-blue-50 disabled:hover:shadow-none"
                           aria-label={`Edit ${item.name}`}
                         >
                           <Pencil className="w-4 h-4" />
@@ -174,12 +181,13 @@ const LeadSourceTable: React.FC<LeadSourceTableProps> = ({
                       ) : null}
                       {canEdit ? (
                         <button
+                          disabled={isTempId(item.id)}
                           onClick={() => onToggleStatus(item.id)}
                           className={`px-3 py-2 rounded-xl text-[11px] font-black transition-all hover:shadow-md focus:outline-none focus:ring-2 ${
                             item.status === 'ACTIVE'
                               ? 'text-amber-700 bg-amber-50 hover:bg-amber-100 focus:ring-amber-500/30'
                               : 'text-emerald-700 bg-emerald-50 hover:bg-emerald-100 focus:ring-emerald-500/30'
-                          }`}
+                          } disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:shadow-none`}
                           aria-label={`${item.status === 'ACTIVE' ? 'Deactivate' : 'Activate'} ${item.name}`}
                         >
                           {item.status === 'ACTIVE' ? 'Deactivate' : 'Activate'}
@@ -187,8 +195,9 @@ const LeadSourceTable: React.FC<LeadSourceTableProps> = ({
                       ) : null}
                       {canDelete ? (
                         <button
+                          disabled={isTempId(item.id)}
                           onClick={() => onDelete(item)}
-                          className="p-2 text-red-500 bg-red-50 hover:bg-red-100 rounded-xl transition-all hover:shadow-md focus:outline-none focus:ring-2 focus:ring-red-500/30"
+                          className="p-2 text-red-500 bg-red-50 hover:bg-red-100 rounded-xl transition-all hover:shadow-md focus:outline-none focus:ring-2 focus:ring-red-500/30 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-red-50 disabled:hover:shadow-none"
                           aria-label={`Delete ${item.name}`}
                         >
                           <Trash2 className="w-4 h-4" />
@@ -240,8 +249,9 @@ const LeadSourceTable: React.FC<LeadSourceTableProps> = ({
                 <div className={`grid gap-2 ${canEdit && canDelete ? 'grid-cols-3' : 'grid-cols-2'}`}>
                   {canEdit ? (
                     <button
+                      disabled={isTempId(item.id)}
                       onClick={() => onEdit(item)}
-                      className="py-2 rounded-xl text-xs font-black text-blue-600 bg-blue-50 hover:bg-blue-100"
+                      className="py-2 rounded-xl text-xs font-black text-blue-600 bg-blue-50 hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-blue-50"
                       aria-label={`Edit ${item.name}`}
                     >
                       Edit
@@ -249,8 +259,9 @@ const LeadSourceTable: React.FC<LeadSourceTableProps> = ({
                   ) : null}
                   {canEdit ? (
                     <button
+                      disabled={isTempId(item.id)}
                       onClick={() => onToggleStatus(item.id)}
-                      className="py-2 rounded-xl text-xs font-black text-emerald-600 bg-emerald-50 hover:bg-emerald-100"
+                      className="py-2 rounded-xl text-xs font-black text-emerald-600 bg-emerald-50 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-emerald-50"
                       aria-label={`${item.status === 'ACTIVE' ? 'Deactivate' : 'Activate'} ${item.name}`}
                     >
                       {item.status === 'ACTIVE' ? 'Deactivate' : 'Activate'}
@@ -258,8 +269,9 @@ const LeadSourceTable: React.FC<LeadSourceTableProps> = ({
                   ) : null}
                   {canDelete ? (
                     <button
+                      disabled={isTempId(item.id)}
                       onClick={() => onDelete(item)}
-                      className="py-2 rounded-xl text-xs font-black text-red-600 bg-red-50 hover:bg-red-100"
+                      className="py-2 rounded-xl text-xs font-black text-red-600 bg-red-50 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-red-50"
                       aria-label={`Delete ${item.name}`}
                     >
                       Delete

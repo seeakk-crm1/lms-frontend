@@ -19,6 +19,8 @@ const updateLeadSourceListCache = (
   };
 };
 
+const isTempLeadSourceId = (id: string): boolean => id.startsWith('temp-');
+
 export const useCreateLeadSourceMutation = () => {
   const queryClient = useQueryClient();
 
@@ -52,6 +54,9 @@ export const useCreateLeadSourceMutation = () => {
       }
       toast.error(error?.response?.data?.message || 'Failed to create lead source');
     },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['lead-sources'] });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['lead-sources'] });
       queryClient.invalidateQueries({ queryKey: ['lead-meta'] });
@@ -64,7 +69,12 @@ export const useUpdateLeadSourceMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: UpdateLeadSourceInput }) => updateLeadSource(id, data),
+    mutationFn: ({ id, data }: { id: string; data: UpdateLeadSourceInput }) => {
+      if (isTempLeadSourceId(id)) {
+        throw new Error('Please wait for the lead source to finish saving before editing it.');
+      }
+      return updateLeadSource(id, data);
+    },
     onMutate: async ({ id, data }) => {
       await queryClient.cancelQueries({ queryKey: ['lead-sources'] });
       const previous = queryClient.getQueriesData<ListLeadSourcesResponse>({ queryKey: ['lead-sources'] });
@@ -93,6 +103,9 @@ export const useUpdateLeadSourceMutation = () => {
       }
       toast.error(error?.response?.data?.message || 'Failed to update lead source');
     },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['lead-sources'] });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['lead-sources'] });
       queryClient.invalidateQueries({ queryKey: ['lead-meta'] });
@@ -105,7 +118,12 @@ export const useToggleLeadSourceStatus = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: string) => toggleLeadSourceStatus(id),
+    mutationFn: (id: string) => {
+      if (isTempLeadSourceId(id)) {
+        throw new Error('Please wait for the lead source to finish saving before changing its status.');
+      }
+      return toggleLeadSourceStatus(id);
+    },
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey: ['lead-sources'] });
       const previous = queryClient.getQueriesData<ListLeadSourcesResponse>({ queryKey: ['lead-sources'] });
@@ -130,6 +148,9 @@ export const useToggleLeadSourceStatus = () => {
       }
       toast.error(error?.response?.data?.message || 'Failed to update lead source status');
     },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['lead-sources'] });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['lead-sources'] });
       queryClient.invalidateQueries({ queryKey: ['lead-meta'] });
@@ -142,7 +163,12 @@ export const useDeleteLeadSourceMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: string) => deleteLeadSource(id),
+    mutationFn: (id: string) => {
+      if (isTempLeadSourceId(id)) {
+        throw new Error('Please wait for the lead source to finish saving before deleting it.');
+      }
+      return deleteLeadSource(id);
+    },
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey: ['lead-sources'] });
       const previous = queryClient.getQueriesData<ListLeadSourcesResponse>({ queryKey: ['lead-sources'] });
@@ -170,6 +196,9 @@ export const useDeleteLeadSourceMutation = () => {
         });
       }
       toast.error(error?.response?.data?.message || 'Failed to delete lead source');
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['lead-sources'] });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['lead-sources'] });

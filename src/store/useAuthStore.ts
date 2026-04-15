@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { User } from '../types/user.types';
+import { queryClient } from '../lib/queryClient';
 
 interface AuthState {
   user: User | null;
@@ -45,6 +46,8 @@ const useAuthStore = create<AuthState>((set) => {
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
         localStorage.removeItem('user');
+        localStorage.removeItem('jobId');
+        queryClient.clear();
         set({ user: null, accessToken: null, refreshToken: null, isAuthenticated: false });
     };
 
@@ -63,12 +66,32 @@ const useAuthStore = create<AuthState>((set) => {
                     : (rawUser.role as string) || 'Administrator'
             } : rawUser;
 
-            if (accessToken) {
-                localStorage.setItem('accessToken', accessToken);
-                if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
-                localStorage.setItem('user', JSON.stringify(user));
-            }
-            set({ user, accessToken, refreshToken, isAuthenticated: !!accessToken });
+            set((state) => {
+                const previousUserId = state.user?.id || null;
+                const nextUserId = user?.id || null;
+                const isUserSwitch = previousUserId !== null && nextUserId !== null && previousUserId !== nextUserId;
+
+                if (isUserSwitch) {
+                    queryClient.clear();
+                    localStorage.removeItem('jobId');
+                }
+
+                if (accessToken) {
+                    localStorage.setItem('accessToken', accessToken);
+                    if (refreshToken) {
+                        localStorage.setItem('refreshToken', refreshToken);
+                    } else {
+                        localStorage.removeItem('refreshToken');
+                    }
+                    localStorage.setItem('user', JSON.stringify(user));
+                } else {
+                    localStorage.removeItem('accessToken');
+                    localStorage.removeItem('refreshToken');
+                    localStorage.removeItem('user');
+                }
+
+                return { user, accessToken, refreshToken, isAuthenticated: !!accessToken };
+            });
         },
 
         updateUser: (updatedFields) => set((state) => {
