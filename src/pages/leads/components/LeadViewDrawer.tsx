@@ -184,7 +184,7 @@ const LeadViewDrawer: React.FC<LeadViewDrawerProps> = ({ isOpen, lead, initialTa
                         </div>
                         <div className="flex items-center justify-between gap-3">
                           <dt className="font-semibold text-gray-500">Life Cycle</dt>
-                          <dd className="font-black text-gray-900">{resolvedLead.lifecycle?.name || 'Default'}</dd>
+                          <dd className="font-black text-gray-900">{resolvedLead.lifecycle?.name || 'No lifecycle'}</dd>
                         </div>
                         <div className="flex items-center justify-between gap-3">
                           <dt className="font-semibold text-gray-500">Source</dt>
