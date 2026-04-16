@@ -16,6 +16,7 @@ import { Toaster } from 'react-hot-toast';
 import useAuthStore from './store/useAuthStore';
 import FollowUpReminderListener from './components/calendar/FollowUpReminderListener';
 import Login from './pages/Login';
+import InvitePage from './pages/InvitePage';
 import Dashboard from './pages/Dashboard';
 import WorkspaceSetup from './pages/WorkspaceSetup';
 import AdminUsersPage from './pages/AdminUsersPage';
@@ -152,6 +153,9 @@ function App() {
             <Login />
           </PublicRoute>
         } />
+
+        <Route path="/invite" element={<InvitePage />} />
+        <Route path="/invite/accept" element={<InvitePage />} />
 
         <Route path="/workspace/setup" element={
           <OnboardingRoute>
