@@ -23,6 +23,27 @@ if (localStorage.getItem('storeVersion') !== STORE_VERSION) {
     localStorage.setItem('storeVersion', STORE_VERSION);
 }
 
+const normalizeUserRole = (role: unknown): string => {
+    if (typeof role === 'object' && role !== null) {
+        return (role as { name?: string }).name || 'Administrator';
+    }
+
+    if (typeof role === 'string' && role.trim().length > 0) {
+        return role;
+    }
+
+    return 'Administrator';
+};
+
+const normalizeStoredUser = (rawUser: User | null): User | null => {
+    if (!rawUser) return rawUser;
+
+    return {
+        ...rawUser,
+        role: normalizeUserRole(rawUser.role),
+    };
+};
+
 const useAuthStore = create<AuthState>((set) => {
     // Safely parse local storage state
     let initialUser: User | null = null;
@@ -30,12 +51,7 @@ const useAuthStore = create<AuthState>((set) => {
         const storedUser = localStorage.getItem('user');
         if (storedUser) {
             const parsed = JSON.parse(storedUser);
-            // Normalize role: if it's an object, extract the name string
-            // This handles stale MongoDB data that stored the full role object
-            if (parsed && typeof parsed.role === 'object' && parsed.role !== null) {
-                parsed.role = parsed.role.name || 'Administrator';
-            }
-            initialUser = parsed;
+            initialUser = normalizeStoredUser(parsed);
         }
     } catch {
         initialUser = null;
@@ -58,13 +74,7 @@ const useAuthStore = create<AuthState>((set) => {
         isAuthenticated: !!localStorage.getItem('accessToken'),
 
         setAuth: (rawUser, accessToken, refreshToken) => {
-            // Normalize role: always store it as a plain string to avoid React rendering crashes
-            const user = rawUser ? {
-                ...rawUser,
-                role: typeof rawUser.role === 'object' && rawUser.role !== null
-                    ? (rawUser.role as any).name || 'Administrator'
-                    : (rawUser.role as string) || 'Administrator'
-            } : rawUser;
+            const user = normalizeStoredUser(rawUser);
 
             set((state) => {
                 const previousUserId = state.user?.id || null;
@@ -96,7 +106,7 @@ const useAuthStore = create<AuthState>((set) => {
 
         updateUser: (updatedFields) => set((state) => {
             if (!state.user) return state;
-            const newUser = { ...state.user, ...updatedFields };
+            const newUser = normalizeStoredUser({ ...state.user, ...updatedFields });
             localStorage.setItem('user', JSON.stringify(newUser));
             return { user: newUser };
         }),

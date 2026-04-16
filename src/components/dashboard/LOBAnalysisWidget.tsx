@@ -43,8 +43,13 @@ const LOBAnalysisWidget: React.FC = () => {
                 </div>
             </div>
 
-            <div className="flex-1 w-full min-h-[200px] relative z-10 pt-2">
-                <ResponsiveContainer width="99%" height="100%">
+            <div className="flex-1 w-full min-h-[220px] relative z-10 pt-2">
+                {lobData.length === 0 ? (
+                    <div className="h-full flex items-center justify-center rounded-xl border border-dashed border-gray-200 bg-gray-50/60 text-sm font-medium text-gray-400">
+                        No LOB movement recorded yet.
+                    </div>
+                ) : (
+                <ResponsiveContainer width="100%" height={220}>
                     <BarChart data={lobData} margin={{ top: 0, right: 0, left: -25, bottom: 0 }} barSize={32}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
                         <XAxis
@@ -72,6 +77,7 @@ const LOBAnalysisWidget: React.FC = () => {
                         />
                     </BarChart>
                 </ResponsiveContainer>
+                )}
             </div>
         </motion.div>
     );

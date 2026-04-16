@@ -18,6 +18,7 @@ import CreateUserDetailsTab from './CreateUserDetailsTab';
 import CreateUserAccessTab from './CreateUserAccessTab';
 import CreateUserTargetsTab from './CreateUserTargetsTab';
 import type { UserFormData } from './CreateUserModal.types';
+import type { Location } from '../../types/user.types';
 
 import { toast } from 'react-hot-toast';
 
@@ -67,6 +68,40 @@ const getPhoneValidationMessage = (value: string, country: PhoneCountry): string
   }
 
   return true;
+};
+
+const formatLocationLabel = (value?: string | null) => {
+  const normalized = (value || '').trim();
+  if (!normalized) return 'Location';
+
+  return normalized
+    .replace(/_/g, ' ')
+    .toLowerCase()
+    .replace(/\b\w/g, (character) => character.toUpperCase());
+};
+
+const getAddressPathFromLocation = (
+  countryId: string,
+  leafId: string,
+  locationById: Map<string, Location>,
+) => {
+  const path: string[] = [];
+  let cursorId: string | undefined = leafId;
+  const visited = new Set<string>();
+
+  while (cursorId) {
+    if (visited.has(cursorId)) break;
+    visited.add(cursorId);
+
+    const location = locationById.get(cursorId);
+    if (!location) break;
+    if (location.id === countryId) break;
+
+    path.push(location.id);
+    cursorId = location.parentId;
+  }
+
+  return path.reverse();
 };
 
 type CreateUserPayload = {
@@ -134,6 +169,7 @@ const CreateUserModal: React.FC = () => {
   const { reset, handleSubmit, watch, setFocus, setValue, clearErrors, formState: { isSubmitting, errors } } = methods;
   const countryId = watch('countryId');
   const stateId = watch('stateId');
+  const districtId = watch('districtId');
 
   const getFieldClassName = (hasError?: boolean) =>
     `w-full px-4 py-2.5 rounded-xl outline-none transition-all text-sm ${
@@ -337,25 +373,106 @@ const CreateUserModal: React.FC = () => {
 
   const submitForm = handleSubmit(onSubmit, onInvalid);
 
-  const allLocations = allLocationsData?.locations || [];
-  const countries = useMemo(
-    () => allLocations.filter((location: any) => location.type === 'COUNTRY'),
+  const allLocations = (allLocationsData?.locations || []) as Location[];
+  const locationById = useMemo(
+    () => new Map(allLocations.map((location) => [location.id, location])),
     [allLocations],
   );
-  const states = useMemo(
+
+  const countryOptions = useMemo(
     () =>
-      allLocations.filter(
-        (location: any) => location.type === 'STATE' && (!countryId || location.parentId === countryId),
-      ),
-    [allLocations, countryId],
+      allLocations
+        .filter((location) => location.type === 'COUNTRY')
+        .map((location) => ({ id: location.id, name: location.name })),
+    [allLocations],
   );
-  const districts = useMemo(
-    () =>
-      allLocations.filter(
-        (location: any) => location.type === 'DISTRICT' && (!stateId || location.parentId === stateId),
-      ),
-    [allLocations, stateId],
-  );
+
+  const addressSelectionPath = useMemo(() => {
+    if (!countryId) return [];
+
+    if (districtId) {
+      const derivedPath = getAddressPathFromLocation(countryId, districtId, locationById);
+      if (derivedPath.length > 0) return derivedPath;
+    }
+
+    if (stateId) {
+      const derivedPath = getAddressPathFromLocation(countryId, stateId, locationById);
+      if (derivedPath.length > 0) return derivedPath;
+      return [stateId];
+    }
+
+    return [];
+  }, [countryId, districtId, locationById, stateId]);
+
+  const addressLevels = useMemo(() => {
+    if (!countryId) return [];
+
+    const levels: Array<{
+      key: string;
+      label: string;
+      selectedId: string;
+      options: Array<{ id: string; name: string }>;
+      helperText?: string;
+    }> = [];
+
+    let parentId = countryId;
+    let levelIndex = 0;
+
+    while (parentId) {
+      const childOptions = allLocations.filter((location) => location.parentId === parentId);
+      if (childOptions.length === 0) break;
+
+      const selectedId = addressSelectionPath[levelIndex] || '';
+      const levelLabel =
+        childOptions[0]?.level?.levelName ||
+        formatLocationLabel(childOptions[0]?.type) ||
+        `Level ${levelIndex + 1}`;
+
+      levels.push({
+        key: `${parentId}-${levelIndex}`,
+        label: levelLabel,
+        selectedId,
+        options: childOptions.map((location) => ({
+          id: location.id,
+          name: location.name,
+        })),
+        helperText:
+          !selectedId && levelIndex > 0
+            ? `Choose the previous ${levels[levelIndex - 1]?.label.toLowerCase()} first to unlock this level.`
+            : undefined,
+      });
+
+      if (!selectedId) break;
+
+      parentId = selectedId;
+      levelIndex += 1;
+    }
+
+    return levels;
+  }, [addressSelectionPath, allLocations, countryId]);
+
+  const handleCountryChange = (nextCountryId: string) => {
+    setValue('countryId', nextCountryId, { shouldDirty: true, shouldValidate: true });
+    setValue('stateId', '', { shouldDirty: true, shouldValidate: true });
+    setValue('districtId', '', { shouldDirty: true, shouldValidate: true });
+    clearErrors(['countryId', 'stateId', 'districtId']);
+  };
+
+  const handleAddressLevelChange = (levelIndex: number, nextLocationId: string) => {
+    const nextPath = addressSelectionPath.slice(0, levelIndex);
+
+    if (nextLocationId) {
+      nextPath.push(nextLocationId);
+    }
+
+    setValue('stateId', nextPath[0] || '', { shouldDirty: true, shouldValidate: true });
+    setValue('districtId', nextPath.length >= 2 ? nextPath[nextPath.length - 1] : '', {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+    clearErrors(['stateId', 'districtId']);
+  };
+
   const departments = Array.isArray(deptsData) ? deptsData : deptsData?.departments || [];
   const safeRoles = (rolesData?.roles || []).map((role: any) => ({
     value: role?.id || role?.name || '',
@@ -435,9 +552,11 @@ const CreateUserModal: React.FC = () => {
               {/* Tab: Details */}
               <div style={{ display: activeTab === 'details' ? 'block' : 'none' }} className="space-y-6">
                 <CreateUserDetailsTab
-                  countries={countries}
-                  states={states}
-                  districts={districts}
+                  countryOptions={countryOptions}
+                  countryId={countryId}
+                  addressLevels={addressLevels}
+                  onCountryChange={handleCountryChange}
+                  onAddressLevelChange={handleAddressLevelChange}
                   selectedUserId={selectedUserId}
                   selectedPhoneCountry={selectedPhoneCountry}
                   setSelectedPhoneCountry={setSelectedPhoneCountry}

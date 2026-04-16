@@ -4,7 +4,7 @@ import { Calendar, Clock, Video, Phone } from 'lucide-react';
 import useDashboardStore from '../../store/useDashboardStore';
 
 const CalendarWidget: React.FC = () => {
-    const { meetings, isLoading } = useDashboardStore();
+    const { meetings, isLoading, scheduleDateLabel } = useDashboardStore();
 
     if (isLoading) {
         return (
@@ -50,11 +50,16 @@ const CalendarWidget: React.FC = () => {
                     </div>
                     <div>
                         <h3 className="text-base font-bold text-gray-900 leading-tight">Schedule</h3>
-                        <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Today, Oct 24</p>
+                        <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Today, {scheduleDateLabel || 'No date'}</p>
                     </div>
                 </div>
             </div>
 
+            {meetings.length === 0 ? (
+                <div className="flex-1 flex items-center justify-center rounded-xl border border-dashed border-gray-200 bg-gray-50/60 text-sm font-medium text-gray-400">
+                    No follow-ups scheduled for today.
+                </div>
+            ) : (
             <div className="flex flex-col gap-4 flex-1">
                 {meetings.map((meeting, i) => (
                     <div key={meeting.id} className="flex gap-4 group">
@@ -74,6 +79,7 @@ const CalendarWidget: React.FC = () => {
                     </div>
                 ))}
             </div>
+            )}
 
             <div className="mt-2 text-center pt-2">
                 <button className="text-xs font-bold text-gray-400 hover:text-gray-900 transition-colors uppercase tracking-widest">

@@ -4,10 +4,25 @@ import { Controller, useFormContext } from 'react-hook-form';
 import { DEFAULT_PHONE_COUNTRY, getPhoneFlag, PHONE_COUNTRIES, type PhoneCountry } from '../../constants/phoneCountries';
 import type { UserFormData } from './CreateUserModal.types';
 
+interface AddressLevelOption {
+  id: string;
+  name: string;
+}
+
+interface AddressLevelField {
+  key: string;
+  label: string;
+  selectedId: string;
+  options: AddressLevelOption[];
+  helperText?: string;
+}
+
 interface CreateUserDetailsTabProps {
-  countries: any[];
-  states: any[];
-  districts: any[];
+  countryOptions: AddressLevelOption[];
+  countryId: string;
+  addressLevels: AddressLevelField[];
+  onCountryChange: (value: string) => void;
+  onAddressLevelChange: (levelIndex: number, value: string) => void;
   selectedUserId: string | null | undefined;
   selectedPhoneCountry: PhoneCountry;
   setSelectedPhoneCountry: React.Dispatch<React.SetStateAction<PhoneCountry>>;
@@ -24,9 +39,11 @@ interface CreateUserDetailsTabProps {
 }
 
 const CreateUserDetailsTab: React.FC<CreateUserDetailsTabProps> = ({
-  countries,
-  states,
-  districts,
+  countryOptions,
+  countryId,
+  addressLevels,
+  onCountryChange,
+  onAddressLevelChange,
   selectedUserId,
   selectedPhoneCountry,
   setSelectedPhoneCountry,
@@ -49,8 +66,6 @@ const CreateUserDetailsTab: React.FC<CreateUserDetailsTabProps> = ({
   } = useFormContext<UserFormData>();
 
   const password = watch('password');
-  const countryId = watch('countryId');
-  const stateId = watch('stateId');
 
   return (
     <div className="space-y-6">
@@ -243,12 +258,20 @@ const CreateUserDetailsTab: React.FC<CreateUserDetailsTabProps> = ({
       <div className="h-px bg-gray-100 my-2" />
       <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Permanent Address</p>
 
+      <input type="hidden" {...register('countryId')} />
+      <input type="hidden" {...register('stateId')} />
+      <input type="hidden" {...register('districtId')} />
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="space-y-1.5">
           <label className="text-[10px] font-bold text-gray-400 uppercase">Country</label>
-          <select {...register('countryId')} className={getSelectClassName(Boolean(errors.countryId))}>
+          <select
+            value={countryId}
+            onChange={(event) => onCountryChange(event.target.value)}
+            className={getSelectClassName(Boolean(errors.countryId))}
+          >
             <option value="">Select Country</option>
-            {countries.map((l: any) => (
+            {countryOptions.map((l) => (
               <option key={l.id} value={l.id}>
                 {l.name}
               </option>
@@ -256,55 +279,43 @@ const CreateUserDetailsTab: React.FC<CreateUserDetailsTabProps> = ({
           </select>
           {renderFieldError(errors.countryId?.message)}
         </div>
-        <div className="space-y-1.5">
-          <label className="text-[10px] font-bold text-gray-400 uppercase">State</label>
-          <select
-            {...register('stateId', {
-              validate: (value) => {
-                if (!value) return true;
-                return countryId ? true : 'Select a country before choosing a state.';
-              },
-            })}
-            className={getSelectClassName(Boolean(errors.stateId))}
-            disabled={!countryId}
-          >
-            <option value="">Select State</option>
-            {states.map((l: any) => (
-              <option key={l.id} value={l.id}>
-                {l.name}
-              </option>
-            ))}
-          </select>
-          {!countryId && !errors.stateId ? (
-            <p className="text-[11px] text-gray-400 font-semibold">Choose a country first to unlock states.</p>
-          ) : null}
-          {renderFieldError(errors.stateId?.message)}
-        </div>
-        <div className="space-y-1.5">
-          <label className="text-[10px] font-bold text-gray-400 uppercase">District</label>
-          <select
-            {...register('districtId', {
-              validate: (value) => {
-                if (!value) return true;
-                return stateId ? true : 'Select a state before choosing a district.';
-              },
-            })}
-            className={getSelectClassName(Boolean(errors.districtId))}
-            disabled={!stateId}
-          >
-            <option value="">Select District</option>
-            {districts.map((l: any) => (
-              <option key={l.id} value={l.id}>
-                {l.name}
-              </option>
-            ))}
-          </select>
-          {!stateId && !errors.districtId ? (
-            <p className="text-[11px] text-gray-400 font-semibold">Choose a state first to unlock districts.</p>
-          ) : null}
-          {renderFieldError(errors.districtId?.message)}
-        </div>
+
+        {addressLevels.map((level, index) => (
+          <div key={level.key} className="space-y-1.5">
+            <label className="text-[10px] font-bold text-gray-400 uppercase">{level.label}</label>
+            <select
+              value={level.selectedId}
+              onChange={(event) => onAddressLevelChange(index, event.target.value)}
+              className={getSelectClassName(Boolean(index === 0 ? errors.stateId : errors.districtId))}
+              disabled={!countryId}
+            >
+              <option value="">Select {level.label}</option>
+              {level.options.map((option) => (
+                <option key={option.id} value={option.id}>
+                  {option.name}
+                </option>
+              ))}
+            </select>
+            {level.helperText && !(index === 0 ? errors.stateId : errors.districtId) ? (
+              <p className="text-[11px] text-gray-400 font-semibold">{level.helperText}</p>
+            ) : null}
+            {index === 0 ? renderFieldError(errors.stateId?.message) : null}
+            {index === 1 ? renderFieldError(errors.districtId?.message) : null}
+          </div>
+        ))}
       </div>
+
+      {countryId && addressLevels.length === 0 ? (
+        <p className="text-[11px] text-gray-400 font-semibold">
+          This country does not have additional location levels configured yet.
+        </p>
+      ) : null}
+
+      {countryId && addressLevels.length > 2 ? (
+        <p className="text-[11px] text-emerald-600 font-semibold">
+          Extra address levels are shown automatically from your location setup.
+        </p>
+      ) : null}
     </div>
   );
 };

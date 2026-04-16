@@ -52,6 +52,11 @@ const RecentActivityWidget: React.FC = () => {
                 </div>
             </div>
 
+            {activities.length === 0 ? (
+                <div className="flex-1 flex items-center justify-center rounded-xl border border-dashed border-gray-200 bg-gray-50/60 text-sm font-medium text-gray-400">
+                    No recent activity in this workspace yet.
+                </div>
+            ) : (
             <div className="flex flex-col gap-6 flex-1">
                 {activities.map((act) => (
                     <div key={act.id} className="flex gap-4 items-start group">
@@ -80,6 +85,7 @@ const RecentActivityWidget: React.FC = () => {
                     </div>
                 ))}
             </div>
+            )}
         </motion.div>
     );
 };

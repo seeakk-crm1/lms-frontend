@@ -14,10 +14,10 @@ import useDashboardStore from '../store/useDashboardStore';
 const Dashboard: React.FC = () => {
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-    const { fetchDashboardData } = useDashboardStore();
+    const { fetchDashboardData, error } = useDashboardStore();
 
     useEffect(() => {
-        fetchDashboardData();
+        void fetchDashboardData();
     }, [fetchDashboardData]);
 
     return (
@@ -63,6 +63,11 @@ const Dashboard: React.FC = () => {
                     <div className="absolute top-0 right-0 w-[800px] h-[500px] bg-gradient-to-bl from-emerald-50/80 via-transparent to-transparent pointer-events-none -z-10" />
 
                     <div className="max-w-[1600px] mx-auto p-6 md:p-8 space-y-8">
+                        {error && (
+                            <div className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-medium text-red-600">
+                                {error}
+                            </div>
+                        )}
 
                         {/* KPI SECTION */}
                         <KPICards />

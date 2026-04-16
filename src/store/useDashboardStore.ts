@@ -1,4 +1,6 @@
 import { create } from 'zustand';
+import axios from 'axios';
+import { getDashboardSummary, type DashboardRange } from '../services/dashboard.api';
 
 export interface KPIData {
     title: string;
@@ -21,7 +23,7 @@ export interface PipelineData {
 }
 
 export interface Activity {
-    id: number;
+    id: string;
     user: string;
     action: string;
     target: string;
@@ -36,7 +38,7 @@ export interface LOBData {
 }
 
 export interface Meeting {
-    id: number;
+    id: string;
     title: string;
     time: string;
     type: string;
@@ -44,6 +46,9 @@ export interface Meeting {
 
 interface DashboardState {
     isLoading: boolean;
+    isRefreshing: boolean;
+    selectedRange: DashboardRange;
+    scheduleDateLabel: string;
     kpiData: KPIData[];
     leadGrowthData: LeadGrowthData[];
     pipelineData: PipelineData[];
@@ -51,11 +56,14 @@ interface DashboardState {
     lobData: LOBData[];
     meetings: Meeting[];
     error: string | null;
-    fetchDashboardData: () => Promise<void>;
+    fetchDashboardData: (range?: DashboardRange) => Promise<void>;
 }
 
 const useDashboardStore = create<DashboardState>((set) => ({
     isLoading: true,
+    isRefreshing: false,
+    selectedRange: '7d',
+    scheduleDateLabel: '',
     kpiData: [],
     leadGrowthData: [],
     pipelineData: [],
@@ -64,47 +72,44 @@ const useDashboardStore = create<DashboardState>((set) => ({
     meetings: [],
     error: null,
 
-    fetchDashboardData: async () => {
-        set({ isLoading: true, error: null });
+    fetchDashboardData: async (range) => {
+        const requestedRange = range ?? useDashboardStore.getState().selectedRange;
+        const hasExistingData = useDashboardStore.getState().kpiData.length > 0;
+
+        set({
+            isLoading: hasExistingData ? false : true,
+            isRefreshing: hasExistingData,
+            error: null,
+            selectedRange: requestedRange,
+        });
+
         try {
-            // Simulate network delay for realistic loading animations
-            await new Promise(resolve => setTimeout(resolve, 1500));
+            const response = await getDashboardSummary(requestedRange);
+            const dashboard = response.data;
 
             set({
                 isLoading: false,
-                kpiData: [
-                    { title: "Today's Leads", value: "14", growth: "+5 leads today", trend: "up", iconName: "Target" },
-                    { title: "Total Leads", value: "4,821", growth: "+18% growth", trend: "up", iconName: "Users" },
-                    { title: "Closed Leads", value: "1,245", growth: "+3.2% this week", trend: "up", iconName: "CheckCircle2" },
-                    { title: "Active Users", value: "92", growth: "-1.4% this week", trend: "down", iconName: "TrendingUp" }
-                ],
-                leadGrowthData: [
-                    { name: 'Mon', leads: 40 }, { name: 'Tue', leads: 60 }, { name: 'Wed', leads: 45 },
-                    { name: 'Thu', leads: 80 }, { name: 'Fri', leads: 55 }, { name: 'Sat', leads: 95 }, { name: 'Sun', leads: 110 }
-                ],
-                pipelineData: [
-                    { name: 'New Lead', count: 420, percent: 100, color: 'from-gray-300 to-gray-400' },
-                    { name: 'Qualified Lead', count: 280, percent: 66, color: 'from-emerald-300 to-emerald-400' },
-                    { name: 'Potential Qualified', count: 190, percent: 45, color: 'from-emerald-400 to-emerald-500' },
-                    { name: 'Closure', count: 85, percent: 20, color: 'from-emerald-500 to-emerald-600' }
-                ],
-                activities: [
-                    { id: 1, user: "Alex Chen", action: "assigned lead", target: "Apple Enterprise", time: "10 mins ago", avatar: "https://i.pravatar.cc/100?img=11", status: "assigned" },
-                    { id: 2, user: "Sarah Lopez", action: "requested approval", target: "Acme Discount Structure", time: "1 hour ago", avatar: "https://i.pravatar.cc/100?img=5", status: "pending" },
-                    { id: 3, user: "Mike Johnson", action: "closed lead", target: "Tesla Fleet Contract", time: "2 hours ago", avatar: null, status: "closed" }
-                ],
-                lobData: [
-                    { name: 'Initial', lost: 45 }, { name: 'Contact', lost: 30 }, { name: 'Demo', lost: 85 },
-                    { name: 'Negotiation', lost: 20 }, { name: 'Final', lost: 5 }
-                ],
-                meetings: [
-                    { id: 1, title: 'Follow-up Call - Microsoft Refit', time: '10:00 AM', type: 'call' },
-                    { id: 2, title: 'Product Demo - Acme Corp', time: '01:30 PM', type: 'video' },
-                    { id: 3, title: 'Lead Qualification - Meta', time: '04:00 PM', type: 'call' }
-                ]
+                isRefreshing: false,
+                scheduleDateLabel: dashboard.scheduleDateLabel,
+                kpiData: dashboard.kpis.map((kpi) => ({
+                    ...kpi,
+                    value: new Intl.NumberFormat('en-US').format(kpi.value),
+                })),
+                leadGrowthData: dashboard.leadGrowth,
+                pipelineData: dashboard.pipeline,
+                activities: dashboard.activities,
+                lobData: dashboard.lob,
+                meetings: dashboard.meetings,
             });
         } catch (error) {
-            set({ error: "Failed to load dashboard data", isLoading: false });
+            const message = axios.isAxiosError(error)
+                ? (error.response?.data?.message || error.response?.data?.error || error.message)
+                : "Failed to load dashboard data";
+            set({
+                error: String(message || "Failed to load dashboard data"),
+                isLoading: false,
+                isRefreshing: false,
+            });
         }
     }
 }));

@@ -20,6 +20,13 @@ export interface Location {
   name: string;
   type: 'COUNTRY' | 'STATE' | 'DISTRICT' | 'CITY' | 'WARD' | 'CONSTITUENCY';
   parentId?: string;
+  countryId?: string | null;
+  levelId?: string | null;
+  level?: {
+    id: string;
+    levelName: string;
+    levelOrder: number;
+  } | null;
   children?: Location[];
 }
 
