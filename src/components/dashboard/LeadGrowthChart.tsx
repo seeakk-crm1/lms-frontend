@@ -56,13 +56,13 @@ const LeadGrowthChart: React.FC = () => {
                     ))}
                 </div>
             </div>
-            <div className="flex-1 w-full min-h-0 relative z-10">
+            <div className="flex-1 w-full min-h-[260px] relative z-10">
                 {leadGrowthData.length === 0 ? (
                     <div className="h-full flex items-center justify-center rounded-xl border border-dashed border-gray-200 bg-gray-50/60 text-sm font-medium text-gray-400">
                         No lead activity available for this range yet.
                     </div>
                 ) : (
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height={260}>
                     <AreaChart data={leadGrowthData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
                         <defs>
                             <linearGradient id="colorLeads" x1="0" y1="0" x2="0" y2="1">
