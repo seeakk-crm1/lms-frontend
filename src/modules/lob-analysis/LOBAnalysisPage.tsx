@@ -1,8 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { AlertTriangle, FileBarChart2, RefreshCcw } from 'lucide-react';
-import DashboardHeader from '../../components/dashboard/DashboardHeader';
-import DashboardSidebar from '../../components/dashboard/DashboardSidebar';
+import DashboardLayout from '../../components/dashboard/DashboardLayout';
 import { useLeadMetaQuery } from '../../hooks/useLeads';
 import { useOfficesQuery } from '../../hooks/admin/office/useOfficeQuery';
 import { useCountriesQuery } from '../locations/hooks/useLocations';
@@ -31,8 +30,6 @@ const emptyFilters: LOBAnalysisFilters = {
 };
 
 const LOBAnalysisPage: React.FC = () => {
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [, setMobileMenuOpen] = useState(false);
   const [draftFilters, setDraftFilters] = useState<LOBAnalysisFilters>(emptyFilters);
   const [appliedFilters, setAppliedFilters] = useState<LOBAnalysisFilters>(emptyFilters);
   const [page, setPage] = useState(1);
@@ -86,35 +83,21 @@ const LOBAnalysisPage: React.FC = () => {
     return chips;
   }, [appliedFilters]);
 
-  if (!canView) {
-    return (
-      <div className="flex h-screen w-full overflow-hidden bg-gray-50 font-sans text-gray-900">
-        <DashboardSidebar isCollapsed={isSidebarCollapsed} toggleCollapsed={() => setIsSidebarCollapsed((value) => !value)} />
-        <main className="relative flex h-full flex-1 flex-col overflow-hidden">
-          <DashboardHeader setMobileMenuOpen={setMobileMenuOpen} />
-          <div className="flex flex-1 items-center justify-center p-6">
-            <div className="max-w-lg rounded-[32px] border border-rose-100 bg-white p-8 text-center shadow-[0_25px_60px_-35px_rgba(15,23,42,0.25)]">
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-50 text-rose-500">
-                <AlertTriangle className="h-6 w-6" />
-              </div>
-              <h1 className="mt-5 text-3xl font-black text-gray-900">LOB Analysis Access Needed</h1>
-              <p className="mt-3 text-sm font-semibold leading-7 text-gray-500">
-                Your current role does not expose this analysis screen in the UI. Ask an administrator to grant LOB analysis or reporting access.
-              </p>
+
+    <DashboardLayout>
+      {!canView ? (
+        <div className="flex flex-1 items-center justify-center p-6">
+          <div className="max-w-lg rounded-[32px] border border-rose-100 bg-white p-8 text-center shadow-[0_25px_60px_-35px_rgba(15,23,42,0.25)]">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-50 text-rose-500">
+              <AlertTriangle className="h-6 w-6" />
             </div>
+            <h1 className="mt-5 text-3xl font-black text-gray-900">LOB Analysis Access Needed</h1>
+            <p className="mt-3 text-sm font-semibold leading-7 text-gray-500">
+              Your current role does not expose this analysis screen in the UI. Ask an administrator to grant LOB analysis or reporting access.
+            </p>
           </div>
-        </main>
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex h-screen w-full overflow-hidden bg-gray-50 font-sans text-gray-900">
-      <DashboardSidebar isCollapsed={isSidebarCollapsed} toggleCollapsed={() => setIsSidebarCollapsed((value) => !value)} />
-
-      <main className="relative flex h-full flex-1 flex-col overflow-hidden">
-        <DashboardHeader setMobileMenuOpen={setMobileMenuOpen} />
-
+        </div>
+      ) : (
         <div className="relative flex-1 overflow-x-hidden overflow-y-auto custom-scrollbar p-4 md:p-8">
           <div className="absolute right-0 top-0 -z-10 h-[420px] w-[720px] bg-gradient-to-bl from-emerald-50 via-transparent to-transparent" />
 
@@ -191,8 +174,8 @@ const LOBAnalysisPage: React.FC = () => {
             />
           </div>
         </div>
-      </main>
-    </div>
+      )}
+    </DashboardLayout>
   );
 };
 

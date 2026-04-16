@@ -1,8 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { AlertTriangle, CheckCheck, Clock3, Filter, Search, ShieldCheck, XCircle } from 'lucide-react';
-import DashboardHeader from '../../components/dashboard/DashboardHeader';
-import DashboardSidebar from '../../components/dashboard/DashboardSidebar';
+import DashboardLayout from '../../components/dashboard/DashboardLayout';
 import { useApprovalActionMutation, useApprovalsQuery } from '../../hooks/useApprovals';
 import useApprovalStore from '../../store/approvalStore';
 import useAuthStore from '../../store/useAuthStore';
@@ -25,8 +24,6 @@ const statusOrder: Record<string, number> = {
 };
 
 const PendingApprovalPage: React.FC = () => {
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [, setMobileMenuOpen] = useState(false);
   const [searchDraft, setSearchDraft] = useState('');
 
   const { user } = useAuthStore();
@@ -144,15 +141,7 @@ const PendingApprovalPage: React.FC = () => {
   }, [setSelectedApproval]);
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-gray-50 font-sans text-gray-900 selection:bg-amber-200 selection:text-amber-900">
-      <DashboardSidebar
-        isCollapsed={isSidebarCollapsed}
-        toggleCollapsed={() => setIsSidebarCollapsed((value) => !value)}
-      />
-
-      <main className="relative flex h-full flex-1 flex-col overflow-hidden">
-        <DashboardHeader setMobileMenuOpen={setMobileMenuOpen} />
-
+    <DashboardLayout>
         <div className="relative flex-1 overflow-x-hidden overflow-y-auto custom-scrollbar p-4 sm:p-5 md:p-8">
           <div className="absolute right-0 top-0 -z-10 h-[460px] w-[720px] bg-gradient-to-bl from-amber-50 via-transparent to-transparent" />
 
@@ -303,7 +292,6 @@ const PendingApprovalPage: React.FC = () => {
             />
           </div>
         </div>
-      </main>
 
       <ApprovalModal
         approval={selectedApproval}
@@ -312,7 +300,7 @@ const PendingApprovalPage: React.FC = () => {
         onClose={resetModal}
         onSubmit={handleSubmitApproval}
       />
-    </div>
+    </DashboardLayout>
   );
 };
 

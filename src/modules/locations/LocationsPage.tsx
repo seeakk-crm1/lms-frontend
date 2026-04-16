@@ -2,8 +2,7 @@ import React, { Suspense, lazy, useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight, ChevronRight, Pencil, Plus, Search, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import DashboardHeader from '../../components/dashboard/DashboardHeader';
-import DashboardSidebar from '../../components/dashboard/DashboardSidebar';
+import DashboardLayout from '../../components/dashboard/DashboardLayout';
 import useAuthStore from '../../store/useAuthStore';
 import type { Country, LocationLevel, LocationRecord } from '../../services/locations.api';
 import {
@@ -31,8 +30,6 @@ const roleKey = (role: unknown) =>
     .replace(/[\s_-]+/g, '');
 
 const LocationsPage: React.FC = () => {
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [, setMobileMenuOpen] = useState(false);
   const [countrySearch, setCountrySearch] = useState('');
   const [plannedLevelCount, setPlannedLevelCount] = useState('0');
   const [selectedCountryId, setSelectedCountryId] = useState('');
@@ -169,12 +166,7 @@ const LocationsPage: React.FC = () => {
   }, [countries, countrySearch]);
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-[#f4fbf8] font-sans text-slate-900">
-      <DashboardSidebar isCollapsed={isSidebarCollapsed} toggleCollapsed={() => setIsSidebarCollapsed((value) => !value)} />
-
-      <main className="relative flex h-full flex-1 flex-col overflow-hidden">
-        <DashboardHeader setMobileMenuOpen={setMobileMenuOpen} />
-
+    <DashboardLayout>
         <div className="relative flex-1 overflow-x-hidden overflow-y-auto custom-scrollbar p-4 md:p-8">
           <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_left,_rgba(16,185,129,0.16),_transparent_34%),radial-gradient(circle_at_top_right,_rgba(45,212,191,0.14),_transparent_30%),linear-gradient(180deg,_#f7fffb_0%,_#eefaf5_100%)]" />
 
@@ -389,7 +381,6 @@ const LocationsPage: React.FC = () => {
             </section>
           </div>
         </div>
-      </main>
 
       <Suspense fallback={null}>
         <AddCountryModal
@@ -499,7 +490,7 @@ const LocationsPage: React.FC = () => {
           isSubmitting={deleteCountryMutation.isPending || deleteLocationMutation.isPending}
         />
       </Suspense>
-    </div>
+    </DashboardLayout>
   );
 };
 

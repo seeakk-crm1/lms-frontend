@@ -1,8 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { CalendarClock, CalendarDays, Users } from 'lucide-react';
-import DashboardSidebar from '../../../components/dashboard/DashboardSidebar';
-import DashboardHeader from '../../../components/dashboard/DashboardHeader';
+import DashboardLayout from '../../../components/dashboard/DashboardLayout';
 import { useDepartmentsQuery, useSupervisorsQuery } from '../../../hooks/useUsersQuery';
 import RosterFilters from './RosterFilters';
 import RosterModal from './RosterModal';
@@ -12,8 +11,6 @@ import { useRosterEntriesQuery, useRosterUsersQuery } from './useRosterQuery';
 import type { RosterUser } from './types';
 
 const RosterPage: React.FC = () => {
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [, setMobileMenuOpen] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
 
   const {
@@ -126,15 +123,7 @@ const RosterPage: React.FC = () => {
   }, [closeModal]);
 
   return (
-    <div className="h-screen w-full bg-gray-50 flex overflow-hidden font-sans text-gray-900">
-      <DashboardSidebar
-        isCollapsed={isSidebarCollapsed}
-        toggleCollapsed={() => setIsSidebarCollapsed((value) => !value)}
-      />
-
-      <main className="flex-1 flex flex-col h-full overflow-hidden relative">
-        <DashboardHeader setMobileMenuOpen={setMobileMenuOpen} />
-
+    <DashboardLayout>
         <div className="flex-1 overflow-x-hidden overflow-y-auto custom-scrollbar relative p-4 md:p-8">
           <div className="absolute top-0 right-0 w-[850px] h-[520px] bg-gradient-to-bl from-emerald-50/80 via-transparent to-transparent pointer-events-none -z-10" />
 
@@ -219,7 +208,6 @@ const RosterPage: React.FC = () => {
             )}
           </div>
         </div>
-      </main>
 
       <RosterModal
         isOpen={modalState.isRosterModalOpen}
@@ -234,7 +222,7 @@ const RosterPage: React.FC = () => {
         onCloseForm={handleCloseForm}
         onEdit={handleEditEntry}
       />
-    </div>
+    </DashboardLayout>
   );
 };
 

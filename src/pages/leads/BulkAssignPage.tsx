@@ -2,8 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Filter, Layers3, SendToBack, UsersRound } from 'lucide-react';
 import { toast } from 'react-hot-toast';
-import DashboardHeader from '../../components/dashboard/DashboardHeader';
-import DashboardSidebar from '../../components/dashboard/DashboardSidebar';
+import DashboardLayout from '../../components/dashboard/DashboardLayout';
 import { useBulkAssignMutation, useBulkPreviewQuery } from '../../hooks/useBulkAssign';
 import { useLeadMetaQuery } from '../../hooks/useLeads';
 import useBulkAssignStore from '../../store/bulkAssignStore';
@@ -13,8 +12,6 @@ import BulkAssignFilters from './components/BulkAssignFilters';
 import BulkAssignPreview from './components/BulkAssignPreview';
 
 const BulkAssignPage: React.FC = () => {
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [, setMobileMenuOpen] = useState(false);
   const [showFilters, setShowFilters] = useState(true);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
@@ -153,15 +150,7 @@ const BulkAssignPage: React.FC = () => {
   }, [appliedFilters, assignmentType, bulkAssignMutation, previewCount, selectedAssignee, selectedAssigneeIds, setProgress]);
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-gray-50 font-sans text-gray-900 selection:bg-emerald-200 selection:text-emerald-900">
-      <DashboardSidebar
-        isCollapsed={isSidebarCollapsed}
-        toggleCollapsed={() => setIsSidebarCollapsed((value) => !value)}
-      />
-
-      <main className="relative flex h-full flex-1 flex-col overflow-hidden">
-        <DashboardHeader setMobileMenuOpen={setMobileMenuOpen} />
-
+    <DashboardLayout>
         <div className="relative flex-1 overflow-x-hidden overflow-y-auto custom-scrollbar p-4 md:p-8">
           <div className="absolute right-0 top-0 -z-10 h-[420px] w-[760px] bg-gradient-to-bl from-emerald-50 via-transparent to-transparent" />
 
@@ -286,7 +275,6 @@ const BulkAssignPage: React.FC = () => {
             </div>
           </div>
         </div>
-      </main>
 
       <BulkAssignConfirmModal
         isOpen={isConfirmOpen}
@@ -298,7 +286,7 @@ const BulkAssignPage: React.FC = () => {
         onClose={() => setIsConfirmOpen(false)}
         onConfirm={handleConfirmAssign}
       />
-    </div>
+    </DashboardLayout>
   );
 };
 

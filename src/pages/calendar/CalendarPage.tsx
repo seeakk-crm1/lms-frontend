@@ -5,8 +5,7 @@ import { z } from 'zod';
 import { AnimatePresence, motion } from 'framer-motion';
 import { CalendarPlus, Loader2, Plus, X } from 'lucide-react';
 import SearchableSelect from '../../components/SearchableSelect';
-import DashboardSidebar from '../../components/dashboard/DashboardSidebar';
-import DashboardHeader from '../../components/dashboard/DashboardHeader';
+import DashboardLayout from '../../components/dashboard/DashboardLayout';
 import CalendarHeader from '../../components/calendar/CalendarHeader';
 import CalendarView from '../../components/calendar/CalendarView';
 import CompleteFollowUpModal from '../../components/calendar/CompleteFollowUpModal';
@@ -30,8 +29,6 @@ const scheduleSchema = z.object({
 type ScheduleFormValues = z.infer<typeof scheduleSchema>;
 
 const CalendarPage: React.FC = () => {
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [, setMobileMenuOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   const { view, selectedDate, selectedUser, modalOpen, selectedFollowUp, setView, setDate, setUser, openModal, closeModal } =
@@ -80,13 +77,7 @@ const CalendarPage: React.FC = () => {
     [createMutation, reset],
   );
 
-  return (
-    <div className="flex h-screen w-full overflow-hidden bg-gray-50 font-sans text-gray-900">
-      <DashboardSidebar isCollapsed={isSidebarCollapsed} toggleCollapsed={() => setIsSidebarCollapsed((value) => !value)} />
-
-      <main className="relative flex h-full flex-1 flex-col overflow-hidden">
-        <DashboardHeader setMobileMenuOpen={setMobileMenuOpen} />
-
+    <DashboardLayout>
         <div className="custom-scrollbar relative flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-8">
           <div className="pointer-events-none absolute right-0 top-0 -z-10 h-[520px] w-[820px] bg-gradient-to-bl from-emerald-50/80 via-transparent to-transparent" />
 
@@ -122,7 +113,6 @@ const CalendarPage: React.FC = () => {
             />
           </div>
         </div>
-      </main>
 
       <CompleteFollowUpModal
         isOpen={modalOpen}
@@ -241,7 +231,7 @@ const CalendarPage: React.FC = () => {
           </div>
         ) : null}
       </AnimatePresence>
-    </div>
+    </DashboardLayout>
   );
 };
 

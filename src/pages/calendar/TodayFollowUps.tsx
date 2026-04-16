@@ -1,28 +1,19 @@
 import React, { useState } from 'react';
 import { CheckCircle2, Clock3 } from 'lucide-react';
-import DashboardSidebar from '../../components/dashboard/DashboardSidebar';
-import DashboardHeader from '../../components/dashboard/DashboardHeader';
+import DashboardLayout from '../../components/dashboard/DashboardLayout';
 import FollowUpList from '../../components/calendar/FollowUpList';
 import CompleteFollowUpModal from '../../components/calendar/CompleteFollowUpModal';
 import { useCompleteFollowUpMutation, useTodayFollowUpsQuery } from '../../hooks/useFollowUps';
 import useFollowupStore from '../../store/followupStore';
 
 const TodayFollowUps: React.FC = () => {
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [, setMobileMenuOpen] = useState(false);
   const { modalOpen, selectedFollowUp, openModal, closeModal } = useFollowupStore();
   const todayQuery = useTodayFollowUpsQuery();
   const completeMutation = useCompleteFollowUpMutation();
 
   const items = todayQuery.data?.data.items || [];
 
-  return (
-    <div className="flex h-screen w-full overflow-hidden bg-gray-50 font-sans text-gray-900">
-      <DashboardSidebar isCollapsed={isSidebarCollapsed} toggleCollapsed={() => setIsSidebarCollapsed((value) => !value)} />
-
-      <main className="relative flex h-full flex-1 flex-col overflow-hidden">
-        <DashboardHeader setMobileMenuOpen={setMobileMenuOpen} />
-
+    <DashboardLayout>
         <div className="custom-scrollbar relative flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-8">
           <div className="mx-auto max-w-[1420px] space-y-6">
             <div className="grid gap-4 lg:grid-cols-[1.4fr_0.6fr]">
@@ -60,7 +51,6 @@ const TodayFollowUps: React.FC = () => {
             />
           </div>
         </div>
-      </main>
 
       <CompleteFollowUpModal
         isOpen={modalOpen}
@@ -72,7 +62,7 @@ const TodayFollowUps: React.FC = () => {
           await completeMutation.mutateAsync({ id: selectedFollowUp.id, payload });
         }}
       />
-    </div>
+    </DashboardLayout>
   );
 };
 
