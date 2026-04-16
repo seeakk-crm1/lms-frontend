@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import axios from 'axios';
 import { getDashboardSummary, type DashboardRange } from '../services/dashboard.api';
 
 export interface KPIData {
@@ -101,8 +102,11 @@ const useDashboardStore = create<DashboardState>((set) => ({
                 meetings: dashboard.meetings,
             });
         } catch (error) {
+            const message = axios.isAxiosError(error)
+                ? (error.response?.data?.message || error.response?.data?.error || error.message)
+                : "Failed to load dashboard data";
             set({
-                error: "Failed to load dashboard data",
+                error: String(message || "Failed to load dashboard data"),
                 isLoading: false,
                 isRefreshing: false,
             });
