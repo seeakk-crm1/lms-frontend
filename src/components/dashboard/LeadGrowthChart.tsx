@@ -1,11 +1,16 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { motion } from 'framer-motion';
 import useDashboardStore from '../../store/useDashboardStore';
 
 const LeadGrowthChart: React.FC = () => {
-    const { leadGrowthData, isLoading } = useDashboardStore();
-    const [filter, setFilter] = useState('7 Days');
+    const { leadGrowthData, isLoading, isRefreshing, selectedRange, fetchDashboardData } = useDashboardStore();
+
+    const filters = [
+        { label: '7 Days', value: '7d' as const },
+        { label: '30 Days', value: '30d' as const },
+        { label: '12 Months', value: '12m' as const },
+    ];
 
     if (isLoading) {
         return (
@@ -32,17 +37,18 @@ const LeadGrowthChart: React.FC = () => {
             transition={{ duration: 0.4, delay: 0.1 }}
             className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8 flex flex-col col-span-1 lg:col-span-2 relative overflow-hidden h-[420px]"
         >
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 pb-4 border-b border-gray-50 z-10 gap-4">
-                <div>
-                    <h3 className="text-lg font-bold text-gray-900 leading-tight">Growth Velocity — Lead Acquisition</h3>
-                    <p className="text-sm font-medium text-gray-400 mt-1">Daily new lead generation volume</p>
-                </div>
-                <div className="flex items-center gap-1 bg-gray-50 p-1 rounded-xl shrink-0">
-                    {['7 Days', '30 Days', '12 Months'].map(label => (
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 pb-4 border-b border-gray-50 z-10 gap-4">
+                    <div>
+                        <h3 className="text-lg font-bold text-gray-900 leading-tight">Growth Velocity — Lead Acquisition</h3>
+                        <p className="text-sm font-medium text-gray-400 mt-1">Daily new lead generation volume</p>
+                    </div>
+                    <div className="flex items-center gap-1 bg-gray-50 p-1 rounded-xl shrink-0">
+                    {filters.map(({ label, value }) => (
                         <button
-                            key={label}
-                            onClick={() => setFilter(label)}
-                            className={`px-4 py-1.5 text-xs font-bold transition-all rounded-lg relative ${filter === label ? 'text-gray-900 bg-white shadow-sm' : 'text-gray-400 hover:text-gray-700'
+                            key={value}
+                            onClick={() => void fetchDashboardData(value)}
+                            disabled={isRefreshing}
+                            className={`px-4 py-1.5 text-xs font-bold transition-all rounded-lg relative disabled:cursor-wait ${selectedRange === value ? 'text-gray-900 bg-white shadow-sm' : 'text-gray-400 hover:text-gray-700'
                                 }`}
                         >
                             {label}
@@ -51,7 +57,12 @@ const LeadGrowthChart: React.FC = () => {
                 </div>
             </div>
             <div className="flex-1 w-full min-h-0 relative z-10">
-                <ResponsiveContainer width="99%" height="100%">
+                {leadGrowthData.length === 0 ? (
+                    <div className="h-full flex items-center justify-center rounded-xl border border-dashed border-gray-200 bg-gray-50/60 text-sm font-medium text-gray-400">
+                        No lead activity available for this range yet.
+                    </div>
+                ) : (
+                <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={leadGrowthData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
                         <defs>
                             <linearGradient id="colorLeads" x1="0" y1="0" x2="0" y2="1">
@@ -66,6 +77,7 @@ const LeadGrowthChart: React.FC = () => {
                         <Area type="monotone" dataKey="leads" stroke="#10B981" strokeWidth={3} fillOpacity={1} fill="url(#colorLeads)" animationDuration={1500} animationEasing="ease-in-out" />
                     </AreaChart>
                 </ResponsiveContainer>
+                )}
             </div>
             <div className="absolute bottom-0 left-0 w-full h-1/2 bg-gradient-to-t from-emerald-50/50 to-transparent pointer-events-none" />
         </motion.div>

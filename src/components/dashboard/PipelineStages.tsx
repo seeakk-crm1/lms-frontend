@@ -38,6 +38,11 @@ const PipelineStages: React.FC = () => {
                 <h3 className="text-lg font-bold text-gray-900 leading-tight">Pipeline Stages</h3>
                 <p className="text-sm font-medium text-gray-400 mt-1">Lead stage distribution and funnels</p>
             </div>
+            {pipelineData.length === 0 ? (
+                <div className="flex-1 flex items-center justify-center rounded-xl border border-dashed border-gray-200 bg-gray-50/60 text-sm font-medium text-gray-400">
+                    No pipeline stages have lead data yet.
+                </div>
+            ) : (
             <div className="flex-1 flex flex-col justify-center gap-6">
                 {pipelineData.map((stage, idx) => (
                     <div key={idx} className="group cursor-pointer">
@@ -50,12 +55,14 @@ const PipelineStages: React.FC = () => {
                                 initial={{ width: 0 }}
                                 animate={{ width: `${stage.percent}%` }}
                                 transition={{ duration: 1, delay: 0.3 + (idx * 0.1), ease: "easeOut" }}
-                                className={`h-full bg-gradient-to-r rounded-full shadow-sm group-hover:brightness-110 ${stage.color}`}
+                                className="h-full rounded-full shadow-sm group-hover:brightness-110"
+                                style={{ backgroundColor: stage.color }}
                             />
                         </div>
                     </div>
                 ))}
             </div>
+            )}
         </motion.div>
     );
 };
