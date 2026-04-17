@@ -246,7 +246,5 @@ const LeadSourceListPage: React.FC = () => {
     </DashboardLayout>
   );
 };
-  );
-};
 
 export default LeadSourceListPage;

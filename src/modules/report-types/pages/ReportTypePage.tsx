@@ -628,6 +628,7 @@ const ReportTypePage: React.FC = () => {
           });
         }}
         isDeleting={deleteMutation.isPending}
+      />
     </DashboardLayout>
   );
 };

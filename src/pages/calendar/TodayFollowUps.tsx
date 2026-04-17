@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { CheckCircle2, Clock3 } from 'lucide-react';
 import DashboardLayout from '../../components/dashboard/DashboardLayout';
 import FollowUpList from '../../components/calendar/FollowUpList';
@@ -13,6 +13,7 @@ const TodayFollowUps: React.FC = () => {
 
   const items = todayQuery.data?.data.items || [];
 
+  return (
     <DashboardLayout>
         <div className="custom-scrollbar relative flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-8">
           <div className="mx-auto max-w-[1420px] space-y-6">

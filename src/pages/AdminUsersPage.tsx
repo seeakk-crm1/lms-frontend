@@ -90,7 +90,5 @@ const AdminUsersPage: React.FC = () => {
     </DashboardLayout>
   );
 };
-  );
-};
 
 export default AdminUsersPage;

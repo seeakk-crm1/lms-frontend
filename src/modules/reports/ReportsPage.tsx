@@ -181,6 +181,7 @@ const ReportsPage: React.FC = () => {
     setDeleteTarget(null);
   };
 
+  return (
     <DashboardLayout>
         <div className="flex-1 overflow-y-auto px-4 pb-8 pt-5 md:px-6 lg:px-8">
           <div className="mx-auto flex w-full max-w-[1700px] flex-col gap-6">

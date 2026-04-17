@@ -77,6 +77,7 @@ const CalendarPage: React.FC = () => {
     [createMutation, reset],
   );
 
+  return (
     <DashboardLayout>
         <div className="custom-scrollbar relative flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-8">
           <div className="pointer-events-none absolute right-0 top-0 -z-10 h-[520px] w-[820px] bg-gradient-to-bl from-emerald-50/80 via-transparent to-transparent" />

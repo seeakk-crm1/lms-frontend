@@ -84,6 +84,7 @@ const LOBAnalysisPage: React.FC = () => {
   }, [appliedFilters]);
 
 
+  return (
     <DashboardLayout>
       {!canView ? (
         <div className="flex flex-1 items-center justify-center p-6">

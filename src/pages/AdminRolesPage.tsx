@@ -56,6 +56,7 @@ const AdminRolesPage: React.FC = () => {
         setDeleteModal({ ...deleteModal, isOpen: false });
     };
 
+    return (
     <DashboardLayout>
         <div className="flex-1 overflow-x-hidden overflow-y-auto custom-scrollbar relative p-4 md:p-8">
             {/* Background Decorator */}

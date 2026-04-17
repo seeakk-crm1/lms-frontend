@@ -171,7 +171,5 @@ const LeadStagesListPage: React.FC = () => {
     </DashboardLayout>
   );
 };
-  );
-};
 
 export default LeadStagesListPage;
