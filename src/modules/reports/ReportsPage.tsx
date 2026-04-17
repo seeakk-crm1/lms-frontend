@@ -1,8 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { DownloadCloud, FileBarChart2, Filter, Plus, RefreshCcw } from 'lucide-react';
-import DashboardHeader from '../../components/dashboard/DashboardHeader';
-import DashboardSidebar from '../../components/dashboard/DashboardSidebar';
+import DashboardLayout from '../../components/dashboard/DashboardLayout';
 import { useLeadMetaQuery } from '../../hooks/useLeads';
 import { useDepartmentsQuery, useRolesQuery } from '../../hooks/useUsersQuery';
 import { useOfficesQuery } from '../../hooks/admin/office/useOfficeQuery';
@@ -30,8 +29,6 @@ const roleKey = (role: unknown) =>
     .replace(/[\s_-]+/g, '');
 
 const ReportsPage: React.FC = () => {
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [, setMobileMenuOpen] = useState(false);
   const [draftSearch, setDraftSearch] = useState('');
   const [draftFilters, setDraftFilters] = useState<SavedReportFilters>({});
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -185,12 +182,7 @@ const ReportsPage: React.FC = () => {
   };
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-gray-50 font-sans text-gray-900">
-      <DashboardSidebar isCollapsed={isSidebarCollapsed} toggleCollapsed={() => setIsSidebarCollapsed((value) => !value)} />
-
-      <main className="relative flex h-full flex-1 flex-col overflow-hidden">
-        <DashboardHeader onOpenMobileMenu={() => setMobileMenuOpen(true)} />
-
+    <DashboardLayout>
         <div className="flex-1 overflow-y-auto px-4 pb-8 pt-5 md:px-6 lg:px-8">
           <div className="mx-auto flex w-full max-w-[1700px] flex-col gap-6">
             <section className="relative overflow-hidden rounded-[32px] border border-white/70 bg-[radial-gradient(circle_at_top_left,_rgba(16,185,129,0.18),_transparent_42%),linear-gradient(180deg,rgba(255,255,255,0.98),rgba(249,250,251,0.96))] p-6 shadow-[0_30px_80px_-40px_rgba(15,23,42,0.35)]">
@@ -307,7 +299,6 @@ const ReportsPage: React.FC = () => {
             </section>
           </div>
         </div>
-      </main>
 
       <CreateReportModal
         open={isModalOpen}
@@ -352,7 +343,7 @@ const ReportsPage: React.FC = () => {
           </div>
         </div>
       )}
-    </div>
+    </DashboardLayout>
   );
 };
 

@@ -3,23 +3,13 @@ import { motion } from 'framer-motion';
 import { Download, Filter, Plus, TrendingUp, Upload } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useLocation, useNavigate } from 'react-router-dom';
-import DashboardHeader from '../../components/dashboard/DashboardHeader';
-import DashboardSidebar from '../../components/dashboard/DashboardSidebar';
-import { useChangeLeadStageMutation, useDeleteLeadMutation, useExportLeads, useExtendLeadSlaMutation, useLeadMetaQuery, useLeadsQuery, usePermanentDeleteLeadMutation, useBulkDeleteLeadsMutation } from '../../hooks/useLeads';
-import useLeadStore from '../../store/leadStore';
-import type { LeadListItem } from '../../types/lead.types';
-import LeadFilters from './components/LeadFilters';
-import LeadsTable from './components/LeadsTable';
-import DeleteLeadModal from './components/DeleteLeadModal';
-import LeadSlaDecisionModal from './components/LeadSlaDecisionModal';
+import DashboardLayout from '../../components/dashboard/DashboardLayout';
 
 const LeadFormDrawer = lazy(() => import('./components/LeadFormDrawer'));
 
 const LeadsPage: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [, setMobileMenuOpen] = useState(false);
   const [showFilters, setShowFilters] = useState(true);
   const [searchDraft, setSearchDraft] = useState('');
   const [deleteModal, setDeleteModal] = useState<{ 
@@ -268,16 +258,8 @@ const LeadsPage: React.FC = () => {
   );
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-gray-50 font-sans text-gray-900 selection:bg-emerald-200 selection:text-emerald-900">
-      <DashboardSidebar
-        isCollapsed={isSidebarCollapsed}
-        toggleCollapsed={() => setIsSidebarCollapsed((value) => !value)}
-      />
-
-      <main className="relative flex h-full flex-1 flex-col overflow-hidden">
-        <DashboardHeader setMobileMenuOpen={setMobileMenuOpen} />
-
-        <div className="relative flex-1 overflow-x-hidden overflow-y-auto custom-scrollbar p-4 md:p-8">
+    <DashboardLayout>
+      <div className="relative flex-1 overflow-x-hidden overflow-y-auto custom-scrollbar p-4 md:p-8">
           <div className="absolute right-0 top-0 -z-10 h-[480px] w-[760px] bg-gradient-to-bl from-emerald-50 via-transparent to-transparent" />
 
           <div className="mx-auto max-w-[1480px] space-y-6 md:space-y-8">
@@ -429,38 +411,37 @@ const LeadsPage: React.FC = () => {
             />
           </div>
         </div>
-      </main>
 
-      <Suspense fallback={null}>
-        <LeadFormDrawer
-          isOpen={drawerState.isOpen}
-          mode={drawerState.mode}
-          lead={selectedLead}
-          onClose={closeDrawer}
+        <Suspense fallback={null}>
+          <LeadFormDrawer
+            isOpen={drawerState.isOpen}
+            mode={drawerState.mode}
+            lead={selectedLead}
+            onClose={closeDrawer}
+          />
+        </Suspense>
+
+        <DeleteLeadModal
+          isOpen={deleteModal.isOpen}
+          leadName={deleteModal.isBulk ? `${selectedLeadIds.length} selected leads` : deleteModal.lead?.name || 'this lead'}
+          isArchiving={!!(deleteMutation.isPending || (deleteModal.isBulk && bulkDeleteMutation.isPending))}
+          isPermanentlyDeleting={!!(permanentDeleteMutation.isPending || (deleteModal.isBulk && bulkDeleteMutation.isPending))}
+          onClose={closeDeleteModal}
+          onArchive={confirmArchive}
+          onPermanentDelete={confirmPermanentDelete}
         />
-      </Suspense>
 
-      <DeleteLeadModal
-        isOpen={deleteModal.isOpen}
-        leadName={deleteModal.isBulk ? `${selectedLeadIds.length} selected leads` : deleteModal.lead?.name || 'this lead'}
-        isArchiving={!!(deleteMutation.isPending || (deleteModal.isBulk && bulkDeleteMutation.isPending))}
-        isPermanentlyDeleting={!!(permanentDeleteMutation.isPending || (deleteModal.isBulk && bulkDeleteMutation.isPending))}
-        onClose={closeDeleteModal}
-        onArchive={confirmArchive}
-        onPermanentDelete={confirmPermanentDelete}
-      />
-
-      <LeadSlaDecisionModal
-        isOpen={Boolean(slaModalLead)}
-        lead={slaModalLead}
-        isSubmitting={changeStageMutation.isPending || extendLeadSlaMutation.isPending}
-        lobReasonOptions={lobReasonOptions}
-        onClose={closeSlaModal}
-        onExtend={handleExtendLeadSla}
-        onMoveToLob={handleMoveLeadToLob}
-      />
-    </div>
-  );
+        <LeadSlaDecisionModal
+          isOpen={Boolean(slaModalLead)}
+          lead={slaModalLead}
+          isSubmitting={changeStageMutation.isPending || extendLeadSlaMutation.isPending}
+          lobReasonOptions={lobReasonOptions}
+          onClose={closeSlaModal}
+          onExtend={handleExtendLeadSla}
+          onMoveToLob={handleMoveLeadToLob}
+        />
+      </DashboardLayout>
+    );
 };
 
 export default LeadsPage;

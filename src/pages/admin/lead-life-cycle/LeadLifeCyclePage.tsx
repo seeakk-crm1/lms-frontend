@@ -1,8 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { GitPullRequestCreate, Loader2, Plus, ShieldCheck } from 'lucide-react';
-import DashboardSidebar from '../../../components/dashboard/DashboardSidebar';
-import DashboardHeader from '../../../components/dashboard/DashboardHeader';
+import DashboardLayout from '../../../components/dashboard/DashboardLayout';
 import LeadLifeCycleTable from '../../../components/admin/lead-life-cycle/LeadLifeCycleTable';
 import LeadLifeCycleFormModal from '../../../components/admin/lead-life-cycle/LeadLifeCycleFormModal';
 import {
@@ -21,8 +20,6 @@ import type {
 } from '../../../types/admin/lead-life-cycle/leadLifeCycle.types';
 
 const LeadLifeCyclePage: React.FC = () => {
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [, setMobileMenuOpen] = useState(false);
   const [searchDraft, setSearchDraft] = useState('');
 
   const {
@@ -116,15 +113,7 @@ const LeadLifeCyclePage: React.FC = () => {
   const isSubmitting = createMutation.isPending || updateMutation.isPending;
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-gray-50 font-sans text-gray-900 selection:bg-emerald-200 selection:text-emerald-900">
-      <DashboardSidebar
-        isCollapsed={isSidebarCollapsed}
-        toggleCollapsed={() => setIsSidebarCollapsed((value) => !value)}
-      />
-
-      <main className="relative flex h-full flex-1 flex-col overflow-hidden">
-        <DashboardHeader setMobileMenuOpen={setMobileMenuOpen} />
-
+    <DashboardLayout>
         <div className="custom-scrollbar relative flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-8">
           <div className="pointer-events-none absolute right-0 top-0 -z-10 h-[520px] w-[820px] bg-gradient-to-bl from-emerald-50/80 via-transparent to-transparent" />
 
@@ -197,7 +186,6 @@ const LeadLifeCyclePage: React.FC = () => {
             />
           </div>
         </div>
-      </main>
 
       <LeadLifeCycleFormModal
         isOpen={formState.isModalOpen}
@@ -251,7 +239,7 @@ const LeadLifeCyclePage: React.FC = () => {
           </div>
         ) : null}
       </AnimatePresence>
-    </div>
+    </DashboardLayout>
   );
 };
 

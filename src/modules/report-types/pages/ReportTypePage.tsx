@@ -2,8 +2,7 @@ import React, { Suspense, lazy, useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { BarChart3, Filter, LayoutList, Plus, Search, Sparkles } from 'lucide-react';
 import { toast } from 'react-hot-toast';
-import DashboardHeader from '../../../components/dashboard/DashboardHeader';
-import DashboardSidebar from '../../../components/dashboard/DashboardSidebar';
+import DashboardLayout from '../../../components/dashboard/DashboardLayout';
 import SearchableSelect from '../../../components/SearchableSelect';
 import { useLeadMetaQuery } from '../../../hooks/useLeads';
 import { useDepartmentsQuery, useRolesQuery } from '../../../hooks/useUsersQuery';
@@ -121,8 +120,6 @@ const ResultTable: React.FC<{ rows: Array<Record<string, unknown>> }> = ({ rows 
 };
 
 const ReportTypePage: React.FC = () => {
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [, setMobileMenuOpen] = useState(false);
   const [searchDraft, setSearchDraft] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalReportType, setModalReportType] = useState<ReportType | null>(null);
@@ -288,12 +285,7 @@ const ReportTypePage: React.FC = () => {
       .filter(Boolean) as ReportExecutionFilter[];
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-gray-50 font-sans text-gray-900">
-      <DashboardSidebar isCollapsed={isSidebarCollapsed} toggleCollapsed={() => setIsSidebarCollapsed((value) => !value)} />
-
-      <main className="relative flex h-full flex-1 flex-col overflow-hidden">
-        <DashboardHeader setMobileMenuOpen={setMobileMenuOpen} />
-
+    <DashboardLayout>
         <div className="relative flex-1 overflow-x-hidden overflow-y-auto custom-scrollbar p-4 md:p-8">
           <div className="absolute right-0 top-0 -z-10 h-[440px] w-[760px] bg-gradient-to-bl from-emerald-50 via-transparent to-transparent" />
 
@@ -413,7 +405,7 @@ const ReportTypePage: React.FC = () => {
                       setModalReportType(null);
                       setIsModalOpen(true);
                     }}
-                    className="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-500 px-5 py-3 text-sm font-black text-white shadow-[0_18px_40px_-18px_rgba(16,185,129,0.8)] transition-all hover:bg-emerald-600"
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-500 px-5 py-3 text-sm font-black text-white shadow-[0_18px_40px_-18px_rgba(16,185,129,0.8)] transition-all hover:bg-emerald-600"
                   >
                     <Plus className="h-4 w-4" />
                     Add Report Type
@@ -611,7 +603,6 @@ const ReportTypePage: React.FC = () => {
             </div>
           </div>
         </div>
-      </main>
 
       <Suspense fallback={null}>
         <ReportTypeModal
@@ -638,7 +629,7 @@ const ReportTypePage: React.FC = () => {
         }}
         isDeleting={deleteMutation.isPending}
       />
-    </div>
+    </DashboardLayout>
   );
 };
 

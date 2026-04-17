@@ -1,8 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { CalendarClock, CheckCircle2, Loader2, Plus } from 'lucide-react';
-import DashboardSidebar from '../../../components/dashboard/DashboardSidebar';
-import DashboardHeader from '../../../components/dashboard/DashboardHeader';
+import DashboardLayout from '../../../components/dashboard/DashboardLayout';
 import TargetCycleModal from './TargetCycleModal';
 import TargetCycleTable from './TargetCycleTable';
 import { useTargetCycleStore } from './targetCycle.store';
@@ -15,8 +14,6 @@ import { useTargetCyclesQuery } from './useTargetCycleQuery';
 import type { TargetCycle, TargetCycleFormValues, TargetCycleStatus } from './types';
 
 const TargetCyclePage: React.FC = () => {
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [, setMobileMenuOpen] = useState(false);
   const [searchDraft, setSearchDraft] = useState('');
 
   const {
@@ -108,15 +105,7 @@ const TargetCyclePage: React.FC = () => {
   }, [deleteCandidate, deleteMutation, setDeleteCandidate]);
 
   return (
-    <div className="h-screen w-full bg-gray-50 flex overflow-hidden font-sans text-gray-900 selection:bg-emerald-200 selection:text-emerald-900">
-      <DashboardSidebar
-        isCollapsed={isSidebarCollapsed}
-        toggleCollapsed={() => setIsSidebarCollapsed((value) => !value)}
-      />
-
-      <main className="flex-1 flex flex-col h-full overflow-hidden relative">
-        <DashboardHeader setMobileMenuOpen={setMobileMenuOpen} />
-
+    <DashboardLayout>
         <div className="flex-1 overflow-x-hidden overflow-y-auto custom-scrollbar relative p-4 md:p-8">
           <div className="absolute top-0 right-0 w-[820px] h-[520px] bg-gradient-to-bl from-emerald-50/80 via-transparent to-transparent pointer-events-none -z-10" />
 
@@ -190,7 +179,6 @@ const TargetCyclePage: React.FC = () => {
             />
           </div>
         </div>
-      </main>
 
       <TargetCycleModal
         isOpen={formState.isModalOpen}
@@ -242,7 +230,7 @@ const TargetCyclePage: React.FC = () => {
           </div>
         ) : null}
       </AnimatePresence>
-    </div>
+    </DashboardLayout>
   );
 };
 

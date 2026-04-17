@@ -1,8 +1,7 @@
 import React, { Suspense, lazy, useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Filter, Plus, Search, Tags } from 'lucide-react';
-import DashboardHeader from '../../../components/dashboard/DashboardHeader';
-import DashboardSidebar from '../../../components/dashboard/DashboardSidebar';
+import DashboardLayout from '../../../components/dashboard/DashboardLayout';
 import SearchableSelect from '../../../components/SearchableSelect';
 import useAuthStore from '../../../store/useAuthStore';
 import { useCreateLOBReason } from '../hooks/useCreateLOBReason';
@@ -28,8 +27,6 @@ const statusOptions: Array<{ value: LOBReasonStatus | ''; label: string }> = [
 ];
 
 const LOBReasonsPage: React.FC = () => {
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [, setMobileMenuOpen] = useState(false);
   const [searchDraft, setSearchDraft] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalReason, setModalReason] = useState<LOBReason | null>(null);
@@ -76,12 +73,7 @@ const LOBReasonsPage: React.FC = () => {
   };
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-gray-50 font-sans text-gray-900">
-      <DashboardSidebar isCollapsed={isSidebarCollapsed} toggleCollapsed={() => setIsSidebarCollapsed((value) => !value)} />
-
-      <main className="relative flex h-full flex-1 flex-col overflow-hidden">
-        <DashboardHeader setMobileMenuOpen={setMobileMenuOpen} />
-
+    <DashboardLayout>
         <div className="relative flex-1 overflow-x-hidden overflow-y-auto custom-scrollbar p-4 md:p-8">
           <div className="absolute right-0 top-0 -z-10 h-[420px] w-[720px] bg-gradient-to-bl from-emerald-50 via-transparent to-transparent" />
 
@@ -216,7 +208,6 @@ const LOBReasonsPage: React.FC = () => {
             </section>
           </div>
         </div>
-      </main>
 
       <Suspense fallback={null}>
         <LOBReasonModal
@@ -230,7 +221,7 @@ const LOBReasonsPage: React.FC = () => {
           isSubmitting={createMutation.isPending || updateMutation.isPending}
         />
       </Suspense>
-    </div>
+    </DashboardLayout>
   );
 };
 

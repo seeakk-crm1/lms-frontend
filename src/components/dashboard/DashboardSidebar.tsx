@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     LayoutDashboard, Users, UserCog, Settings, FileText, Calendar as CalendarIcon,
-    Briefcase, FileBarChart, Unplug, MapPin, ChevronDown, Activity, ChevronRight, LogOut, LucideIcon
+    Briefcase, FileBarChart, Unplug, MapPin, ChevronDown, Activity, ChevronRight, LogOut, LucideIcon, X
 } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import useAuthStore from '../../store/useAuthStore';
@@ -95,9 +95,10 @@ interface MenuItemProps {
     setActiveMenu: (label: string | null) => void;
     activeMenu: string | null;
     toggleCollapsed?: () => void;
+    onNavigate?: () => void;
 }
 
-const MenuItem: React.FC<MenuItemProps> = ({ item, isCollapsed, isActive, setActiveMenu, activeMenu, toggleCollapsed }) => {
+const MenuItem: React.FC<MenuItemProps> = ({ item, isCollapsed, isActive, setActiveMenu, activeMenu, toggleCollapsed, onNavigate }) => {
     const isExpanded = activeMenu === item.label;
     const hasSubItems = item.subItems && item.subItems.length > 0;
     const navigate = useNavigate();
@@ -111,6 +112,7 @@ const MenuItem: React.FC<MenuItemProps> = ({ item, isCollapsed, isActive, setAct
         if (item.path) {
             navigate(item.path);
             setActiveMenu(null); // Close accordions when navigating directly
+            onNavigate?.();
         } else if (hasSubItems) {
             setActiveMenu(isExpanded ? null : item.label);
             if (isCollapsed && toggleCollapsed) {
@@ -158,6 +160,7 @@ const MenuItem: React.FC<MenuItemProps> = ({ item, isCollapsed, isActive, setAct
                                 <Link 
                                     key={idx} 
                                     to={sub.path} 
+                                    onClick={() => onNavigate?.()}
                                     className={`flex items-center gap-2 text-xs font-medium py-2 transition-colors ${location.pathname === sub.path ? 'text-emerald-600' : 'text-gray-500 hover:text-emerald-600'}`}
                                 >
                                     <div className={`w-1 h-1 rounded-full ${location.pathname === sub.path ? 'bg-emerald-500' : 'bg-gray-300'}`}></div>
@@ -176,9 +179,10 @@ interface DashboardSidebarProps {
     isCollapsed: boolean;
     toggleCollapsed: () => void;
     isMobile?: boolean;
+    onNavigate?: () => void;
 }
 
-const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ isCollapsed, toggleCollapsed, isMobile = false }) => {
+const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ isCollapsed, toggleCollapsed, isMobile = false, onNavigate }) => {
     const [activeMenu, setActiveMenu] = useState<string | null>('Dashboard');
     const location = useLocation();
     const navigate = useNavigate();
@@ -187,13 +191,17 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ isCollapsed, toggle
     const handleLogout = () => {
         logout();
         navigate('/login', { replace: true });
+        onNavigate?.();
     };
 
     return (
         <motion.aside
+            id={isMobile ? 'mobile-dashboard-sidebar' : undefined}
             initial={false}
-            animate={{ width: isCollapsed ? 80 : 280 }}
-            className={`h-screen bg-white border-r border-gray-200 flex flex-col relative z-20 shrink-0 select-none ${isMobile ? 'flex w-full' : 'hidden md:flex'}`}
+            animate={{ width: isMobile ? 320 : isCollapsed ? 80 : 280 }}
+            className={`h-screen bg-white border-r border-gray-200 flex flex-col relative z-20 shrink-0 select-none ${
+                isMobile ? 'flex w-[85vw] max-w-[320px] shadow-2xl' : 'hidden md:flex'
+            }`}
         >
             {/* Logo Area */}
             <div className={`h-20 flex items-center ${isCollapsed ? 'justify-center' : 'px-6'} border-b border-gray-100 shrink-0`}>
@@ -202,9 +210,21 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ isCollapsed, toggle
                         <span className="text-white font-black text-lg">S</span>
                     </div>
                 ) : (
-                    <div className="flex items-center justify-start w-full h-full pointer-events-none select-none">
-                        <img src="/logo.png" alt="Seeakk" className="w-[180px] h-auto object-contain object-left origin-left hover:scale-105 transition-transform" />
-                    </div>
+                    <>
+                        <div className="flex items-center justify-start w-full h-full pointer-events-none select-none">
+                            <img src="/logo.png" alt="Seeakk" className="w-[180px] h-auto object-contain object-left origin-left hover:scale-105 transition-transform" />
+                        </div>
+                        {isMobile && (
+                            <button
+                                type="button"
+                                onClick={onNavigate ?? toggleCollapsed}
+                                aria-label="Close navigation menu"
+                                className="h-10 w-10 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+                            >
+                                <X size={20} />
+                            </button>
+                        )}
+                    </>
                 )}
             </div>
 
@@ -224,6 +244,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ isCollapsed, toggle
                                 activeMenu={activeMenu}
                                 setActiveMenu={setActiveMenu}
                                 toggleCollapsed={toggleCollapsed}
+                                onNavigate={onNavigate}
                             />
                         ))}
                     </div>
@@ -241,14 +262,16 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ isCollapsed, toggle
                     <LogOut size={18} />
                     {!isCollapsed && <span>Sign Out</span>}
                 </button>
-                <div className="flex justify-center">
-                    <button
-                        onClick={toggleCollapsed}
-                        className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-50 hover:bg-gray-100 text-gray-400 transition-colors"
-                    >
-                        <ChevronRight size={18} className={`transition-transform duration-300 ${!isCollapsed ? 'rotate-180' : ''}`} />
-                    </button>
-                </div>
+                {!isMobile && (
+                    <div className="flex justify-center">
+                        <button
+                            onClick={toggleCollapsed}
+                            className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-50 hover:bg-gray-100 text-gray-400 transition-colors"
+                        >
+                            <ChevronRight size={18} className={`transition-transform duration-300 ${!isCollapsed ? 'rotate-180' : ''}`} />
+                        </button>
+                    </div>
+                )}
             </div>
         </motion.aside>
     );

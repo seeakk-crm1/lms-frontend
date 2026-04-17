@@ -1,13 +1,14 @@
 import React from 'react';
-import { Search, Bell, Menu, Plus } from 'lucide-react';
+import { Search, Bell, Menu, Plus, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import useAuthStore from '../../store/useAuthStore';
 
 interface DashboardHeaderProps {
-    setMobileMenuOpen: (open: boolean) => void;
+    isMobileMenuOpen: boolean;
+    onToggleMobileMenu: () => void;
 }
 
-const DashboardHeader: React.FC<DashboardHeaderProps> = ({ setMobileMenuOpen }) => {
+const DashboardHeader: React.FC<DashboardHeaderProps> = ({ isMobileMenuOpen, onToggleMobileMenu }) => {
     const { user } = useAuthStore();
     const navigate = useNavigate();
     const displayName = typeof user?.name === 'string' && user.name.trim() ? user.name : 'Super Admin';
@@ -26,10 +27,18 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ setMobileMenuOpen }) 
             <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
                 {/* Mobile Hamburger (hidden on large screens) */}
                 <button
-                    onClick={() => setMobileMenuOpen(true)}
+                    type="button"
+                    onClick={onToggleMobileMenu}
+                    aria-label={isMobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
+                    aria-expanded={isMobileMenuOpen}
+                    aria-controls="mobile-dashboard-sidebar"
                     className="md:hidden p-2 text-gray-500 hover:bg-gray-50 rounded-lg transition-colors"
                 >
-                    <Menu size={20} className="sm:w-6 sm:h-6" />
+                    {isMobileMenuOpen ? (
+                        <X size={20} className="sm:w-6 sm:h-6" />
+                    ) : (
+                        <Menu size={20} className="sm:w-6 sm:h-6" />
+                    )}
                 </button>
 
                 {/* Mobile Logo */}

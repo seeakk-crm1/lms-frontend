@@ -14,8 +14,7 @@ import {
 } from 'lucide-react';
 import { eachDayOfInterval, endOfMonth, endOfWeek, format, isSameMonth, isToday, parseISO, startOfMonth, startOfWeek } from 'date-fns';
 import { toast } from 'react-hot-toast';
-import DashboardHeader from '../../../components/dashboard/DashboardHeader';
-import DashboardSidebar from '../../../components/dashboard/DashboardSidebar';
+import DashboardLayout from '../../../components/dashboard/DashboardLayout';
 import SearchableSelect from '../../../components/SearchableSelect';
 import {
   useCreateHolidayMutation,
@@ -253,8 +252,6 @@ const HolidayFormModal: React.FC<{
 };
 
 const HolidayPage: React.FC = () => {
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [, setMobileMenuOpen] = useState(false);
   const [view, setView] = useState<'CALENDAR' | 'LIST'>('CALENDAR');
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<'' | HolidayStatus>('');
@@ -341,12 +338,7 @@ const HolidayPage: React.FC = () => {
   const monthLabel = useMemo(() => format(parseISO(`${currentMonth}-01`), 'MMMM yyyy'), [currentMonth]);
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-gray-50 font-sans text-gray-900">
-      <DashboardSidebar isCollapsed={isSidebarCollapsed} toggleCollapsed={() => setIsSidebarCollapsed((value) => !value)} />
-
-      <main className="relative flex h-full flex-1 flex-col overflow-hidden">
-        <DashboardHeader setMobileMenuOpen={setMobileMenuOpen} />
-
+    <DashboardLayout>
         <div className="custom-scrollbar relative flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-8">
           <div className="pointer-events-none absolute right-0 top-0 -z-10 h-[420px] w-[720px] bg-gradient-to-bl from-emerald-50/80 via-transparent to-transparent" />
 
@@ -737,7 +729,6 @@ const HolidayPage: React.FC = () => {
             </section>
           </div>
         </div>
-      </main>
 
       <HolidayFormModal
         open={isModalOpen}
@@ -791,7 +782,7 @@ const HolidayPage: React.FC = () => {
           </div>
         ) : null}
       </AnimatePresence>
-    </div>
+    </DashboardLayout>
   );
 };
 

@@ -1,8 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Building2, CheckCircle2, Loader2, Plus } from 'lucide-react';
-import DashboardSidebar from '../../../components/dashboard/DashboardSidebar';
-import DashboardHeader from '../../../components/dashboard/DashboardHeader';
+import DashboardLayout from '../../../components/dashboard/DashboardLayout';
 import OfficeFormModal from '../../../components/admin/office/OfficeFormModal';
 import OfficeTable from '../../../components/admin/office/OfficeTable';
 import {
@@ -17,8 +16,6 @@ import { useOfficeStore } from '../../../store/admin/office/officeStore';
 import type { Office, OfficeFormValues } from '../../../types/admin/office/office.types';
 
 const OfficePage: React.FC = () => {
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [, setMobileMenuOpen] = useState(false);
   const [searchDraft, setSearchDraft] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [deleteCandidate, setDeleteCandidate] = useState<Office | null>(null);
@@ -134,15 +131,7 @@ const OfficePage: React.FC = () => {
   const isSubmitting = createMutation.isPending || updateMutation.isPending;
 
   return (
-    <div className="h-screen w-full bg-gray-50 flex overflow-hidden font-sans text-gray-900 selection:bg-emerald-200 selection:text-emerald-900">
-      <DashboardSidebar
-        isCollapsed={isSidebarCollapsed}
-        toggleCollapsed={() => setIsSidebarCollapsed((value) => !value)}
-      />
-
-      <main className="flex-1 flex flex-col h-full overflow-hidden relative">
-        <DashboardHeader setMobileMenuOpen={setMobileMenuOpen} />
-
+    <DashboardLayout>
         <div className="flex-1 overflow-x-hidden overflow-y-auto custom-scrollbar relative p-4 md:p-8">
           <div className="absolute top-0 right-0 w-[800px] h-[500px] bg-gradient-to-bl from-emerald-50/80 via-transparent to-transparent pointer-events-none -z-10" />
 
@@ -227,7 +216,6 @@ const OfficePage: React.FC = () => {
             />
           </div>
         </div>
-      </main>
 
       <OfficeFormModal
         isOpen={isModalOpen}
@@ -278,7 +266,7 @@ const OfficePage: React.FC = () => {
           </div>
         ) : null}
       </AnimatePresence>
-    </div>
+    </DashboardLayout>
   );
 };
 

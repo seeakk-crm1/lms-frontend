@@ -1,8 +1,7 @@
 import React, { Suspense, lazy, useCallback, useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AlertTriangle, Download, Filter, RotateCcw, TrendingDown, WalletCards } from 'lucide-react';
-import DashboardHeader from '../../components/dashboard/DashboardHeader';
-import DashboardSidebar from '../../components/dashboard/DashboardSidebar';
+import DashboardLayout from '../../components/dashboard/DashboardLayout';
 import { useClosedLeadsQuery, useExportClosedLeads, useReopenLeadMutation, useUpdateRevenueMutation } from '../../hooks/useClosedLeads';
 import { useLeadMetaQuery } from '../../hooks/useLeads';
 import useClosedLeadsStore from '../../store/closedLeadsStore';
@@ -85,8 +84,6 @@ const ReopenLeadModal: React.FC<{
 );
 
 const ClosedLeadsPage: React.FC = () => {
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [, setMobileMenuOpen] = useState(false);
   const [showFilters, setShowFilters] = useState(true);
   const [searchDraft, setSearchDraft] = useState('');
   const [revenueModalLead, setRevenueModalLead] = useState<LeadListItem | null>(null);
@@ -194,15 +191,7 @@ const ClosedLeadsPage: React.FC = () => {
   const tableLoading = isLoading || isFetching;
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-gray-50 font-sans text-gray-900 selection:bg-emerald-200 selection:text-emerald-900">
-      <DashboardSidebar
-        isCollapsed={isSidebarCollapsed}
-        toggleCollapsed={() => setIsSidebarCollapsed((value) => !value)}
-      />
-
-      <main className="relative flex h-full flex-1 flex-col overflow-hidden">
-        <DashboardHeader setMobileMenuOpen={setMobileMenuOpen} />
-
+    <DashboardLayout>
         <div className="relative flex-1 overflow-x-hidden overflow-y-auto custom-scrollbar p-4 md:p-8">
           <div className="absolute left-0 top-0 -z-10 h-[520px] w-[760px] bg-gradient-to-br from-slate-100 via-transparent to-transparent" />
 
@@ -306,7 +295,6 @@ const ClosedLeadsPage: React.FC = () => {
             />
           </div>
         </div>
-      </main>
 
       <RevenueEditModal
         isOpen={Boolean(revenueModalLead)}
@@ -332,7 +320,7 @@ const ClosedLeadsPage: React.FC = () => {
           onClose={closeDrawer}
         />
       </Suspense>
-    </div>
+    </DashboardLayout>
   );
 };
 
