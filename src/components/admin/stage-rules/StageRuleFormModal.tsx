@@ -2,8 +2,21 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { CheckCircle2, ChevronDown, FileType2, ListChecks, Loader2, Save, TextCursorInput, Type, X } from 'lucide-react';
+import {
+  CheckCircle2,
+  ChevronDown,
+  FileType2,
+  ListChecks,
+  Loader2,
+  Plus,
+  Save,
+  TextCursorInput,
+  Trash2,
+  Type,
+  X,
+} from 'lucide-react';
 import { z } from 'zod';
+import { toast } from 'react-hot-toast';
 import { CreateStageRuleInput, StageRule, StageRuleInputType } from '../../../types/stageRule.types';
 
 const stageRuleSchema = z.object({
@@ -50,13 +63,14 @@ const buildPreviewOptions = (ruleName: string): string[] => {
 const buildPreviewByType = (
   inputType: StageRuleInputType,
   ruleName: string,
+  previewOptionsList: string[],
   previewValue: string,
   onPreviewValueChange: (value: string) => void,
 ): React.ReactNode => {
   const normalizedName = ruleName.trim();
   const label = normalizedName || 'Field Preview';
   const placeholder = normalizedName ? `Enter ${normalizedName.toLowerCase()}` : 'Enter value';
-  const previewOptions = buildPreviewOptions(ruleName);
+  const previewOptions = previewOptionsList.length > 0 ? previewOptionsList : buildPreviewOptions(ruleName);
 
   if (inputType === 'TEXT') {
     return (
@@ -130,6 +144,7 @@ const StageRuleFormModal: React.FC<StageRuleFormModalProps> = ({
   onSubmit,
 }) => {
   const [previewValue, setPreviewValue] = useState('');
+  const [optionRows, setOptionRows] = useState<string[]>(['']);
 
   const {
     register,
@@ -158,6 +173,7 @@ const StageRuleFormModal: React.FC<StageRuleFormModalProps> = ({
       required: stageRule?.required || false,
       status: stageRule?.status || 'ACTIVE',
     });
+    setOptionRows(stageRule?.options?.length ? [...stageRule.options] : ['']);
   }, [isOpen, stageRule, reset]);
 
   const watchedName = watch('name');
@@ -167,9 +183,15 @@ const StageRuleFormModal: React.FC<StageRuleFormModalProps> = ({
   useEffect(() => {
     setPreviewValue('');
   }, [isOpen, watchedInputType, watchedName]);
+  const previewOptionList = useMemo(
+    () => optionRows.map((row) => row.trim()).filter(Boolean),
+    [optionRows],
+  );
+
   const previewContent = useMemo(
-    () => buildPreviewByType(watchedInputType, watchedName || '', previewValue, setPreviewValue),
-    [previewValue, watchedInputType, watchedName],
+    () =>
+      buildPreviewByType(watchedInputType, watchedName || '', previewOptionList, previewValue, setPreviewValue),
+    [previewOptionList, previewValue, watchedInputType, watchedName],
   );
   const selectedInputTypeMeta = useMemo(
     () => inputTypeOptions.find((option) => option.value === watchedInputType) || inputTypeOptions[0],
@@ -177,10 +199,19 @@ const StageRuleFormModal: React.FC<StageRuleFormModalProps> = ({
   );
 
   const handleFormSubmit = async (data: StageRuleFormValues) => {
+    const cleanedOptions = optionRows.map((row) => row.trim()).filter(Boolean);
+    if (data.inputType === 'RADIO' || data.inputType === 'SELECT') {
+      if (cleanedOptions.length < 1) {
+        toast.error('Add at least one option for radio or select fields.');
+        return;
+      }
+    }
+
     await onSubmit({
       ...data,
       name: data.name.trim(),
       sortOrder: Number(data.sortOrder),
+      options: data.inputType === 'TEXT' || data.inputType === 'TEXTAREA' ? [] : cleanedOptions,
     });
   };
 
@@ -370,6 +401,52 @@ const StageRuleFormModal: React.FC<StageRuleFormModalProps> = ({
                       )}
                     />
                   </div>
+
+                  {watchedInputType === 'RADIO' || watchedInputType === 'SELECT' ? (
+                    <div className="space-y-3 rounded-2xl border border-emerald-100 bg-emerald-50/30 p-4">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-emerald-800">Options</p>
+                        <button
+                          type="button"
+                          onClick={() => setOptionRows((rows) => [...rows, ''])}
+                          className="inline-flex items-center gap-1 rounded-xl bg-white px-3 py-1.5 text-[11px] font-black text-emerald-700 shadow-sm ring-1 ring-emerald-200 hover:bg-emerald-50"
+                        >
+                          <Plus className="h-3.5 w-3.5" />
+                          Add option
+                        </button>
+                      </div>
+                      <div className="space-y-2">
+                        {optionRows.map((row, index) => (
+                          <div key={index} className="flex gap-2">
+                            <input
+                              type="text"
+                              value={row}
+                              onChange={(event) =>
+                                setOptionRows((rows) =>
+                                  rows.map((item, rowIndex) => (rowIndex === index ? event.target.value : item)),
+                                )
+                              }
+                              placeholder={`Option ${index + 1}`}
+                              className="flex-1 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-900 outline-none focus:border-emerald-500"
+                            />
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setOptionRows((rows) => (rows.length <= 1 ? [''] : rows.filter((_, rowIndex) => rowIndex !== index)))
+                              }
+                              className="shrink-0 rounded-xl border border-gray-200 p-2 text-gray-400 hover:bg-rose-50 hover:text-rose-600"
+                              aria-label="Remove option"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                      <p className="text-[11px] font-semibold text-gray-600">
+                        These values appear in the transition popup and are validated on submit.
+                      </p>
+                    </div>
+                  ) : null}
 
                   <div className="space-y-3">
                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Input Preview</p>

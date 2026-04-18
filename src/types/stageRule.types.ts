@@ -5,6 +5,7 @@ export interface StageRule {
   id: string;
   name: string;
   inputType: StageRuleInputType;
+  options?: string[];
   sortOrder: number;
   required: boolean;
   status: StageRuleStatus;
@@ -17,6 +18,7 @@ export interface StageRule {
 export interface StageRuleFilters {
   search: string;
   status?: StageRuleStatus;
+  stageId?: string;
 }
 
 export interface StageRulePagination {
@@ -36,6 +38,7 @@ export interface ListStageRulesResponse {
 export interface CreateStageRuleInput {
   name: string;
   inputType: StageRuleInputType;
+  options?: string[];
   sortOrder: number;
   required: boolean;
   status: StageRuleStatus;

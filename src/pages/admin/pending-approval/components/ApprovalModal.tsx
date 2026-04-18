@@ -30,6 +30,18 @@ const ApprovalModal: React.FC<ApprovalModalProps> = ({ approval, isSubmitting, c
     return null;
   }
 
+  const stageRuleEntries =
+    approval.requestData &&
+    typeof approval.requestData === 'object' &&
+    !Array.isArray(approval.requestData) &&
+    Array.isArray((approval.requestData as Record<string, unknown>).stageRuleValues)
+      ? ((approval.requestData as Record<string, unknown>).stageRuleValues as Array<{
+          ruleName?: string;
+          ruleId?: string;
+          value?: string;
+        }>)
+      : [];
+
   const handleAction = async (action: LeadApprovalAction) => {
     setTouched(true);
     if (!comment.trim()) return;
@@ -110,6 +122,20 @@ const ApprovalModal: React.FC<ApprovalModalProps> = ({ approval, isSubmitting, c
                   </div>
                 </div>
               </div>
+
+              {stageRuleEntries.length > 0 ? (
+                <div className="mt-5 rounded-2xl border border-emerald-100 bg-emerald-50/40 p-4">
+                  <div className="text-[11px] font-black uppercase tracking-[0.2em] text-emerald-800">Submitted stage data</div>
+                  <ul className="mt-3 space-y-2">
+                    {stageRuleEntries.map((entry, index) => (
+                      <li key={`${entry.ruleId || index}`} className="text-sm text-gray-900">
+                        <span className="font-black text-gray-800">{entry.ruleName || entry.ruleId || 'Field'}:</span>{' '}
+                        <span className="font-semibold text-gray-700">{entry.value ?? '—'}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
             </div>
 
             <div className="flex-1 space-y-5 overflow-y-auto p-4 sm:space-y-6 sm:p-6 lg:p-8">
