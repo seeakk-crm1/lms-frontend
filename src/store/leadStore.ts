@@ -39,7 +39,7 @@ export const createEmptyLeadFormValues = (): LeadFormValues => ({
   dynamicValues: {},
 });
 
-const useLeadStore = create<LeadStoreState>((set) => ({
+export const useLeadStore = create<LeadStoreState>((set) => ({
   leads: [],
   filters: {},
   search: '',

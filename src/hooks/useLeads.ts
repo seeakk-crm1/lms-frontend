@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-hot-toast';
-import useLeadStore from '../store/leadStore';
+import { useLeadStore } from '../store/leadStore';
 import useAuthStore from '../store/useAuthStore';
 import {
   changeLeadStage,

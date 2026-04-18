@@ -4,6 +4,22 @@ import { Download, Filter, Plus, TrendingUp, Upload } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useLocation, useNavigate } from 'react-router-dom';
 import DashboardLayout from '../../components/dashboard/DashboardLayout';
+import { useLeadStore } from '../../store/leadStore';
+import DeleteLeadModal from './components/DeleteLeadModal';
+import LeadFilters from './components/LeadFilters';
+import LeadSlaDecisionModal from './components/LeadSlaDecisionModal';
+import LeadsTable from './components/LeadsTable';
+import {
+  useLeadsQuery,
+  useLeadMetaQuery,
+  useExportLeads,
+  useDeleteLeadMutation,
+  usePermanentDeleteLeadMutation,
+  useBulkDeleteLeadsMutation,
+  useChangeLeadStageMutation,
+  useExtendLeadSlaMutation,
+} from '../../hooks/useLeads';
+import { LeadListItem } from '../../types/lead.types';
 
 const LeadFormDrawer = lazy(() => import('./components/LeadFormDrawer'));
 
@@ -404,8 +420,8 @@ const LeadsPage: React.FC = () => {
               selectedIds={selectedLeadIds}
               onToggleSelection={handleToggleSelection}
               onSelectAll={handleSelectAll}
-              onPageChange={(value) => setPagination({ page: value })}
-              onLimitChange={(value) => setPagination({ limit: value, page: 1 })}
+              onPageChange={(value: number) => setPagination({ page: value })}
+              onLimitChange={(value: number) => setPagination({ limit: value, page: 1 })}
               onEdit={openEditDrawer}
               onDelete={handleDelete}
             />
