@@ -5,6 +5,7 @@ import DashboardLayout from '../components/dashboard/DashboardLayout';
 import LeadStagesTable from '../components/admin/lead-stages/LeadStagesTable';
 import CreateLeadStageModal from '../components/admin/lead-stages/CreateLeadStageModal';
 import EditLeadStageModal from '../components/admin/lead-stages/EditLeadStageModal';
+import DeleteLeadStageModal from '../components/admin/lead-stages/DeleteLeadStageModal';
 import useLeadStageStore from '../store/leadStageStore';
 import { useLeadStagesQuery } from '../hooks/useLeadStagesQuery';
 import { useDeleteLeadStageMutation, useUpdateLeadStageMutation } from '../hooks/useLeadStageMutations';
@@ -24,6 +25,10 @@ const LeadStagesListPage: React.FC = () => {
     setLeadStages,
     setUIState,
   } = useLeadStageStore();
+  const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; stage: LeadStage | null }>({
+    isOpen: false,
+    stage: null,
+  });
 
   const [searchDraft, setSearchDraft] = useState(search);
   const { data, isLoading, isFetching } = useLeadStagesQuery();
@@ -70,11 +75,21 @@ const LeadStagesListPage: React.FC = () => {
   );
 
   const handleDelete = useCallback(
-    (id: string) => {
-      deleteStage.mutate(id);
+    (stage: LeadStage) => {
+      setDeleteModal({ isOpen: true, stage });
     },
-    [deleteStage],
+    [],
   );
+
+  const confirmDelete = useCallback(async () => {
+    if (!deleteModal.stage) return;
+    try {
+      await deleteStage.mutateAsync(deleteModal.stage.id);
+      setDeleteModal({ isOpen: false, stage: null });
+    } catch {
+      // Error handles by mutation
+    }
+  }, [deleteModal.stage, deleteStage]);
 
   const handleToggleStatus = useCallback(
     (stage: LeadStage) => {
@@ -168,6 +183,13 @@ const LeadStagesListPage: React.FC = () => {
       </div>
       <CreateLeadStageModal isOpen={uiState.isCreateModalOpen} onClose={closeCreateModal} />
       <EditLeadStageModal isOpen={uiState.isEditModalOpen} onClose={closeEditModal} leadStage={selectedStage} />
+      <DeleteLeadStageModal
+        isOpen={deleteModal.isOpen}
+        stageName={deleteModal.stage?.name || ''}
+        isDeleting={deleteStage.isPending}
+        onClose={() => setDeleteModal({ isOpen: false, stage: null })}
+        onConfirm={confirmDelete}
+      />
     </DashboardLayout>
   );
 };
