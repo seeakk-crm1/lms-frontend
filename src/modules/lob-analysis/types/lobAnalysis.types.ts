@@ -35,6 +35,8 @@ export interface LOBAuditItem {
   lead_id: string;
   lead_name: string;
   from_stage: string;
+  /** Previous pipeline stage id before LOB (when known). */
+  from_stage_id?: string | null;
   reason: string;
   changed_by: string;
   comment?: string | null;
