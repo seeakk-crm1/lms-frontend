@@ -17,7 +17,7 @@ interface LeadStagesTableProps {
   onStatusChange: (value?: 'ACTIVE' | 'INACTIVE') => void;
   onPageChange: (page: number) => void;
   onEdit: (item: LeadStage) => void;
-  onDelete: (id: string) => void;
+  onDelete: (item: LeadStage) => void;
   onToggleStatus: (item: LeadStage) => void;
 }
 
@@ -196,7 +196,7 @@ const LeadStagesTable: React.FC<LeadStagesTableProps> = ({
                         {item.status === 'ACTIVE' ? 'Deactivate' : 'Activate'}
                       </button>
                       <button
-                        onClick={() => onDelete(item.id)}
+                        onClick={() => onDelete(item)}
                         className="p-2 text-red-500 bg-red-50 hover:bg-red-100 rounded-xl transition-all"
                         aria-label={`Delete ${item.name}`}
                       >
@@ -247,7 +247,7 @@ const LeadStagesTable: React.FC<LeadStagesTableProps> = ({
                   {item.status === 'ACTIVE' ? 'Deactivate' : 'Activate'}
                 </button>
                 <button
-                  onClick={() => onDelete(item.id)}
+                  onClick={() => onDelete(item)}
                   className="py-2 rounded-xl text-xs font-black text-red-600 bg-red-50"
                 >
                   Delete
