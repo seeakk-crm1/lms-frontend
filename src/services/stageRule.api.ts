@@ -6,7 +6,15 @@ import {
 } from '../types/stageRule.types';
 
 export const getStageRules = async (params?: StageRuleFilters & { page?: number; limit?: number }) => {
-  const response = await api.get('/master/stage-rules', { params });
+  const response = await api.get('/master/stage-rules', {
+    params: {
+      search: params?.search,
+      status: params?.status,
+      stageId: params?.stageId,
+      page: params?.page,
+      limit: params?.limit,
+    },
+  });
   return response.data;
 };
 

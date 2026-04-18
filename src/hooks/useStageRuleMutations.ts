@@ -34,6 +34,7 @@ export const useCreateStageRuleMutation = () => {
             id: `temp-${Date.now()}`,
             name: payload.name,
             inputType: payload.inputType,
+            options: payload.options,
             sortOrder: payload.sortOrder,
             required: payload.required,
             status: payload.status,

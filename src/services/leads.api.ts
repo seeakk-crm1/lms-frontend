@@ -77,10 +77,16 @@ export const permanentlyDeleteLead = async (id: string) => {
   return response.data;
 };
 
-export const changeLeadStage = async (
-  id: string,
-  payload: { stageId: string; reasonId?: string; remarks?: string; nextFollowUpAt?: string; followUpDescription?: string },
-) => {
+export type ChangeLeadStagePayload = {
+  stageId: string;
+  reasonId?: string;
+  remarks?: string;
+  nextFollowUpAt?: string;
+  followUpDescription?: string;
+  stageRuleValues?: Array<{ ruleId: string; value: string }>;
+};
+
+export const changeLeadStage = async (id: string, payload: ChangeLeadStagePayload) => {
   const response = await api.patch(`/leads/${id}/stage`, payload);
   return response.data;
 };

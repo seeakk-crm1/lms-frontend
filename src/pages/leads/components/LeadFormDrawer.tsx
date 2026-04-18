@@ -1,4 +1,4 @@
-import React, { memo, useEffect, useMemo, useState } from 'react';
+import React, { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AlertCircle, CalendarClock, Save, Sparkles, X } from 'lucide-react';
 import { toast } from 'react-hot-toast';
@@ -9,6 +9,9 @@ import { useLeadStore, createEmptyLeadFormValues } from '../../../store/leadStor
 import type { LeadFormValues, LeadListItem, LeadOption } from '../../../types/lead.types';
 import DynamicFieldRenderer from './DynamicFieldRenderer';
 import LOBModal from './LOBModal';
+import StageRulesTransitionModal, { StageRuleValueEntry } from './StageRulesTransitionModal';
+import { getStageRules } from '../../../services/stageRule.api';
+import type { ListStageRulesResponse, StageRule } from '../../../types/stageRule.types';
 
 interface LeadFormDrawerProps {
   isOpen: boolean;
@@ -116,6 +119,12 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
   const [lobModalOpen, setLobModalOpen] = useState(false);
   const [pendingStageId, setPendingStageId] = useState<string | null>(null);
   const [previousStageId, setPreviousStageId] = useState<string>('');
+  const [stageRulesModalOpen, setStageRulesModalOpen] = useState(false);
+  const [stageRulesForTransition, setStageRulesForTransition] = useState<StageRule[]>([]);
+  const [pendingTransitionStageId, setPendingTransitionStageId] = useState<string | null>(null);
+  const [stageRuleSubmitPayload, setStageRuleSubmitPayload] = useState<StageRuleValueEntry[]>([]);
+  const revertFormBeforeRulesRef = useRef<Pick<LeadFormValues, 'stageId' | 'reasonId' | 'remarks'> | null>(null);
+  const stageIdBeforeLobRef = useRef<string>('');
   const hydratedLead = leadDetails?.id ? (leadDetails as LeadListItem) : lead;
   const currentStageId = hydratedLead?.stageId || previousStageId || '';
 
@@ -125,7 +134,14 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
   }, [meta?.dynamicFields, setDynamicFields]);
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      setStageRulesModalOpen(false);
+      setStageRulesForTransition([]);
+      setPendingTransitionStageId(null);
+      setStageRuleSubmitPayload([]);
+      revertFormBeforeRulesRef.current = null;
+      return;
+    }
 
     if (mode === 'edit' && hydratedLead && !isBusy) {
       setFormValues(fromLeadToForm(hydratedLead));
@@ -181,10 +197,59 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
         return;
       }
       if (isLobStageOption(nextStage)) {
+        stageIdBeforeLobRef.current = formValues.stageId;
+        revertFormBeforeRulesRef.current = {
+          stageId: formValues.stageId,
+          reasonId: formValues.reasonId,
+          remarks: formValues.remarks,
+        };
         setPendingStageId(value);
         setLobModalOpen(true);
         return;
       }
+
+      if (mode === 'edit' && currentStageId && value !== currentStageId) {
+        void (async () => {
+          setStageRuleSubmitPayload([]);
+          try {
+            const res = (await getStageRules({
+              stageId: value,
+              status: 'ACTIVE',
+              page: 1,
+              limit: 100,
+              search: '',
+            })) as ListStageRulesResponse;
+            const rules = res?.data || [];
+            if (rules.length > 0) {
+              revertFormBeforeRulesRef.current = {
+                stageId: formValues.stageId,
+                reasonId: formValues.reasonId,
+                remarks: formValues.remarks,
+              };
+              setPendingTransitionStageId(value);
+              setStageRulesForTransition(rules);
+              setStageRulesModalOpen(true);
+              return;
+            }
+          } catch {
+            toast.error('Could not load stage rules for this transition.');
+            return;
+          }
+          setFormValues((current) => ({
+            ...current,
+            stageId: value,
+          }));
+          setStageRuleSubmitPayload([]);
+        })();
+        return;
+      }
+
+      setFormValues((current) => ({
+        ...current,
+        stageId: value,
+      }));
+      setStageRuleSubmitPayload([]);
+      return;
     }
 
     setFormValues((current) => ({
@@ -204,18 +269,75 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
   };
 
   const handleLobConfirm = ({ reasonId, remarks }: { reasonId: string; remarks: string }) => {
+    const lobTarget = pendingStageId;
     setFormValues((current) => ({
       ...current,
-      stageId: pendingStageId || current.stageId,
+      stageId: lobTarget || current.stageId,
       reasonId,
       remarks,
     }));
     setLobModalOpen(false);
+    setPendingStageId(null);
+
+    if (lobTarget && mode === 'edit') {
+      void (async () => {
+        try {
+          const res = (await getStageRules({
+            stageId: lobTarget,
+            status: 'ACTIVE',
+            page: 1,
+            limit: 100,
+            search: '',
+          })) as ListStageRulesResponse;
+          const rules = res?.data || [];
+          if (rules.length > 0) {
+            revertFormBeforeRulesRef.current = {
+              stageId: stageIdBeforeLobRef.current,
+              reasonId: '',
+              remarks: '',
+            };
+            setPendingTransitionStageId(lobTarget);
+            setStageRulesForTransition(rules);
+            setStageRulesModalOpen(true);
+          }
+        } catch {
+          toast.error('Could not load stage rules for this transition.');
+        }
+      })();
+    }
   };
 
   const handleLobClose = () => {
     setPendingStageId(null);
     setLobModalOpen(false);
+  };
+
+  const handleStageRulesConfirm = (entries: StageRuleValueEntry[]) => {
+    if (!pendingTransitionStageId) return;
+    setFormValues((current) => ({
+      ...current,
+      stageId: pendingTransitionStageId,
+    }));
+    setStageRuleSubmitPayload(entries);
+    setStageRulesModalOpen(false);
+    setPendingTransitionStageId(null);
+    setStageRulesForTransition([]);
+    revertFormBeforeRulesRef.current = null;
+  };
+
+  const handleStageRulesClose = () => {
+    const snap = revertFormBeforeRulesRef.current;
+    if (snap) {
+      setFormValues((current) => ({
+        ...current,
+        ...snap,
+      }));
+    }
+    setStageRulesModalOpen(false);
+    setPendingTransitionStageId(null);
+    setStageRulesForTransition([]);
+    setStageRuleSubmitPayload([]);
+    revertFormBeforeRulesRef.current = null;
   };
 
   const handleSubmit = async (event: React.FormEvent) => {
@@ -292,12 +414,43 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
         });
 
         if (shouldUseStageTransitionFlow) {
+          try {
+            const rulesRes = (await getStageRules({
+              stageId: targetStageId,
+              status: 'ACTIVE',
+              page: 1,
+              limit: 100,
+              search: '',
+            })) as ListStageRulesResponse;
+            const transitionRules = rulesRes?.data || [];
+            if (transitionRules.length > 0 && stageRuleSubmitPayload.length === 0) {
+              revertFormBeforeRulesRef.current = {
+                stageId: currentStageId,
+                reasonId: formValues.reasonId,
+                remarks: formValues.remarks,
+              };
+              setPendingTransitionStageId(targetStageId);
+              setStageRulesForTransition(transitionRules);
+              setStageRulesModalOpen(true);
+              toast.error('Complete the stage information fields before saving.');
+              return;
+            }
+          } catch {
+            toast.error('Could not verify stage rules. Try again.');
+            return;
+          }
+
           await changeStageMutation.mutateAsync({
             id: lead.id,
             payload: {
               stageId: targetStageId,
               reasonId: formValues.reasonId.trim() || undefined,
               remarks: formValues.remarks.trim() || undefined,
+              nextFollowUpAt: formValues.nextFollowUpAt
+                ? new Date(formValues.nextFollowUpAt).toISOString()
+                : undefined,
+              followUpDescription: formValues.followUpDescription.trim() || undefined,
+              stageRuleValues: stageRuleSubmitPayload.length ? stageRuleSubmitPayload : [],
             },
           });
         }
@@ -606,6 +759,14 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
         lobReasonOptions={lobReasonOptions}
         onClose={handleLobClose}
         onConfirm={handleLobConfirm}
+      />
+
+      <StageRulesTransitionModal
+        isOpen={stageRulesModalOpen}
+        rules={stageRulesForTransition}
+        isSubmitting={changeStageMutation.isPending || updateMutation.isPending}
+        onClose={handleStageRulesClose}
+        onConfirm={handleStageRulesConfirm}
       />
     </>
   );
