@@ -29,7 +29,7 @@ const LOBFilters: React.FC<LOBFiltersProps> = ({
   onApply,
   onReset,
 }) => (
-  <section className="rounded-[28px] border border-white/70 bg-white/90 p-5 shadow-[0_20px_50px_-30px_rgba(15,23,42,0.25)] backdrop-blur">
+  <section className="relative z-30 isolate rounded-[28px] border border-white/70 bg-white/90 p-5 shadow-[0_20px_50px_-30px_rgba(15,23,42,0.25)] backdrop-blur">
     <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
       <div>
         <p className="text-xs font-black uppercase tracking-[0.24em] text-emerald-500">Filters</p>

@@ -158,21 +158,25 @@ const LOBAnalysisPage: React.FC = () => {
               }}
             />
 
-            <LOBKPIStats data={lobAnalysis.summary} loading={lobAnalysis.isLoading} />
+            <div className="relative z-10">
+              <LOBKPIStats data={lobAnalysis.summary} loading={lobAnalysis.isLoading} />
+            </div>
 
-            <div className="grid gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(320px,0.9fr)]">
+            <div className="relative z-10 grid gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(320px,0.9fr)]">
               <LOBStageChart breakdown={lobAnalysis.chart} summary={lobAnalysis.summary} loading={lobAnalysis.isLoading} />
               <LOBReasonsList data={lobAnalysis.summary?.top_reasons || []} loading={lobAnalysis.isLoading} />
             </div>
 
-            <LOBAuditTable
-              data={lobAnalysis.auditLogs}
-              loading={lobAnalysis.isLoading || lobAnalysis.isFetching}
-              page={page}
-              totalPages={lobAnalysis.auditPagination?.totalPages || 1}
-              total={lobAnalysis.auditPagination?.total || 0}
-              onPageChange={setPage}
-            />
+            <div className="relative z-10">
+              <LOBAuditTable
+                data={lobAnalysis.auditLogs}
+                loading={lobAnalysis.isLoading || lobAnalysis.isFetching}
+                page={page}
+                totalPages={lobAnalysis.auditPagination?.totalPages || 1}
+                total={lobAnalysis.auditPagination?.total || 0}
+                onPageChange={setPage}
+              />
+            </div>
           </div>
         </div>
       )}
