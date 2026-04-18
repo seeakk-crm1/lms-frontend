@@ -5,7 +5,7 @@ import { toast } from 'react-hot-toast';
 import SearchableSelect from '../../../components/SearchableSelect';
 import { useChangeLeadStageMutation, useCreateLeadMutation, useLeadDetailQuery, useLeadMetaQuery, useUpdateLeadMutation } from '../../../hooks/useLeads';
 import type { LeadDynamicField } from '../../../modules/admin/lead-dynamics/types';
-import useLeadStore, { createEmptyLeadFormValues } from '../../../store/leadStore';
+import { useLeadStore, createEmptyLeadFormValues } from '../../../store/leadStore';
 import type { LeadFormValues, LeadListItem, LeadOption } from '../../../types/lead.types';
 import DynamicFieldRenderer from './DynamicFieldRenderer';
 import LOBModal from './LOBModal';

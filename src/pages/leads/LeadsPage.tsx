@@ -4,7 +4,7 @@ import { Download, Filter, Plus, TrendingUp, Upload } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useLocation, useNavigate } from 'react-router-dom';
 import DashboardLayout from '../../components/dashboard/DashboardLayout';
-import useLeadStore from '../../store/leadStore';
+import { useLeadStore } from '../../store/leadStore';
 import {
   useLeadsQuery,
   useLeadMetaQuery,
