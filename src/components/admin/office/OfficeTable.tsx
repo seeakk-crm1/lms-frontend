@@ -86,20 +86,30 @@ const OfficeTable: React.FC<Props> = ({
     [locations],
   );
   const states = useMemo(
-    () => locations.filter((item) => item.type === 'STATE' && item.parentId === countryId),
+    () => locations.filter((item) => item.parentId === countryId && item.level?.levelOrder === 1),
     [locations, countryId],
   );
   const districts = useMemo(
-    () => locations.filter((item) => item.type === 'DISTRICT' && item.parentId === stateId),
+    () => locations.filter((item) => item.parentId === stateId && item.level?.levelOrder === 2),
     [locations, stateId],
   );
+  const countryLocations = useMemo(
+    () => locations.filter((item) => item.countryId === countryId),
+    [locations, countryId],
+  );
   const stateLabel = useMemo(
-    () => states[0]?.level?.levelName || toTitle(states[0]?.type || 'State'),
-    [states],
+    () =>
+      countryLocations.find((item) => item.level?.levelOrder === 1)?.level?.levelName ||
+      states[0]?.level?.levelName ||
+      toTitle(states[0]?.type || 'State'),
+    [countryLocations, states],
   );
   const districtLabel = useMemo(
-    () => districts[0]?.level?.levelName || toTitle(districts[0]?.type || 'District'),
-    [districts],
+    () =>
+      countryLocations.find((item) => item.level?.levelOrder === 2)?.level?.levelName ||
+      districts[0]?.level?.levelName ||
+      toTitle(districts[0]?.type || 'District'),
+    [countryLocations, districts],
   );
 
   const safeFrom = total === 0 ? 0 : (page - 1) * limit + 1;
