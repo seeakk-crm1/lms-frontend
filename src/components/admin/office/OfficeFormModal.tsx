@@ -10,6 +10,12 @@ import type {
   OfficeFormValues,
 } from '../../../types/admin/office/office.types';
 
+const toTitle = (value: string) =>
+  value
+    .replace(/_/g, ' ')
+    .toLowerCase()
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+
 const schema = z.object({
   name: z.string().trim().min(1, 'Office name is required').max(100, 'Office name too long'),
   address: z.string().optional(),
@@ -83,6 +89,14 @@ const OfficeFormModal: React.FC<Props> = ({
   const districts = useMemo(
     () => locations.filter((item) => item.type === 'DISTRICT' && item.parentId === stateId),
     [locations, stateId],
+  );
+  const stateLabel = useMemo(
+    () => states[0]?.level?.levelName || toTitle(states[0]?.type || 'State'),
+    [states],
+  );
+  const districtLabel = useMemo(
+    () => districts[0]?.level?.levelName || toTitle(districts[0]?.type || 'District'),
+    [districts],
   );
 
   const handleCountryChange = (value: string) => {
@@ -200,7 +214,7 @@ const OfficeFormModal: React.FC<Props> = ({
                 </div>
 
                 <div>
-                  <label className="text-[10px] uppercase tracking-widest text-gray-400 font-black">State</label>
+                  <label className="text-[10px] uppercase tracking-widest text-gray-400 font-black">{stateLabel}</label>
                   <motion.select
                     key={`state-${stateId}-${countryId}`}
                     value={stateId}
@@ -212,7 +226,7 @@ const OfficeFormModal: React.FC<Props> = ({
                       errors.stateId ? 'border-red-200' : 'border-gray-200'
                     }`}
                   >
-                    <option value="">Select state</option>
+                    <option value="">{`Select ${stateLabel.toLowerCase()}`}</option>
                     {states.map((item) => (
                       <option key={item.id} value={item.id}>
                         {item.name}
@@ -225,7 +239,7 @@ const OfficeFormModal: React.FC<Props> = ({
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-[10px] uppercase tracking-widest text-gray-400 font-black">District</label>
+                  <label className="text-[10px] uppercase tracking-widest text-gray-400 font-black">{districtLabel}</label>
                   <motion.select
                     key={`district-${stateId}`}
                     {...register('districtId')}
@@ -236,7 +250,7 @@ const OfficeFormModal: React.FC<Props> = ({
                       errors.districtId ? 'border-red-200' : 'border-gray-200'
                     }`}
                   >
-                    <option value="">Select district</option>
+                    <option value="">{`Select ${districtLabel.toLowerCase()}`}</option>
                     {districts.map((item) => (
                       <option key={item.id} value={item.id}>
                         {item.name}

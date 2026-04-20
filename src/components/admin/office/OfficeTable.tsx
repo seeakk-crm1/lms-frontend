@@ -18,6 +18,12 @@ import type {
   OfficeFilterStatus,
 } from '../../../types/admin/office/office.types';
 
+const toTitle = (value: string) =>
+  value
+    .replace(/_/g, ' ')
+    .toLowerCase()
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+
 interface Props {
   offices: Office[];
   locations: LocationOption[];
@@ -87,6 +93,14 @@ const OfficeTable: React.FC<Props> = ({
     () => locations.filter((item) => item.type === 'DISTRICT' && item.parentId === stateId),
     [locations, stateId],
   );
+  const stateLabel = useMemo(
+    () => states[0]?.level?.levelName || toTitle(states[0]?.type || 'State'),
+    [states],
+  );
+  const districtLabel = useMemo(
+    () => districts[0]?.level?.levelName || toTitle(districts[0]?.type || 'District'),
+    [districts],
+  );
 
   const safeFrom = total === 0 ? 0 : (page - 1) * limit + 1;
   const safeTo = Math.min(page * limit, total);
@@ -143,7 +157,7 @@ const OfficeTable: React.FC<Props> = ({
             disabled={!countryId}
             className="w-full px-3 py-2 bg-gray-50 border border-gray-100 rounded-xl focus:border-emerald-500/30 focus:ring-4 focus:ring-emerald-500/5 outline-none text-sm font-semibold disabled:opacity-60"
           >
-            <option value="">All States</option>
+            <option value="">{`All ${stateLabel}`}</option>
             {states.map((state) => (
               <option key={state.id} value={state.id}>
                 {state.name}
@@ -157,7 +171,7 @@ const OfficeTable: React.FC<Props> = ({
             disabled={!stateId}
             className="w-full px-3 py-2 bg-gray-50 border border-gray-100 rounded-xl focus:border-emerald-500/30 focus:ring-4 focus:ring-emerald-500/5 outline-none text-sm font-semibold disabled:opacity-60"
           >
-            <option value="">All Districts</option>
+            <option value="">{`All ${districtLabel}`}</option>
             {districts.map((district) => (
               <option key={district.id} value={district.id}>
                 {district.name}
@@ -174,8 +188,8 @@ const OfficeTable: React.FC<Props> = ({
               <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Office Name</th>
               <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Address</th>
               <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Country</th>
-              <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">State</th>
-              <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">District</th>
+              <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">{stateLabel}</th>
+              <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">{districtLabel}</th>
               <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Status</th>
               <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Created Date</th>
               <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider text-right">Actions</th>
@@ -324,8 +338,8 @@ const OfficeTable: React.FC<Props> = ({
 
               <div className="text-[11px] font-semibold text-gray-500 space-y-1">
                 <p>Country: {locationMap.get(office.countryId || '') || '-'}</p>
-                <p>State: {locationMap.get(office.stateId || '') || '-'}</p>
-                <p>District: {locationMap.get(office.districtId || '') || '-'}</p>
+                <p>{stateLabel}: {locationMap.get(office.stateId || '') || '-'}</p>
+                <p>{districtLabel}: {locationMap.get(office.districtId || '') || '-'}</p>
                 <p>Created: {format(new Date(office.createdAt), 'MMM dd, yyyy')}</p>
               </div>
 
