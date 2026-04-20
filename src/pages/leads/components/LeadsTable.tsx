@@ -187,7 +187,7 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
                     <div className="text-xs font-semibold text-gray-400">{format(new Date(lead.createdAt), 'hh:mm a')}</div>
                   </td>
                   <td className="px-6 py-5">
-                    <div className="flex items-center justify-end gap-2 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100">
+                    <div className="flex items-center justify-end gap-2">
                       {lead.deletedAt ? (
                         <span className="rounded-full bg-gray-100 px-3 py-1 text-[11px] font-black uppercase tracking-wider text-gray-500">
                           Archived
