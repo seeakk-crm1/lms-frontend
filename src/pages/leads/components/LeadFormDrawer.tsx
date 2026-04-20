@@ -44,7 +44,7 @@ const fromLeadToForm = (lead: LeadListItem): LeadFormValues => ({
   lifecycleId: lead.lifecycleId || '',
   sourceId: lead.sourceId || '',
   nextFollowUpAt: toInputDateTime(lead.nextFollowUpAt),
-  followUpDescription: '',
+  followUpDescription: lead.followUpDescription || '',
   reasonId: lead.lobLogs?.[0]?.reasonId || '',
   remarks: lead.lobLogs?.[0]?.remarks || '',
   dynamicValues: {},

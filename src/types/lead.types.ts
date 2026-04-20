@@ -16,6 +16,7 @@ export interface LeadListItem {
   lifecycleId: string | null;
   sourceId: string | null;
   nextFollowUpAt: string | null;
+  followUpDescription?: string | null;
   stageEnteredAt?: string | null;
   stageExpiresAt?: string | null;
   slaAction?: 'AUTO_LOB' | 'WARN_AND_CHOOSE' | null;
