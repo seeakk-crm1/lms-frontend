@@ -1,6 +1,6 @@
 export type FollowUpView = 'month' | 'week' | 'day' | 'list';
 export type FollowUpType = 'CALL' | 'VISIT' | 'MEETING';
-export type FollowUpStatus = 'PENDING' | 'COMPLETED';
+export type FollowUpStatus = 'PENDING' | 'COMPLETED' | 'MISSED';
 
 export interface FollowUpUser {
   id: string;
@@ -19,10 +19,17 @@ export interface FollowUpImage {
 export interface FollowUp {
   id: string;
   leadId: string;
+  lead: {
+    id: string;
+    name: string;
+    email: string | null;
+    phone: string | null;
+  };
   userId: string;
   workspaceId: string;
   type: FollowUpType;
   description: string | null;
+  completionDescription: string | null;
   status: FollowUpStatus;
   scheduledAt: string;
   completedAt: string | null;
@@ -107,6 +114,10 @@ export interface CreateFollowUpInput {
 export interface CompleteFollowUpInput {
   description: string;
   images: string[];
+}
+
+export interface SnoozeFollowUpInput {
+  scheduledAt: string;
 }
 
 export interface CalendarQueryParams {

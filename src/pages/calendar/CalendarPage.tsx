@@ -4,20 +4,26 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { AnimatePresence, motion } from 'framer-motion';
 import { CalendarPlus, Loader2, Plus, X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-hot-toast';
 import SearchableSelect from '../../components/SearchableSelect';
 import DashboardLayout from '../../components/dashboard/DashboardLayout';
 import CalendarHeader from '../../components/calendar/CalendarHeader';
 import CalendarView from '../../components/calendar/CalendarView';
 import CompleteFollowUpModal from '../../components/calendar/CompleteFollowUpModal';
+import FollowUpActionModal from '../../components/calendar/FollowUpActionModal';
+import SnoozeFollowUpModal from '../../components/calendar/SnoozeFollowUpModal';
 import {
   useCalendarQuery,
   useCompleteFollowUpMutation,
   useCreateFollowUpMutation,
   useFollowUpLeadsQuery,
+  useSnoozeFollowUpMutation,
   useFollowUpUsersQuery,
 } from '../../hooks/useFollowUps';
 import useFollowupStore from '../../store/followupStore';
 import type { CreateFollowUpInput } from '../../types/followup.types';
+import type { FollowUp } from '../../types/followup.types';
 
 const scheduleSchema = z.object({
   leadId: z.string().trim().min(1, 'Lead ID is required'),
@@ -30,6 +36,10 @@ type ScheduleFormValues = z.infer<typeof scheduleSchema>;
 
 const CalendarPage: React.FC = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [actionFollowUp, setActionFollowUp] = useState<FollowUp | null>(null);
+  const [snoozeFollowUpItem, setSnoozeFollowUpItem] = useState<FollowUp | null>(null);
+  const [snoozeDateTime, setSnoozeDateTime] = useState('');
+  const navigate = useNavigate();
 
   const { view, selectedDate, selectedUser, modalOpen, selectedFollowUp, setView, setDate, setUser, openModal, closeModal } =
     useFollowupStore();
@@ -39,6 +49,7 @@ const CalendarPage: React.FC = () => {
   const leadsQuery = useFollowUpLeadsQuery();
   const createMutation = useCreateFollowUpMutation();
   const completeMutation = useCompleteFollowUpMutation();
+  const snoozeMutation = useSnoozeFollowUpMutation();
 
   const {
     register,
@@ -110,7 +121,11 @@ const CalendarPage: React.FC = () => {
               items={calendarItems}
               groups={calendarQuery.data?.data.groups}
               onSelectDate={setDate}
-              onComplete={openModal}
+              onComplete={(item) => {
+                setActionFollowUp(item);
+                openModal(item);
+              }}
+              onOpenFollowUp={setActionFollowUp}
             />
           </div>
         </div>
@@ -123,6 +138,48 @@ const CalendarPage: React.FC = () => {
         onSubmit={async (payload) => {
           if (!selectedFollowUp) return;
           await completeMutation.mutateAsync({ id: selectedFollowUp.id, payload });
+        }}
+      />
+      <FollowUpActionModal
+        isOpen={Boolean(actionFollowUp)}
+        followUp={actionFollowUp}
+        onClose={() => setActionFollowUp(null)}
+        onOpenLead={(followUp) => {
+          navigate('/leads', { state: { openLeadId: followUp.leadId } });
+          setActionFollowUp(null);
+        }}
+        onMarkCompleted={(followUp) => {
+          openModal(followUp);
+          setActionFollowUp(null);
+        }}
+        onSnooze={(followUp) => {
+          setSnoozeFollowUpItem(followUp);
+          setSnoozeDateTime('');
+          setActionFollowUp(null);
+        }}
+      />
+      <SnoozeFollowUpModal
+        isOpen={Boolean(snoozeFollowUpItem)}
+        value={snoozeDateTime}
+        onChange={setSnoozeDateTime}
+        isSubmitting={snoozeMutation.isPending}
+        onClose={() => {
+          setSnoozeFollowUpItem(null);
+          setSnoozeDateTime('');
+        }}
+        onSubmit={async () => {
+          if (!snoozeFollowUpItem || !snoozeDateTime) return;
+          const nextTime = new Date(snoozeDateTime);
+          if (Number.isNaN(nextTime.getTime()) || nextTime.getTime() <= Date.now()) {
+            toast.error('Please choose a future reminder time');
+            return;
+          }
+          await snoozeMutation.mutateAsync({
+            id: snoozeFollowUpItem.id,
+            payload: { scheduledAt: nextTime.toISOString() },
+          });
+          setSnoozeFollowUpItem(null);
+          setSnoozeDateTime('');
         }}
       />
 

@@ -9,10 +9,11 @@ import {
   getCalendarData,
   getFollowUpReminderAlerts,
   getFollowUpLeads,
+  snoozeFollowUp,
   getFollowUpUsers,
   getTodayFollowUps,
 } from '../services/followupService';
-import type { CalendarQueryParams, CompleteFollowUpInput, CreateFollowUpInput, FollowUp } from '../types/followup.types';
+import type { CalendarQueryParams, CompleteFollowUpInput, CreateFollowUpInput, FollowUp, SnoozeFollowUpInput } from '../types/followup.types';
 
 const buildDateRange = (view: 'month' | 'week' | 'day' | 'list', selectedDate: string) => {
   const baseDate = parseISO(selectedDate);
@@ -163,6 +164,22 @@ export const useCompleteFollowUpMutation = () => {
       queryClient.invalidateQueries({ queryKey: ['followups', 'today'] });
       queryClient.invalidateQueries({ queryKey: ['followups', 'history'] });
       toast.success('Follow-up completed');
+    },
+  });
+};
+
+export const useSnoozeFollowUpMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: SnoozeFollowUpInput }) => snoozeFollowUp(id, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['followups', 'calendar'] });
+      queryClient.invalidateQueries({ queryKey: ['followups', 'today'] });
+      queryClient.invalidateQueries({ queryKey: ['followups', 'alerts'] });
+      toast.success('Follow-up snoozed');
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || 'Failed to snooze follow-up');
     },
   });
 };

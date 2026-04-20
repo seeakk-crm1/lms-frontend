@@ -1,8 +1,13 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'react-hot-toast';
+import { useNavigate } from 'react-router-dom';
 import { useFollowUpReminderAlertsQuery } from '../../hooks/useFollowUps';
+import { useCompleteFollowUpMutation, useSnoozeFollowUpMutation } from '../../hooks/useFollowUps';
 import useAuthStore from '../../store/useAuthStore';
-import type { FollowUpReminderItem } from '../../types/followup.types';
+import type { FollowUp, FollowUpReminderItem } from '../../types/followup.types';
+import FollowUpActionModal from './FollowUpActionModal';
+import CompleteFollowUpModal from './CompleteFollowUpModal';
+import SnoozeFollowUpModal from './SnoozeFollowUpModal';
 
 const storageKey = 'followupReminderSeenAt';
 
@@ -60,10 +65,40 @@ const buildAlertMessage = (item: FollowUpReminderItem): string => {
 
 const FollowUpReminderListener: React.FC = () => {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const navigate = useNavigate();
   const query = useFollowUpReminderAlertsQuery();
+  const completeMutation = useCompleteFollowUpMutation();
+  const snoozeMutation = useSnoozeFollowUpMutation();
   const initialLoaded = useRef(false);
+  const [queue, setQueue] = useState<FollowUp[]>([]);
+  const [active, setActive] = useState<FollowUp | null>(null);
+  const [completionTarget, setCompletionTarget] = useState<FollowUp | null>(null);
+  const [snoozeTarget, setSnoozeTarget] = useState<FollowUp | null>(null);
+  const [snoozeDateTime, setSnoozeDateTime] = useState('');
 
   const items = useMemo(() => query.data?.data?.items || [], [query.data]);
+  const toFollowUp = (item: FollowUpReminderItem): FollowUp => ({
+    id: item.id,
+    leadId: item.leadId,
+    lead: {
+      id: item.leadId,
+      name: item.leadName,
+      email: null,
+      phone: null,
+    },
+    userId: item.userId,
+    workspaceId: '',
+    type: item.type,
+    description: item.description,
+    completionDescription: null,
+    status: 'PENDING',
+    scheduledAt: item.scheduledAt,
+    completedAt: null,
+    createdAt: item.scheduledAt,
+    updatedAt: item.scheduledAt,
+    user: item.user,
+    images: [],
+  });
 
   useEffect(() => {
     if (!isAuthenticated || query.isLoading) return;
@@ -91,12 +126,73 @@ const FollowUpReminderListener: React.FC = () => {
 
       seen[item.id] = Date.now();
       changed = true;
+      setQueue((current) => [...current, toFollowUp(item)]);
     });
 
     if (changed) writeSeenMap(seen);
   }, [isAuthenticated, items, query.isLoading]);
 
-  return null;
+  useEffect(() => {
+    if (!active && queue.length > 0) {
+      setActive(queue[0]);
+      setQueue((current) => current.slice(1));
+    }
+  }, [active, queue]);
+
+  return (
+    <>
+      <FollowUpActionModal
+        isOpen={Boolean(active)}
+        followUp={active}
+        onClose={() => setActive(null)}
+        onOpenLead={(followUp) => {
+          navigate('/leads', { state: { openLeadId: followUp.leadId } });
+          setActive(null);
+        }}
+        onMarkCompleted={(followUp) => {
+          setCompletionTarget(followUp);
+          setActive(null);
+        }}
+        onSnooze={(followUp) => {
+          setSnoozeTarget(followUp);
+          setSnoozeDateTime('');
+          setActive(null);
+        }}
+      />
+      <CompleteFollowUpModal
+        isOpen={Boolean(completionTarget)}
+        followUp={completionTarget}
+        isSubmitting={completeMutation.isPending}
+        onClose={() => setCompletionTarget(null)}
+        onSubmit={async (payload) => {
+          if (!completionTarget) return;
+          await completeMutation.mutateAsync({ id: completionTarget.id, payload });
+          setCompletionTarget(null);
+        }}
+      />
+      <SnoozeFollowUpModal
+        isOpen={Boolean(snoozeTarget)}
+        value={snoozeDateTime}
+        onChange={setSnoozeDateTime}
+        isSubmitting={snoozeMutation.isPending}
+        onClose={() => {
+          setSnoozeTarget(null);
+          setSnoozeDateTime('');
+        }}
+        onSubmit={async () => {
+          if (!snoozeTarget || !snoozeDateTime) return;
+          const date = new Date(snoozeDateTime);
+          if (Number.isNaN(date.getTime()) || date.getTime() <= Date.now()) {
+            toast.error('Please choose a future reminder time');
+            return;
+          }
+          await snoozeMutation.mutateAsync({ id: snoozeTarget.id, payload: { scheduledAt: date.toISOString() } });
+          setSnoozeTarget(null);
+          setSnoozeDateTime('');
+        }}
+      />
+    </>
+  );
 };
 
 export default FollowUpReminderListener;

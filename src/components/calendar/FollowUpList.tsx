@@ -10,6 +10,7 @@ interface Props {
   emptyTitle?: string;
   emptyDescription?: string;
   onComplete?: (followUp: FollowUp) => void;
+  onOpen?: (followUp: FollowUp) => void;
 }
 
 const getIcon = (type: FollowUp['type']) => {
@@ -24,6 +25,7 @@ const FollowUpList: React.FC<Props> = ({
   emptyTitle = 'No follow-ups found',
   emptyDescription = 'Try changing the filters or date range.',
   onComplete,
+  onOpen,
 }) => {
   if (isLoading) {
     return (
@@ -81,9 +83,10 @@ const FollowUpList: React.FC<Props> = ({
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.02 }}
-                  className="transition-colors hover:bg-emerald-50/30"
+                  className="cursor-pointer transition-colors hover:bg-red-50/40"
+                  onClick={() => onOpen?.(item)}
                 >
-                  <td className="px-5 py-4 text-sm font-black text-gray-900">{item.leadId}</td>
+                  <td className="px-5 py-4 text-sm font-black text-gray-900">{item.lead?.name || item.leadId}</td>
                   <td className="px-5 py-4 text-sm font-semibold text-gray-600">{item.user.displayName}</td>
                   <td className="px-5 py-4 text-sm font-semibold text-gray-600">
                     {format(new Date(item.scheduledAt), 'dd MMM, hh:mm a')}
@@ -107,7 +110,10 @@ const FollowUpList: React.FC<Props> = ({
                     {item.status === 'PENDING' && onComplete ? (
                       <button
                         type="button"
-                        onClick={() => onComplete(item)}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          onComplete(item);
+                        }}
                         className="rounded-xl bg-emerald-500 px-3 py-2 text-xs font-black text-white hover:bg-emerald-600"
                       >
                         Complete
@@ -127,10 +133,10 @@ const FollowUpList: React.FC<Props> = ({
         {items.map((item) => {
           const Icon = getIcon(item.type);
           return (
-            <div key={item.id} className="space-y-3 p-4">
+            <button key={item.id} className="w-full space-y-3 p-4 text-left" type="button" onClick={() => onOpen?.(item)}>
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  <p className="text-sm font-black text-gray-900">{item.leadId}</p>
+                  <p className="text-sm font-black text-gray-900">{item.lead?.name || item.leadId}</p>
                   <p className="mt-0.5 text-xs font-semibold text-gray-500">{item.user.displayName}</p>
                 </div>
                 <span
@@ -148,13 +154,16 @@ const FollowUpList: React.FC<Props> = ({
               {item.status === 'PENDING' && onComplete ? (
                 <button
                   type="button"
-                  onClick={() => onComplete(item)}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onComplete(item);
+                  }}
                   className="w-full rounded-xl bg-emerald-500 py-2.5 text-xs font-black text-white"
                 >
                   Complete
                 </button>
               ) : null}
-            </div>
+            </button>
           );
         })}
       </div>

@@ -8,9 +8,10 @@ interface Props {
   followUp: FollowUp;
   compact?: boolean;
   onComplete?: (followUp: FollowUp) => void;
+  onOpen?: (followUp: FollowUp) => void;
 }
 
-const FollowUpCard: React.FC<Props> = ({ followUp, compact = false, onComplete }) => {
+const FollowUpCard: React.FC<Props> = ({ followUp, compact = false, onComplete, onOpen }) => {
   const icon = useMemo(() => {
     if (followUp.type === 'VISIT') return MapPinned;
     if (followUp.type === 'MEETING') return Video;
@@ -20,9 +21,11 @@ const FollowUpCard: React.FC<Props> = ({ followUp, compact = false, onComplete }
   const Icon = icon;
 
   return (
-    <motion.div
+    <motion.button
       whileHover={{ y: -2 }}
-      className="rounded-2xl border border-gray-100 bg-white p-3 shadow-sm transition-colors hover:border-emerald-200"
+      type="button"
+      onClick={() => onOpen?.(followUp)}
+      className="w-full rounded-2xl border border-red-200 bg-red-50/70 p-3 text-left shadow-sm transition-colors hover:border-red-300 hover:bg-red-50"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
@@ -31,7 +34,7 @@ const FollowUpCard: React.FC<Props> = ({ followUp, compact = false, onComplete }
               <Icon className="h-4 w-4" />
             </div>
             <div className="min-w-0">
-              <p className="truncate text-sm font-black text-gray-900">{followUp.user.displayName}</p>
+              <p className="truncate text-sm font-black text-gray-900">{followUp.lead?.name || followUp.user.displayName}</p>
               <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400">{followUp.type}</p>
             </div>
           </div>
@@ -64,7 +67,7 @@ const FollowUpCard: React.FC<Props> = ({ followUp, compact = false, onComplete }
           </button>
         ) : null}
       </div>
-    </motion.div>
+    </motion.button>
   );
 };
 
