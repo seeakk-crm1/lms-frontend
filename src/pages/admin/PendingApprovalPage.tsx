@@ -17,6 +17,11 @@ const normalizeRole = (role: unknown) =>
 const normalizeRoleKey = (role: unknown) =>
   normalizeRole(role).replace(/[\s_-]+/g, '');
 
+const permissionSet = (permissions: unknown): Set<string> => {
+  if (!Array.isArray(permissions)) return new Set();
+  return new Set(permissions.map((permission) => String(permission)));
+};
+
 const statusOrder: Record<string, number> = {
   PENDING: 0,
   APPROVED: 1,
@@ -56,7 +61,11 @@ const PendingApprovalPage: React.FC = () => {
   }, [searchDraft, setFilters]);
 
   const roleKey = normalizeRoleKey(user?.role);
-  const canAct = ['admin', 'manager', 'superadmin'].includes(roleKey);
+  const permissions = useMemo(() => permissionSet(user?.permissions), [user?.permissions]);
+  const isAdminRole = ['admin', 'manager', 'superadmin'].includes(roleKey);
+  const canApprove = isAdminRole || permissions.has('LEAD_APPROVAL_APPROVE') || permissions.has('LEADS_APPROVE');
+  const canDeny = isAdminRole || permissions.has('LEAD_APPROVAL_DENY') || permissions.has('LEADS_REJECT');
+  const canAct = canApprove || canDeny;
 
   const sortedApprovals = useMemo(() => {
     const items = [...approvals];
@@ -297,6 +306,8 @@ const PendingApprovalPage: React.FC = () => {
         approval={selectedApproval}
         isSubmitting={approvalActionMutation.isPending}
         canAct={canAct}
+        canApprove={canApprove}
+        canDeny={canDeny}
         onClose={resetModal}
         onSubmit={handleSubmitApproval}
       />
