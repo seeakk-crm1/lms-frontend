@@ -8,11 +8,21 @@ interface ApprovalModalProps {
   approval: LeadApprovalListItem | null;
   isSubmitting: boolean;
   canAct: boolean;
+  canApprove: boolean;
+  canDeny: boolean;
   onClose: () => void;
   onSubmit: (payload: { action: LeadApprovalAction; comment: string }) => Promise<void> | void;
 }
 
-const ApprovalModal: React.FC<ApprovalModalProps> = ({ approval, isSubmitting, canAct, onClose, onSubmit }) => {
+const ApprovalModal: React.FC<ApprovalModalProps> = ({
+  approval,
+  isSubmitting,
+  canAct,
+  canApprove,
+  canDeny,
+  onClose,
+  onSubmit,
+}) => {
   const [comment, setComment] = useState('');
   const [touched, setTouched] = useState(false);
 
@@ -197,22 +207,26 @@ const ApprovalModal: React.FC<ApprovalModalProps> = ({ approval, isSubmitting, c
 
                 {showActionButtons ? (
                   <>
-                    <button
-                      type="button"
-                      onClick={() => handleAction('DENY')}
-                      disabled={isSubmitting}
-                      className="order-1 flex w-full items-center justify-center rounded-2xl bg-rose-500 px-5 py-4 text-sm font-black text-white shadow-lg shadow-rose-500/20 transition-all hover:bg-rose-600 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-rose-300 sm:order-2 sm:flex-1"
-                    >
-                      {isSubmitting ? 'Processing…' : 'Deny'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleAction('APPROVE')}
-                      disabled={isSubmitting}
-                      className="order-2 flex w-full items-center justify-center rounded-2xl bg-emerald-500 px-5 py-4 text-sm font-black text-white shadow-lg shadow-emerald-500/20 transition-all hover:bg-emerald-600 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-emerald-300 sm:order-3 sm:flex-[1.2]"
-                    >
-                      {isSubmitting ? 'Processing…' : 'Approve'}
-                    </button>
+                    {canDeny ? (
+                      <button
+                        type="button"
+                        onClick={() => handleAction('DENY')}
+                        disabled={isSubmitting}
+                        className="order-1 flex w-full items-center justify-center rounded-2xl bg-rose-500 px-5 py-4 text-sm font-black text-white shadow-lg shadow-rose-500/20 transition-all hover:bg-rose-600 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-rose-300 sm:order-2 sm:flex-1"
+                      >
+                        {isSubmitting ? 'Processing…' : 'Deny'}
+                      </button>
+                    ) : null}
+                    {canApprove ? (
+                      <button
+                        type="button"
+                        onClick={() => handleAction('APPROVE')}
+                        disabled={isSubmitting}
+                        className="order-2 flex w-full items-center justify-center rounded-2xl bg-emerald-500 px-5 py-4 text-sm font-black text-white shadow-lg shadow-emerald-500/20 transition-all hover:bg-emerald-600 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-emerald-300 sm:order-3 sm:flex-[1.2]"
+                      >
+                        {isSubmitting ? 'Processing…' : 'Approve'}
+                      </button>
+                    ) : null}
                   </>
                 ) : null}
               </div>
