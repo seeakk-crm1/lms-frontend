@@ -444,7 +444,7 @@ export const useExportLeads = () =>
       return true;
     },
     onSuccess: () => {
-      toast.success('Lead export downloaded');
+      toast.success('Lead export downloaded (all rows matching your filters, every page)');
     },
     onError: (error: any) => {
       toast.error(error?.response?.data?.message || 'Failed to export leads');

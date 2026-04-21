@@ -65,6 +65,11 @@ export const useCalendarQuery = () => {
     gcTime: 300_000,
     refetchOnWindowFocus: false,
     placeholderData: (previousData) => previousData,
+    retry: (failureCount, error: any) => {
+      const status = error?.response?.status;
+      if (status === 401 || status === 403 || status === 422 || status === 503) return false;
+      return failureCount < 2;
+    },
   });
 };
 
@@ -78,6 +83,11 @@ export const useTodayFollowUpsQuery = () => {
     gcTime: 180_000,
     refetchOnWindowFocus: true,
     placeholderData: (previousData) => previousData,
+    retry: (failureCount, error: any) => {
+      const status = error?.response?.status;
+      if (status === 401 || status === 403 || status === 422 || status === 503) return false;
+      return failureCount < 2;
+    },
   });
 };
 
@@ -96,6 +106,11 @@ export const useFollowUpReminderAlertsQuery = () => {
     gcTime: 120_000,
     refetchInterval: 30_000,
     refetchOnWindowFocus: true,
+    retry: (failureCount, error: any) => {
+      const status = error?.response?.status;
+      if (status === 401 || status === 403 || status === 422 || status === 503) return false;
+      return failureCount < 2;
+    },
   });
 };
 

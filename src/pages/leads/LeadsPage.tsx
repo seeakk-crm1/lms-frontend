@@ -28,6 +28,7 @@ const LeadsPage: React.FC = () => {
   const navigate = useNavigate();
   const [showFilters, setShowFilters] = useState(true);
   const [searchDraft, setSearchDraft] = useState('');
+  const [exportIncludeArchived, setExportIncludeArchived] = useState(false);
   const [deleteModal, setDeleteModal] = useState<{ 
     isOpen: boolean; 
     lead: LeadListItem | null;
@@ -131,8 +132,9 @@ const LeadsPage: React.FC = () => {
       assignedTo: filters.assignedTo || undefined,
       source: filters.source || undefined,
       status: filters.status || undefined,
+      includeArchived: exportIncludeArchived,
     });
-  }, [exportMutation, filters.assignedTo, filters.source, filters.stage, filters.status, search]);
+  }, [exportMutation, exportIncludeArchived, filters.assignedTo, filters.source, filters.stage, filters.status, search]);
 
   const handleImportClick = useCallback(() => {
     navigate('/leads/import');
@@ -347,15 +349,27 @@ const LeadsPage: React.FC = () => {
                   <span>Import</span>
                 </button>
 
-                <button
-                  type="button"
-                  onClick={handleExport}
-                  disabled={exportMutation.isPending}
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-black text-gray-700 shadow-sm transition-all hover:border-emerald-200 hover:text-emerald-600 disabled:cursor-not-allowed disabled:opacity-70"
-                >
-                  <Download className="h-4 w-4" />
-                  <span>{exportMutation.isPending ? 'Exporting…' : 'Export to Excel'}</span>
-                </button>
+                <div className="flex flex-col gap-2 rounded-2xl border border-gray-100 bg-gray-50/80 px-4 py-3 sm:flex-row sm:items-center sm:gap-4">
+                  <label className="flex cursor-pointer items-center gap-2 text-xs font-bold text-gray-600">
+                    <input
+                      type="checkbox"
+                      checked={exportIncludeArchived}
+                      onChange={(event) => setExportIncludeArchived(event.target.checked)}
+                      className="h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                    />
+                    <span>Include archived leads in export</span>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={handleExport}
+                    disabled={exportMutation.isPending}
+                    title="Exports every lead that matches your current filters (all pages), not only the visible table."
+                    className="inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-black text-gray-700 shadow-sm transition-all hover:border-emerald-200 hover:text-emerald-600 disabled:cursor-not-allowed disabled:opacity-70 sm:ml-auto"
+                  >
+                    <Download className="h-4 w-4" />
+                    <span>{exportMutation.isPending ? 'Exporting…' : 'Export to Excel'}</span>
+                  </button>
+                </div>
 
                 <button
                   type="button"
