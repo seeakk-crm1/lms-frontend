@@ -19,6 +19,12 @@ export interface LocationOption {
   name: string;
   type: 'COUNTRY' | 'STATE' | 'DISTRICT' | 'CITY' | 'WARD' | 'CONSTITUENCY' | 'OFFICE';
   parentId?: string | null;
+  countryId?: string | null;
+  level?: {
+    id: string;
+    levelName: string;
+    levelOrder: number;
+  } | null;
   workspaceId: string;
 }
 

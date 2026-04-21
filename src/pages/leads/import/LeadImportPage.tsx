@@ -32,7 +32,7 @@ export default function LeadImportPage() {
         </button>
         <div>
           <h2 className="text-2xl font-black text-gray-900 tracking-tight">Bulk Lead Import</h2>
-          <p className="text-sm font-semibold text-gray-500 mt-1">Upload CSV or Excel files to import multiple leads at once.</p>
+          <p className="text-sm font-semibold text-gray-500 mt-1">Upload CSV files to import multiple leads at once.</p>
         </div>
       </div>
 

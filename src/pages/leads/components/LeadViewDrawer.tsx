@@ -1,6 +1,6 @@
 import React, { memo, useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { CalendarClock, CircleDollarSign, History, Mail, Phone, UserCircle2, X } from 'lucide-react';
+import { Building2, CalendarClock, CircleDollarSign, History, Mail, MapPin, Phone, UserCircle2, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { useLeadDetailQuery } from '../../../hooks/useLeads';
 import type { LeadListItem } from '../../../types/lead.types';
@@ -147,6 +147,14 @@ const LeadViewDrawer: React.FC<LeadViewDrawerProps> = ({ isOpen, lead, initialTa
                         <div className="flex items-center gap-3">
                           <Phone className="h-4 w-4 text-emerald-500" />
                           <span>{resolvedLead.phone || 'No phone recorded'}</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <Building2 className="h-4 w-4 shrink-0 text-emerald-500" />
+                          <span>{resolvedLead.companyName?.trim() || 'No company recorded'}</span>
+                        </div>
+                        <div className="flex items-start gap-3">
+                          <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
+                          <span className="whitespace-pre-wrap">{resolvedLead.address?.trim() || 'No address recorded'}</span>
                         </div>
                         <div className="flex items-center gap-3">
                           <UserCircle2 className="h-4 w-4 text-emerald-500" />

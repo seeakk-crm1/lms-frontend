@@ -10,6 +10,7 @@ import type {
   FollowUpReminderAlertsResponse,
   FollowUpLeadOption,
   FollowUpHistoryResponse,
+  SnoozeFollowUpInput,
   FollowUpUserOption,
   TodayFollowUpsResponse,
 } from '../types/followup.types';
@@ -43,6 +44,14 @@ export const createFollowUp = async (payload: CreateFollowUpInput) => {
 export const completeFollowUp = async (id: string, payload: CompleteFollowUpInput) => {
   const response = await api.post<{ success: boolean; message: string; data: FollowUp }>(
     `/followups/${id}/complete`,
+    payload,
+  );
+  return response.data;
+};
+
+export const snoozeFollowUp = async (id: string, payload: SnoozeFollowUpInput) => {
+  const response = await api.patch<{ success: boolean; message: string; data: FollowUp }>(
+    `/followups/${id}/snooze`,
     payload,
   );
   return response.data;

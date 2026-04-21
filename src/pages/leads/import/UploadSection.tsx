@@ -22,9 +22,7 @@ export default function UploadSection({ onUploadStart, isUploading }: UploadSect
   const { getRootProps, getInputProps, isDragActive } = useDropzone({ 
     onDrop,
     accept: {
-      'text/csv': ['.csv'],
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
-      'application/vnd.ms-excel': ['.xls']
+      'text/csv': ['.csv']
     },
     maxFiles: 1
   });
@@ -90,21 +88,37 @@ export default function UploadSection({ onUploadStart, isUploading }: UploadSect
               <div className="text-base text-gray-600 font-semibold mt-2">
                 <span className="text-emerald-500 font-black">Click to select</span> or drag and drop here
               </div>
-              <p className="text-sm font-medium text-gray-400 mt-1">Accepts CSV or Excel files (max 10MB)</p>
+              <p className="text-sm font-medium text-gray-400 mt-1">Accepts CSV files only (max 10MB)</p>
             </>
           )}
         </div>
       </div>
 
-      <div className="mt-8 flex flex-col sm:flex-row justify-between items-center gap-4">
-        <a
-          href="/templates/lead_template.csv"
-          download="lead_template.csv"
-          className="flex w-full sm:w-auto items-center justify-center gap-2 px-6 py-3 rounded-2xl text-sm font-black transition-all text-emerald-700 bg-emerald-50 hover:bg-emerald-100"
-        >
-          <DownloadCloud className="w-4 h-4" />
-          Download Template
-        </a>
+      <div className="mt-8 space-y-3">
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+          <a
+            href="/templates/lead_template.csv"
+            download="lead_template.csv"
+            className="flex w-full sm:w-auto items-center justify-center gap-2 px-6 py-3 rounded-2xl text-sm font-black transition-all text-emerald-700 bg-emerald-50 hover:bg-emerald-100"
+          >
+            <DownloadCloud className="w-4 h-4" />
+            Download CSV Template
+          </a>
+          <a
+            href="/templates/lead_template.numbers"
+            download="lead_template.numbers"
+            className="flex w-full sm:w-auto items-center justify-center gap-2 px-6 py-3 rounded-2xl text-sm font-black transition-all text-sky-700 bg-sky-50 hover:bg-sky-100"
+          >
+            <DownloadCloud className="w-4 h-4" />
+            Download Numbers Template
+          </a>
+        </div>
+        <p className="text-xs font-semibold text-gray-500">
+          If you use the Numbers template, export it as CSV before uploading.
+        </p>
+      </div>
+
+      <div className="mt-4 flex flex-col sm:flex-row justify-end items-center gap-4">
         <button
           onClick={handleUpload}
           disabled={!file || loading}

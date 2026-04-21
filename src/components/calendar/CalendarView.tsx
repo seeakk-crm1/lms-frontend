@@ -12,11 +12,12 @@ interface Props {
   groups?: Array<{ date: string; items: FollowUp[] }>;
   onSelectDate: (date: string) => void;
   onComplete: (followUp: FollowUp) => void;
+  onOpenFollowUp: (followUp: FollowUp) => void;
 }
 
 const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-const CalendarView: React.FC<Props> = ({ view, selectedDate, items, groups = [], onSelectDate, onComplete }) => {
+const CalendarView: React.FC<Props> = ({ view, selectedDate, items, groups = [], onSelectDate, onComplete, onOpenFollowUp }) => {
   const selected = parseISO(selectedDate);
   const groupedMap = useMemo(
     () =>
@@ -42,7 +43,7 @@ const CalendarView: React.FC<Props> = ({ view, selectedDate, items, groups = [],
   );
 
   if (view === 'list') {
-    return <FollowUpList items={items} onComplete={onComplete} />;
+    return <FollowUpList items={items} onComplete={onComplete} onOpen={onOpenFollowUp} />;
   }
 
   if (view === 'day') {
@@ -55,6 +56,7 @@ const CalendarView: React.FC<Props> = ({ view, selectedDate, items, groups = [],
         <FollowUpList
           items={dayItems}
           onComplete={onComplete}
+          onOpen={onOpenFollowUp}
           emptyTitle="No follow-ups scheduled for this day"
           emptyDescription="Try another day or create a new follow-up."
         />
@@ -77,7 +79,9 @@ const CalendarView: React.FC<Props> = ({ view, selectedDate, items, groups = [],
             </button>
             <div className="space-y-3">
               {group.items.length > 0 ? (
-                group.items.map((item) => <FollowUpCard key={item.id} followUp={item} compact onComplete={onComplete} />)
+                group.items.map((item) => (
+                  <FollowUpCard key={item.id} followUp={item} compact onComplete={onComplete} onOpen={onOpenFollowUp} />
+                ))
               ) : (
                 <p className="rounded-2xl border border-dashed border-gray-200 px-3 py-6 text-center text-xs font-bold text-gray-400">
                   No follow-ups
@@ -136,10 +140,18 @@ const CalendarView: React.FC<Props> = ({ view, selectedDate, items, groups = [],
 
                 <div className="space-y-2">
                   {dayEntries.slice(0, 3).map((entry) => (
-                    <div key={entry.id} className="rounded-xl bg-white px-2.5 py-2 text-xs font-semibold text-gray-600 shadow-sm">
-                      <p className="truncate font-black text-gray-800">{entry.type}</p>
+                    <button
+                      key={entry.id}
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onOpenFollowUp(entry);
+                      }}
+                      className="w-full rounded-xl border border-red-200 bg-red-50 px-2.5 py-2 text-left text-xs font-semibold text-red-700 shadow-sm hover:bg-red-100"
+                    >
+                      <p className="truncate font-black text-red-800">{entry.type}</p>
                       <p className="truncate text-[11px] text-gray-500">{format(new Date(entry.scheduledAt), 'hh:mm a')}</p>
-                    </div>
+                    </button>
                   ))}
                 </div>
               </motion.button>

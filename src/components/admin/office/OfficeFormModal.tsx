@@ -10,12 +10,18 @@ import type {
   OfficeFormValues,
 } from '../../../types/admin/office/office.types';
 
+const toTitle = (value: string) =>
+  value
+    .replace(/_/g, ' ')
+    .toLowerCase()
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+
 const schema = z.object({
   name: z.string().trim().min(1, 'Office name is required').max(100, 'Office name too long'),
   address: z.string().optional(),
   countryId: z.string().trim().min(1, 'Country is required'),
-  stateId: z.string().trim().min(1, 'State is required'),
-  districtId: z.string().trim().min(1, 'District is required'),
+  stateId: z.string().trim().min(1, 'Level 1 location is required'),
+  districtId: z.string().trim().min(1, 'Deepest location is required'),
   isActive: z.boolean(),
 });
 
@@ -71,19 +77,93 @@ const OfficeFormModal: React.FC<Props> = ({
 
   const countryId = watch('countryId');
   const stateId = watch('stateId');
+  const districtId = watch('districtId');
+
+  const locationById = useMemo(
+    () => new Map(locations.map((item) => [item.id, item])),
+    [locations],
+  );
 
   const countries = useMemo(
     () => locations.filter((item) => item.type === 'COUNTRY'),
     [locations],
   );
-  const states = useMemo(
-    () => locations.filter((item) => item.type === 'STATE' && item.parentId === countryId),
+
+  const countryLocations = useMemo(
+    () => locations.filter((item) => item.countryId === countryId),
     [locations, countryId],
   );
-  const districts = useMemo(
-    () => locations.filter((item) => item.type === 'DISTRICT' && item.parentId === stateId),
-    [locations, stateId],
+
+  const levelOrders = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          countryLocations
+            .map((item) => item.level?.levelOrder)
+            .filter((value): value is number => Boolean(value)),
+        ),
+      ).sort((left, right) => left - right),
+    [countryLocations],
   );
+
+  const levelLabelByOrder = useMemo(() => {
+    const result = new Map<number, string>();
+    levelOrders.forEach((order) => {
+      const source = countryLocations.find((item) => item.level?.levelOrder === order);
+      if (source?.level?.levelName) result.set(order, source.level.levelName);
+    });
+    return result;
+  }, [countryLocations, levelOrders]);
+
+  const getPathFromLocation = (selectedId?: string): string[] => {
+    if (!countryId || !selectedId) return [];
+
+    const path: string[] = [];
+    let current = locationById.get(selectedId);
+
+    while (current) {
+      if (current.countryId !== countryId) break;
+      if (current.type !== 'COUNTRY') path.unshift(current.id);
+      if (!current.parentId || current.parentId === countryId) break;
+      current = locationById.get(current.parentId);
+    }
+
+    return path;
+  };
+
+  const selectedPath = useMemo(() => {
+    if (!countryId) return [];
+    const fromDeepest = getPathFromLocation(districtId);
+    if (fromDeepest.length > 0) return fromDeepest;
+    return getPathFromLocation(stateId);
+  }, [countryId, districtId, stateId, locationById]);
+
+  const levelConfigs = useMemo(() => {
+    if (!countryId) return [];
+
+    const configs: Array<{ order: number; label: string; options: LocationOption[]; value: string }> = [];
+    let parentId = countryId;
+
+    for (let index = 0; index < levelOrders.length; index += 1) {
+      const order = levelOrders[index];
+      const options = countryLocations.filter(
+        (item) => item.level?.levelOrder === order && item.parentId === parentId,
+      );
+      const value = selectedPath[index] || '';
+
+      configs.push({
+        order,
+        label: levelLabelByOrder.get(order) || toTitle(options[0]?.type || `Level ${order}`),
+        options,
+        value,
+      });
+
+      if (!value) break;
+      parentId = value;
+    }
+
+    return configs;
+  }, [countryId, countryLocations, levelLabelByOrder, levelOrders, selectedPath]);
 
   const handleCountryChange = (value: string) => {
     setValue('countryId', value, { shouldValidate: true, shouldDirty: true });
@@ -91,9 +171,15 @@ const OfficeFormModal: React.FC<Props> = ({
     setValue('districtId', '', { shouldValidate: true, shouldDirty: true });
   };
 
-  const handleStateChange = (value: string) => {
-    setValue('stateId', value, { shouldValidate: true, shouldDirty: true });
-    setValue('districtId', '', { shouldValidate: true, shouldDirty: true });
+  const handleLevelChange = (index: number, value: string) => {
+    const nextPath = selectedPath.slice(0, index);
+    if (value) nextPath.push(value);
+
+    setValue('stateId', nextPath[0] || '', { shouldValidate: true, shouldDirty: true });
+    setValue('districtId', nextPath.length > 0 ? nextPath[nextPath.length - 1] : '', {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
   };
 
   return (
@@ -194,60 +280,41 @@ const OfficeFormModal: React.FC<Props> = ({
                       </option>
                     ))}
                   </motion.select>
-                  {errors.countryId ? (
-                    <p className="text-[11px] text-red-600 font-bold mt-1">{errors.countryId.message}</p>
-                  ) : null}
-                </div>
-
-                <div>
-                  <label className="text-[10px] uppercase tracking-widest text-gray-400 font-black">State</label>
-                  <motion.select
-                    key={`state-${stateId}-${countryId}`}
-                    value={stateId}
-                    onChange={(event) => handleStateChange(event.target.value)}
-                    initial={{ opacity: 0.9 }}
-                    animate={{ opacity: 1 }}
-                    disabled={!countryId}
-                    className={`w-full mt-1 px-3 py-2.5 rounded-xl border bg-gray-50 text-base sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500/20 disabled:opacity-60 ${
-                      errors.stateId ? 'border-red-200' : 'border-gray-200'
-                    }`}
-                  >
-                    <option value="">Select state</option>
-                    {states.map((item) => (
-                      <option key={item.id} value={item.id}>
-                        {item.name}
-                      </option>
-                    ))}
-                  </motion.select>
-                  {errors.stateId ? <p className="text-[11px] text-red-600 font-bold mt-1">{errors.stateId.message}</p> : null}
+                  {errors.countryId ? <p className="text-[11px] text-red-600 font-bold mt-1">{errors.countryId.message}</p> : null}
                 </div>
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-[10px] uppercase tracking-widest text-gray-400 font-black">District</label>
-                  <motion.select
-                    key={`district-${stateId}`}
-                    {...register('districtId')}
-                    initial={{ opacity: 0.9 }}
-                    animate={{ opacity: 1 }}
-                    disabled={!stateId}
-                    className={`w-full mt-1 px-3 py-2.5 rounded-xl border bg-gray-50 text-base sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500/20 disabled:opacity-60 ${
-                      errors.districtId ? 'border-red-200' : 'border-gray-200'
-                    }`}
-                  >
-                    <option value="">Select district</option>
-                    {districts.map((item) => (
-                      <option key={item.id} value={item.id}>
-                        {item.name}
-                      </option>
-                    ))}
-                  </motion.select>
-                  {errors.districtId ? (
-                    <p className="text-[11px] text-red-600 font-bold mt-1">{errors.districtId.message}</p>
-                  ) : null}
-                </div>
+                {levelConfigs.map((level, index) => {
+                  const fieldError = index === 0 ? errors.stateId : index === levelConfigs.length - 1 ? errors.districtId : undefined;
+                  return (
+                    <div key={`level-${level.order}`}>
+                      <label className="text-[10px] uppercase tracking-widest text-gray-400 font-black">{level.label}</label>
+                      <motion.select
+                        key={`level-select-${level.order}-${countryId}`}
+                        value={level.value}
+                        onChange={(event) => handleLevelChange(index, event.target.value)}
+                        initial={{ opacity: 0.9 }}
+                        animate={{ opacity: 1 }}
+                        disabled={!countryId || (index > 0 && !selectedPath[index - 1])}
+                        className={`w-full mt-1 px-3 py-2.5 rounded-xl border bg-gray-50 text-base sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500/20 disabled:opacity-60 ${
+                          fieldError ? 'border-red-200' : 'border-gray-200'
+                        }`}
+                      >
+                        <option value="">{`Select ${level.label.toLowerCase()}`}</option>
+                        {level.options.map((item) => (
+                          <option key={item.id} value={item.id}>
+                            {item.name}
+                          </option>
+                        ))}
+                      </motion.select>
+                      {fieldError ? <p className="text-[11px] text-red-600 font-bold mt-1">{fieldError.message}</p> : null}
+                    </div>
+                  );
+                })}
+              </div>
 
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <div>
                   <label className="text-[10px] uppercase tracking-widest text-gray-400 font-black">Status</label>
                   <div className="mt-1 p-1 rounded-xl border border-gray-200 bg-gray-50 flex gap-1">
@@ -280,6 +347,9 @@ const OfficeFormModal: React.FC<Props> = ({
                   </div>
                 </div>
               </div>
+
+              <input type="hidden" {...register('stateId')} />
+              <input type="hidden" {...register('districtId')} />
 
               <div className="pt-1 flex flex-col sm:flex-row gap-3 sticky bottom-0 bg-white pb-1">
                 <button

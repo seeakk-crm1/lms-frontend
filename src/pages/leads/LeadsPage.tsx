@@ -100,6 +100,18 @@ const LeadsPage: React.FC = () => {
     navigate(location.pathname, { replace: true, state: {} });
   }, [location.pathname, location.state, navigate, openCreateDrawer]);
 
+  useEffect(() => {
+    const openLeadId = (location.state as { openLeadId?: string } | null)?.openLeadId;
+    if (!openLeadId || leads.length === 0) return;
+    const target = leads.find((lead) => lead.id === openLeadId);
+    if (target) {
+      openEditDrawer(target);
+    } else {
+      toast.error('Requested lead is not available on this page');
+    }
+    navigate(location.pathname, { replace: true, state: {} });
+  }, [leads, location.pathname, location.state, navigate, openEditDrawer]);
+
   const totalLeads = data?.pagination?.total || 0;
   const dueTodayCount = useMemo(
     () =>
