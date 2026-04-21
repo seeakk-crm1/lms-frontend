@@ -38,7 +38,8 @@ const fromLeadToForm = (lead: LeadListItem): LeadFormValues => ({
   name: lead.name || '',
   email: lead.email || '',
   phone: lead.phone || '',
-  expectedRevenue: lead.expectedRevenue !== null && lead.expectedRevenue !== undefined ? String(lead.expectedRevenue) : '',
+  companyName: lead.companyName || '',
+  address: lead.address || '',
   assignedToId: lead.assignedToId || '',
   stageId: lead.stageId || '',
   lifecycleId: lead.lifecycleId || '',
@@ -375,7 +376,8 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
       name: formValues.name.trim(),
       email: formValues.email.trim() || undefined,
       phone: formValues.phone.trim() || undefined,
-      expectedRevenue: formValues.expectedRevenue ? Number(formValues.expectedRevenue) : undefined,
+      companyName: formValues.companyName.trim() || undefined,
+      address: formValues.address.trim() || undefined,
       assignedToId: formValues.assignedToId || undefined,
       stageId: formValues.stageId || undefined,
       lifecycleId: formValues.lifecycleId || undefined,
@@ -401,7 +403,8 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
             ...payload,
             email: formValues.email.trim() || null,
             phone: formValues.phone.trim() || null,
-            expectedRevenue: formValues.expectedRevenue ? Number(formValues.expectedRevenue) : null,
+            companyName: formValues.companyName.trim() || null,
+            address: formValues.address.trim() || null,
             assignedToId: formValues.assignedToId || null,
             stageId: shouldUseStageTransitionFlow ? undefined : targetStageId || null,
             lifecycleId: formValues.lifecycleId || null,
@@ -520,7 +523,9 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
                     <section className="rounded-3xl border border-gray-100 bg-gray-50/70 p-5">
                       <div className="mb-5">
                         <h3 className="text-lg font-black text-gray-900">General</h3>
-                        <p className="text-sm font-semibold text-gray-500">Core contact details, source, owner, and expected value.</p>
+                        <p className="text-sm font-semibold text-gray-500">
+                          Core contact details, company, address, source, and owner.
+                        </p>
                       </div>
 
                       <div className="grid gap-4 md:grid-cols-2">
@@ -559,15 +564,24 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
                         </div>
 
                         <div>
-                          <label className="mb-2 block text-sm font-black text-gray-900">Expected Revenue</label>
+                          <label className="mb-2 block text-sm font-black text-gray-900">Company Name</label>
                           <input
-                            type="number"
-                            min="0"
-                            step="any"
-                            value={formValues.expectedRevenue}
-                            onChange={(event) => handleFieldChange('expectedRevenue', event.target.value)}
+                            type="text"
+                            value={formValues.companyName}
+                            onChange={(event) => handleFieldChange('companyName', event.target.value)}
                             className={inputClassName}
-                            placeholder="250000"
+                            placeholder="Acme Pvt Ltd"
+                          />
+                        </div>
+
+                        <div className="md:col-span-2">
+                          <label className="mb-2 block text-sm font-black text-gray-900">Address</label>
+                          <textarea
+                            rows={3}
+                            value={formValues.address}
+                            onChange={(event) => handleFieldChange('address', event.target.value)}
+                            className={`${inputClassName} resize-none`}
+                            placeholder="Street, city, state, PIN"
                           />
                         </div>
 

@@ -9,6 +9,8 @@ export interface LeadListItem {
   name: string;
   email: string | null;
   phone: string | null;
+  companyName?: string | null;
+  address?: string | null;
   expectedRevenue: number | null;
   generatedRevenue?: number | null;
   assignedToId: string | null;
@@ -104,6 +106,8 @@ export interface LeadCreatePayload {
   name: string;
   email?: string;
   phone?: string;
+  companyName?: string;
+  address?: string;
   expectedRevenue?: number;
   assignedToId?: string;
   stageId?: string;
@@ -119,6 +123,8 @@ export interface LeadUpdatePayload {
   name?: string;
   email?: string | null;
   phone?: string | null;
+  companyName?: string | null;
+  address?: string | null;
   expectedRevenue?: number | null;
   assignedToId?: string | null;
   stageId?: string | null;
@@ -267,7 +273,8 @@ export interface LeadFormValues {
   name: string;
   email: string;
   phone: string;
-  expectedRevenue: string;
+  companyName: string;
+  address: string;
   assignedToId: string;
   stageId: string;
   lifecycleId: string;
