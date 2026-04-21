@@ -117,6 +117,7 @@ export interface LeadCreatePayload {
   followUpDescription?: string;
   reasonId?: string;
   remarks?: string;
+  skipAutoStageAssignment?: boolean;
 }
 
 export interface LeadUpdatePayload {

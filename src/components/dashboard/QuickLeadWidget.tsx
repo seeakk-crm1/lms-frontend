@@ -32,6 +32,7 @@ const QuickLeadWidget: React.FC = () => {
                 payload: {
                     name: trimmedName,
                     phone: trimmedPhone,
+                    skipAutoStageAssignment: true,
                 },
             });
             setName('');
