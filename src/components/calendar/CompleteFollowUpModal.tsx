@@ -1,8 +1,8 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2, UploadCloud, X } from 'lucide-react';
+import { Loader2, X } from 'lucide-react';
 import { z } from 'zod';
 import type { FollowUp } from '../../types/followup.types';
 
@@ -17,14 +17,10 @@ interface Props {
   followUp: FollowUp | null;
   isSubmitting: boolean;
   onClose: () => void;
-  onSubmit: (payload: { description: string; images: string[] }) => Promise<void> | void;
+  onSubmit: (payload: { description: string }) => Promise<void> | void;
 }
 
 const CompleteFollowUpModal: React.FC<Props> = ({ isOpen, followUp, isSubmitting, onClose, onSubmit }) => {
-  const [images, setImages] = useState<string[]>([]);
-  const [urlDraft, setUrlDraft] = useState('');
-  const [isDragActive, setIsDragActive] = useState(false);
-
   const {
     register,
     handleSubmit,
@@ -37,23 +33,8 @@ const CompleteFollowUpModal: React.FC<Props> = ({ isOpen, followUp, isSubmitting
 
   const resetModal = useCallback(() => {
     reset({ description: '' });
-    setImages([]);
-    setUrlDraft('');
-    setIsDragActive(false);
     onClose();
   }, [onClose, reset]);
-
-  const addImageUrl = useCallback((value: string) => {
-    const trimmed = value.trim();
-    if (!trimmed) return;
-    setImages((current) => (current.includes(trimmed) ? current : [...current, trimmed]));
-    setUrlDraft('');
-  }, []);
-
-  const helperText = useMemo(
-    () => 'Drop image URLs here or paste them manually. Upload integration stays backend-compatible because only URLs are submitted.',
-    [],
-  );
 
   return (
     <AnimatePresence>
@@ -89,7 +70,7 @@ const CompleteFollowUpModal: React.FC<Props> = ({ isOpen, followUp, isSubmitting
 
             <form
               onSubmit={handleSubmit(async (values) => {
-                await onSubmit({ description: values.description.trim(), images });
+                await onSubmit({ description: values.description.trim() });
                 resetModal();
               })}
               className="space-y-5 p-5"
@@ -105,70 +86,6 @@ const CompleteFollowUpModal: React.FC<Props> = ({ isOpen, followUp, isSubmitting
                   }`}
                 />
                 {errors.description ? <p className="mt-1 text-[11px] font-bold text-red-600">{errors.description.message}</p> : null}
-              </div>
-
-              <div>
-                <label className="text-[11px] font-black uppercase tracking-widest text-gray-400">Image Upload</label>
-                <div
-                  onDragOver={(event) => {
-                    event.preventDefault();
-                    setIsDragActive(true);
-                  }}
-                  onDragLeave={() => setIsDragActive(false)}
-                  onDrop={(event) => {
-                    event.preventDefault();
-                    setIsDragActive(false);
-                    const droppedUrl = event.dataTransfer.getData('text/uri-list') || event.dataTransfer.getData('text/plain');
-                    addImageUrl(droppedUrl);
-                  }}
-                  className={`mt-1.5 rounded-2xl border border-dashed p-5 transition-all ${
-                    isDragActive ? 'border-emerald-400 bg-emerald-50' : 'border-gray-200 bg-gray-50/60'
-                  }`}
-                >
-                  <div className="flex flex-col items-center justify-center text-center">
-                    <div className="rounded-2xl bg-white p-3 text-emerald-600 shadow-sm">
-                      <UploadCloud className="h-5 w-5" />
-                    </div>
-                    <p className="mt-3 text-sm font-black text-gray-800">Drag & drop image URLs</p>
-                    <p className="mt-1 max-w-lg text-xs text-gray-500">{helperText}</p>
-                  </div>
-                </div>
-
-                <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-                  <input
-                    value={urlDraft}
-                    onChange={(event) => setUrlDraft(event.target.value)}
-                    placeholder="https://cdn.example.com/follow-up-proof.jpg"
-                    className="flex-1 rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-800 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => addImageUrl(urlDraft)}
-                    className="rounded-2xl bg-gray-900 px-4 py-3 text-sm font-black text-white hover:bg-gray-800"
-                  >
-                    Add URL
-                  </button>
-                </div>
-
-                {images.length > 0 ? (
-                  <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                    {images.map((image) => (
-                      <div key={image} className="overflow-hidden rounded-2xl border border-gray-100 bg-white">
-                        <img src={image} alt="Follow-up preview" className="h-36 w-full object-cover" />
-                        <div className="flex items-center justify-between gap-3 px-3 py-2">
-                          <p className="truncate text-xs font-semibold text-gray-500">{image}</p>
-                          <button
-                            type="button"
-                            onClick={() => setImages((current) => current.filter((entry) => entry !== image))}
-                            className="rounded-lg bg-red-50 p-1.5 text-red-600 hover:bg-red-100"
-                          >
-                            <X className="h-3.5 w-3.5" />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : null}
               </div>
 
               <div className="flex flex-col gap-3 sm:flex-row">

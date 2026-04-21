@@ -113,7 +113,7 @@ export interface CreateFollowUpInput {
 
 export interface CompleteFollowUpInput {
   description: string;
-  images: string[];
+  images?: string[];
 }
 
 export interface SnoozeFollowUpInput {
