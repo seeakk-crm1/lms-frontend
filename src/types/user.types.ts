@@ -12,6 +12,11 @@ export interface User {
   supervisor?: string | { id?: string; name?: string; email?: string } | null;
   office?: string | { id?: string; name?: string } | null;
   assignedLocations?: any[];
+  workspace?: {
+    id: string;
+    companyName: string;
+    logoUrl?: string | null;
+  } | null;
   [key: string]: any;
 }
 

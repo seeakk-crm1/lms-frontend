@@ -1,5 +1,5 @@
 import React, { ChangeEvent, FormEvent } from 'react';
-import { Building2, Users, Globe2, Languages, Coins, CheckCircle2, ChevronRight, Loader2, Sparkles, LucideIcon } from 'lucide-react';
+import { Building2, Users, Globe2, Languages, Coins, CheckCircle2, ChevronRight, Loader2, Sparkles, LucideIcon, ImagePlus, X } from 'lucide-react';
 import SearchableSelect from './SearchableSelect';
 import { WorkspaceFormData, WorkspaceMetaLists } from '../pages/WorkspaceSetup';
 
@@ -22,12 +22,13 @@ const InputWrapper: React.FC<InputWrapperProps> = ({ label, icon: Icon, children
 interface WorkspaceFormProps {
     formData: WorkspaceFormData;
     handleChange: (e: ChangeEvent<HTMLInputElement | HTMLSelectElement> | { target: { name: string; value: any } }) => void;
+    setFormData: React.Dispatch<React.SetStateAction<WorkspaceFormData>>;
     handleSubmit: (e: FormEvent) => void;
     loading: boolean;
     lists: WorkspaceMetaLists;
 }
 
-const WorkspaceForm: React.FC<WorkspaceFormProps> = ({ formData, handleChange, handleSubmit, loading, lists }) => {
+const WorkspaceForm: React.FC<WorkspaceFormProps> = ({ formData, handleChange, setFormData, handleSubmit, loading, lists }) => {
 
     const timeZones = lists?.timeZones || [];
     const languages = lists?.languages || [];
@@ -36,6 +37,29 @@ const WorkspaceForm: React.FC<WorkspaceFormProps> = ({ formData, handleChange, h
     const timeZoneOptions = timeZones.map(tz => ({ value: tz, label: tz.replace(/_/g, ' ') }));
     const languageOptions = languages.map(lng => ({ value: lng.code, label: (lng as any).label || (lng as any).name }));
     const currencyOptions = currencies.map(cur => ({ value: cur.code, label: (cur as any).label || (cur as any).name }));
+
+    const handleLogoSelect = (event: ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        if (!file.type.startsWith('image/')) {
+            event.target.value = '';
+            return;
+        }
+
+        const maxBytes = 1024 * 1024; // 1MB raw file keeps data URL reasonably small
+        if (file.size > maxBytes) {
+            event.target.value = '';
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = () => {
+            const result = typeof reader.result === 'string' ? reader.result : '';
+            setFormData(prev => ({ ...prev, logoUrl: result }));
+        };
+        reader.readAsDataURL(file);
+    };
 
     return (
         <div className="md:w-[58%] p-8 sm:p-12 pl-8 sm:pl-14 flex flex-col justify-center bg-white relative">
@@ -59,6 +83,34 @@ const WorkspaceForm: React.FC<WorkspaceFormProps> = ({ formData, handleChange, h
                         className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all placeholder:text-gray-400 font-medium"
                         required
                     />
+                </InputWrapper>
+
+                <InputWrapper label="Company Logo" icon={ImagePlus}>
+                    <div className="flex items-center gap-3">
+                        <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleLogoSelect}
+                            className="block w-full text-xs font-medium text-gray-600 file:mr-3 file:rounded-lg file:border-0 file:bg-emerald-50 file:px-3 file:py-2 file:font-bold file:text-emerald-700 hover:file:bg-emerald-100"
+                        />
+                        {formData.logoUrl ? (
+                            <button
+                                type="button"
+                                onClick={() => setFormData(prev => ({ ...prev, logoUrl: '' }))}
+                                className="h-8 w-8 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 inline-flex items-center justify-center"
+                                title="Remove logo"
+                            >
+                                <X size={14} />
+                            </button>
+                        ) : null}
+                    </div>
+                    {formData.logoUrl ? (
+                        <div className="mt-2 h-14 w-14 overflow-hidden rounded-xl border border-gray-200 bg-white">
+                            <img src={formData.logoUrl} alt="Company logo preview" className="h-full w-full object-contain" />
+                        </div>
+                    ) : (
+                        <p className="mt-1 text-[11px] font-semibold text-gray-400">Optional. PNG/JPG/WebP up to 1MB.</p>
+                    )}
                 </InputWrapper>
 
                 <InputWrapper label="Employee Count" icon={Users}>

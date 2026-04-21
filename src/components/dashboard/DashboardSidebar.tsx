@@ -187,6 +187,9 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ isCollapsed, toggle
     const location = useLocation();
     const navigate = useNavigate();
     const logout = useAuthStore((state) => state.logout);
+    const user = useAuthStore((state) => state.user);
+    const workspaceName = user?.workspace?.companyName || 'Seeakk';
+    const workspaceLogo = user?.workspace?.logoUrl || null;
 
     const handleLogout = () => {
         logout();
@@ -206,13 +209,23 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ isCollapsed, toggle
             {/* Logo Area */}
             <div className={`h-20 flex items-center ${isCollapsed ? 'justify-center' : 'px-6'} border-b border-gray-100 shrink-0`}>
                 {isCollapsed ? (
-                    <div className="w-8 h-8 rounded-xl bg-emerald-500 flex items-center justify-center">
-                        <span className="text-white font-black text-lg">S</span>
+                    <div className="w-8 h-8 rounded-xl bg-emerald-500 flex items-center justify-center overflow-hidden">
+                        {workspaceLogo ? (
+                            <img src={workspaceLogo} alt={workspaceName} className="h-full w-full object-cover" />
+                        ) : (
+                            <span className="text-white font-black text-lg">{workspaceName.charAt(0).toUpperCase()}</span>
+                        )}
                     </div>
                 ) : (
                     <>
-                        <div className="flex items-center justify-start w-full h-full pointer-events-none select-none">
-                            <img src="/logo.png" alt="Seeakk" className="w-[180px] h-auto object-contain object-left origin-left hover:scale-105 transition-transform" />
+                        <div className="flex items-center justify-start w-full h-full gap-3 pointer-events-none select-none">
+                            <div className="h-10 w-10 overflow-hidden rounded-xl border border-gray-100 bg-white">
+                                <img src={workspaceLogo || '/logo.png'} alt={workspaceName} className="h-full w-full object-contain" />
+                            </div>
+                            <div className="min-w-0">
+                                <p className="truncate text-sm font-black text-gray-900">{workspaceName}</p>
+                                <p className="truncate text-[10px] font-bold uppercase tracking-wider text-gray-400">Workspace</p>
+                            </div>
                         </div>
                         {isMobile && (
                             <button

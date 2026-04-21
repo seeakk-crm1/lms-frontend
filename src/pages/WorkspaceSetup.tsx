@@ -10,6 +10,7 @@ import WorkspaceForm from '../components/WorkspaceForm';
 
 export interface WorkspaceFormData {
     companyName: string;
+    logoUrl: string;
     employeeCount: string;
     timeZone: string;
     language: string;
@@ -32,6 +33,7 @@ const WorkspaceSetup = () => {
 
     const [formData, setFormData] = useState<WorkspaceFormData>({
         companyName: '',
+        logoUrl: '',
         employeeCount: '',
         timeZone: '',
         language: '',
@@ -98,6 +100,13 @@ const WorkspaceSetup = () => {
                 isOnboarded: true,
                 workspaceId: response.data.workspace?.id || response.data.workspace?._id,
                 role: response.data.user?.role || null,
+                workspace: response.data.workspace
+                    ? {
+                        id: response.data.workspace.id,
+                        companyName: response.data.workspace.companyName,
+                        logoUrl: response.data.workspace.logoUrl || null,
+                    }
+                    : null,
             });
             toast.success("Workspace perfectly configured!", { id: toastId });
             navigate('/dashboard', { replace: true });
@@ -135,6 +144,7 @@ const WorkspaceSetup = () => {
                 <WorkspaceForm
                     formData={formData}
                     handleChange={handleChange}
+                    setFormData={setFormData}
                     handleSubmit={handleSubmit}
                     loading={loading}
                     lists={metaLists}
