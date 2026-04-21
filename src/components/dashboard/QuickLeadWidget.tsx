@@ -38,7 +38,8 @@ const QuickLeadWidget: React.FC = () => {
             setPhone('');
             navigate('/leads', {
                 state: {
-                    quickLeadCreatedId: response?.data?.id || null,
+                    openLeadId: response?.data?.id || null,
+                    fromQuickAdd: true,
                 },
             });
         } catch {

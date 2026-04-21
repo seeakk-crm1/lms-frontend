@@ -102,13 +102,34 @@ const LeadsPage: React.FC = () => {
   }, [location.pathname, location.state, navigate, openCreateDrawer]);
 
   useEffect(() => {
+    const state = location.state as { fromQuickAdd?: boolean } | null;
+    if (!state?.fromQuickAdd) return;
+
+    // Quick Add should always land on an unfiltered list so newly created leads are visible,
+    // even when they do not have a stage yet.
+    setSearch('');
+    setSearchDraft('');
+    setFilters({
+      stage: undefined,
+      assignedTo: undefined,
+      source: undefined,
+      status: undefined,
+      createdFrom: undefined,
+      createdTo: undefined,
+    });
+  }, [location.state, setFilters, setSearch, setSearchDraft]);
+
+  useEffect(() => {
     const openLeadId = (location.state as { openLeadId?: string } | null)?.openLeadId;
     if (!openLeadId || leads.length === 0) return;
     const target = leads.find((lead) => lead.id === openLeadId);
     if (target) {
       openEditDrawer(target);
     } else {
-      toast.error('Requested lead is not available on this page');
+      const fromQuickAdd = (location.state as { fromQuickAdd?: boolean } | null)?.fromQuickAdd;
+      if (!fromQuickAdd) {
+        toast.error('Requested lead is not available on this page');
+      }
     }
     navigate(location.pathname, { replace: true, state: {} });
   }, [leads, location.pathname, location.state, navigate, openEditDrawer]);
