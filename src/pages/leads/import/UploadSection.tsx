@@ -98,8 +98,8 @@ export default function UploadSection({ onUploadStart, isUploading }: UploadSect
 
       <div className="mt-8 flex flex-col sm:flex-row justify-between items-center gap-4">
         <a
-          href="/templates/lead_template.csv"
-          download="lead_template.csv"
+          href="/templates/lead_template.numbers"
+          download="lead_template.numbers"
           className="flex w-full sm:w-auto items-center justify-center gap-2 px-6 py-3 rounded-2xl text-sm font-black transition-all text-emerald-700 bg-emerald-50 hover:bg-emerald-100"
         >
           <DownloadCloud className="w-4 h-4" />
