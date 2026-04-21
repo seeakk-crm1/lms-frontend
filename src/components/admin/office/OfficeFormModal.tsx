@@ -16,6 +16,26 @@ const toTitle = (value: string) =>
     .toLowerCase()
     .replace(/\b\w/g, (char) => char.toUpperCase());
 
+const getPathFromLocation = (
+  countryId: string,
+  selectedId: string,
+  locationById: Map<string, LocationOption>,
+): string[] => {
+  if (!countryId || !selectedId) return [];
+  const path: string[] = [];
+  let cursor: string | null | undefined = selectedId;
+
+  while (cursor) {
+    const location = locationById.get(cursor);
+    if (!location) break;
+    if (location.type !== 'COUNTRY') path.unshift(location.id);
+    if (location.parentId === countryId) break;
+    cursor = location.parentId;
+  }
+
+  return path;
+};
+
 const schema = z.object({
   name: z.string().trim().min(1, 'Office name is required').max(100, 'Office name too long'),
   address: z.string().optional(),
@@ -89,81 +109,39 @@ const OfficeFormModal: React.FC<Props> = ({
     [locations],
   );
 
-  const countryLocations = useMemo(
-    () => locations.filter((item) => item.countryId === countryId),
-    [locations, countryId],
-  );
-
-  const levelOrders = useMemo(
-    () =>
-      Array.from(
-        new Set(
-          countryLocations
-            .map((item) => item.level?.levelOrder)
-            .filter((value): value is number => Boolean(value)),
-        ),
-      ).sort((left, right) => left - right),
-    [countryLocations],
-  );
-
-  const levelLabelByOrder = useMemo(() => {
-    const result = new Map<number, string>();
-    levelOrders.forEach((order) => {
-      const source = countryLocations.find((item) => item.level?.levelOrder === order);
-      if (source?.level?.levelName) result.set(order, source.level.levelName);
-    });
-    return result;
-  }, [countryLocations, levelOrders]);
-
-  const getPathFromLocation = (selectedId?: string): string[] => {
-    if (!countryId || !selectedId) return [];
-
-    const path: string[] = [];
-    let current = locationById.get(selectedId);
-
-    while (current) {
-      if (current.countryId !== countryId) break;
-      if (current.type !== 'COUNTRY') path.unshift(current.id);
-      if (!current.parentId || current.parentId === countryId) break;
-      current = locationById.get(current.parentId);
-    }
-
-    return path;
-  };
-
   const selectedPath = useMemo(() => {
     if (!countryId) return [];
-    const fromDeepest = getPathFromLocation(districtId);
+    const fromDeepest = getPathFromLocation(countryId, districtId, locationById);
     if (fromDeepest.length > 0) return fromDeepest;
-    return getPathFromLocation(stateId);
+    return getPathFromLocation(countryId, stateId, locationById);
   }, [countryId, districtId, stateId, locationById]);
 
   const levelConfigs = useMemo(() => {
     if (!countryId) return [];
 
-    const configs: Array<{ order: number; label: string; options: LocationOption[]; value: string }> = [];
+    const configs: Array<{ key: string; label: string; options: LocationOption[]; value: string }> = [];
     let parentId = countryId;
+    let index = 0;
 
-    for (let index = 0; index < levelOrders.length; index += 1) {
-      const order = levelOrders[index];
-      const options = countryLocations.filter(
-        (item) => item.level?.levelOrder === order && item.parentId === parentId,
-      );
+    while (parentId) {
+      const options = locations.filter((item) => item.parentId === parentId);
+      if (options.length === 0) break;
       const value = selectedPath[index] || '';
 
       configs.push({
-        order,
-        label: levelLabelByOrder.get(order) || toTitle(options[0]?.type || `Level ${order}`),
+        key: `${parentId}-${index}`,
+        label: options[0]?.level?.levelName || toTitle(options[0]?.type || `Level ${index + 1}`),
         options,
         value,
       });
 
       if (!value) break;
       parentId = value;
+      index += 1;
     }
 
     return configs;
-  }, [countryId, countryLocations, levelLabelByOrder, levelOrders, selectedPath]);
+  }, [countryId, locations, selectedPath]);
 
   const handleCountryChange = (value: string) => {
     setValue('countryId', value, { shouldValidate: true, shouldDirty: true });
@@ -288,10 +266,10 @@ const OfficeFormModal: React.FC<Props> = ({
                 {levelConfigs.map((level, index) => {
                   const fieldError = index === 0 ? errors.stateId : index === levelConfigs.length - 1 ? errors.districtId : undefined;
                   return (
-                    <div key={`level-${level.order}`}>
+                    <div key={level.key}>
                       <label className="text-[10px] uppercase tracking-widest text-gray-400 font-black">{level.label}</label>
                       <motion.select
-                        key={`level-select-${level.order}-${countryId}`}
+                        key={`level-select-${level.key}`}
                         value={level.value}
                         onChange={(event) => handleLevelChange(index, event.target.value)}
                         initial={{ opacity: 0.9 }}
