@@ -49,8 +49,22 @@ const statusOptions: Array<{ value: '' | HolidayStatus; label: string }> = [
 
 const HOLIDAY_COLOR_PRESETS = ['#fda4af', '#fb7185', '#f97316', '#f59e0b', '#34d399', '#10b981', '#38bdf8', '#6366f1', '#a78bfa', '#f472b6'];
 
-const hexToRgba = (hex: string, alpha: number) => {
-  const normalized = hex.replace('#', '');
+const normalizeHolidayColor = (value?: string | null) => {
+  if (typeof value !== 'string') {
+    return '#fda4af';
+  }
+
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return '#fda4af';
+  }
+
+  const normalized = trimmed.startsWith('#') ? trimmed : `#${trimmed}`;
+  return /^#[0-9a-fA-F]{6}$/.test(normalized) ? normalized.toLowerCase() : '#fda4af';
+};
+
+const hexToRgba = (hex: string | undefined | null, alpha: number) => {
+  const normalized = normalizeHolidayColor(hex).replace('#', '');
   if (normalized.length !== 6) {
     return `rgba(253, 164, 175, ${alpha})`;
   }
@@ -86,7 +100,7 @@ const HolidayFormModal: React.FC<{
     setCountryId(initialValue?.countryId || '');
     setStateId(initialValue?.stateId || '');
     setDistrictId(initialValue?.districtId || '');
-    setColor(initialValue?.color || '#fda4af');
+    setColor(normalizeHolidayColor(initialValue?.color));
     setStatus(initialValue?.status || 'ACTIVE');
     setIsRecurring(initialValue?.isRecurring || false);
   }, [initialValue, open]);
@@ -218,7 +232,7 @@ const HolidayFormModal: React.FC<{
                       aria-label="Holiday color hex code"
                     />
                     <div className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-2">
-                      <span className="h-4 w-4 rounded-full border border-white shadow-sm" style={{ backgroundColor: color }} />
+                      <span className="h-4 w-4 rounded-full border border-white shadow-sm" style={{ backgroundColor: normalizeHolidayColor(color) }} />
                       <span className="text-xs font-black uppercase tracking-[0.18em] text-gray-500">Preview</span>
                     </div>
                   </div>
@@ -228,7 +242,7 @@ const HolidayFormModal: React.FC<{
                         key={preset}
                         type="button"
                         onClick={() => setColor(preset)}
-                        className={`h-8 w-8 rounded-full border-2 transition-transform hover:scale-105 ${color.toLowerCase() === preset.toLowerCase() ? 'border-gray-900' : 'border-white'}`}
+                        className={`h-8 w-8 rounded-full border-2 transition-transform hover:scale-105 ${normalizeHolidayColor(color) === preset.toLowerCase() ? 'border-gray-900' : 'border-white'}`}
                         style={{ backgroundColor: preset }}
                         aria-label={`Select ${preset} as holiday color`}
                         title={preset}
@@ -355,10 +369,10 @@ const HolidayPage: React.FC = () => {
   }, [currentMonth]);
 
   const calendarItemsByDate = useMemo(() => {
-    const map = new Map<string, Array<{ title: string; source: string }>>();
+    const map = new Map<string, Array<{ title: string; source: string; color: string }>>();
     (calendarQuery.data || []).forEach((item) => {
       const existing = map.get(item.date) || [];
-      existing.push({ title: item.title, source: item.source });
+      existing.push({ title: item.title, source: item.source, color: normalizeHolidayColor(item.color) });
       map.set(item.date, existing);
     });
     return map;
@@ -567,7 +581,7 @@ const HolidayPage: React.FC = () => {
                                     style={{
                                       backgroundColor: hexToRgba(item.color, 0.14),
                                       borderColor: hexToRgba(item.color, 0.28),
-                                      color: item.color,
+                                      color: normalizeHolidayColor(item.color),
                                     }}
                                   >
                                     {item.title}
@@ -613,7 +627,7 @@ const HolidayPage: React.FC = () => {
                                   style={{
                                     backgroundColor: hexToRgba(item.color, 0.14),
                                     borderColor: hexToRgba(item.color, 0.28),
-                                    color: item.color,
+                                    color: normalizeHolidayColor(item.color),
                                   }}
                                 >
                                   {item.title}
@@ -669,7 +683,7 @@ const HolidayPage: React.FC = () => {
                               <tr key={item.id} className="border-t border-gray-100 text-sm font-semibold text-gray-700 transition-colors hover:bg-emerald-50/40">
                                 <td className="px-5 py-4">
                                   <div className="flex items-center gap-3">
-                                    <span className="h-3.5 w-3.5 rounded-full border border-white shadow-sm" style={{ backgroundColor: item.color }} />
+                                    <span className="h-3.5 w-3.5 rounded-full border border-white shadow-sm" style={{ backgroundColor: normalizeHolidayColor(item.color) }} />
                                     <span className="font-black text-gray-900">{item.name}</span>
                                   </div>
                                 </td>
@@ -745,7 +759,7 @@ const HolidayPage: React.FC = () => {
                           <div className="flex items-start justify-between gap-3">
                             <div>
                               <div className="flex items-center gap-3">
-                                <span className="h-3.5 w-3.5 rounded-full border border-white shadow-sm" style={{ backgroundColor: item.color }} />
+                                <span className="h-3.5 w-3.5 rounded-full border border-white shadow-sm" style={{ backgroundColor: normalizeHolidayColor(item.color) }} />
                                 <h3 className="text-lg font-black text-gray-900">{item.name}</h3>
                               </div>
                               <p className="mt-1 text-sm font-semibold text-gray-500">{format(parseISO(item.holidayDate), 'dd MMM yyyy')}</p>
