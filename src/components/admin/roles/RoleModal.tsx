@@ -18,6 +18,25 @@ const roleSchema = z.object({
   permissions: z.array(z.string()).min(1, 'Select at least one permission'),
 });
 
+const roleExamples = [
+  {
+    name: 'Sales Manager',
+    description: 'Oversees lead allocation, approvals, reporting visibility, and team-level sales activity.',
+  },
+  {
+    name: 'Sales Executive',
+    description: 'Works assigned leads, updates follow-ups, and progresses opportunities through the pipeline.',
+  },
+  {
+    name: 'Operations Coordinator',
+    description: 'Handles office workflow, roster coordination, holiday calendars, and support operations.',
+  },
+  {
+    name: 'Reporting Analyst',
+    description: 'Views dashboards, exports reports, and monitors performance data without operational edits.',
+  },
+];
+
 interface RoleModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -37,6 +56,7 @@ const RoleModal: React.FC<RoleModalProps> = ({ isOpen, onClose, role, onDelete }
     control,
     reset,
     watch,
+    setValue,
     formState: { errors },
   } = useForm<CreateRoleInput>({
     resolver: zodResolver(roleSchema),
@@ -95,6 +115,12 @@ const RoleModal: React.FC<RoleModalProps> = ({ isOpen, onClose, role, onDelete }
     } else {
       toast.error('Please fix the errors in the Details tab', { id: 'validation-error' });
     }
+  };
+
+  const applyRoleExample = (example: (typeof roleExamples)[number]) => {
+    setValue('name', example.name, { shouldDirty: true, shouldValidate: true });
+    setValue('description', example.description, { shouldDirty: true, shouldValidate: true });
+    toast.success(`Loaded ${example.name} as a starter example`);
   };
 
   if (!isOpen) return null;
@@ -166,10 +192,36 @@ const RoleModal: React.FC<RoleModalProps> = ({ isOpen, onClose, role, onDelete }
                     {activeTab === 'details' && (
                         <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="space-y-5 md:space-y-6">
                             <div className="rounded-2xl border border-emerald-100 bg-emerald-50/50 px-4 py-3">
-                                <p className="text-sm font-black text-emerald-800">Create only real business roles.</p>
+                                <p className="text-sm font-black text-emerald-800">Create clear, workable business roles.</p>
                                 <p className="mt-1 text-xs font-semibold leading-5 text-emerald-700/80">
-                                    This screen no longer injects starter presets like Manager or Executive. Superadmins now define each role from scratch using the exact permission set their workspace needs.
+                                    Use the examples below to understand common role types, then assign the exact permissions manually for your workspace.
                                 </p>
+                            </div>
+
+                            <div className="space-y-3">
+                                <div className="flex items-center justify-between gap-3">
+                                    <div>
+                                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Starter Examples</p>
+                                        <p className="mt-1 text-xs font-semibold text-gray-500">
+                                            These help with role naming and description only. Permissions are still selected manually.
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    {roleExamples.map((example) => (
+                                        <button
+                                            key={example.name}
+                                            type="button"
+                                            onClick={() => applyRoleExample(example)}
+                                            className="rounded-2xl border border-gray-100 bg-white p-4 text-left shadow-sm transition-all hover:border-emerald-300 hover:bg-emerald-50/40 active:scale-[0.99]"
+                                        >
+                                            <p className="text-sm font-black text-gray-900">{example.name}</p>
+                                            <p className="mt-1 text-xs font-medium leading-5 text-gray-500">
+                                                {example.description}
+                                            </p>
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
 
                             <div className="space-y-1.5">
@@ -220,7 +272,7 @@ const RoleModal: React.FC<RoleModalProps> = ({ isOpen, onClose, role, onDelete }
                             <div className="rounded-2xl border border-gray-100 bg-gray-50/70 px-4 py-3">
                                 <p className="text-sm font-black text-gray-800">Assign permissions intentionally.</p>
                                 <p className="mt-1 text-xs font-semibold leading-5 text-gray-500">
-                                    There are no quick-apply role templates here anymore. Choose only the permissions this role should truly have so the access matrix stays clean and auditable.
+                                    The starter examples do not auto-assign permissions. Choose only the permissions this role should truly have so the access matrix stays clean and auditable.
                                 </p>
                             </div>
 
@@ -253,13 +305,13 @@ const RoleModal: React.FC<RoleModalProps> = ({ isOpen, onClose, role, onDelete }
                     <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Role Guidance</h3>
                     <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
                         <p className="text-xs font-bold text-gray-700">
-                            Build roles from real business access only.
+                            Use examples for understanding, then configure access precisely.
                         </p>
                         <p className="mt-2 text-[11px] font-medium leading-5 text-gray-500">
-                            We removed the built-in quick-template role buttons and preset copy/apply behavior so superadmins can define clean, workspace-specific permission sets without dummy starter roles influencing the configuration.
+                            The old preset permission roles are still removed, but this screen now gives practical example role types so users can understand what to create without introducing dummy access matrices.
                         </p>
                         <ul className="mt-3 space-y-2 text-[11px] font-semibold text-gray-500">
-                            <li>Use the role name to reflect an actual business responsibility.</li>
+                            <li>Pick a starter example if you want help with role naming.</li>
                             <li>Assign only the permissions needed for that responsibility.</li>
                             <li>Keep sensitive actions like delete, settings, and approvals tightly scoped.</li>
                         </ul>
