@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Shield, Save, Loader2, Info, RotateCcw, LayoutDashboard, Trash2 } from 'lucide-react';
+import { X, Shield, Save, Loader2, Info, RotateCcw, LayoutDashboard, Trash2, Copy } from 'lucide-react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -20,20 +20,20 @@ const roleSchema = z.object({
 
 const roleExamples = [
   {
-    name: 'Sales Manager',
-    description: 'Oversees lead allocation, approvals, reporting visibility, and team-level sales activity.',
+    name: 'Full Admin',
+    description: 'High-trust operational role with broad administrative visibility and workspace management access.',
   },
   {
-    name: 'Sales Executive',
-    description: 'Works assigned leads, updates follow-ups, and progresses opportunities through the pipeline.',
+    name: 'Manager',
+    description: 'Supervises teams, approvals, reports, and day-to-day operational monitoring.',
   },
   {
-    name: 'Operations Coordinator',
-    description: 'Handles office workflow, roster coordination, holiday calendars, and support operations.',
+    name: 'Executive',
+    description: 'Handles assigned leads, updates workflow tasks, and completes operational actions.',
   },
   {
-    name: 'Reporting Analyst',
-    description: 'Views dashboards, exports reports, and monitors performance data without operational edits.',
+    name: 'Read Only',
+    description: 'Views dashboards and records without edit, delete, or approval authority.',
   },
 ];
 
@@ -191,44 +191,6 @@ const RoleModal: React.FC<RoleModalProps> = ({ isOpen, onClose, role, onDelete }
                     {/* Tab: Details */}
                     {activeTab === 'details' && (
                         <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="space-y-5 md:space-y-6">
-                            <div className="rounded-2xl border border-emerald-100 bg-emerald-50/50 px-4 py-3">
-                                <p className="text-sm font-black text-emerald-800">Create clear, workable business roles.</p>
-                                <p className="mt-1 text-xs font-semibold leading-5 text-emerald-700/80">
-                                    Use the examples below to understand common role types, then assign the exact permissions manually for your workspace.
-                                </p>
-                            </div>
-
-                            <div className="space-y-3">
-                                <div>
-                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Starter Examples</p>
-                                    <p className="mt-1 text-xs font-semibold text-gray-500">
-                                        These help with role naming and description only. Permissions are still selected manually.
-                                    </p>
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                    {roleExamples.map((example) => {
-                                        const isSelected = watch('name') === example.name;
-                                        return (
-                                            <button
-                                                key={example.name}
-                                                type="button"
-                                                onClick={() => applyRoleExample(example)}
-                                                className={`rounded-2xl border p-4 text-left shadow-sm transition-all active:scale-[0.99] ${
-                                                    isSelected
-                                                        ? 'border-emerald-300 bg-emerald-50/60'
-                                                        : 'border-gray-100 bg-white hover:border-emerald-200 hover:bg-emerald-50/30'
-                                                }`}
-                                            >
-                                                <p className="text-sm font-black text-gray-900">{example.name}</p>
-                                                <p className="mt-1 text-xs font-medium leading-6 text-gray-500">
-                                                    {example.description}
-                                                </p>
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-
                             <div className="space-y-1.5">
                                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Role Name</label>
                                 <input 
@@ -274,13 +236,6 @@ const RoleModal: React.FC<RoleModalProps> = ({ isOpen, onClose, role, onDelete }
                     {/* Tab: Permissions */}
                     {activeTab === 'permissions' && (
                         <motion.div initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} className="space-y-6">
-                            <div className="rounded-2xl border border-gray-100 bg-gray-50/70 px-4 py-3">
-                                <p className="text-sm font-black text-gray-800">Assign permissions intentionally.</p>
-                                <p className="mt-1 text-xs font-semibold leading-5 text-gray-500">
-                                    The starter examples do not auto-assign permissions. Choose only the permissions this role should truly have so the access matrix stays clean and auditable.
-                                </p>
-                            </div>
-
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2 text-emerald-600">
                                     <LayoutDashboard className="w-4 h-4 shrink-0" />
@@ -307,15 +262,41 @@ const RoleModal: React.FC<RoleModalProps> = ({ isOpen, onClose, role, onDelete }
             {/* Sidebar / Summary Panel (Desktop Only) */}
             <div className="hidden lg:flex w-72 bg-gray-50/50 border-l border-gray-50 flex-col p-6 space-y-6 overflow-y-auto">
                 <div className="space-y-4">
+                    <div className="space-y-3">
+                        <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Quick Templates</h3>
+                        <div className="space-y-2.5">
+                            {roleExamples.map((example) => {
+                                const isSelected = watch('name') === example.name;
+                                return (
+                                    <button
+                                        key={example.name}
+                                        type="button"
+                                        onClick={() => applyRoleExample(example)}
+                                        className={`flex w-full items-center justify-between rounded-2xl border px-3 py-3 text-left shadow-sm transition-all active:scale-[0.99] ${
+                                            isSelected
+                                                ? 'border-emerald-300 bg-emerald-50/60'
+                                                : 'border-gray-100 bg-white hover:border-emerald-200 hover:bg-emerald-50/30'
+                                        }`}
+                                    >
+                                        <div className="min-w-0">
+                                            <p className="text-xs font-black text-gray-900">{example.name}</p>
+                                        </div>
+                                        <Copy className="h-3.5 w-3.5 shrink-0 text-gray-300" />
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+
                     <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
                         <p className="text-xs font-bold text-gray-700">
                             Use examples for understanding, then configure access precisely.
                         </p>
                         <p className="mt-2 text-[11px] font-medium leading-5 text-gray-500">
-                            The old preset permission roles are still removed, but this screen now gives practical example role types so users can understand what to create without introducing dummy access matrices.
+                            These quick templates help with role naming and scope. They do not auto-assign permissions, so the access matrix still stays fully intentional.
                         </p>
                         <ul className="mt-3 space-y-2 text-[11px] font-semibold text-gray-500">
-                            <li>Pick a starter example if you want help with role naming.</li>
+                            <li>Pick a template to prefill the role name and description.</li>
                             <li>Assign only the permissions needed for that responsibility.</li>
                             <li>Keep sensitive actions like delete, settings, and approvals tightly scoped.</li>
                         </ul>
