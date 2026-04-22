@@ -7,6 +7,7 @@ export interface HolidayRecord {
   id: string;
   name: string;
   holidayDate: string;
+  color: string;
   countryId?: string | null;
   stateId?: string | null;
   districtId?: string | null;
@@ -20,6 +21,7 @@ export interface HolidayRecord {
 
 export interface HolidayCalendarItem {
   date: string;
+  color: string;
   title: string;
   type: 'HOLIDAY';
   source: HolidaySource;
@@ -28,6 +30,7 @@ export interface HolidayCalendarItem {
 export interface HolidayPayload {
   name: string;
   holidayDate: string;
+  color?: string;
   countryId?: string;
   stateId?: string;
   districtId?: string;
