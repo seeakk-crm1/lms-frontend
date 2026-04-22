@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Shield, Save, Loader2, Info, RotateCcw, LayoutDashboard, Copy, Trash2 } from 'lucide-react';
+import { X, Shield, Save, Loader2, Info, RotateCcw, LayoutDashboard, Trash2 } from 'lucide-react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -96,13 +96,6 @@ const RoleModal: React.FC<RoleModalProps> = ({ isOpen, onClose, role, onDelete }
       toast.error('Please fix the errors in the Details tab', { id: 'validation-error' });
     }
   };
-
-  const templates = [
-      { name: 'Full Admin', keys: permissionsData?.map((p: any) => p.key) || [] },
-      { name: 'Manager', keys: permissionsData?.filter((p: any) => !p.key.includes('DELETE') && !p.key.includes('SYSTEM')).map((p: any) => p.key) || [] },
-      { name: 'Executive', keys: permissionsData?.filter((p: any) => p.key.endsWith('_VIEW') || p.key.endsWith('_CREATE')).map((p: any) => p.key) || [] },
-      { name: 'Read Only', keys: permissionsData?.filter((p: any) => p.key.endsWith('_VIEW') || p.key.endsWith('_VIEW_ALL')).map((p: any) => p.key) || [] },
-  ];
 
   if (!isOpen) return null;
 
@@ -217,23 +210,6 @@ const RoleModal: React.FC<RoleModalProps> = ({ isOpen, onClose, role, onDelete }
                     {/* Tab: Permissions */}
                     {activeTab === 'permissions' && (
                         <motion.div initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} className="space-y-6">
-                            {/* Mobile Templates list */}
-                            <div className="lg:hidden space-y-3 pb-2">
-                                <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Quick Templates</h3>
-                                <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
-                                    {templates.map(t => (
-                                        <button
-                                            key={t.name}
-                                            type="button"
-                                            onClick={() => reset({ ...watch(), permissions: t.keys })}
-                                            className="px-3 py-2 bg-gray-50 border border-gray-100 rounded-xl text-[10px] font-black text-gray-600 whitespace-nowrap active:bg-emerald-50 active:text-emerald-600 transition-colors"
-                                        >
-                                            {t.name}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2 text-emerald-600">
                                     <LayoutDashboard className="w-4 h-4 shrink-0" />
@@ -259,20 +235,15 @@ const RoleModal: React.FC<RoleModalProps> = ({ isOpen, onClose, role, onDelete }
 
             {/* Sidebar / Summary Panel (Desktop Only) */}
             <div className="hidden lg:flex w-72 bg-gray-50/50 border-l border-gray-50 flex-col p-6 space-y-6 overflow-y-auto">
-                <div className="space-y-4">
-                    <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Quick Templates</h3>
-                    <div className="grid grid-cols-1 gap-2">
-                        {templates.map(t => (
-                            <button
-                                key={t.name}
-                                type="button"
-                                onClick={() => reset({ ...watch(), permissions: t.keys })}
-                                className="flex items-center justify-between p-2.5 bg-white border border-gray-100 rounded-xl hover:border-emerald-500 group transition-all"
-                            >
-                                <span className="text-[11px] font-bold text-gray-600 group-hover:text-emerald-600">{t.name}</span>
-                                <Copy className="w-3 h-3 text-gray-300 group-hover:text-emerald-500" />
-                            </button>
-                        ))}
+                <div className="space-y-3">
+                    <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Role Guidance</h3>
+                    <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+                        <p className="text-xs font-bold text-gray-700">
+                            Build roles from real business access only.
+                        </p>
+                        <p className="mt-2 text-[11px] font-medium leading-5 text-gray-500">
+                            We removed the hardcoded preset roles so superadmins can define clean, workspace-specific permission sets without dummy starter roles influencing the configuration.
+                        </p>
                     </div>
                 </div>
 
