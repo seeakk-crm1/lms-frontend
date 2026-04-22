@@ -194,8 +194,39 @@ const RoleModal: React.FC<RoleModalProps> = ({ isOpen, onClose, role, onDelete }
                             <div className="rounded-2xl border border-emerald-100 bg-emerald-50/50 px-4 py-3">
                                 <p className="text-sm font-black text-emerald-800">Create clear, workable business roles.</p>
                                 <p className="mt-1 text-xs font-semibold leading-5 text-emerald-700/80">
-                                    Use the role identity fields here, then pick permissions in the next tab. Example role ideas are available in the right sidebar for quick reference.
+                                    Use the examples below to understand common role types, then assign the exact permissions manually for your workspace.
                                 </p>
+                            </div>
+
+                            <div className="space-y-3">
+                                <div>
+                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Starter Examples</p>
+                                    <p className="mt-1 text-xs font-semibold text-gray-500">
+                                        These help with role naming and description only. Permissions are still selected manually.
+                                    </p>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    {roleExamples.map((example) => {
+                                        const isSelected = watch('name') === example.name;
+                                        return (
+                                            <button
+                                                key={example.name}
+                                                type="button"
+                                                onClick={() => applyRoleExample(example)}
+                                                className={`rounded-2xl border p-4 text-left shadow-sm transition-all active:scale-[0.99] ${
+                                                    isSelected
+                                                        ? 'border-emerald-300 bg-emerald-50/60'
+                                                        : 'border-gray-100 bg-white hover:border-emerald-200 hover:bg-emerald-50/30'
+                                                }`}
+                                            >
+                                                <p className="text-sm font-black text-gray-900">{example.name}</p>
+                                                <p className="mt-1 text-xs font-medium leading-6 text-gray-500">
+                                                    {example.description}
+                                                </p>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
                             </div>
 
                             <div className="space-y-1.5">
@@ -276,44 +307,15 @@ const RoleModal: React.FC<RoleModalProps> = ({ isOpen, onClose, role, onDelete }
             {/* Sidebar / Summary Panel (Desktop Only) */}
             <div className="hidden lg:flex w-72 bg-gray-50/50 border-l border-gray-50 flex-col p-6 space-y-6 overflow-y-auto">
                 <div className="space-y-4">
-                    <div className="space-y-3">
-                        <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Role Templates</h3>
-                        <p className="text-[11px] font-semibold leading-5 text-gray-500">
-                            These are workable starter examples for understanding only. Clicking one fills the role name and description, while permissions remain fully manual.
-                        </p>
-                        <div className="space-y-2.5">
-                            {roleExamples.map((example) => {
-                                const isSelected = watch('name') === example.name;
-                                return (
-                                    <button
-                                        key={example.name}
-                                        type="button"
-                                        onClick={() => applyRoleExample(example)}
-                                        className={`w-full rounded-2xl border p-3 text-left shadow-sm transition-all active:scale-[0.99] ${
-                                            isSelected
-                                                ? 'border-emerald-300 bg-emerald-50/60'
-                                                : 'border-gray-100 bg-white hover:border-emerald-200 hover:bg-emerald-50/30'
-                                        }`}
-                                    >
-                                        <p className="text-xs font-black text-gray-900">{example.name}</p>
-                                        <p className="mt-1 text-[11px] font-medium leading-5 text-gray-500">
-                                            {example.description}
-                                        </p>
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    </div>
-
                     <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
                         <p className="text-xs font-bold text-gray-700">
                             Use examples for understanding, then configure access precisely.
                         </p>
                         <p className="mt-2 text-[11px] font-medium leading-5 text-gray-500">
-                            The old preset permission roles are still removed, but this screen keeps practical role examples on the right side so users can understand what to create without introducing dummy access matrices.
+                            The old preset permission roles are still removed, but this screen now gives practical example role types so users can understand what to create without introducing dummy access matrices.
                         </p>
                         <ul className="mt-3 space-y-2 text-[11px] font-semibold text-gray-500">
-                            <li>Pick a role template if you want help with naming and scope.</li>
+                            <li>Pick a starter example if you want help with role naming.</li>
                             <li>Assign only the permissions needed for that responsibility.</li>
                             <li>Keep sensitive actions like delete, settings, and approvals tightly scoped.</li>
                         </ul>
