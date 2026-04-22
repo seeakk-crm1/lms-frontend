@@ -18,24 +18,86 @@ const roleSchema = z.object({
   permissions: z.array(z.string()).min(1, 'Select at least one permission'),
 });
 
+type RoleTemplateDefinition = {
+  name: string;
+  description: string;
+  permissionStrategy: (availableKeys: Set<string>) => string[];
+};
+
+const pickExistingPermissions = (availableKeys: Set<string>, permissionKeys: string[]) =>
+  permissionKeys.filter((key) => availableKeys.has(key));
+
 const roleExamples = [
   {
     name: 'Full Admin',
     description: 'High-trust operational role with broad administrative visibility and workspace management access.',
+    permissionStrategy: (availableKeys: Set<string>) => Array.from(availableKeys),
   },
   {
     name: 'Manager',
     description: 'Supervises teams, approvals, reports, and day-to-day operational monitoring.',
+    permissionStrategy: (availableKeys: Set<string>) =>
+      pickExistingPermissions(availableKeys, [
+        'USERS_VIEW',
+        'USERS_CREATE',
+        'USERS_EDIT',
+        'USERS_EXPORT',
+        'ROLES_VIEW',
+        'DEPARTMENTS_VIEW',
+        'DEPARTMENTS_CREATE',
+        'DEPARTMENTS_EDIT',
+        'LEAD_SOURCES_VIEW',
+        'LEAD_SOURCES_CREATE',
+        'LEAD_SOURCES_EDIT',
+        'LEAD_STAGES_VIEW',
+        'LEAD_STAGE_RULES_VIEW',
+        'TARGET_CYCLES_VIEW',
+        'LEAD_DYNAMICS_VIEW',
+        'LOB_REASONS_VIEW',
+        'LOCATION_VIEW',
+        'LEADS_VIEW_ALL',
+        'LEADS_VIEW_TEAM',
+        'LEADS_CREATE',
+        'LEADS_EDIT',
+        'LEADS_ASSIGN',
+        'LEADS_BULK_ASSIGN',
+        'LEAD_APPROVAL_VIEW',
+        'LEAD_APPROVAL_APPROVE',
+        'LEAD_APPROVAL_DENY',
+        'LEADS_APPROVE',
+        'LEADS_REJECT',
+        'LEADS_CLOSE',
+        'LEADS_REOPEN',
+        'LEADS_EXPORT',
+        'LEADS_IMPORT',
+        'REPORTS_VIEW',
+        'REPORTS_GENERATE',
+        'REPORT_LOGS_VIEW',
+        'LOB_ANALYSIS_VIEW',
+      ]),
   },
   {
     name: 'Executive',
     description: 'Handles assigned leads, updates workflow tasks, and completes operational actions.',
+    permissionStrategy: (availableKeys: Set<string>) =>
+      pickExistingPermissions(availableKeys, [
+        'LEADS_VIEW_OWN',
+        'LEADS_VIEW_TEAM',
+        'LEADS_CREATE',
+        'LEADS_EDIT',
+        'LEADS_ASSIGN',
+        'LEAD_APPROVAL_VIEW',
+        'REPORTS_VIEW',
+        'LOB_ANALYSIS_VIEW',
+      ]),
   },
   {
     name: 'Read Only',
     description: 'Views dashboards and records without edit, delete, or approval authority.',
+    permissionStrategy: (availableKeys: Set<string>) =>
+      Array.from(availableKeys).filter((key) => key.includes('_VIEW')),
   },
-];
+] satisfies RoleTemplateDefinition[];
 
 interface RoleModalProps {
   isOpen: boolean;
@@ -117,10 +179,15 @@ const RoleModal: React.FC<RoleModalProps> = ({ isOpen, onClose, role, onDelete }
     }
   };
 
-  const applyRoleExample = (example: (typeof roleExamples)[number]) => {
+  const applyRoleExample = (example: RoleTemplateDefinition) => {
+    const availablePermissionKeys = new Set((permissionsData ?? []).map((permission) => permission.key));
+    const recommendedPermissions = example.permissionStrategy(availablePermissionKeys);
+
     setValue('name', example.name, { shouldDirty: true, shouldValidate: true });
     setValue('description', example.description, { shouldDirty: true, shouldValidate: true });
-    toast.success(`Loaded ${example.name} as a starter example`);
+    setValue('permissions', recommendedPermissions, { shouldDirty: true, shouldValidate: true });
+    setActiveTab('permissions');
+    toast.success(`Loaded ${example.name} template. You can still adjust every permission manually.`);
   };
 
   if (!isOpen) return null;
