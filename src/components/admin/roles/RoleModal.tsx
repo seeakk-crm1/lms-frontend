@@ -27,7 +27,7 @@ interface RoleModalProps {
 
 const RoleModal: React.FC<RoleModalProps> = ({ isOpen, onClose, role, onDelete }) => {
   const { setPermissions } = useRoleStore();
-  const { data: permissionsData, isLoading: isLoadingPerms } = usePermissionsQuery();
+  const { data: permissionsData } = usePermissionsQuery();
   const { createRole, updateRole } = useRoleMutations();
   const [activeTab, setActiveTab] = useState<'details' | 'permissions'>('details');
 
@@ -165,6 +165,13 @@ const RoleModal: React.FC<RoleModalProps> = ({ isOpen, onClose, role, onDelete }
                     {/* Tab: Details */}
                     {activeTab === 'details' && (
                         <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="space-y-5 md:space-y-6">
+                            <div className="rounded-2xl border border-emerald-100 bg-emerald-50/50 px-4 py-3">
+                                <p className="text-sm font-black text-emerald-800">Create only real business roles.</p>
+                                <p className="mt-1 text-xs font-semibold leading-5 text-emerald-700/80">
+                                    This screen no longer injects starter presets like Manager or Executive. Superadmins now define each role from scratch using the exact permission set their workspace needs.
+                                </p>
+                            </div>
+
                             <div className="space-y-1.5">
                                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Role Name</label>
                                 <input 
@@ -210,6 +217,13 @@ const RoleModal: React.FC<RoleModalProps> = ({ isOpen, onClose, role, onDelete }
                     {/* Tab: Permissions */}
                     {activeTab === 'permissions' && (
                         <motion.div initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} className="space-y-6">
+                            <div className="rounded-2xl border border-gray-100 bg-gray-50/70 px-4 py-3">
+                                <p className="text-sm font-black text-gray-800">Assign permissions intentionally.</p>
+                                <p className="mt-1 text-xs font-semibold leading-5 text-gray-500">
+                                    There are no quick-apply role templates here anymore. Choose only the permissions this role should truly have so the access matrix stays clean and auditable.
+                                </p>
+                            </div>
+
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2 text-emerald-600">
                                     <LayoutDashboard className="w-4 h-4 shrink-0" />
@@ -242,8 +256,13 @@ const RoleModal: React.FC<RoleModalProps> = ({ isOpen, onClose, role, onDelete }
                             Build roles from real business access only.
                         </p>
                         <p className="mt-2 text-[11px] font-medium leading-5 text-gray-500">
-                            We removed the hardcoded preset roles so superadmins can define clean, workspace-specific permission sets without dummy starter roles influencing the configuration.
+                            We removed the built-in quick-template role buttons and preset copy/apply behavior so superadmins can define clean, workspace-specific permission sets without dummy starter roles influencing the configuration.
                         </p>
+                        <ul className="mt-3 space-y-2 text-[11px] font-semibold text-gray-500">
+                            <li>Use the role name to reflect an actual business responsibility.</li>
+                            <li>Assign only the permissions needed for that responsibility.</li>
+                            <li>Keep sensitive actions like delete, settings, and approvals tightly scoped.</li>
+                        </ul>
                     </div>
                 </div>
 
