@@ -10,7 +10,7 @@ import LOBAnalysisWidget from '../components/dashboard/LOBAnalysisWidget';
 import CalendarWidget from '../components/dashboard/CalendarWidget';
 import useDashboardStore from '../store/useDashboardStore';
 import useAuthStore from '../store/useAuthStore';
-import { hasAnyPermission, hasPermission } from '../utils/permissions';
+import { hasAnyPermission, hasPermission } from '../utils/permission.util';
 
 interface DashboardProps {
     mode?: 'admin' | 'operations';
@@ -20,7 +20,7 @@ const Dashboard: React.FC<DashboardProps> = ({ mode = 'operations' }) => {
     const { fetchDashboardData, error } = useDashboardStore();
     const user = useAuthStore((state) => state.user);
 
-    const canSeeMetrics = hasAnyPermission(user, [
+    const canSeeMetrics = hasAnyPermission(user?.permissions || [], [
         'LEADS_VIEW_ALL',
         'LEADS_VIEW_OWN',
         'LEADS_VIEW_TEAM',
@@ -29,23 +29,23 @@ const Dashboard: React.FC<DashboardProps> = ({ mode = 'operations' }) => {
         'USERS_VIEW',
         'SYSTEM_CONFIG',
     ]);
-    const canSeeGrowth = hasAnyPermission(user, [
+    const canSeeGrowth = hasAnyPermission(user?.permissions || [], [
         'LEADS_VIEW_ALL',
         'LEADS_VIEW_OWN',
         'LEADS_VIEW_TEAM',
         'REPORTS_VIEW',
         'LOB_ANALYSIS_VIEW',
     ]);
-    const canQuickAddLead = hasPermission(user, 'LEADS_CREATE');
-    const canSeeActivity = hasAnyPermission(user, [
+    const canQuickAddLead = hasPermission(user?.permissions || [], 'LEADS_CREATE');
+    const canSeeActivity = hasAnyPermission(user?.permissions || [], [
         'LEADS_VIEW_ALL',
         'LEADS_VIEW_OWN',
         'LEADS_VIEW_TEAM',
         'USERS_VIEW',
         'REPORTS_VIEW',
     ]);
-    const canSeeLOB = hasAnyPermission(user, ['LOB_ANALYSIS_VIEW', 'REPORTS_VIEW']);
-    const canSeeCalendar = hasAnyPermission(user, [
+    const canSeeLOB = hasAnyPermission(user?.permissions || [], ['LOB_ANALYSIS_VIEW', 'REPORTS_VIEW']);
+    const canSeeCalendar = hasAnyPermission(user?.permissions || [], [
         'LEADS_VIEW_ALL',
         'LEADS_VIEW_OWN',
         'LEADS_VIEW_TEAM',

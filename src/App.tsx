@@ -14,6 +14,7 @@ import Footer from './components/Footer';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import useAuthStore from './store/useAuthStore';
+import { hasAnyPermission } from './utils/permission.util';
 import FollowUpReminderListener from './components/calendar/FollowUpReminderListener';
 import Login from './pages/Login';
 import InvitePage from './pages/InvitePage';
@@ -54,6 +55,15 @@ const ProtectedRoute: React.FC<RouteProps> = ({ children }) => {
   const { isAuthenticated, user } = useAuthStore();
   if (!isAuthenticated) return <Navigate to="/login" replace />;
   if (user && !user.isOnboarded) return <Navigate to="/workspace/setup" replace />;
+  return <>{children}</>;
+};
+
+// Protect routes that require specific permissions
+const PermissionRoute: React.FC<RouteProps & { permissions: string[] }> = ({ children, permissions }) => {
+  const { isAuthenticated, user } = useAuthStore();
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (user && !user.isOnboarded) return <Navigate to="/workspace/setup" replace />;
+  if (!hasAnyPermission(user?.permissions || [], permissions)) return <Navigate to="/dashboard" replace />;
   return <>{children}</>;
 };
 
@@ -170,153 +180,153 @@ function App() {
         } />
 
         <Route path="/admin/users" element={
-          <ProtectedRoute>
+          <PermissionRoute permissions={['USERS_VIEW']}>
             <AdminUsersPage />
-          </ProtectedRoute>
+          </PermissionRoute>
         } />
 
         <Route path="/admin/roles" element={
-          <ProtectedRoute>
+          <PermissionRoute permissions={['ROLES_VIEW']}>
             <AdminRolesPage />
-          </ProtectedRoute>
+          </PermissionRoute>
         } />
 
         <Route path="/admin/departments" element={
-          <ProtectedRoute>
+          <PermissionRoute permissions={['DEPARTMENTS_VIEW']}>
             <AdminDepartmentsPage />
-          </ProtectedRoute>
+          </PermissionRoute>
         } />
 
         <Route path="/admin/lead-source" element={
-          <ProtectedRoute>
+          <PermissionRoute permissions={['LEAD_SOURCES_VIEW', 'SYSTEM_CONFIG']}>
             <LeadSourceListPage />
-          </ProtectedRoute>
+          </PermissionRoute>
         } />
 
         <Route path="/admin/lead-stages" element={
-          <ProtectedRoute>
+          <PermissionRoute permissions={['LEAD_STAGES_VIEW', 'SYSTEM_CONFIG']}>
             <LeadStagesListPage />
-          </ProtectedRoute>
+          </PermissionRoute>
         } />
 
         <Route path="/admin/stage-rules" element={
-          <ProtectedRoute>
+          <PermissionRoute permissions={['LEAD_STAGE_RULES_VIEW', 'SYSTEM_CONFIG']}>
             <StageRulesListPage />
-          </ProtectedRoute>
+          </PermissionRoute>
         } />
 
         <Route path="/admin/organisation-chart" element={
-          <ProtectedRoute>
+          <PermissionRoute permissions={['USERS_VIEW', 'DEPARTMENTS_VIEW']}>
             <OrganisationChartPage />
-          </ProtectedRoute>
+          </PermissionRoute>
         } />
 
         <Route path="/admin/roster" element={
-          <ProtectedRoute>
+          <PermissionRoute permissions={['USERS_VIEW', 'SYSTEM_CONFIG']}>
             <RosterPage />
-          </ProtectedRoute>
+          </PermissionRoute>
         } />
 
         <Route path="/admin/target-cycles" element={
-          <ProtectedRoute>
+          <PermissionRoute permissions={['TARGET_CYCLES_VIEW', 'SYSTEM_CONFIG']}>
             <TargetCyclePage />
-          </ProtectedRoute>
+          </PermissionRoute>
         } />
 
         <Route path="/admin/lead-dynamics" element={
-          <ProtectedRoute>
+          <PermissionRoute permissions={['LEAD_DYNAMICS_VIEW', 'SYSTEM_CONFIG']}>
             <LeadDynamicsPage />
-          </ProtectedRoute>
+          </PermissionRoute>
         } />
 
         <Route path="/admin/offices" element={
-          <ProtectedRoute>
+          <PermissionRoute permissions={['SYSTEM_CONFIG']}>
             <OfficePage />
-          </ProtectedRoute>
+          </PermissionRoute>
         } />
 
         <Route path="/admin/lead-life-cycles" element={
-          <ProtectedRoute>
+          <PermissionRoute permissions={['SYSTEM_CONFIG']}>
             <LeadLifeCyclePage />
-          </ProtectedRoute>
+          </PermissionRoute>
         } />
 
         <Route path="/calendar" element={
-          <ProtectedRoute>
+          <PermissionRoute permissions={['LEADS_VIEW_ALL', 'LEADS_VIEW_OWN', 'LEADS_VIEW_TEAM', 'SYSTEM_CONFIG']}>
             <CalendarPage />
-          </ProtectedRoute>
+          </PermissionRoute>
         } />
 
         <Route path="/calendar/today" element={
-          <ProtectedRoute>
+          <PermissionRoute permissions={['LEADS_VIEW_ALL', 'LEADS_VIEW_OWN', 'LEADS_VIEW_TEAM', 'SYSTEM_CONFIG']}>
             <TodayFollowUps />
-          </ProtectedRoute>
+          </PermissionRoute>
         } />
 
         <Route path="/admin/holidays" element={
-          <ProtectedRoute>
+          <PermissionRoute permissions={['SYSTEM_CONFIG']}>
             <HolidayPage />
-          </ProtectedRoute>
+          </PermissionRoute>
         } />
 
         <Route path="/admin/report-types" element={
-          <ProtectedRoute>
+          <PermissionRoute permissions={['REPORT_TYPE_MANAGE', 'SYSTEM_CONFIG']}>
             <ReportTypePage />
-          </ProtectedRoute>
+          </PermissionRoute>
         } />
 
         <Route path="/admin/lob-reasons" element={
-          <ProtectedRoute>
+          <PermissionRoute permissions={['LOB_REASONS_VIEW', 'SYSTEM_CONFIG']}>
             <LOBReasonsPage />
-          </ProtectedRoute>
+          </PermissionRoute>
         } />
 
         <Route path="/reports" element={
-          <ProtectedRoute>
+          <PermissionRoute permissions={['REPORTS_VIEW', 'REPORTS_GENERATE']}>
             <ReportsPage />
-          </ProtectedRoute>
+          </PermissionRoute>
         } />
 
         <Route path="/lob-analysis" element={
-          <ProtectedRoute>
+          <PermissionRoute permissions={['LOB_ANALYSIS_VIEW']}>
             <LOBAnalysisPage />
-          </ProtectedRoute>
+          </PermissionRoute>
         } />
 
         <Route path="/leads" element={
-          <ProtectedRoute>
+          <PermissionRoute permissions={['LEADS_VIEW_ALL', 'LEADS_VIEW_OWN', 'LEADS_VIEW_TEAM', 'LEADS_CREATE']}>
             <LeadsPage />
-          </ProtectedRoute>
+          </PermissionRoute>
         } />
 
         <Route path="/leads/import" element={
-          <ProtectedRoute>
+          <PermissionRoute permissions={['LEADS_CREATE']}>
             <LeadImportPage />
-          </ProtectedRoute>
+          </PermissionRoute>
         } />
 
         <Route path="/leads/closed" element={
-          <ProtectedRoute>
+          <PermissionRoute permissions={['LEADS_CLOSE', 'LEADS_REOPEN', 'LEADS_VIEW_ALL', 'LEADS_VIEW_OWN', 'LEADS_VIEW_TEAM']}>
             <ClosedLeadsPage />
-          </ProtectedRoute>
+          </PermissionRoute>
         } />
 
         <Route path="/leads/bulk-assign" element={
-          <ProtectedRoute>
+          <PermissionRoute permissions={['LEADS_BULK_ASSIGN', 'LEADS_ASSIGN']}>
             <BulkAssignPage />
-          </ProtectedRoute>
+          </PermissionRoute>
         } />
 
         <Route path="/leads/pending-approval" element={
-          <ProtectedRoute>
+          <PermissionRoute permissions={['LEAD_APPROVAL_VIEW', 'LEAD_APPROVAL_APPROVE', 'LEAD_APPROVAL_DENY', 'LEADS_APPROVE', 'LEADS_REJECT']}>
             <PendingApprovalPage />
-          </ProtectedRoute>
+          </PermissionRoute>
         } />
 
         <Route path="/locations" element={
-          <ProtectedRoute>
+          <PermissionRoute permissions={['LOCATION_VIEW', 'LOCATION_MANAGE', 'SYSTEM_CONFIG']}>
             <LocationsPage />
-          </ProtectedRoute>
+          </PermissionRoute>
         } />
 
         <Route path="/master/stage-rules" element={<Navigate to="/admin/stage-rules" replace />} />
