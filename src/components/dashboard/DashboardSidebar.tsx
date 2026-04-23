@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import useAuthStore from '../../store/useAuthStore';
-import { hasAnyPermission } from '../../utils/permissions';
+import { hasAnyPermission, hasPermission } from '../../utils/permission.util';
 
 interface SubMenuItem {
     label: string;
@@ -209,7 +209,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ isCollapsed, toggle
                         const visibleSubItems = item.subItems.filter(
                             (subItem) =>
                                 !subItem.requiredPermissions ||
-                                hasAnyPermission(user, subItem.requiredPermissions),
+                                hasAnyPermission(user?.permissions || [], subItem.requiredPermissions),
                         );
 
                         if (visibleSubItems.length === 0) return null;
@@ -220,7 +220,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ isCollapsed, toggle
                         };
                     }
 
-                    if (item.requiredPermissions && !hasAnyPermission(user, item.requiredPermissions)) {
+                    if (item.requiredPermissions && !hasAnyPermission(user?.permissions || [], item.requiredPermissions)) {
                         return null;
                     }
 
