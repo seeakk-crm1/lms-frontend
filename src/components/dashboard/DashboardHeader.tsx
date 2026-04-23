@@ -2,6 +2,7 @@ import React from 'react';
 import { Search, Bell, Menu, Plus, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import useAuthStore from '../../store/useAuthStore';
+import { getPrimaryRoleName, hasPermission } from '../../utils/permissions';
 
 interface DashboardHeaderProps {
     isMobileMenuOpen: boolean;
@@ -12,10 +13,8 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ isMobileMenuOpen, onT
     const { user } = useAuthStore();
     const navigate = useNavigate();
     const displayName = typeof user?.name === 'string' && user.name.trim() ? user.name : 'Super Admin';
-    const displayRole =
-        typeof user?.role === 'string'
-            ? user.role
-            : 'Administrator';
+    const displayRole = getPrimaryRoleName(user);
+    const canCreateLead = hasPermission(user, 'LEADS_CREATE');
 
     const handleAddLead = () => {
         navigate('/leads', { state: { openCreateLead: true } });
@@ -70,24 +69,28 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ isMobileMenuOpen, onT
             <div className="flex items-center gap-2 sm:gap-3 md:gap-5 shrink-0 ml-2 sm:ml-4">
 
                 {/* Quick Add Button */}
-                <button
-                    type="button"
-                    onClick={handleAddLead}
-                    className="hidden md:flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2.5 rounded-full text-sm font-bold shadow-[0_4px_14px_0_rgba(16,185,129,0.39)] hover:shadow-[0_6px_20px_rgba(16,185,129,0.23)] transition-all active:scale-95"
-                >
-                    <Plus size={16} strokeWidth={3} />
-                    <span>Add Lead</span>
-                </button>
+                {canCreateLead && (
+                    <button
+                        type="button"
+                        onClick={handleAddLead}
+                        className="hidden md:flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2.5 rounded-full text-sm font-bold shadow-[0_4px_14px_0_rgba(16,185,129,0.39)] hover:shadow-[0_6px_20px_rgba(16,185,129,0.23)] transition-all active:scale-95"
+                    >
+                        <Plus size={16} strokeWidth={3} />
+                        <span>Add Lead</span>
+                    </button>
+                )}
 
                 {/* Quick Add - Mobile icon only */}
-                <button
-                    type="button"
-                    onClick={handleAddLead}
-                    className="md:hidden w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center bg-emerald-500 text-white rounded-full shadow-md active:scale-95 transition-all"
-                >
-                    <Plus size={18} strokeWidth={3} className="sm:hidden" />
-                    <Plus size={20} strokeWidth={3} className="hidden sm:block" />
-                </button>
+                {canCreateLead && (
+                    <button
+                        type="button"
+                        onClick={handleAddLead}
+                        className="md:hidden w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center bg-emerald-500 text-white rounded-full shadow-md active:scale-95 transition-all"
+                    >
+                        <Plus size={18} strokeWidth={3} className="sm:hidden" />
+                        <Plus size={20} strokeWidth={3} className="hidden sm:block" />
+                    </button>
+                )}
 
                 <div className="w-px h-8 bg-gray-200 mx-1 hidden sm:block"></div>
 

@@ -4,7 +4,8 @@ export interface User {
   email: string;
   username?: string;
   phone?: string;
-  role: string | { id?: string; name?: string } | null;
+  role: string | { id?: string; name?: string; status?: string; isSystemRole?: boolean } | null;
+  permissions?: string[];
   isOnboarded: boolean;
   workspaceId?: string;
   isActive?: boolean;

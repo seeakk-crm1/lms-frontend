@@ -6,10 +6,12 @@ import {
 } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import useAuthStore from '../../store/useAuthStore';
+import { hasAnyPermission } from '../../utils/permissions';
 
 interface SubMenuItem {
     label: string;
     path: string;
+    requiredPermissions?: string[];
 }
 
 interface SidebarItem {
@@ -17,6 +19,7 @@ interface SidebarItem {
     label: string;
     path?: string;
     subItems?: SubMenuItem[];
+    requiredPermissions?: string[];
 }
 
 interface SidebarSection {
@@ -37,27 +40,27 @@ const sidebarMenus: SidebarSection[] = [
             {
                 icon: Users, label: 'Admin Management',
                 subItems: [
-                    { label: 'Users', path: '/admin/users' },
-                    { label: 'Roles', path: '/admin/roles' },
-                    { label: 'Departments', path: '/admin/departments' },
-                    { label: 'Organization Chart', path: '/admin/organisation-chart' },
-                    { label: 'Roster Sheet', path: '/admin/roster' }
+                    { label: 'Users', path: '/admin/users', requiredPermissions: ['USERS_VIEW'] },
+                    { label: 'Roles', path: '/admin/roles', requiredPermissions: ['ROLES_VIEW'] },
+                    { label: 'Departments', path: '/admin/departments', requiredPermissions: ['DEPARTMENTS_VIEW'] },
+                    { label: 'Organization Chart', path: '/admin/organisation-chart', requiredPermissions: ['USERS_VIEW', 'DEPARTMENTS_VIEW'] },
+                    { label: 'Roster Sheet', path: '/admin/roster', requiredPermissions: ['USERS_VIEW', 'SYSTEM_CONFIG'] }
                 ]
             },
             {
                 icon: Settings, label: 'Master Configuration',
                 subItems: [
-                    { label: 'Lead Sources', path: '/admin/lead-source' },
-                    { label: 'Lead Stages', path: '/admin/lead-stages' },
-                    { label: 'Stage Rules', path: '/admin/stage-rules' },
-                    { label: 'Target Cycles', path: '/admin/target-cycles' },
-                    { label: 'Lead Dynamic Forms', path: '/admin/lead-dynamics' },
-                    { label: 'Office Locations', path: '/admin/offices' },
-                    { label: 'Lead Life Cycle', path: '/admin/lead-life-cycles' },
-                    { label: 'Calendar', path: '/calendar' },
-                    { label: 'Holiday List', path: '/admin/holidays' },
-                    { label: 'Report Types', path: '/admin/report-types' },
-                    { label: 'LOB Reasons', path: '/admin/lob-reasons' }
+                    { label: 'Lead Sources', path: '/admin/lead-source', requiredPermissions: ['LEAD_SOURCES_VIEW', 'SYSTEM_CONFIG'] },
+                    { label: 'Lead Stages', path: '/admin/lead-stages', requiredPermissions: ['LEAD_STAGES_VIEW', 'SYSTEM_CONFIG'] },
+                    { label: 'Stage Rules', path: '/admin/stage-rules', requiredPermissions: ['LEAD_STAGE_RULES_VIEW', 'SYSTEM_CONFIG'] },
+                    { label: 'Target Cycles', path: '/admin/target-cycles', requiredPermissions: ['TARGET_CYCLES_VIEW', 'SYSTEM_CONFIG'] },
+                    { label: 'Lead Dynamic Forms', path: '/admin/lead-dynamics', requiredPermissions: ['LEAD_DYNAMICS_VIEW', 'SYSTEM_CONFIG'] },
+                    { label: 'Office Locations', path: '/admin/offices', requiredPermissions: ['SYSTEM_CONFIG'] },
+                    { label: 'Lead Life Cycle', path: '/admin/lead-life-cycles', requiredPermissions: ['SYSTEM_CONFIG'] },
+                    { label: 'Calendar', path: '/calendar', requiredPermissions: ['LEADS_VIEW_ALL', 'LEADS_VIEW_OWN', 'LEADS_VIEW_TEAM', 'SYSTEM_CONFIG'] },
+                    { label: 'Holiday List', path: '/admin/holidays', requiredPermissions: ['SYSTEM_CONFIG'] },
+                    { label: 'Report Types', path: '/admin/report-types', requiredPermissions: ['REPORT_TYPE_MANAGE', 'SYSTEM_CONFIG'] },
+                    { label: 'LOB Reasons', path: '/admin/lob-reasons', requiredPermissions: ['LOB_REASONS_VIEW', 'SYSTEM_CONFIG'] }
                 ]
             }
         ]
@@ -68,22 +71,22 @@ const sidebarMenus: SidebarSection[] = [
             {
                 icon: Briefcase, label: 'Leads',
                 subItems: [
-                    { label: 'All Leads', path: '/leads' },
-                    { label: 'Closed Leads', path: '/leads/closed' },
-                    { label: 'Bulk Assign', path: '/leads/bulk-assign' },
-                    { label: 'Pending Approval', path: '/leads/pending-approval' },
+                    { label: 'All Leads', path: '/leads', requiredPermissions: ['LEADS_VIEW_ALL', 'LEADS_VIEW_OWN', 'LEADS_VIEW_TEAM', 'LEADS_CREATE'] },
+                    { label: 'Closed Leads', path: '/leads/closed', requiredPermissions: ['LEADS_CLOSE', 'LEADS_REOPEN', 'LEADS_VIEW_ALL', 'LEADS_VIEW_OWN', 'LEADS_VIEW_TEAM'] },
+                    { label: 'Bulk Assign', path: '/leads/bulk-assign', requiredPermissions: ['LEADS_BULK_ASSIGN', 'LEADS_ASSIGN'] },
+                    { label: 'Pending Approval', path: '/leads/pending-approval', requiredPermissions: ['LEAD_APPROVAL_VIEW', 'LEAD_APPROVAL_APPROVE', 'LEAD_APPROVAL_DENY', 'LEADS_APPROVE', 'LEADS_REJECT'] },
                 ]
             },
-            { icon: FileText, label: 'Reports', path: '/reports' },
-            { icon: FileBarChart, label: 'LOB Analysis', path: '/lob-analysis' }
+            { icon: FileText, label: 'Reports', path: '/reports', requiredPermissions: ['REPORTS_VIEW', 'REPORTS_GENERATE'] },
+            { icon: FileBarChart, label: 'LOB Analysis', path: '/lob-analysis', requiredPermissions: ['LOB_ANALYSIS_VIEW'] }
         ]
     },
     {
         title: 'SYSTEM',
         items: [
-            { icon: UserCog, label: 'Settings', path: '/settings' },
-            { icon: Unplug, label: 'Unlock Staff', path: '/unlock-staff' },
-            { icon: MapPin, label: 'Locations', path: '/locations' }
+            { icon: UserCog, label: 'Settings', path: '/settings', requiredPermissions: ['SYSTEM_CONFIG'] },
+            { icon: Unplug, label: 'Unlock Staff', path: '/unlock-staff', requiredPermissions: ['USERS_EDIT', 'SYSTEM_CONFIG'] },
+            { icon: MapPin, label: 'Locations', path: '/locations', requiredPermissions: ['LOCATION_VIEW', 'LOCATION_MANAGE', 'SYSTEM_CONFIG'] }
         ]
     }
 ];
@@ -197,6 +200,36 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ isCollapsed, toggle
         onNavigate?.();
     };
 
+    const visibleSections = sidebarMenus
+        .map((section) => ({
+            ...section,
+            items: section.items
+                .map((item) => {
+                    if (item.subItems?.length) {
+                        const visibleSubItems = item.subItems.filter(
+                            (subItem) =>
+                                !subItem.requiredPermissions ||
+                                hasAnyPermission(user, subItem.requiredPermissions),
+                        );
+
+                        if (visibleSubItems.length === 0) return null;
+
+                        return {
+                            ...item,
+                            subItems: visibleSubItems,
+                        };
+                    }
+
+                    if (item.requiredPermissions && !hasAnyPermission(user, item.requiredPermissions)) {
+                        return null;
+                    }
+
+                    return item;
+                })
+                .filter(Boolean) as SidebarItem[],
+        }))
+        .filter((section) => section.items.length > 0);
+
     return (
         <motion.aside
             id={isMobile ? 'mobile-dashboard-sidebar' : undefined}
@@ -243,7 +276,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ isCollapsed, toggle
 
             {/* Menu Sections */}
             <div className="flex-1 overflow-y-auto py-6 px-4 custom-scrollbar">
-                {sidebarMenus.map((section, idx) => (
+                {visibleSections.map((section, idx) => (
                     <div key={idx} className="mb-6">
                         {!isCollapsed && (
                             <p className="px-3 text-[10px] font-bold tracking-widest text-gray-400 mb-2">{section.title}</p>
