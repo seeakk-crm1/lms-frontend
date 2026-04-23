@@ -15,7 +15,7 @@ interface AuthState {
 
 // Increment this when user schema changes (e.g. MongoDB → PostgreSQL migration)
 // Forces all users to re-login and clears stale localStorage data
-const STORE_VERSION = '3';
+const STORE_VERSION = '4';
 if (localStorage.getItem('storeVersion') !== STORE_VERSION) {
     localStorage.removeItem('user');
     localStorage.removeItem('accessToken');
@@ -52,7 +52,7 @@ const normalizeStoredUser = (rawUser: User | null): User | null => {
     return {
         ...rawUser,
         role: normalizeUserRole(rawUser.role),
-        permissions: normalizePermissions(rawUser.permissions),
+        permissions: normalizePermissions(rawUser.permissions || []),
     };
 };
 
