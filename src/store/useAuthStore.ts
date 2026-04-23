@@ -15,7 +15,7 @@ interface AuthState {
 
 // Increment this when user schema changes (e.g. MongoDB → PostgreSQL migration)
 // Forces all users to re-login and clears stale localStorage data
-const STORE_VERSION = '2';
+const STORE_VERSION = '3';
 if (localStorage.getItem('storeVersion') !== STORE_VERSION) {
     localStorage.removeItem('user');
     localStorage.removeItem('accessToken');
@@ -23,9 +23,15 @@ if (localStorage.getItem('storeVersion') !== STORE_VERSION) {
     localStorage.setItem('storeVersion', STORE_VERSION);
 }
 
-const normalizeUserRole = (role: unknown): string => {
+const normalizeUserRole = (role: unknown): User['role'] => {
     if (typeof role === 'object' && role !== null) {
-        return (role as { name?: string }).name || 'Administrator';
+        const normalizedRole = role as { id?: string; name?: string; status?: string; isSystemRole?: boolean };
+        return {
+            id: normalizedRole.id,
+            name: normalizedRole.name || 'Administrator',
+            status: normalizedRole.status,
+            isSystemRole: normalizedRole.isSystemRole,
+        };
     }
 
     if (typeof role === 'string' && role.trim().length > 0) {
@@ -35,12 +41,18 @@ const normalizeUserRole = (role: unknown): string => {
     return 'Administrator';
 };
 
+const normalizePermissions = (permissions: unknown): string[] => {
+    if (!Array.isArray(permissions)) return [];
+    return permissions.map((permission) => String(permission));
+};
+
 const normalizeStoredUser = (rawUser: User | null): User | null => {
     if (!rawUser) return rawUser;
 
     return {
         ...rawUser,
         role: normalizeUserRole(rawUser.role),
+        permissions: normalizePermissions(rawUser.permissions),
     };
 };
 

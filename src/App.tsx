@@ -17,7 +17,7 @@ import useAuthStore from './store/useAuthStore';
 import FollowUpReminderListener from './components/calendar/FollowUpReminderListener';
 import Login from './pages/Login';
 import InvitePage from './pages/InvitePage';
-import Dashboard from './pages/Dashboard';
+import DashboardRouter from './components/dashboard/DashboardRouter';
 import WorkspaceSetup from './pages/WorkspaceSetup';
 import AdminUsersPage from './pages/AdminUsersPage';
 import AdminRolesPage from './pages/AdminRolesPage';
@@ -165,7 +165,7 @@ function App() {
 
         <Route path="/dashboard" element={
           <ProtectedRoute>
-            <Dashboard />
+            <DashboardRouter />
           </ProtectedRoute>
         } />
 
