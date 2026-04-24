@@ -113,7 +113,11 @@ api.interceptors.request.use(
         config.headers['x-device-id'] = deviceId as string;
         
         // Skip proactive refresh for auth endpoints
-        if (config.url?.includes('/auth/login') || config.url?.includes('/auth/refresh')) {
+        if (
+            config.url?.includes('/auth/login') ||
+            config.url?.includes('/auth/google') ||
+            config.url?.includes('/auth/refresh')
+        ) {
             return config;
         }
 
@@ -151,7 +155,11 @@ api.interceptors.response.use(
             return Promise.reject(error);
         }
 
-        if (originalRequest.url.includes('/auth/login') || originalRequest.url.includes('/auth/refresh')) {
+        if (
+            originalRequest.url.includes('/auth/login') ||
+            originalRequest.url.includes('/auth/google') ||
+            originalRequest.url.includes('/auth/refresh')
+        ) {
             return Promise.reject(error);
         }
 
