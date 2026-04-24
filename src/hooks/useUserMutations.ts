@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import * as usersApi from '../services/users.api';
+import { sendInviteAPI } from '../services/invite.api';
 import { toast } from 'react-hot-toast';
 
 export const useCreateUserMutation = () => {
@@ -85,5 +86,19 @@ export const useResetPasswordMutation = () => {
   return useMutation({
     mutationFn: ({ id, payload }: { id: string; payload?: any }) =>
       usersApi.resetPassword(id, payload ?? {}),
+  });
+};
+
+export const useSendInviteMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (userId: string) => sendInviteAPI(userId),
+    onSuccess: (response) => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      toast.success(response.message || 'Invite email sent');
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || 'Failed to send invite');
+    },
   });
 };

@@ -23,6 +23,7 @@ import {
   useDeleteUserMutation,
   useUnlockUserMutation,
   useResetPasswordMutation,
+  useSendInviteMutation,
 } from '../../hooks/useUserMutations';
 import { User } from '../../types/user.types';
 import DeleteUserModal from './DeleteUserModal';
@@ -35,6 +36,9 @@ const UsersTable: React.FC = () => {
   const unlockUser = useUnlockUserMutation();
   const deleteUser = useDeleteUserMutation();
   const resetPassword = useResetPasswordMutation();
+  const sendInvite = useSendInviteMutation();
+  const [inviteSendingId, setInviteSendingId] = useState<string | null>(null);
+  const [inviteSentMap, setInviteSentMap] = useState<Record<string, boolean>>({});
 
   const [deleteModal, setDeleteModal] = useState<{ open: boolean; userId: string; userName: string }>({
     open: false,
@@ -86,6 +90,38 @@ const UsersTable: React.FC = () => {
 
   const handleDelete = (id: string, name: string) => {
     setDeleteModal({ open: true, userId: id, userName: name });
+  };
+
+  const hasPendingInvite = (user: User): boolean => {
+    const invite = user.receivedInvites?.[0];
+    if (!invite) return false;
+    if (invite.usedAt || invite.revokedAt) return false;
+    const status = String(invite.status || '').toUpperCase();
+    if (status === 'PENDING') {
+      const expiresAtMs = new Date(invite.expiresAt).getTime();
+      return Number.isFinite(expiresAtMs) && expiresAtMs > Date.now();
+    }
+    return false;
+  };
+
+  const canSendInvite = (user: User): boolean => {
+    const roleId = (user as any).roleId;
+    const workspaceId = (user as any).workspaceId;
+    return !user.isActive && Boolean(roleId) && Boolean(workspaceId);
+  };
+
+  const shouldShowInviteSent = (user: User): boolean => inviteSentMap[user.id] || hasPendingInvite(user);
+
+  const handleSendInvite = async (userId: string) => {
+    try {
+      setInviteSendingId(userId);
+      await sendInvite.mutateAsync(userId);
+      setInviteSentMap((current) => ({ ...current, [userId]: true }));
+    } catch {
+      // Error toast is handled in mutation hook.
+    } finally {
+      setInviteSendingId(null);
+    }
   };
 
   const confirmDelete = () => {
@@ -229,6 +265,21 @@ const UsersTable: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-2 md:opacity-0 group-hover:opacity-100 transition-opacity">
+                      {canSendInvite(user) && !shouldShowInviteSent(user) && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleSendInvite(user.id); }}
+                          disabled={inviteSendingId === user.id || sendInvite.isPending}
+                          className="px-2.5 py-1.5 text-[11px] font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          title="Send Invite"
+                        >
+                          {inviteSendingId === user.id ? 'Sending…' : 'Send Invite'}
+                        </button>
+                      )}
+                      {shouldShowInviteSent(user) && (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold uppercase tracking-tight">
+                          Invite Sent
+                        </span>
+                      )}
                       {user.isLocked && (
                         <button
                           onClick={(e) => { e.stopPropagation(); handleUnlock(user.id); }}
@@ -355,6 +406,20 @@ const UsersTable: React.FC = () => {
                       </div>
                   </div>
                   <div className="flex items-center gap-2">
+                      {canSendInvite(user) && !shouldShowInviteSent(user) && (
+                        <button
+                          onClick={() => handleSendInvite(user.id)}
+                          disabled={inviteSendingId === user.id || sendInvite.isPending}
+                          className="px-2.5 py-2 text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-100 rounded-lg disabled:opacity-50"
+                        >
+                          {inviteSendingId === user.id ? 'Sending…' : 'Invite'}
+                        </button>
+                      )}
+                      {shouldShowInviteSent(user) && (
+                        <span className="px-2 py-1 rounded-md bg-emerald-100 text-emerald-700 text-[10px] font-bold uppercase tracking-tight">
+                          Invite Sent
+                        </span>
+                      )}
                       <button
                         onClick={() => handleResetPassword(user.id, user.email)}
                         className="p-2 text-amber-500 bg-white border border-gray-100 rounded-lg shadow-sm"

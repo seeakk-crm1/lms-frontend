@@ -18,6 +18,15 @@ export interface User {
     companyName: string;
     logoUrl?: string | null;
   } | null;
+  receivedInvites?: Array<{
+    id: string;
+    status: string;
+    expiresAt: string;
+    usedAt?: string | null;
+    revokedAt?: string | null;
+    resentAt?: string | null;
+    createdAt: string;
+  }>;
   [key: string]: any;
 }
 
