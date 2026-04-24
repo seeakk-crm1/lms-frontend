@@ -66,11 +66,14 @@ const Login = () => {
     });
 
     const handleGoogleSuccess = (credentialResponse: CredentialResponse) => {
+        console.log('Google credential:', credentialResponse);
+
         if (credentialResponse.credential) {
             googleLoginMutation.mutate(credentialResponse.credential);
             return;
         }
 
+        console.error('Missing Google credential');
         toast.error('Google did not return a credential token.');
     };
 
