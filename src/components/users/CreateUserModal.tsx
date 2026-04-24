@@ -476,7 +476,10 @@ const CreateUserModal: React.FC = () => {
   const departments = Array.isArray(deptsData) ? deptsData : deptsData?.departments || [];
   const safeRoles = (rolesData?.roles || []).map((role: any) => ({
     value: role?.id || role?.name || '',
-    label: role?.name || role?.id || 'Unknown Role',
+    label:
+      role?.status === 'INACTIVE'
+        ? `${role?.name || role?.id || 'Unknown Role'} (Inactive)`
+        : role?.name || role?.id || 'Unknown Role',
   })).filter((role: { value: string }) => Boolean(role.value));
   const safeDepartments = (departments || []).map((department: any) => ({
     value: department?.id || department?.name || '',

@@ -79,7 +79,9 @@ export const getOffices = async () => {
 };
 
 export const getRoles = async () => {
-  const { data } = await api.get('/admin/users/meta/roles');
+  const { data } = await api.get('/admin/users/meta/roles', {
+    params: { includeInactive: true },
+  });
   return data.data;
 };
 
