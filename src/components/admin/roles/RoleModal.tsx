@@ -111,6 +111,12 @@ const RoleModal: React.FC<RoleModalProps> = ({ isOpen, onClose, role, onDelete }
   const { data: permissionsData } = usePermissionsQuery();
   const { createRole, updateRole } = useRoleMutations();
   const [activeTab, setActiveTab] = useState<'details' | 'permissions'>('details');
+  const canDeleteRole = !role?.isSystemRole && (role?.usersCount ?? 0) === 0;
+  const deleteTooltip = role?.isSystemRole
+    ? 'System roles cannot be deleted'
+    : (role?.usersCount ?? 0) > 0
+      ? `Reassign ${role?.usersCount} user${role?.usersCount === 1 ? '' : 's'} before deleting`
+      : 'Delete Role';
 
   const {
     register,
@@ -418,10 +424,13 @@ const RoleModal: React.FC<RoleModalProps> = ({ isOpen, onClose, role, onDelete }
             <button 
               type="button" 
               onClick={() => {
+                if (!canDeleteRole) return;
                 onDelete(role.id, role.name);
                 onClose();
               }}
-              className="flex items-center gap-2 px-5 py-2.5 text-xs font-bold text-red-500 hover:text-red-600 bg-red-50 hover:bg-red-100 rounded-xl transition-all active:scale-95"
+              disabled={!canDeleteRole}
+              title={deleteTooltip}
+              className="flex items-center gap-2 px-5 py-2.5 text-xs font-bold text-red-500 hover:text-red-600 bg-red-50 hover:bg-red-100 rounded-xl transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-red-50 disabled:hover:text-red-500"
             >
               <Trash2 className="w-3.5 h-3.5" />
               Delete Role

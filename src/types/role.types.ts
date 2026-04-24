@@ -15,7 +15,9 @@ export interface Role {
   createdBy: string | null;
   createdAt: string;
   updatedAt: string;
+  isSystemRole?: boolean;
   permissionsCount?: number;
+  usersCount?: number;
   permissions?: string[]; // Array of permission keys
 }
 

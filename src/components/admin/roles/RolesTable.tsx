@@ -33,6 +33,19 @@ const RolesTable: React.FC<RolesTableProps> = ({ onEdit, onManagePermissions, on
   const total = rolesResponse?.pagination?.total || 0;
   const totalPages = rolesResponse?.pagination?.totalPages || 1;
 
+  const canDeleteRole = (role: Role) => !role.isSystemRole && (role.usersCount ?? 0) === 0;
+  const getDeleteTooltip = (role: Role) => {
+    if (role.isSystemRole) {
+      return 'System roles cannot be deleted';
+    }
+
+    if ((role.usersCount ?? 0) > 0) {
+      return `Reassign ${role.usersCount} user${role.usersCount === 1 ? '' : 's'} before deleting`;
+    }
+
+    return 'Decommission Role';
+  };
+
   const handleStatusToggle = (role: Role) => {
     updateRole.mutate({
       id: role.id,
@@ -132,6 +145,18 @@ const RolesTable: React.FC<RolesTableProps> = ({ onEdit, onManagePermissions, on
                         <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider truncate max-w-[200px]" title={role.description || ''}>
                           {role.description || 'No description provided'}
                         </div>
+                        <div className="mt-1 flex items-center gap-2 flex-wrap">
+                          {role.isSystemRole && (
+                            <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-500 text-[9px] font-black uppercase tracking-wider">
+                              System protected
+                            </span>
+                          )}
+                          {(role.usersCount ?? 0) > 0 && (
+                            <span className="px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 text-[9px] font-black uppercase tracking-wider">
+                              {role.usersCount} assigned user{role.usersCount === 1 ? '' : 's'}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </td>
@@ -176,9 +201,10 @@ const RolesTable: React.FC<RolesTableProps> = ({ onEdit, onManagePermissions, on
                         <Pencil className="w-4 h-4" />
                       </button>
                       <button
-                        onClick={() => onDelete(role.id, role.name)}
-                        className="p-2 text-red-500 bg-red-50 hover:bg-red-100 rounded-xl transition-all shadow-sm active:scale-90"
-                        title="Decommission Role"
+                        onClick={() => canDeleteRole(role) && onDelete(role.id, role.name)}
+                        disabled={!canDeleteRole(role)}
+                        className="p-2 text-red-500 bg-red-50 hover:bg-red-100 rounded-xl transition-all shadow-sm active:scale-90 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-red-50"
+                        title={getDeleteTooltip(role)}
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -261,8 +287,10 @@ const RolesTable: React.FC<RolesTableProps> = ({ onEdit, onManagePermissions, on
                     Mark {role.status === 'ACTIVE' ? 'Inactive' : 'Active'}
                  </button>
                  <button 
-                    onClick={() => onDelete(role.id, role.name)}
-                    className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-red-500"
+                    onClick={() => canDeleteRole(role) && onDelete(role.id, role.name)}
+                    disabled={!canDeleteRole(role)}
+                    className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-red-500 disabled:opacity-40 disabled:cursor-not-allowed"
+                    title={getDeleteTooltip(role)}
                  >
                     <Trash2 className="w-3.5 h-3.5" />
                     Archive
