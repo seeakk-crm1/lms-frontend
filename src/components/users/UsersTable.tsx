@@ -97,7 +97,7 @@ const UsersTable: React.FC = () => {
     if (!invite) return false;
     if (invite.usedAt || invite.revokedAt) return false;
     const status = String(invite.status || '').toUpperCase();
-    if (status === 'PENDING') {
+    if (!status || status === 'PENDING') {
       const expiresAtMs = new Date(invite.expiresAt).getTime();
       return Number.isFinite(expiresAtMs) && expiresAtMs > Date.now();
     }
@@ -107,7 +107,7 @@ const UsersTable: React.FC = () => {
   const canSendInvite = (user: User): boolean => {
     const roleId = (user as any).roleId;
     const workspaceId = (user as any).workspaceId;
-    return !user.isActive && Boolean(roleId) && Boolean(workspaceId);
+    return !user.isOnboarded && Boolean(roleId) && Boolean(workspaceId);
   };
 
   const shouldShowInviteSent = (user: User): boolean => inviteSentMap[user.id] || hasPendingInvite(user);
