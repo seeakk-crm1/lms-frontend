@@ -264,6 +264,7 @@ const UsersTable: React.FC = () => {
                       {canSendInvite(user) && !shouldShowInviteSent(user) && (
                         <button
                           onClick={(e) => { e.stopPropagation(); handleSendInvite(user.id); }}
+                          type="button"
                           disabled={inviteSendingId === user.id || sendInvite.isPending}
                           className="px-2.5 py-1.5 text-[11px] font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           title="Send Invite"
@@ -404,7 +405,8 @@ const UsersTable: React.FC = () => {
                   <div className="flex items-center gap-2">
                       {canSendInvite(user) && !shouldShowInviteSent(user) && (
                         <button
-                          onClick={() => handleSendInvite(user.id)}
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); handleSendInvite(user.id); }}
                           disabled={inviteSendingId === user.id || sendInvite.isPending}
                           className="px-2.5 py-2 text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-100 rounded-lg disabled:opacity-50"
                         >
@@ -480,4 +482,3 @@ const UsersTable: React.FC = () => {
 };
 
 export default React.memo(UsersTable);
-
