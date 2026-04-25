@@ -41,6 +41,9 @@ const WorkspaceSetup = () => {
         loadSampleData: true
     });
 
+    const normalizeRoleKey = (value?: string | null): string =>
+        (value || '').trim().toLowerCase().replace(/[\s_-]+/g, '');
+
     useEffect(() => {
         const fetchMeta = async () => {
             try {
@@ -95,11 +98,20 @@ const WorkspaceSetup = () => {
         const toastId = toast.loading('Configuring your workspace...');
         try {
             const response = await api.post('/workspace/setup', formData);
+            const roleName = response.data.user?.role?.name || '';
+            const permissionsFromApi = Array.isArray(response.data.user?.permissions)
+                ? response.data.user.permissions.map((permission: unknown) => String(permission))
+                : [];
+            const permissions =
+                normalizeRoleKey(roleName) === 'superadmin'
+                    ? Array.from(new Set([...permissionsFromApi, 'SUPERADMIN']))
+                    : permissionsFromApi;
             // Update global state without needing to relogin
             updateUser({
                 isOnboarded: true,
                 workspaceId: response.data.workspace?.id || response.data.workspace?._id,
                 role: response.data.user?.role || null,
+                permissions,
                 workspace: response.data.workspace
                     ? {
                         id: response.data.workspace.id,
