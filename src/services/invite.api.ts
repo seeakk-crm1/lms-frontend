@@ -61,6 +61,12 @@ export interface SendUserInviteResponse {
   inviteLink?: string | null;
 }
 
+export interface ResendInviteResponse {
+  message: string;
+  delivery?: 'EMAIL' | 'MANUAL';
+  inviteLink?: string | null;
+}
+
 export const validateInviteToken = async (token: string): Promise<InviteValidationResponse> => {
   const response = await api.get('/auth/invite/validate', {
     params: { token },
@@ -76,5 +82,10 @@ export const acceptInvite = async (payload: AcceptInvitePayload): Promise<Accept
 
 export const sendInviteAPI = async (userId: string): Promise<SendUserInviteResponse> => {
   const response = await api.post(`/admin/users/${userId}/send-invite`);
+  return response.data.data;
+};
+
+export const resendInviteAPI = async (inviteId: string): Promise<ResendInviteResponse> => {
+  const response = await api.post(`/admin/users/invite/${inviteId}/resend`);
   return response.data.data;
 };

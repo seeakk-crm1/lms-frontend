@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import * as usersApi from '../services/users.api';
-import { sendInviteAPI } from '../services/invite.api';
+import { resendInviteAPI, sendInviteAPI } from '../services/invite.api';
 import { toast } from 'react-hot-toast';
 
 export const useCreateUserMutation = () => {
@@ -104,6 +104,25 @@ export const useSendInviteMutation = () => {
     },
     onError: (error: any) => {
       toast.error(error?.response?.data?.message || 'Failed to send invite');
+    },
+  });
+};
+
+export const useResendInviteMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (inviteId: string) => resendInviteAPI(inviteId),
+    onSuccess: (response) => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      if (response.delivery === 'MANUAL') {
+        toast.success(response.message || 'Invite refreshed. Email is not configured, so share the invite link manually.');
+        return;
+      }
+
+      toast.success(response.message || 'Invite resent successfully');
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || 'Failed to resend invite');
     },
   });
 };

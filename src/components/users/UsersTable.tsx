@@ -24,6 +24,7 @@ import {
   useUnlockUserMutation,
   useResetPasswordMutation,
   useSendInviteMutation,
+  useResendInviteMutation,
 } from '../../hooks/useUserMutations';
 import { User } from '../../types/user.types';
 import DeleteUserModal from './DeleteUserModal';
@@ -37,7 +38,8 @@ const UsersTable: React.FC = () => {
   const deleteUser = useDeleteUserMutation();
   const resetPassword = useResetPasswordMutation();
   const sendInvite = useSendInviteMutation();
-  const [inviteSendingId, setInviteSendingId] = useState<string | null>(null);
+  const resendInvite = useResendInviteMutation();
+  const [inviteActionId, setInviteActionId] = useState<string | null>(null);
   const [inviteSentMap, setInviteSentMap] = useState<Record<string, boolean>>({});
 
   const [deleteModal, setDeleteModal] = useState<{ open: boolean; userId: string; userName: string }>({
@@ -106,17 +108,30 @@ const UsersTable: React.FC = () => {
     return !user.isOnboarded && Boolean(roleId) && Boolean(workspaceId);
   };
 
+  const getLatestInvite = (user: User) => user.receivedInvites?.[0] ?? null;
+
   const shouldShowInviteSent = (user: User): boolean => inviteSentMap[user.id] || hasPendingInvite(user);
 
   const handleSendInvite = async (userId: string) => {
     try {
-      setInviteSendingId(userId);
+      setInviteActionId(userId);
       await sendInvite.mutateAsync(userId);
       setInviteSentMap((current) => ({ ...current, [userId]: true }));
     } catch {
       // Error toast is handled in mutation hook.
     } finally {
-      setInviteSendingId(null);
+      setInviteActionId(null);
+    }
+  };
+
+  const handleResendInvite = async (inviteId: string) => {
+    try {
+      setInviteActionId(inviteId);
+      await resendInvite.mutateAsync(inviteId);
+    } catch {
+      // Error toast is handled in mutation hook.
+    } finally {
+      setInviteActionId(null);
     }
   };
 
@@ -265,17 +280,38 @@ const UsersTable: React.FC = () => {
                         <button
                           onClick={(e) => { e.stopPropagation(); handleSendInvite(user.id); }}
                           type="button"
-                          disabled={inviteSendingId === user.id || sendInvite.isPending}
+                          disabled={inviteActionId === user.id || sendInvite.isPending || resendInvite.isPending}
                           className="px-2.5 py-1.5 text-[11px] font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           title="Send Invite"
                         >
-                          {inviteSendingId === user.id ? 'Sending…' : 'Send Invite'}
+                          {inviteActionId === user.id ? 'Sending…' : 'Send Invite'}
                         </button>
                       )}
                       {shouldShowInviteSent(user) && (
-                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold uppercase tracking-tight">
-                          Invite Sent
-                        </span>
+                        getLatestInvite(user)?.id ? (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleResendInvite(getLatestInvite(user)!.id);
+                            }}
+                            disabled={inviteActionId === getLatestInvite(user)?.id || sendInvite.isPending || resendInvite.isPending}
+                            className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold uppercase tracking-tight hover:bg-emerald-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            title="Resend Invite"
+                          >
+                            {inviteActionId === getLatestInvite(user)?.id ? 'Resending…' : 'Resend Invite'}
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={(e) => e.stopPropagation()}
+                            disabled
+                            className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold uppercase tracking-tight opacity-70 cursor-not-allowed"
+                            title="Invite Sent"
+                          >
+                            Invite Sent
+                          </button>
+                        )
                       )}
                       {user.isLocked && (
                         <button
@@ -407,16 +443,37 @@ const UsersTable: React.FC = () => {
                         <button
                           type="button"
                           onClick={(e) => { e.stopPropagation(); handleSendInvite(user.id); }}
-                          disabled={inviteSendingId === user.id || sendInvite.isPending}
+                          disabled={inviteActionId === user.id || sendInvite.isPending || resendInvite.isPending}
                           className="px-2.5 py-2 text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-100 rounded-lg disabled:opacity-50"
                         >
-                          {inviteSendingId === user.id ? 'Sending…' : 'Invite'}
+                          {inviteActionId === user.id ? 'Sending…' : 'Invite'}
                         </button>
                       )}
                       {shouldShowInviteSent(user) && (
-                        <span className="px-2 py-1 rounded-md bg-emerald-100 text-emerald-700 text-[10px] font-bold uppercase tracking-tight">
-                          Invite Sent
-                        </span>
+                        getLatestInvite(user)?.id ? (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleResendInvite(getLatestInvite(user)!.id);
+                            }}
+                            disabled={inviteActionId === getLatestInvite(user)?.id || sendInvite.isPending || resendInvite.isPending}
+                            className="px-2 py-1 rounded-md bg-emerald-100 text-emerald-700 text-[10px] font-bold uppercase tracking-tight hover:bg-emerald-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            title="Resend Invite"
+                          >
+                            {inviteActionId === getLatestInvite(user)?.id ? 'Resending…' : 'Resend'}
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={(e) => e.stopPropagation()}
+                            disabled
+                            className="px-2 py-1 rounded-md bg-emerald-100 text-emerald-700 text-[10px] font-bold uppercase tracking-tight opacity-70 cursor-not-allowed"
+                            title="Invite Sent"
+                          >
+                            Invite Sent
+                          </button>
+                        )
                       )}
                       <button
                         onClick={() => handleResetPassword(user.id, user.email)}
