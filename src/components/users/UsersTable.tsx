@@ -95,13 +95,9 @@ const UsersTable: React.FC = () => {
   const hasPendingInvite = (user: User): boolean => {
     const invite = user.receivedInvites?.[0];
     if (!invite) return false;
-    if (invite.usedAt || invite.revokedAt) return false;
-    const status = String(invite.status || '').toUpperCase();
-    if (!status || status === 'PENDING') {
-      const expiresAtMs = new Date(invite.expiresAt).getTime();
-      return Number.isFinite(expiresAtMs) && expiresAtMs > Date.now();
-    }
-    return false;
+    if (invite.usedAt) return false;
+    const expiresAtMs = new Date(invite.expiresAt).getTime();
+    return Number.isFinite(expiresAtMs) && expiresAtMs > Date.now();
   };
 
   const canSendInvite = (user: User): boolean => {
@@ -484,5 +480,4 @@ const UsersTable: React.FC = () => {
 };
 
 export default React.memo(UsersTable);
-
 

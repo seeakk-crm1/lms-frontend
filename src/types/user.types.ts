@@ -20,11 +20,8 @@ export interface User {
   } | null;
   receivedInvites?: Array<{
     id: string;
-    status: string;
     expiresAt: string;
     usedAt?: string | null;
-    revokedAt?: string | null;
-    resentAt?: string | null;
     createdAt: string;
   }>;
   [key: string]: any;

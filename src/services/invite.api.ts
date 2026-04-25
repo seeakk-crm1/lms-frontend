@@ -43,7 +43,7 @@ export interface SendUserInviteResponse {
   message: string;
   invite: {
     id: string;
-    status: string;
+    status?: string;
     expiresAt: string;
     createdAt: string;
   };
@@ -57,6 +57,8 @@ export interface SendUserInviteResponse {
       name?: string;
     } | null;
   };
+  delivery?: 'EMAIL' | 'MANUAL';
+  inviteLink?: string | null;
 }
 
 export const validateInviteToken = async (token: string): Promise<InviteValidationResponse> => {

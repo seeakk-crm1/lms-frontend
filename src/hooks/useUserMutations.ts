@@ -95,6 +95,11 @@ export const useSendInviteMutation = () => {
     mutationFn: (userId: string) => sendInviteAPI(userId),
     onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
+      if (response.delivery === 'MANUAL') {
+        toast.success(response.message || 'Invite created. Email is not configured, so share the invite link manually.');
+        return;
+      }
+
       toast.success(response.message || 'Invite email sent');
     },
     onError: (error: any) => {
