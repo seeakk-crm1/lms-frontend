@@ -3,8 +3,8 @@ import { io, Socket } from 'socket.io-client';
 let socket: Socket | null = null;
 
 const getRealtimeBaseUrl = (): string => {
-  const apiUrl = import.meta.env.VITE_API_URL || 'https://backend-26l2.onrender.com/api';
-  return apiUrl.replace(/\/api\/?$/, '');
+  const backendUrl = import.meta.env.VITE_BACKEND_URL || import.meta.env.VITE_API_URL || 'https://backend-2612.onrender.com';
+  return backendUrl.replace(/\/api\/?$/, '');
 };
 
 export const connectRealtime = (accessToken: string): Socket => {
