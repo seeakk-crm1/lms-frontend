@@ -3,6 +3,33 @@ import * as usersApi from '../services/users.api';
 import { resendInviteAPI, sendInviteAPI } from '../services/invite.api';
 import { toast } from 'react-hot-toast';
 
+const handleManualInviteDelivery = async (response: { message?: string; inviteLink?: string | null }) => {
+  const inviteLink = response?.inviteLink || '';
+  const baseMessage = response?.message || 'Invite is ready for manual sharing.';
+  if (!inviteLink) {
+    toast(baseMessage, { duration: 7000 });
+    return;
+  }
+
+  try {
+    if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(inviteLink);
+      toast(
+        `${baseMessage} Invite link copied to clipboard.`,
+        { duration: 7000 },
+      );
+      return;
+    }
+  } catch {
+    // Fall through to showing the raw link in toast.
+  }
+
+  toast(
+    `${baseMessage} Link: ${inviteLink}`,
+    { duration: 9000 },
+  );
+};
+
 export const useCreateUserMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({
@@ -93,10 +120,10 @@ export const useSendInviteMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (userId: string) => sendInviteAPI(userId),
-    onSuccess: (response) => {
+    onSuccess: async (response) => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
       if (response.delivery === 'MANUAL') {
-        toast.success(response.message || 'Invite created. Email is not configured, so share the invite link manually.');
+        await handleManualInviteDelivery(response);
         return;
       }
 
@@ -112,10 +139,10 @@ export const useResendInviteMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (inviteId: string) => resendInviteAPI(inviteId),
-    onSuccess: (response) => {
+    onSuccess: async (response) => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
       if (response.delivery === 'MANUAL') {
-        toast.success(response.message || 'Invite refreshed. Email is not configured, so share the invite link manually.');
+        await handleManualInviteDelivery(response);
         return;
       }
 

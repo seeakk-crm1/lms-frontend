@@ -58,12 +58,14 @@ export interface SendUserInviteResponse {
     } | null;
   };
   delivery?: 'EMAIL' | 'MANUAL';
+  deliveryErrorMessage?: string | null;
   inviteLink?: string | null;
 }
 
 export interface ResendInviteResponse {
   message: string;
   delivery?: 'EMAIL' | 'MANUAL';
+  deliveryErrorMessage?: string | null;
   inviteLink?: string | null;
 }
 
