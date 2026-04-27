@@ -85,7 +85,7 @@ const sidebarMenus: SidebarSection[] = [
         title: 'SYSTEM',
         items: [
             { icon: UserCog, label: 'Settings', path: '/settings', requiredPermissions: ['SYSTEM_CONFIG'] },
-            { icon: Unplug, label: 'Unlock Staff', path: '/unlock-staff', requiredPermissions: ['USERS_EDIT', 'SYSTEM_CONFIG'] },
+            { icon: Unplug, label: 'Unlock Staff', path: '/unlock-staff', requiredPermissions: ['USERS_UNLOCK', 'USERS_EDIT', 'SYSTEM_CONFIG'] },
             { icon: MapPin, label: 'Locations', path: '/locations', requiredPermissions: ['LOCATION_VIEW', 'LOCATION_MANAGE', 'SYSTEM_CONFIG'] }
         ]
     }

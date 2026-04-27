@@ -17,6 +17,7 @@ import useAuthStore from './store/useAuthStore';
 import { hasAnyPermission } from './utils/permission.util';
 import api from './services/api';
 import FollowUpReminderListener from './components/calendar/FollowUpReminderListener';
+import RealtimeSyncListener from './components/realtime/RealtimeSyncListener';
 import Login from './pages/Login';
 import InvitePage from './pages/InvitePage';
 import DashboardRouter from './components/dashboard/DashboardRouter';
@@ -124,6 +125,7 @@ function App() {
   return (
     <>
       {isAuthenticated ? <FollowUpReminderListener /> : null}
+      {isAuthenticated ? <RealtimeSyncListener /> : null}
       <Toaster
         position="top-center"
         toastOptions={{
