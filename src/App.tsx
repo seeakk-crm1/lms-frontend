@@ -15,6 +15,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import useAuthStore from './store/useAuthStore';
 import { hasAnyPermission } from './utils/permission.util';
+import api from './services/api';
 import FollowUpReminderListener from './components/calendar/FollowUpReminderListener';
 import Login from './pages/Login';
 import InvitePage from './pages/InvitePage';
@@ -86,6 +87,8 @@ const PublicRoute: React.FC<RouteProps> = ({ children }) => {
 function App() {
   const [loading, setLoading] = useState(true);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const updateUser = useAuthStore((state) => state.updateUser);
+  const clearAuth = useAuthStore((state) => state.clearAuth);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -93,6 +96,30 @@ function App() {
     }, 1500);
     return () => clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    let cancelled = false;
+
+    api
+      .get('/auth/me')
+      .then((response) => {
+        if (cancelled || !response.data?.user) return;
+        updateUser(response.data.user);
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        const status = error?.response?.status;
+        if (status === 401 || status === 403) {
+          clearAuth();
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [clearAuth, isAuthenticated, updateUser]);
 
   return (
     <>
