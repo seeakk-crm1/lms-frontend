@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import axios from 'axios';
 import { User } from '../types/user.types';
 import { queryClient } from '../lib/queryClient';
 
@@ -22,6 +23,8 @@ if (localStorage.getItem('storeVersion') !== STORE_VERSION) {
     localStorage.removeItem('refreshToken');
     localStorage.setItem('storeVersion', STORE_VERSION);
 }
+
+const API_URL = import.meta.env.VITE_API_URL || 'https://backend-2612.onrender.com/api';
 
 const normalizeUserRole = (role: unknown): User['role'] => {
     if (typeof role === 'object' && role !== null) {
@@ -134,8 +137,12 @@ const useAuthStore = create<AuthState>((set) => {
             // Fire and forget logout to clear session at Redis DB
             if (currentRefreshToken) {
                 try {
-                    const apiModule = await import('../services/api');
-                    await apiModule.default.post('/auth/logout', { refreshToken: currentRefreshToken });
+                    await axios.post(`${API_URL}/auth/logout`, { refreshToken: currentRefreshToken }, {
+                        withCredentials: true,
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                    });
                 } catch (error) {
                     // Ignore backend failures on logout
                     console.error("Logout request failed:", error);
