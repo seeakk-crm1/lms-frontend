@@ -216,6 +216,21 @@ const CreateUserModal: React.FC = () => {
     assignedLocationIds: (data.assignedLocationIds || []).filter(Boolean),
   });
 
+  const toUpdatePayload = (data: UserFormData): Record<string, unknown> => ({
+    name: data.name.trim(),
+    username: toOptional(data.username),
+    phone: toOptional(data.phone),
+    roleId: toOptional(data.roleId),
+    departmentId: toOptional(data.departmentId),
+    supervisorId: toOptional(data.supervisorId),
+    officeId: toOptional(data.officeId),
+    countryId: toOptional(data.countryId),
+    stateId: toOptional(data.stateId),
+    districtId: toOptional(data.districtId),
+    assignedLocationIds: (data.assignedLocationIds || []).filter(Boolean),
+    isActive: data.isActive,
+  });
+
   useEffect(() => {
     if (userDetail?.user) {
       const u = userDetail.user;
@@ -227,7 +242,10 @@ const CreateUserModal: React.FC = () => {
         phone: u.phone || '',
         roleId: typeof u.role === 'string' ? u.role : u.role?.id || '',
         departmentId: u.department?.id || '',
-        supervisorId: u.supervisor?.id || '',
+        supervisorId:
+          typeof u.supervisor === 'string'
+            ? u.supervisor
+            : u.supervisor?.id || '',
         officeId: u.office?.id || '',
         countryId: u.country?.id || '',
         stateId: u.state?.id || '',
@@ -282,7 +300,7 @@ const CreateUserModal: React.FC = () => {
     const toastId = toast.loading(selectedUserId ? 'Updating profile...' : 'Creating account...');
     try {
       if (selectedUserId) {
-        await updateUser.mutateAsync({ id: selectedUserId, payload: data });
+        await updateUser.mutateAsync({ id: selectedUserId, payload: toUpdatePayload(data) });
         if (data.targetTypeId) {
           try {
             await assignTarget.mutateAsync({ userId: selectedUserId, payload: data });
