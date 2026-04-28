@@ -1,9 +1,8 @@
 import api from './api';
 import { getLifeCycles } from './admin/lead-life-cycle/leadLifeCycleService';
 import { getActiveLOBReasons } from './lobReasons.api';
-import { getLeadSources } from './leadSource.api';
+import { getActiveLeadSources } from './leadSource.api';
 import { getLeadStages } from './leadStage.api';
-import { getUsers } from './users.api';
 import type { FollowUpType } from '../types/followup.types';
 import type {
   LeadApprovalActionPayload,
@@ -190,6 +189,32 @@ export const saveLeadDynamicValues = async (leadId: string, values: LeadDynamicV
   return response.data;
 };
 
+export const getLeadAssignees = async () => {
+  const endpoints = ['/leads/meta/assignees', '/admin/users'];
+
+  for (const endpoint of endpoints) {
+    try {
+      const response = await api.get(endpoint, {
+        params: endpoint === '/admin/users' ? { page: 1, limit: 200, isActive: true } : undefined,
+      });
+      const payload = response.data;
+
+      if (endpoint === '/leads/meta/assignees') {
+        return payload;
+      }
+
+      const users = payload?.data?.users || payload?.data || [];
+      return { success: payload?.success ?? true, data: users };
+    } catch (error: any) {
+      const status = error?.response?.status;
+      if (status === 401) throw error;
+      if (endpoint === endpoints[endpoints.length - 1]) throw error;
+    }
+  }
+
+  return { success: true, data: [] };
+};
+
 const mapUserOptions = (users: any[]): LeadOption[] =>
   users
     .filter((user) => user?.isActive !== false)
@@ -201,7 +226,7 @@ const mapUserOptions = (users: any[]): LeadOption[] =>
 
 const mapSourceOptions = (sources: LeadSource[]): LeadOption[] =>
   sources
-    .filter((source) => source.status === 'ACTIVE')
+    .filter((source) => !source.status || source.status === 'ACTIVE')
     .map((source) => ({
       id: source.id,
       label: source.name,
@@ -238,15 +263,15 @@ const mapLOBReasonOptions = (reasons: Array<{ id: string; name: string; status: 
 
 export const getLeadMeta = async () => {
   const [usersResult, sourcesResult, stagesResult, lifeCyclesResult, dynamicFieldsResult, lobReasonsResult] = await Promise.allSettled([
-    getUsers({ page: 1, limit: 100, isActive: true }),
-    getLeadSources({ page: 1, limit: 100, search: '', status: 'ACTIVE' }),
+    getLeadAssignees(),
+    getActiveLeadSources(),
     getLeadStages({ page: 1, limit: 100, search: '', status: 'ACTIVE' }),
     getLifeCycles({ page: 1, limit: 100 }),
     getActiveLeadDynamicFields(),
     getActiveLOBReasons(),
   ]);
 
-  const usersData = getSettledValue(usersResult, { users: [] } as any);
+  const usersData = getSettledValue(usersResult, { data: [] } as any);
   const sourcesData = getSettledValue(sourcesResult, { data: [] } as any);
   const stagesData = getSettledValue(stagesResult, { data: [] } as any);
   const lifeCyclesData = getSettledValue(lifeCyclesResult, {
@@ -256,7 +281,7 @@ export const getLeadMeta = async () => {
   const lobReasonsData = getSettledValue(lobReasonsResult, { data: [] } as any);
 
   return {
-    users: mapUserOptions(usersData?.users || []),
+    users: mapUserOptions(usersData?.data || []),
     sources: mapSourceOptions(sourcesData?.data || []),
     stages: mapStageOptions(stagesData?.data || []),
     lifeCycles: mapLifeCycleOptions(lifeCyclesData?.data?.lifeCycles || []),
