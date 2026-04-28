@@ -12,7 +12,7 @@ import type { LeadFormValues, LeadListItem, LeadOption } from '../../../types/le
 import DynamicFieldRenderer from './DynamicFieldRenderer';
 import LOBModal from './LOBModal';
 import StageRulesTransitionModal, { StageRuleValueEntry } from './StageRulesTransitionModal';
-import { getStageRules } from '../../../services/stageRule.api';
+import { getLeadTransitionStageRules, getStageRules } from '../../../services/stageRule.api';
 import type { ListStageRulesResponse, StageRule } from '../../../types/stageRule.types';
 
 interface LeadFormDrawerProps {
@@ -216,13 +216,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
         void (async () => {
           setStageRuleSubmitPayload([]);
           try {
-            const res = (await getStageRules({
-              stageId: value,
-              status: 'ACTIVE',
-              page: 1,
-              limit: 100,
-              search: '',
-            })) as ListStageRulesResponse;
+            const res = (await getLeadTransitionStageRules(value)) as ListStageRulesResponse;
             const rules = res?.data || [];
             if (rules.length > 0) {
               revertFormBeforeRulesRef.current = {
@@ -286,13 +280,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
     if (lobTarget && mode === 'edit') {
       void (async () => {
         try {
-          const res = (await getStageRules({
-            stageId: lobTarget,
-            status: 'ACTIVE',
-            page: 1,
-            limit: 100,
-            search: '',
-          })) as ListStageRulesResponse;
+          const res = (await getLeadTransitionStageRules(lobTarget)) as ListStageRulesResponse;
           const rules = res?.data || [];
           if (rules.length > 0) {
             revertFormBeforeRulesRef.current = {
@@ -423,13 +411,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
 
         if (shouldUseStageTransitionFlow) {
           try {
-            const rulesRes = (await getStageRules({
-              stageId: targetStageId,
-              status: 'ACTIVE',
-              page: 1,
-              limit: 100,
-              search: '',
-            })) as ListStageRulesResponse;
+            const rulesRes = (await getLeadTransitionStageRules(targetStageId)) as ListStageRulesResponse;
             const transitionRules = rulesRes?.data || [];
             if (transitionRules.length > 0 && stageRuleSubmitPayload.length === 0) {
               revertFormBeforeRulesRef.current = {

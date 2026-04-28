@@ -18,6 +18,31 @@ export const getStageRules = async (params?: StageRuleFilters & { page?: number;
   return response.data;
 };
 
+export const getLeadTransitionStageRules = async (stageId: string) => {
+  try {
+    const response = await api.get('/leads/meta/stage-rules', {
+      params: { stageId },
+    });
+    return response.data;
+  } catch (error: any) {
+    const status = error?.response?.status;
+    if (status !== 404 && status !== 405) {
+      throw error;
+    }
+
+    const fallbackResponse = await api.get('/master/stage-rules', {
+      params: {
+        search: '',
+        status: 'ACTIVE',
+        stageId,
+        page: 1,
+        limit: 100,
+      },
+    });
+    return fallbackResponse.data;
+  }
+};
+
 export const createStageRule = async (data: CreateStageRuleInput) => {
   const response = await api.post('/master/stage-rules', data);
   return response.data.data;
