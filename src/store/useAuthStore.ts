@@ -24,7 +24,7 @@ if (localStorage.getItem('storeVersion') !== STORE_VERSION) {
     localStorage.setItem('storeVersion', STORE_VERSION);
 }
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://backend-2612.onrender.com/api';
+const API_URL = import.meta.env.VITE_API_URL || 'https://backend-26l2.onrender.com/api';
 
 const normalizeUserRole = (role: unknown): User['role'] => {
     if (typeof role === 'object' && role !== null) {
