@@ -222,7 +222,7 @@ const CreateUserModal: React.FC = () => {
     phone: toOptional(data.phone),
     roleId: toOptional(data.roleId),
     departmentId: toOptional(data.departmentId),
-    supervisorId: toOptional(data.supervisorId),
+    supervisorId: data.supervisorId.trim() ? data.supervisorId.trim() : null,
     officeId: toOptional(data.officeId),
     countryId: toOptional(data.countryId),
     stateId: toOptional(data.stateId),
