@@ -20,7 +20,8 @@ export const connectRealtime = (accessToken: string): Socket => {
   }
 
   socket = io(baseUrl, {
-    transports: ['websocket', 'polling'],
+    // Start with polling to avoid websocket-first handshake drops on some hosted edges.
+    transports: ['polling', 'websocket'],
     withCredentials: true,
     auth: {
       token: accessToken,
@@ -28,6 +29,7 @@ export const connectRealtime = (accessToken: string): Socket => {
     reconnection: true,
     reconnectionDelay: 1000,
     reconnectionDelayMax: 5000,
+    timeout: 20000,
   });
 
   return socket;
