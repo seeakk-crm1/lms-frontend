@@ -4,8 +4,8 @@ let socket: Socket | null = null;
 
 const getRealtimeBaseUrl = (): string => {
   const backendUrl =
-    import.meta.env.VITE_BACKEND_URL ||
     import.meta.env.VITE_API_URL ||
+    import.meta.env.VITE_BACKEND_URL ||
     'https://backend-26l2.onrender.com';
   return backendUrl.replace(/\/api\/?$/, '');
 };
