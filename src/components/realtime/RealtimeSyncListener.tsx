@@ -52,6 +52,37 @@ const RealtimeSyncListener: React.FC = () => {
     }
 
     const socket = connectRealtime(accessToken);
+    const onConnect = () => {
+      console.log('[Socket.io] Connected successfully');
+    };
+    const onConnectError = (err: any) => {
+      const message = String(err?.message || '').toLowerCase();
+      console.warn('[Socket.io] Connection error:', err?.message || String(err));
+      if (
+        message.includes('unauthorized') ||
+        message.includes('token') ||
+        message.includes('authentication') ||
+        message.includes('jwt')
+      ) {
+        console.warn('[Socket.io] Auth failed - clearing session');
+        useAuthStore.getState().clearAuth();
+      }
+    };
+    const onDisconnect = (reason: string) => {
+      console.log('[Socket.io] Disconnected:', reason);
+      if (reason === 'io server disconnect') {
+        console.warn('[Socket.io] Server forced disconnect');
+      }
+    };
+    const onReconnect = (attemptNumber: number) => {
+      console.log('[Socket.io] Reconnected after', attemptNumber, 'attempts');
+    };
+    const onReconnectError = (err: any) => {
+      console.warn('[Socket.io] Reconnect error:', err?.message || String(err));
+    };
+    const onReconnectFailed = () => {
+      console.error('[Socket.io] All reconnect attempts failed');
+    };
 
     const onRoleUpdated = () => {
       invalidatePermissionBoundQueries();
@@ -91,6 +122,12 @@ const RealtimeSyncListener: React.FC = () => {
       refetchDashboardIfLoaded();
     };
 
+    socket.on('connect', onConnect);
+    socket.on('connect_error', onConnectError);
+    socket.on('disconnect', onDisconnect);
+    socket.on('reconnect', onReconnect);
+    socket.on('reconnect_error', onReconnectError);
+    socket.on('reconnect_failed', onReconnectFailed);
     socket.on('role_updated', onRoleUpdated);
     socket.on('permissions_updated', onPermissionsUpdated);
     socket.on('user_updated', onUserUpdated);
@@ -98,6 +135,12 @@ const RealtimeSyncListener: React.FC = () => {
     socket.on('report_updated', onReportUpdated);
 
     return () => {
+      socket.off('connect', onConnect);
+      socket.off('connect_error', onConnectError);
+      socket.off('disconnect', onDisconnect);
+      socket.off('reconnect', onReconnect);
+      socket.off('reconnect_error', onReconnectError);
+      socket.off('reconnect_failed', onReconnectFailed);
       socket.off('role_updated', onRoleUpdated);
       socket.off('permissions_updated', onPermissionsUpdated);
       socket.off('user_updated', onUserUpdated);
