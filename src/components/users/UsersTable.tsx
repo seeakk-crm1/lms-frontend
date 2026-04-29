@@ -125,6 +125,9 @@ const UsersTable: React.FC = () => {
     return !user.isOnboarded && hasRoleAssignment(user);
   };
 
+  const getLatestInvite = (user: User) => user.receivedInvites?.[0] ?? null;
+
+  const getInviteActionState = (user: User):
     | { kind: 'SEND'; label: string; title: string }
     | { kind: 'RESEND'; label: string; title: string; inviteId: string }
     | { kind: 'DISABLED'; label: string; title: string }
@@ -171,7 +174,6 @@ const UsersTable: React.FC = () => {
     };
   };
 
-  const getLatestInvite = (user: User) => user.receivedInvites?.[0] ?? null;
   const shouldShowInviteSent = (user: User): boolean => inviteSentMap[user.id] || hasPendingInvite(user);
 
   const handleSendInvite = async (userId: string) => {
