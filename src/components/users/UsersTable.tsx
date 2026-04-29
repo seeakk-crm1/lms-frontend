@@ -15,7 +15,8 @@ import {
   Send,
   UserPlus,
   Pencil,
-  Trash2
+  Trash2,
+  Key
 } from 'lucide-react';
 import { useUsersStore } from '../../store/useUsersStore';
 import { useUsersQuery } from '../../hooks/useUsersQuery';
@@ -105,16 +106,16 @@ const UsersTable: React.FC = () => {
 
   const hasRoleAssignment = (user: User): boolean => {
     const directRoleId = (user as any).roleId;
-    if (typeof directRoleId === 'string' && directRoleId.trim().length > 0) return true;
+    if (directRoleId && String(directRoleId).trim().length > 0) return true;
 
-    if (user.role && typeof user.role === 'object') {
+    if (user.role && typeof user.role === 'object' && !Array.isArray(user.role)) {
       const nestedRoleId = (user.role as any).id;
       const nestedRoleName = (user.role as any).name;
-      if (typeof nestedRoleId === 'string' && nestedRoleId.trim().length > 0) return true;
-      if (typeof nestedRoleName === 'string' && nestedRoleName.trim().length > 0) return true;
+      if (nestedRoleId && String(nestedRoleId).trim().length > 0) return true;
+      if (nestedRoleName && String(nestedRoleName).trim().length > 0) return true;
     }
 
-    if (typeof user.role === 'string' && user.role.trim().length > 0) return true;
+    if (user.role && typeof user.role === 'string' && String(user.role).trim().length > 0) return true;
     return false;
   };
 
@@ -363,7 +364,7 @@ const UsersTable: React.FC = () => {
                         title={inviteAction.title}
                         aria-label={inviteAction.label}
                       >
-                        <Send className="w-4 h-4" />
+                        <Mail className="w-4 h-4" />
                       </button>
                       {user.isLocked && (
                         <button
@@ -379,7 +380,7 @@ const UsersTable: React.FC = () => {
                         className="p-1.5 text-amber-500 hover:bg-amber-50 rounded-lg transition-colors"
                         title="Send Reset Password Link"
                       >
-                        <Mail className="w-4 h-4" />
+                        <Key className="w-4 h-4" />
                       </button>
                       <button
                         onClick={(e) => { e.stopPropagation(); openCreateModal(user.id); }}
@@ -519,13 +520,14 @@ const UsersTable: React.FC = () => {
                         title={inviteAction.title}
                         aria-label={inviteAction.label}
                       >
-                        <Send className="w-4 h-4" />
+                        <Mail className="w-4 h-4" />
                       </button>
                       <button
-                        onClick={() => handleResetPassword(user.id, user.email)}
+                        onClick={(e) => { e.stopPropagation(); handleResetPassword(user.id, user.email); }}
                         className="p-2 text-amber-500 bg-white border border-gray-100 rounded-lg shadow-sm"
+                        title="Send Reset Password Link"
                       >
-                        <Mail className="w-4 h-4" />
+                        <Key className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => handleStatusToggle(user.id, !!user.isActive)}
