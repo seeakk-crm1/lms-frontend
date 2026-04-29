@@ -347,9 +347,9 @@ function App() {
         } />
 
         <Route path="/leads/pending-approval" element={
-          <PermissionRoute permissions={['LEAD_APPROVAL_VIEW', 'LEAD_APPROVAL_APPROVE', 'LEAD_APPROVAL_DENY', 'LEADS_APPROVE', 'LEADS_REJECT']}>
+          <ProtectedRoute>
             <PendingApprovalPage />
-          </PermissionRoute>
+          </ProtectedRoute>
         } />
 
         <Route path="/locations" element={

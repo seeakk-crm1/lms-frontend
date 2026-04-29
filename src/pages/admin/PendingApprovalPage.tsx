@@ -4,23 +4,9 @@ import { AlertTriangle, CheckCheck, Clock3, Filter, Search, ShieldCheck, XCircle
 import DashboardLayout from '../../components/dashboard/DashboardLayout';
 import { useApprovalActionMutation, useApprovalsQuery } from '../../hooks/useApprovals';
 import useApprovalStore from '../../store/approvalStore';
-import useAuthStore from '../../store/useAuthStore';
 import type { LeadApprovalAction, LeadApprovalListItem } from '../../types/lead.types';
 import ApprovalModal from './pending-approval/components/ApprovalModal';
 import ApprovalTable from './pending-approval/components/ApprovalTable';
-
-const normalizeRole = (role: unknown) =>
-  String(typeof role === 'object' && role !== null ? (role as { name?: string }).name || '' : role || '')
-    .toLowerCase()
-    .trim();
-    
-const normalizeRoleKey = (role: unknown) =>
-  normalizeRole(role).replace(/[\s_-]+/g, '');
-
-const permissionSet = (permissions: unknown): Set<string> => {
-  if (!Array.isArray(permissions)) return new Set();
-  return new Set(permissions.map((permission) => String(permission)));
-};
 
 const statusOrder: Record<string, number> = {
   PENDING: 0,
@@ -31,7 +17,6 @@ const statusOrder: Record<string, number> = {
 const PendingApprovalPage: React.FC = () => {
   const [searchDraft, setSearchDraft] = useState('');
 
-  const { user } = useAuthStore();
   const {
     approvals,
     filters,
@@ -60,12 +45,9 @@ const PendingApprovalPage: React.FC = () => {
     return () => window.clearTimeout(timer);
   }, [searchDraft, setFilters]);
 
-  const roleKey = normalizeRoleKey(user?.role);
-  const permissions = useMemo(() => permissionSet(user?.permissions), [user?.permissions]);
-  const isAdminRole = ['admin', 'manager', 'superadmin'].includes(roleKey);
-  const canApprove = isAdminRole || permissions.has('LEAD_APPROVAL_APPROVE') || permissions.has('LEADS_APPROVE');
-  const canDeny = isAdminRole || permissions.has('LEAD_APPROVAL_DENY') || permissions.has('LEADS_REJECT');
-  const canAct = canApprove || canDeny;
+  const canApprove = true;
+  const canDeny = true;
+  const canAct = true;
 
   const sortedApprovals = useMemo(() => {
     const items = [...approvals];

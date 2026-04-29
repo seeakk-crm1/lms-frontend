@@ -102,10 +102,25 @@ const UsersTable: React.FC = () => {
     return Number.isFinite(expiresAtMs) && expiresAtMs > Date.now();
   };
 
+  const hasRoleAssignment = (user: User): boolean => {
+    const directRoleId = (user as any).roleId;
+    if (typeof directRoleId === 'string' && directRoleId.trim().length > 0) return true;
+
+    if (user.role && typeof user.role === 'object') {
+      const nestedRoleId = (user.role as any).id;
+      const nestedRoleName = (user.role as any).name;
+      if (typeof nestedRoleId === 'string' && nestedRoleId.trim().length > 0) return true;
+      if (typeof nestedRoleName === 'string' && nestedRoleName.trim().length > 0) return true;
+    }
+
+    if (typeof user.role === 'string' && user.role.trim().length > 0) return true;
+    return false;
+  };
+
   const canSendInvite = (user: User): boolean => {
-    const roleId = (user as any).roleId;
-    const workspaceId = (user as any).workspaceId;
-    return !user.isOnboarded && Boolean(roleId) && Boolean(workspaceId);
+    // Sending invite only needs a pending onboarding user with a valid role assignment.
+    // Workspace scope is enforced by backend from the logged-in admin context.
+    return !user.isOnboarded && hasRoleAssignment(user);
   };
 
   const getInviteActionState = (user: User):
@@ -139,7 +154,7 @@ const UsersTable: React.FC = () => {
       };
     }
 
-    if (!(user as any).roleId) {
+    if (!hasRoleAssignment(user)) {
       return {
         kind: 'DISABLED',
         label: 'Assign Role',
