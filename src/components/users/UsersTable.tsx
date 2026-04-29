@@ -338,7 +338,7 @@ const UsersTable: React.FC = () => {
                     {(() => {
                       const inviteAction = getInviteActionState(user);
                       return (
-                    <div className="flex items-center justify-end gap-2 md:opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex items-center justify-end gap-2">
                       {inviteAction.kind === 'SEND' && (
                         <button
                           onClick={(e) => { e.stopPropagation(); handleSendInvite(user.id); }}
