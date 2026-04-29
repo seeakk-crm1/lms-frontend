@@ -12,6 +12,7 @@ import {
   Unlock,
   Target,
   Mail,
+  Send,
   UserPlus,
   Pencil,
   Trash2
@@ -339,42 +340,31 @@ const UsersTable: React.FC = () => {
                       const inviteAction = getInviteActionState(user);
                       return (
                     <div className="flex items-center justify-end gap-2">
-                      {inviteAction.kind === 'SEND' && (
-                        <button
-                          onClick={(e) => { e.stopPropagation(); handleSendInvite(user.id); }}
-                          type="button"
-                          disabled={inviteActionId === user.id || sendInvite.isPending || resendInvite.isPending}
-                          className="px-2.5 py-1.5 text-[11px] font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                          title={inviteAction.title}
-                        >
-                          {inviteActionId === user.id ? 'Sending…' : 'Send Invite'}
-                        </button>
-                      )}
-                      {inviteAction.kind === 'RESEND' && (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleResendInvite(inviteAction.inviteId);
-                            }}
-                            disabled={inviteActionId === inviteAction.inviteId || sendInvite.isPending || resendInvite.isPending}
-                            className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold uppercase tracking-tight hover:bg-emerald-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                            title={inviteAction.title}
-                          >
-                            {inviteActionId === inviteAction.inviteId ? 'Resending…' : 'Resend Invite'}
-                          </button>
-                      )}
-                      {inviteAction.kind === 'DISABLED' && (
-                        <button
-                          type="button"
-                          onClick={(e) => e.stopPropagation()}
-                          disabled
-                          className="px-2.5 py-1.5 text-[11px] font-bold text-gray-500 bg-gray-100 rounded-lg opacity-80 cursor-not-allowed"
-                          title={inviteAction.title}
-                        >
-                          {inviteAction.label}
-                        </button>
-                      )}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (inviteAction.kind === 'SEND') {
+                            handleSendInvite(user.id);
+                          } else if (inviteAction.kind === 'RESEND') {
+                            handleResendInvite(inviteAction.inviteId);
+                          }
+                        }}
+                        disabled={
+                          inviteAction.kind === 'DISABLED' ||
+                          (inviteAction.kind === 'SEND' && (inviteActionId === user.id || sendInvite.isPending || resendInvite.isPending)) ||
+                          (inviteAction.kind === 'RESEND' && (inviteActionId === inviteAction.inviteId || sendInvite.isPending || resendInvite.isPending))
+                        }
+                        className={`p-1.5 rounded-lg transition-colors ${
+                          inviteAction.kind === 'DISABLED'
+                            ? 'text-gray-400 bg-gray-100 cursor-not-allowed opacity-80'
+                            : 'text-emerald-600 hover:bg-emerald-50'
+                        }`}
+                        title={inviteAction.title}
+                        aria-label={inviteAction.label}
+                      >
+                        <Send className="w-4 h-4" />
+                      </button>
                       {user.isLocked && (
                         <button
                           onClick={(e) => { e.stopPropagation(); handleUnlock(user.id); }}
@@ -506,42 +496,31 @@ const UsersTable: React.FC = () => {
                       </div>
                   </div>
                   <div className="flex items-center gap-2">
-                      {inviteAction.kind === 'SEND' && (
-                        <button
-                          type="button"
-                          onClick={(e) => { e.stopPropagation(); handleSendInvite(user.id); }}
-                          disabled={inviteActionId === user.id || sendInvite.isPending || resendInvite.isPending}
-                          className="px-2.5 py-2 text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-100 rounded-lg disabled:opacity-50"
-                          title={inviteAction.title}
-                        >
-                          {inviteActionId === user.id ? 'Sending…' : 'Invite'}
-                        </button>
-                      )}
-                      {inviteAction.kind === 'RESEND' && (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleResendInvite(inviteAction.inviteId);
-                            }}
-                            disabled={inviteActionId === inviteAction.inviteId || sendInvite.isPending || resendInvite.isPending}
-                            className="px-2 py-1 rounded-md bg-emerald-100 text-emerald-700 text-[10px] font-bold uppercase tracking-tight hover:bg-emerald-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                            title={inviteAction.title}
-                          >
-                            {inviteActionId === inviteAction.inviteId ? 'Resending…' : 'Resend'}
-                          </button>
-                      )}
-                      {inviteAction.kind === 'DISABLED' && (
-                        <button
-                          type="button"
-                          onClick={(e) => e.stopPropagation()}
-                          disabled
-                          className="px-2.5 py-2 text-[10px] font-bold text-gray-500 bg-gray-100 border border-gray-200 rounded-lg opacity-80 cursor-not-allowed"
-                          title={inviteAction.title}
-                        >
-                          {inviteAction.label}
-                        </button>
-                      )}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (inviteAction.kind === 'SEND') {
+                            handleSendInvite(user.id);
+                          } else if (inviteAction.kind === 'RESEND') {
+                            handleResendInvite(inviteAction.inviteId);
+                          }
+                        }}
+                        disabled={
+                          inviteAction.kind === 'DISABLED' ||
+                          (inviteAction.kind === 'SEND' && (inviteActionId === user.id || sendInvite.isPending || resendInvite.isPending)) ||
+                          (inviteAction.kind === 'RESEND' && (inviteActionId === inviteAction.inviteId || sendInvite.isPending || resendInvite.isPending))
+                        }
+                        className={`p-2 rounded-lg border shadow-sm ${
+                          inviteAction.kind === 'DISABLED'
+                            ? 'bg-gray-100 text-gray-400 border-gray-200 opacity-80 cursor-not-allowed'
+                            : 'bg-emerald-50 text-emerald-600 border-emerald-100'
+                        }`}
+                        title={inviteAction.title}
+                        aria-label={inviteAction.label}
+                      >
+                        <Send className="w-4 h-4" />
+                      </button>
                       <button
                         onClick={() => handleResetPassword(user.id, user.email)}
                         className="p-2 text-amber-500 bg-white border border-gray-100 rounded-lg shadow-sm"
