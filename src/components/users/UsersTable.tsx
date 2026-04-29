@@ -120,9 +120,7 @@ const UsersTable: React.FC = () => {
   };
 
   const canSendInvite = (user: User): boolean => {
-    // Sending invite only needs a pending onboarding user with a valid role assignment.
-    // Workspace scope is enforced by backend from the logged-in admin context.
-    return !user.isOnboarded && hasRoleAssignment(user);
+    return !user.isOnboarded;
   };
 
   const getLatestInvite = (user: User) => user.receivedInvites?.[0] ?? null;
@@ -156,14 +154,6 @@ const UsersTable: React.FC = () => {
         kind: 'HIDDEN',
         label: 'Onboarded',
         title: 'Invite is unavailable because this user has already completed onboarding.',
-      };
-    }
-
-    if (!hasRoleAssignment(user)) {
-      return {
-        kind: 'DISABLED',
-        label: 'Assign Role',
-        title: 'Assign a role before sending an invite.',
       };
     }
 
