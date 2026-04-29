@@ -7,6 +7,13 @@ import CreateUserModal from '../components/users/CreateUserModal';
 import { useUsersQuery } from '../hooks/useUsersQuery';
 import { useUsersStore } from '../store/useUsersStore';
 
+interface StatItem {
+  label: string;
+  value: number;
+  icon: LucideIcon;
+  color: string;
+}
+
 const AdminUsersPage: React.FC = () => {
   const { openCreateModal } = useUsersStore();
   
