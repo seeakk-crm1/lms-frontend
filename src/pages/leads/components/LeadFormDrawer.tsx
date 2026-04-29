@@ -163,6 +163,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
   const lifeCycleOptions = meta?.lifeCycles || [];
   const dynamicFields = (meta?.dynamicFields as LeadDynamicField[]) || [];
   const lobReasonOptions = getSelectOptions(meta?.lobReasons || []);
+  const canAssignOtherUsers = Boolean(meta?.canAssignOtherUsers);
 
   const isBusy =
     metaLoading ||
@@ -369,7 +370,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
       phone: formValues.phone.trim() || undefined,
       companyName: formValues.companyName.trim() || undefined,
       address: formValues.address.trim() || undefined,
-      assignedToId: formValues.assignedToId || undefined,
+      assignedToId: canAssignOtherUsers ? formValues.assignedToId || undefined : undefined,
       stageId: formValues.stageId || undefined,
       lifecycleId: formValues.lifecycleId || undefined,
       sourceId: formValues.sourceId || undefined,
@@ -397,7 +398,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
             phone: formValues.phone.trim() || null,
             companyName: formValues.companyName.trim() || null,
             address: formValues.address.trim() || null,
-            assignedToId: formValues.assignedToId || null,
+            assignedToId: canAssignOtherUsers ? formValues.assignedToId || null : undefined,
             stageId: shouldUseStageTransitionFlow ? undefined : targetStageId || null,
             lifecycleId: formValues.lifecycleId || null,
             sourceId: formValues.sourceId || null,
@@ -575,13 +576,19 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
 
                         <div>
                           <label className="mb-2 block text-sm font-black text-gray-900">Assigned To</label>
-                          <SearchableSelect
-                            name="assignedToId"
-                            value={formValues.assignedToId}
-                            options={getSelectOptions(meta?.users || [])}
-                            placeholder="Select owner"
-                            onChange={(event) => handleFieldChange('assignedToId', event.target.value)}
-                          />
+                          {canAssignOtherUsers ? (
+                            <SearchableSelect
+                              name="assignedToId"
+                              value={formValues.assignedToId}
+                              options={getSelectOptions(meta?.users || [])}
+                              placeholder="Select owner"
+                              onChange={(event) => handleFieldChange('assignedToId', event.target.value)}
+                            />
+                          ) : (
+                            <div className={`${inputClassName} flex min-h-[50px] items-center`}>
+                              {hydratedLead?.assignedTo?.displayName || hydratedLead?.assignedTo?.name || 'Unassigned'}
+                            </div>
+                          )}
                         </div>
 
                         <div>

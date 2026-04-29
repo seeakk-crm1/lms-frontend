@@ -311,4 +311,5 @@ export interface LeadMetaOptions {
   lifeCycles: Array<LeadOption & { isDefault?: boolean; transitions?: LeadLifeCycle['transitions'] }>;
   lobReasons: LeadOption[];
   dynamicFields: LeadDynamicField[];
+  canAssignOtherUsers: boolean;
 }
