@@ -96,13 +96,19 @@ const UsersTable: React.FC = () => {
     setDeleteModal({ open: true, userId: id, userName: name });
   };
 
-  const hasPendingInvite = (user: User): boolean => {
-    const invite = user.receivedInvites?.[0];
-    if (!invite) return false;
-    if (invite.usedAt) return false;
-    const expiresAtMs = new Date(invite.expiresAt).getTime();
-    return Number.isFinite(expiresAtMs) && expiresAtMs > Date.now();
-  };
+  const getSortedInvites = (user: User) =>
+    [...(user.receivedInvites || [])].sort(
+      (left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime(),
+    );
+
+  const getLatestValidPendingInvite = (user: User) =>
+    getSortedInvites(user).find((invite) => {
+      if (invite.usedAt) return false;
+      const expiresAtMs = new Date(invite.expiresAt).getTime();
+      return Number.isFinite(expiresAtMs) && expiresAtMs > Date.now();
+    }) || null;
+
+  const hasPendingInvite = (user: User): boolean => Boolean(getLatestValidPendingInvite(user));
 
   const hasRoleAssignment = (user: User): boolean => {
     const directRoleId = (user as any).roleId;
@@ -123,12 +129,11 @@ const UsersTable: React.FC = () => {
     return !user.isOnboarded;
   };
 
-  const getLatestInvite = (user: User) => user.receivedInvites?.[0] ?? null;
+  const getLatestInvite = (user: User) => getLatestValidPendingInvite(user);
 
   const getInviteActionState = (user: User):
     | { kind: 'SEND'; label: string; title: string }
     | { kind: 'RESEND'; label: string; title: string; inviteId: string }
-    | { kind: 'DISABLED'; label: string; title: string }
     | { kind: 'HIDDEN'; label: string; title: string } => {
     const latestInvite = getLatestInvite(user);
 
@@ -158,9 +163,9 @@ const UsersTable: React.FC = () => {
     }
 
     return {
-      kind: 'DISABLED',
-      label: 'Invite N/A',
-      title: 'Invite is unavailable for this user right now.',
+      kind: 'SEND',
+      label: 'Send Invite',
+      title: 'Send an onboarding invite to this user.',
     };
   };
 
@@ -352,14 +357,11 @@ const UsersTable: React.FC = () => {
                             }
                           }}
                           disabled={
-                            inviteAction.kind === 'DISABLED' ||
                             (inviteAction.kind === 'SEND' && (inviteActionId === user.id || sendInvite.isPending || resendInvite.isPending)) ||
                             (inviteAction.kind === 'RESEND' && (inviteActionId === inviteAction.inviteId || sendInvite.isPending || resendInvite.isPending))
                           }
                           className={`p-1.5 rounded-lg transition-colors ${
-                            inviteAction.kind === 'DISABLED'
-                              ? 'text-gray-400 bg-gray-100 cursor-not-allowed opacity-80'
-                              : 'text-emerald-600 hover:bg-emerald-50'
+                            'text-emerald-600 hover:bg-emerald-50'
                           }`}
                           title={inviteAction.title}
                           aria-label={inviteAction.label}
@@ -517,14 +519,11 @@ const UsersTable: React.FC = () => {
                             }
                           }}
                           disabled={
-                            inviteAction.kind === 'DISABLED' ||
                             (inviteAction.kind === 'SEND' && (inviteActionId === user.id || sendInvite.isPending || resendInvite.isPending)) ||
                             (inviteAction.kind === 'RESEND' && (inviteActionId === inviteAction.inviteId || sendInvite.isPending || resendInvite.isPending))
                           }
                           className={`p-2 rounded-lg border shadow-sm ${
-                            inviteAction.kind === 'DISABLED'
-                              ? 'bg-gray-100 text-gray-400 border-gray-200 opacity-80 cursor-not-allowed'
-                              : 'bg-emerald-50 text-emerald-600 border-emerald-100'
+                            'bg-emerald-50 text-emerald-600 border-emerald-100'
                           }`}
                           title={inviteAction.title}
                           aria-label={inviteAction.label}
