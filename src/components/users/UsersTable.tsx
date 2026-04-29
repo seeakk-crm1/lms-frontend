@@ -108,8 +108,53 @@ const UsersTable: React.FC = () => {
     return !user.isOnboarded && Boolean(roleId) && Boolean(workspaceId);
   };
 
-  const getLatestInvite = (user: User) => user.receivedInvites?.[0] ?? null;
+  const getInviteActionState = (user: User):
+    | { kind: 'SEND'; label: string; title: string }
+    | { kind: 'RESEND'; label: string; title: string; inviteId: string }
+    | { kind: 'DISABLED'; label: string; title: string } => {
+    const latestInvite = getLatestInvite(user);
 
+    if (hasPendingInvite(user) && latestInvite?.id) {
+      return {
+        kind: 'RESEND',
+        label: 'Resend Invite',
+        title: 'Resend the current pending invite.',
+        inviteId: latestInvite.id,
+      };
+    }
+
+    if (canSendInvite(user)) {
+      return {
+        kind: 'SEND',
+        label: 'Send Invite',
+        title: 'Send an onboarding invite to this user.',
+      };
+    }
+
+    if (user.isOnboarded) {
+      return {
+        kind: 'DISABLED',
+        label: 'Onboarded',
+        title: 'Invite is unavailable because this user has already completed onboarding.',
+      };
+    }
+
+    if (!(user as any).roleId) {
+      return {
+        kind: 'DISABLED',
+        label: 'Assign Role',
+        title: 'Assign a role before sending an invite.',
+      };
+    }
+
+    return {
+      kind: 'DISABLED',
+      label: 'Invite N/A',
+      title: 'Invite is unavailable for this user right now.',
+    };
+  };
+
+  const getLatestInvite = (user: User) => user.receivedInvites?.[0] ?? null;
   const shouldShowInviteSent = (user: User): boolean => inviteSentMap[user.id] || hasPendingInvite(user);
 
   const handleSendInvite = async (userId: string) => {
@@ -275,43 +320,45 @@ const UsersTable: React.FC = () => {
                     </div>
                   </td>
                   <td className="px-6 py-4 text-right">
+                    {(() => {
+                      const inviteAction = getInviteActionState(user);
+                      return (
                     <div className="flex items-center justify-end gap-2 md:opacity-0 group-hover:opacity-100 transition-opacity">
-                      {canSendInvite(user) && !shouldShowInviteSent(user) && (
+                      {inviteAction.kind === 'SEND' && (
                         <button
                           onClick={(e) => { e.stopPropagation(); handleSendInvite(user.id); }}
                           type="button"
                           disabled={inviteActionId === user.id || sendInvite.isPending || resendInvite.isPending}
                           className="px-2.5 py-1.5 text-[11px] font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                          title="Send Invite"
+                          title={inviteAction.title}
                         >
                           {inviteActionId === user.id ? 'Sending…' : 'Send Invite'}
                         </button>
                       )}
-                      {shouldShowInviteSent(user) && (
-                        getLatestInvite(user)?.id ? (
+                      {inviteAction.kind === 'RESEND' && (
                           <button
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleResendInvite(getLatestInvite(user)!.id);
+                              handleResendInvite(inviteAction.inviteId);
                             }}
-                            disabled={inviteActionId === getLatestInvite(user)?.id || sendInvite.isPending || resendInvite.isPending}
+                            disabled={inviteActionId === inviteAction.inviteId || sendInvite.isPending || resendInvite.isPending}
                             className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold uppercase tracking-tight hover:bg-emerald-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                            title="Resend Invite"
+                            title={inviteAction.title}
                           >
-                            {inviteActionId === getLatestInvite(user)?.id ? 'Resending…' : 'Resend Invite'}
+                            {inviteActionId === inviteAction.inviteId ? 'Resending…' : 'Resend Invite'}
                           </button>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={(e) => e.stopPropagation()}
-                            disabled
-                            className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold uppercase tracking-tight opacity-70 cursor-not-allowed"
-                            title="Invite Sent"
-                          >
-                            Invite Sent
-                          </button>
-                        )
+                      )}
+                      {inviteAction.kind === 'DISABLED' && (
+                        <button
+                          type="button"
+                          onClick={(e) => e.stopPropagation()}
+                          disabled
+                          className="px-2.5 py-1.5 text-[11px] font-bold text-gray-500 bg-gray-100 rounded-lg opacity-80 cursor-not-allowed"
+                          title={inviteAction.title}
+                        >
+                          {inviteAction.label}
+                        </button>
                       )}
                       {user.isLocked && (
                         <button
@@ -351,6 +398,8 @@ const UsersTable: React.FC = () => {
                         {user.isActive ? <UserX className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}
                       </button>
                     </div>
+                      );
+                    })()}
                   </td>
                 </motion.tr>
               ))
@@ -384,6 +433,9 @@ const UsersTable: React.FC = () => {
           </div>
         ) : (
           users.map((user: User) => (
+            (() => {
+              const inviteAction = getInviteActionState(user);
+              return (
             <div 
                 key={user.id} 
                 onClick={() => openCreateModal(user.id)}
@@ -439,41 +491,41 @@ const UsersTable: React.FC = () => {
                       </div>
                   </div>
                   <div className="flex items-center gap-2">
-                      {canSendInvite(user) && !shouldShowInviteSent(user) && (
+                      {inviteAction.kind === 'SEND' && (
                         <button
                           type="button"
                           onClick={(e) => { e.stopPropagation(); handleSendInvite(user.id); }}
                           disabled={inviteActionId === user.id || sendInvite.isPending || resendInvite.isPending}
                           className="px-2.5 py-2 text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-100 rounded-lg disabled:opacity-50"
+                          title={inviteAction.title}
                         >
                           {inviteActionId === user.id ? 'Sending…' : 'Invite'}
                         </button>
                       )}
-                      {shouldShowInviteSent(user) && (
-                        getLatestInvite(user)?.id ? (
+                      {inviteAction.kind === 'RESEND' && (
                           <button
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleResendInvite(getLatestInvite(user)!.id);
+                              handleResendInvite(inviteAction.inviteId);
                             }}
-                            disabled={inviteActionId === getLatestInvite(user)?.id || sendInvite.isPending || resendInvite.isPending}
+                            disabled={inviteActionId === inviteAction.inviteId || sendInvite.isPending || resendInvite.isPending}
                             className="px-2 py-1 rounded-md bg-emerald-100 text-emerald-700 text-[10px] font-bold uppercase tracking-tight hover:bg-emerald-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                            title="Resend Invite"
+                            title={inviteAction.title}
                           >
-                            {inviteActionId === getLatestInvite(user)?.id ? 'Resending…' : 'Resend'}
+                            {inviteActionId === inviteAction.inviteId ? 'Resending…' : 'Resend'}
                           </button>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={(e) => e.stopPropagation()}
-                            disabled
-                            className="px-2 py-1 rounded-md bg-emerald-100 text-emerald-700 text-[10px] font-bold uppercase tracking-tight opacity-70 cursor-not-allowed"
-                            title="Invite Sent"
-                          >
-                            Invite Sent
-                          </button>
-                        )
+                      )}
+                      {inviteAction.kind === 'DISABLED' && (
+                        <button
+                          type="button"
+                          onClick={(e) => e.stopPropagation()}
+                          disabled
+                          className="px-2.5 py-2 text-[10px] font-bold text-gray-500 bg-gray-100 border border-gray-200 rounded-lg opacity-80 cursor-not-allowed"
+                          title={inviteAction.title}
+                        >
+                          {inviteAction.label}
+                        </button>
                       )}
                       <button
                         onClick={() => handleResetPassword(user.id, user.email)}
@@ -490,6 +542,8 @@ const UsersTable: React.FC = () => {
                   </div>
               </div>
             </div>
+              );
+            })()
           ))
         )}
       </div>
