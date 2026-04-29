@@ -287,5 +287,6 @@ export const getLeadMeta = async () => {
     lifeCycles: mapLifeCycleOptions(lifeCyclesData?.data?.lifeCycles || []),
     lobReasons: mapLOBReasonOptions(lobReasonsData?.data || []),
     dynamicFields,
+    canAssignOtherUsers: Boolean(usersData?.meta?.canAssignOtherUsers),
   };
 };
