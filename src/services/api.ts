@@ -1,7 +1,8 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import useAuthStore from '../store/useAuthStore';
+import { ENV } from '../config/env';
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://backend-26l2.onrender.com/api';
+const API_URL = ENV.API_URL;
 
 interface CustomAxiosRequestConfig extends InternalAxiosRequestConfig {
     _retry?: boolean;

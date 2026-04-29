@@ -96,13 +96,19 @@ const UsersTable: React.FC = () => {
     setDeleteModal({ open: true, userId: id, userName: name });
   };
 
-  const hasPendingInvite = (user: User): boolean => {
-    const invite = user.receivedInvites?.[0];
-    if (!invite) return false;
-    if (invite.usedAt) return false;
-    const expiresAtMs = new Date(invite.expiresAt).getTime();
-    return Number.isFinite(expiresAtMs) && expiresAtMs > Date.now();
-  };
+  const getSortedInvites = (user: User) =>
+    [...(user.receivedInvites || [])].sort(
+      (left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime(),
+    );
+
+  const getLatestValidPendingInvite = (user: User) =>
+    getSortedInvites(user).find((invite) => {
+      if (invite.usedAt) return false;
+      const expiresAtMs = new Date(invite.expiresAt).getTime();
+      return Number.isFinite(expiresAtMs) && expiresAtMs > Date.now();
+    }) || null;
+
+  const hasPendingInvite = (user: User): boolean => Boolean(getLatestValidPendingInvite(user));
 
   const hasRoleAssignment = (user: User): boolean => {
     const directRoleId = (user as any).roleId;
@@ -120,15 +126,15 @@ const UsersTable: React.FC = () => {
   };
 
   const canSendInvite = (user: User): boolean => {
-    // Sending invite only needs a pending onboarding user with a valid role assignment.
-    // Workspace scope is enforced by backend from the logged-in admin context.
-    return !user.isOnboarded && hasRoleAssignment(user);
+    return !user.isOnboarded;
   };
+
+  const getLatestInvite = (user: User) => getLatestValidPendingInvite(user);
 
   const getInviteActionState = (user: User):
     | { kind: 'SEND'; label: string; title: string }
     | { kind: 'RESEND'; label: string; title: string; inviteId: string }
-    | { kind: 'DISABLED'; label: string; title: string } => {
+    | { kind: 'HIDDEN'; label: string; title: string } => {
     const latestInvite = getLatestInvite(user);
 
     if (hasPendingInvite(user) && latestInvite?.id) {
@@ -150,28 +156,19 @@ const UsersTable: React.FC = () => {
 
     if (user.isOnboarded) {
       return {
-        kind: 'DISABLED',
+        kind: 'HIDDEN',
         label: 'Onboarded',
         title: 'Invite is unavailable because this user has already completed onboarding.',
       };
     }
 
-    if (!hasRoleAssignment(user)) {
-      return {
-        kind: 'DISABLED',
-        label: 'Assign Role',
-        title: 'Assign a role before sending an invite.',
-      };
-    }
-
     return {
-      kind: 'DISABLED',
-      label: 'Invite N/A',
-      title: 'Invite is unavailable for this user right now.',
+      kind: 'SEND',
+      label: 'Send Invite',
+      title: 'Send an onboarding invite to this user.',
     };
   };
 
-  const getLatestInvite = (user: User) => user.receivedInvites?.[0] ?? null;
   const shouldShowInviteSent = (user: User): boolean => inviteSentMap[user.id] || hasPendingInvite(user);
 
   const handleSendInvite = async (userId: string) => {
@@ -299,7 +296,14 @@ const UsersTable: React.FC = () => {
                         {user.name?.charAt(0) || user.email.charAt(0).toUpperCase()}
                       </div>
                       <div className="min-w-0">
-                        <div className="text-sm font-bold text-gray-900 truncate">{user.name || 'Invited User'}</div>
+                        <div className="text-sm font-bold text-gray-900 truncate flex items-center gap-2">
+                          {user.name || 'Invited User'}
+                          {shouldShowInviteSent(user) && (
+                            <span title="Invite Pending" className="flex items-center justify-center p-0.5 bg-emerald-50 text-emerald-500 rounded-md">
+                              <Mail className="w-3 h-3" />
+                            </span>
+                          )}
+                        </div>
                         <div className="flex flex-col">
                             <span className="text-[10px] text-gray-400 font-medium truncate">{user.email}</span>
                             {user.username && <span className="text-[9px] text-emerald-500 font-bold">@{user.username}</span>}
@@ -341,31 +345,30 @@ const UsersTable: React.FC = () => {
                       const inviteAction = getInviteActionState(user);
                       return (
                     <div className="flex items-center justify-end gap-2">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (inviteAction.kind === 'SEND') {
-                            handleSendInvite(user.id);
-                          } else if (inviteAction.kind === 'RESEND') {
-                            handleResendInvite(inviteAction.inviteId);
+                      {inviteAction.kind !== 'HIDDEN' && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (inviteAction.kind === 'SEND') {
+                              handleSendInvite(user.id);
+                            } else if (inviteAction.kind === 'RESEND') {
+                              handleResendInvite(inviteAction.inviteId);
+                            }
+                          }}
+                          disabled={
+                            (inviteAction.kind === 'SEND' && (inviteActionId === user.id || sendInvite.isPending || resendInvite.isPending)) ||
+                            (inviteAction.kind === 'RESEND' && (inviteActionId === inviteAction.inviteId || sendInvite.isPending || resendInvite.isPending))
                           }
-                        }}
-                        disabled={
-                          inviteAction.kind === 'DISABLED' ||
-                          (inviteAction.kind === 'SEND' && (inviteActionId === user.id || sendInvite.isPending || resendInvite.isPending)) ||
-                          (inviteAction.kind === 'RESEND' && (inviteActionId === inviteAction.inviteId || sendInvite.isPending || resendInvite.isPending))
-                        }
-                        className={`p-1.5 rounded-lg transition-colors ${
-                          inviteAction.kind === 'DISABLED'
-                            ? 'text-gray-400 bg-gray-100 cursor-not-allowed opacity-80'
-                            : 'text-emerald-600 hover:bg-emerald-50'
-                        }`}
-                        title={inviteAction.title}
-                        aria-label={inviteAction.label}
-                      >
-                        <Mail className="w-4 h-4" />
-                      </button>
+                          className={`p-1.5 rounded-lg transition-colors ${
+                            'text-emerald-600 hover:bg-emerald-50'
+                          }`}
+                          title={inviteAction.title}
+                          aria-label={inviteAction.label}
+                        >
+                          <Mail className="w-4 h-4" />
+                        </button>
+                      )}
                       {user.isLocked && (
                         <button
                           onClick={(e) => { e.stopPropagation(); handleUnlock(user.id); }}
@@ -453,7 +456,14 @@ const UsersTable: React.FC = () => {
                     {user.name?.charAt(0) || user.email.charAt(0).toUpperCase()}
                   </div>
                   <div className="min-w-0">
-                    <div className="text-sm font-black text-gray-900 truncate">{user.name || 'Invited User'}</div>
+                    <div className="text-sm font-black text-gray-900 truncate flex items-center gap-2">
+                      {user.name || 'Invited User'}
+                      {shouldShowInviteSent(user) && (
+                        <span title="Invite Pending" className="flex items-center justify-center p-0.5 bg-emerald-50 text-emerald-500 rounded-md">
+                          <Mail className="w-3 h-3" />
+                        </span>
+                      )}
+                    </div>
                     <div className="text-[11px] text-gray-400 font-medium truncate mb-1">{user.email}</div>
                     <div className="flex items-center gap-1.5">
                         {user.isLocked ? (
@@ -497,31 +507,30 @@ const UsersTable: React.FC = () => {
                       </div>
                   </div>
                   <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (inviteAction.kind === 'SEND') {
-                            handleSendInvite(user.id);
-                          } else if (inviteAction.kind === 'RESEND') {
-                            handleResendInvite(inviteAction.inviteId);
+                      {inviteAction.kind !== 'HIDDEN' && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (inviteAction.kind === 'SEND') {
+                              handleSendInvite(user.id);
+                            } else if (inviteAction.kind === 'RESEND') {
+                              handleResendInvite(inviteAction.inviteId);
+                            }
+                          }}
+                          disabled={
+                            (inviteAction.kind === 'SEND' && (inviteActionId === user.id || sendInvite.isPending || resendInvite.isPending)) ||
+                            (inviteAction.kind === 'RESEND' && (inviteActionId === inviteAction.inviteId || sendInvite.isPending || resendInvite.isPending))
                           }
-                        }}
-                        disabled={
-                          inviteAction.kind === 'DISABLED' ||
-                          (inviteAction.kind === 'SEND' && (inviteActionId === user.id || sendInvite.isPending || resendInvite.isPending)) ||
-                          (inviteAction.kind === 'RESEND' && (inviteActionId === inviteAction.inviteId || sendInvite.isPending || resendInvite.isPending))
-                        }
-                        className={`p-2 rounded-lg border shadow-sm ${
-                          inviteAction.kind === 'DISABLED'
-                            ? 'bg-gray-100 text-gray-400 border-gray-200 opacity-80 cursor-not-allowed'
-                            : 'bg-emerald-50 text-emerald-600 border-emerald-100'
-                        }`}
-                        title={inviteAction.title}
-                        aria-label={inviteAction.label}
-                      >
-                        <Mail className="w-4 h-4" />
-                      </button>
+                          className={`p-2 rounded-lg border shadow-sm ${
+                            'bg-emerald-50 text-emerald-600 border-emerald-100'
+                          }`}
+                          title={inviteAction.title}
+                          aria-label={inviteAction.label}
+                        >
+                          <Mail className="w-4 h-4" />
+                        </button>
+                      )}
                       <button
                         onClick={(e) => { e.stopPropagation(); handleResetPassword(user.id, user.email); }}
                         className="p-2 text-amber-500 bg-white border border-gray-100 rounded-lg shadow-sm"

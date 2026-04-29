@@ -1,12 +1,10 @@
 import { io, Socket } from 'socket.io-client';
+import { ENV } from '../config/env';
 
 let socket: Socket | null = null;
 
 const getRealtimeBaseUrl = (): string => {
-  const backendUrl =
-    import.meta.env.VITE_API_URL ||
-    import.meta.env.VITE_BACKEND_URL ||
-    'https://backend-26l2.onrender.com';
+  const backendUrl = ENV.BACKEND_URL || ENV.API_URL;
   return backendUrl.replace(/\/api\/?$/, '');
 };
 

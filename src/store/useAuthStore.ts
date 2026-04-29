@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import axios from 'axios';
 import { User } from '../types/user.types';
 import { queryClient } from '../lib/queryClient';
+import { ENV } from '../config/env';
 
 interface AuthState {
   user: User | null;
@@ -24,7 +25,7 @@ if (localStorage.getItem('storeVersion') !== STORE_VERSION) {
     localStorage.setItem('storeVersion', STORE_VERSION);
 }
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://backend-26l2.onrender.com/api';
+const API_URL = ENV.API_URL;
 
 const normalizeUserRole = (role: unknown): User['role'] => {
     if (typeof role === 'object' && role !== null) {
