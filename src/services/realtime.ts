@@ -21,8 +21,7 @@ export const connectRealtime = (accessToken: string): Socket => {
   }
 
   socket = io(baseUrl, {
-    // Start with polling to avoid websocket-first handshake drops on some hosted edges.
-    transports: ['polling', 'websocket'],
+    transports: ['websocket'],
     withCredentials: true,
     auth: {
       token: accessToken,
