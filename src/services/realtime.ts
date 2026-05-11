@@ -21,7 +21,7 @@ export const connectRealtime = (accessToken: string): Socket => {
   }
 
   socket = io(baseUrl, {
-    transports: ['websocket'],
+    transports: ['polling', 'websocket'],
     withCredentials: true,
     auth: {
       token: accessToken,
