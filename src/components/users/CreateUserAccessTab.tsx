@@ -4,6 +4,7 @@ import { MapPin } from 'lucide-react';
 import { motion } from 'framer-motion';
 import LocationSelector from './LocationSelector';
 import type { UserFormData } from './CreateUserModal.types';
+import useAuthStore from '../../store/useAuthStore';
 
 interface CreateUserAccessTabProps {
   safeRoles: Array<{ value: string; label: string }>;
@@ -31,6 +32,10 @@ const CreateUserAccessTab: React.FC<CreateUserAccessTabProps> = ({
     control,
     formState: { errors },
   } = useFormContext<UserFormData>();
+
+  const { user: currentUser } = useAuthStore();
+  const canAssignSupervisor = currentUser?.permissions?.includes('USERS_ASSIGN_SUPERVISOR') || 
+                              currentUser?.role?.name?.toLowerCase() === 'superadmin';
 
   return (
     <div className="space-y-6">
@@ -73,7 +78,11 @@ const CreateUserAccessTab: React.FC<CreateUserAccessTabProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-1.5">
           <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Supervisor</label>
-          <select {...register('supervisorId')} className={getSelectClassName(Boolean(errors.supervisorId))}>
+          <select 
+            {...register('supervisorId')} 
+            disabled={!canAssignSupervisor}
+            className={`${getSelectClassName(Boolean(errors.supervisorId))} ${!canAssignSupervisor ? 'opacity-60 cursor-not-allowed bg-gray-100' : ''}`}
+          >
             <option value="">Select Supervisor</option>
             {supervisorsData?.supervisors?.map((s: any) => (
               <option key={s.id} value={s.id}>
@@ -81,6 +90,11 @@ const CreateUserAccessTab: React.FC<CreateUserAccessTabProps> = ({
               </option>
             ))}
           </select>
+          {!canAssignSupervisor && (
+            <p className="text-[10px] text-gray-400 font-medium mt-1">
+              You do not have permission to change supervisors.
+            </p>
+          )}
           {renderFieldError(errors.supervisorId?.message)}
         </div>
         <div className="space-y-1.5">
