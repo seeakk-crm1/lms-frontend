@@ -1,42 +1,67 @@
 /**
- * Vite exposes only vars prefixed with VITE_. Normalize URLs (no trailing slash confusion).
+ * Vite exposes only vars prefixed with VITE_.
+ *
+ * Architecture:
+ * - REST: VITE_API_URL → https://backend.example.com/api
+ * - Socket.IO origin (no /api): VITE_SOCKET_URL | VITE_BACKEND_URL | derived from API URL
  */
 const requireEnv = (key: string): string => {
   const value = (import.meta.env as Record<string, string | undefined>)[key];
   if (!value && import.meta.env.PROD) {
-    console.error(`[ENV] Missing required build-time var: ${key}`);
+    console.error(`[ENV] Missing build-time var: ${key}`);
   }
   return value || '';
 };
 
-/** Strip trailing slashes except for origin-only URLs we join paths to */
-export const normalizeApiBaseUrl = (raw: string): string => {
-  const trimmed = raw.trim().replace(/\/+$/, '');
-  return trimmed || '';
-};
+export const normalizeOriginUrl = (raw: string): string => raw.trim().replace(/\/+$/, '');
 
-/** Origin for Socket.IO (no /api). Prefer explicit VITE_BACKEND_URL; else derive from API URL. */
-export const resolveBackendOrigin = (): string => {
-  const explicit = normalizeApiBaseUrl(requireEnv('VITE_BACKEND_URL'));
-  if (explicit) return explicit;
+const defaultLocalApi = 'http://localhost:5000/api';
 
-  const api = normalizeApiBaseUrl(requireEnv('VITE_API_URL') || 'http://localhost:5000/api');
-  // .../api -> origin; .../api/foo stays .../api/foo -> strip last segment if ends with api - common case is .../api
+/**
+ * Socket.IO connects to the HTTP **origin** only, path `/socket.io` — never `/api`.
+ * Priority: VITE_SOCKET_URL → VITE_BACKEND_URL → strip `/api` from VITE_API_URL
+ */
+export const resolveSocketOrigin = (): string => {
+  const explicitSocket = normalizeOriginUrl(requireEnv('VITE_SOCKET_URL'));
+  if (explicitSocket) return explicitSocket;
+
+  const legacyBackend = normalizeOriginUrl(requireEnv('VITE_BACKEND_URL'));
+  if (legacyBackend) return legacyBackend;
+
+  const api = normalizeOriginUrl(requireEnv('VITE_API_URL') || defaultLocalApi);
   return api.replace(/\/api\/?$/, '');
 };
 
 const apiUrlRaw = requireEnv('VITE_API_URL');
-const API_URL = normalizeApiBaseUrl(apiUrlRaw || 'http://localhost:5000/api');
+const API_URL = normalizeOriginUrl(apiUrlRaw || defaultLocalApi);
+
+const SOCKET_ORIGIN = resolveSocketOrigin();
 
 export const ENV = {
-  /** Always ends without trailing slash; paths like `/auth/login` join correctly */
   API_URL,
-  /** WebSocket / Engine.IO origin */
-  BACKEND_URL: resolveBackendOrigin(),
+  /** HTTP origin for Engine.IO (same as legacy BACKEND_URL / socket URL) */
+  SOCKET_URL: SOCKET_ORIGIN,
+  /** @deprecated use SOCKET_URL — kept for any older imports */
+  BACKEND_URL: SOCKET_ORIGIN,
   GOOGLE_CLIENT_ID: import.meta.env.VITE_GOOGLE_CLIENT_ID || '',
 };
 
+const logEnv = (): void => {
+  const mode = import.meta.env.PROD ? 'production' : 'development';
+  console.info(`[ENV:${mode}] VITE_API_URL → ${ENV.API_URL}`);
+  console.info(`[ENV:${mode}] Socket.IO origin → ${ENV.SOCKET_URL}`, {
+    sources: {
+      VITE_SOCKET_URL: requireEnv('VITE_SOCKET_URL') ? '(set)' : '(unset)',
+      VITE_BACKEND_URL: requireEnv('VITE_BACKEND_URL') ? '(set)' : '(unset)',
+      derivedFromApi: !requireEnv('VITE_SOCKET_URL') && !requireEnv('VITE_BACKEND_URL'),
+    },
+  });
+};
+
 if (import.meta.env.DEV) {
-  console.info('[ENV] API_URL →', ENV.API_URL);
-  console.info('[ENV] realtime origin →', ENV.BACKEND_URL);
+  logEnv();
+}
+
+if (import.meta.env.PROD) {
+  logEnv();
 }

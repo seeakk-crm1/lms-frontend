@@ -542,7 +542,17 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
                         </div>
 
                         <div>
-                          <label className="mb-2 block text-sm font-black text-gray-900">Email</label>
+                          <div className="mb-2 flex items-center justify-between">
+                            <label className="block text-sm font-black text-gray-900">Email</label>
+                            {formValues.email && (
+                              <a 
+                                href={`mailto:${formValues.email}`}
+                                className="text-[10px] font-bold text-emerald-600 hover:underline"
+                              >
+                                Send Email
+                              </a>
+                            )}
+                          </div>
                           <input
                             type="email"
                             value={formValues.email}

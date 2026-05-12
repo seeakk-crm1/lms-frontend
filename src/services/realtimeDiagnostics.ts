@@ -41,7 +41,7 @@ export const explainFailureKind = (kind: ConnectionFailureKind, backendOrigin: s
         `Open ${healthUrl} — if it is not JSON {"ok":true,...}, your backend URL is wrong or Render has no running service (see x-render-routing: no-server).`
       );
     case 'backend_unreachable':
-      return `Cannot reach ${backendOrigin}. Check VPN, Render service sleep/failure, or wrong VITE_BACKEND_URL / VITE_API_URL in Vercel.`;
+      return `Cannot reach ${backendOrigin}. Check VPN, Render sleep/failure, or set VITE_SOCKET_URL / VITE_API_URL in Vercel (redeploy after env change).`;
     case 'dns_or_tls':
       return `DNS or TLS issue for ${backendOrigin}. Verify the hostname matches your Render dashboard URL exactly.`;
     case 'socket_auth_or_handshake':

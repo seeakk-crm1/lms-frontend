@@ -299,9 +299,26 @@ const UsersTable: React.FC = () => {
                         <div className="text-sm font-bold text-gray-900 truncate flex items-center gap-2">
                           {user.name || 'Invited User'}
                           {shouldShowInviteSent(user) && (
-                            <span title="Invite Pending" className="flex items-center justify-center p-0.5 bg-emerald-50 text-emerald-500 rounded-md">
+                            <button 
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const inviteAction = getInviteActionState(user);
+                                if (inviteAction.kind === 'SEND') {
+                                  handleSendInvite(user.id);
+                                } else if (inviteAction.kind === 'RESEND') {
+                                  handleResendInvite(inviteAction.inviteId);
+                                }
+                              }}
+                              disabled={
+                                (getInviteActionState(user).kind === 'SEND' && (inviteActionId === user.id || sendInvite.isPending || resendInvite.isPending)) ||
+                                (getInviteActionState(user).kind === 'RESEND' && (inviteActionId === getInviteActionState(user).kind === 'RESEND' ? (getInviteActionState(user) as any).inviteId : '' || sendInvite.isPending || resendInvite.isPending))
+                              }
+                              title={getInviteActionState(user).title} 
+                              className="flex items-center justify-center p-0.5 bg-emerald-50 text-emerald-500 rounded-md hover:bg-emerald-100 transition-colors"
+                            >
                               <Mail className="w-3 h-3" />
-                            </span>
+                            </button>
                           )}
                         </div>
                         <div className="flex flex-col">

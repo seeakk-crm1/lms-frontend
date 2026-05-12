@@ -150,9 +150,19 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
                     <div className="max-w-[220px]">
                       <div className="truncate text-sm font-black text-gray-900">{lead.name}</div>
                       <div className="mt-1 space-y-0.5">
-                        <div className={`truncate text-xs font-semibold ${lead.email ? 'text-gray-500' : emptyCell}`}>
-                          {lead.email || 'No email'}
-                        </div>
+                        {lead.email ? (
+                          <a 
+                            href={`mailto:${lead.email}`}
+                            onClick={(e) => e.stopPropagation()}
+                            className="truncate text-xs font-semibold text-gray-500 hover:text-emerald-600 transition-colors"
+                          >
+                            {lead.email}
+                          </a>
+                        ) : (
+                          <div className={`truncate text-xs font-semibold ${emptyCell}`}>
+                            No email
+                          </div>
+                        )}
                         <div className={`truncate text-xs font-semibold ${lead.phone ? 'text-gray-500' : emptyCell}`}>
                           {lead.phone || 'No phone'}
                         </div>

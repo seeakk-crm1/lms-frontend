@@ -1,5 +1,6 @@
 import { io, Socket } from 'socket.io-client';
 import { ENV } from '../config/env';
+import { SOCKET_IO_CLIENT_PATH } from '../config/socketConstants';
 import useAuthStore from '../store/useAuthStore';
 import {
   classifySocketErrorMessage,
@@ -8,8 +9,8 @@ import {
 
 let socket: Socket | null = null;
 
-/** Socket.IO connects to HTTP origin only — never append /api */
-const getRealtimeBaseUrl = (): string => ENV.BACKEND_URL;
+/** Socket.IO uses HTTP origin only (see ENV.SOCKET_URL); never use VITE_API_URL directly if it ends with /api */
+const getRealtimeBaseUrl = (): string => ENV.SOCKET_URL;
 
 const maxAttempts = Number.parseInt(import.meta.env.VITE_SOCKET_MAX_RECONNECT_ATTEMPTS || '25', 10);
 const safeMaxAttempts = Number.isFinite(maxAttempts) && maxAttempts > 0 ? maxAttempts : 25;
@@ -26,7 +27,7 @@ export const connectRealtime = (accessToken: string): Socket => {
   }
 
   socket = io(baseUrl, {
-    path: '/socket.io',
+    path: SOCKET_IO_CLIENT_PATH,
     transports: ['polling', 'websocket'],
     withCredentials: true,
     auth: {
@@ -80,7 +81,7 @@ export const connectRealtime = (accessToken: string): Socket => {
 
   socket.on('reconnect_failed', () => {
     console.error(
-      `[Socket.io] Reconnect exhausted (${safeMaxAttempts} attempts). Check ${baseUrl}/healthz and Vercel env VITE_API_URL / VITE_BACKEND_URL.`,
+      `[Socket.io] Reconnect exhausted (${safeMaxAttempts} attempts). Verify ${baseUrl}/healthz returns JSON and Vercel has VITE_SOCKET_URL or VITE_API_URL (socket origin is derived from API URL).`,
     );
   });
 
