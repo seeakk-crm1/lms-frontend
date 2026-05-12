@@ -1,73 +1,87 @@
 import { io, Socket } from 'socket.io-client';
 import { ENV } from '../config/env';
 import useAuthStore from '../store/useAuthStore';
+import {
+  classifySocketErrorMessage,
+  explainFailureKind,
+} from './realtimeDiagnostics';
 
 let socket: Socket | null = null;
 
-const getRealtimeBaseUrl = (): string => {
-  const backendUrl = ENV.BACKEND_URL || ENV.API_URL;
-  return backendUrl.replace(/\/api\/?$/, '');
-};
+/** Socket.IO connects to HTTP origin only — never append /api */
+const getRealtimeBaseUrl = (): string => ENV.BACKEND_URL;
+
+const maxAttempts = Number.parseInt(import.meta.env.VITE_SOCKET_MAX_RECONNECT_ATTEMPTS || '25', 10);
+const safeMaxAttempts = Number.isFinite(maxAttempts) && maxAttempts > 0 ? maxAttempts : 25;
 
 export const connectRealtime = (accessToken: string): Socket => {
   const baseUrl = getRealtimeBaseUrl();
 
   if (socket) {
-    const currentToken = String((socket.auth as any)?.token || '');
-    if (currentToken === accessToken && (socket.connected || (socket as any).active)) return socket;
+    const currentToken = String((socket.auth as { token?: string })?.token || '');
+    if (currentToken === accessToken && socket.connected) return socket;
     socket.removeAllListeners();
     socket.disconnect();
     socket = null;
   }
 
   socket = io(baseUrl, {
+    path: '/socket.io',
     transports: ['polling', 'websocket'],
     withCredentials: true,
     auth: {
       token: accessToken,
     },
     reconnection: true,
-    reconnectionAttempts: Infinity,
+    reconnectionAttempts: safeMaxAttempts,
     reconnectionDelay: 1000,
-    reconnectionDelayMax: 10000,
+    reconnectionDelayMax: 15000,
+    randomizationFactor: 0.5,
     timeout: 20000,
+    forceNew: true,
   });
 
   socket.on('connect', () => {
-    console.log('[Socket.io] Connected successfully');
+    console.info('[Socket.io] Connected', { origin: baseUrl });
   });
 
-  socket.on('connect_error', (err: any) => {
-    const message = String(err?.message || '').toLowerCase();
-    console.warn('[Socket.io] Connection error:', err?.message || String(err));
+  socket.on('connect_error', (err: Error & { message?: string }) => {
+    const msg = err?.message || String(err);
+    const kind = classifySocketErrorMessage(msg);
+    console.warn('[Socket.io] connect_error:', msg);
+    console.warn('[Socket.io]', explainFailureKind(kind, baseUrl));
+
+    const lower = msg.toLowerCase();
     if (
-      message.includes('unauthorized') ||
-      message.includes('token') ||
-      message.includes('authentication') ||
-      message.includes('jwt')
+      lower.includes('unauthorized') ||
+      lower.includes('token') ||
+      lower.includes('authentication') ||
+      lower.includes('jwt')
     ) {
-      console.warn('[Socket.io] Auth failed - clearing session');
+      console.warn('[Socket.io] Treating as auth failure — clearing session');
       useAuthStore.getState().clearAuth();
     }
   });
 
   socket.on('disconnect', (reason) => {
-    console.log('[Socket.io] Disconnected:', reason);
+    console.info('[Socket.io] disconnect:', reason);
     if (reason === 'io server disconnect') {
-      console.warn('[Socket.io] Server forced disconnect');
+      console.warn('[Socket.io] Server closed the connection');
     }
   });
 
   socket.on('reconnect', (attemptNumber) => {
-    console.log('[Socket.io] Reconnected after', attemptNumber, 'attempts');
+    console.info('[Socket.io] Reconnected after attempts:', attemptNumber);
   });
 
-  socket.on('reconnect_error', (err: any) => {
-    console.warn('[Socket.io] Reconnect error:', err?.message || String(err));
+  socket.on('reconnect_error', (err: Error) => {
+    console.warn('[Socket.io] reconnect_error:', err?.message || String(err));
   });
 
   socket.on('reconnect_failed', () => {
-    console.error('[Socket.io] All reconnect attempts failed');
+    console.error(
+      `[Socket.io] Reconnect exhausted (${safeMaxAttempts} attempts). Check ${baseUrl}/healthz and Vercel env VITE_API_URL / VITE_BACKEND_URL.`,
+    );
   });
 
   return socket;
