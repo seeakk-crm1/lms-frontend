@@ -29,7 +29,9 @@ export const connectRealtime = (accessToken: string): Socket => {
   socket = io(baseUrl, {
     path: SOCKET_IO_CLIENT_PATH,
     transports: ['polling', 'websocket'],
+    upgrade: true,
     withCredentials: true,
+    rememberUpgrade: true,
     auth: {
       token: accessToken,
     },
@@ -38,8 +40,8 @@ export const connectRealtime = (accessToken: string): Socket => {
     reconnectionDelay: 1000,
     reconnectionDelayMax: 15000,
     randomizationFactor: 0.5,
-    timeout: 20000,
-    forceNew: true,
+    timeout: 30000,
+    autoConnect: true,
   });
 
   socket.on('connect', () => {
