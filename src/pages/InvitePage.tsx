@@ -24,7 +24,11 @@ const InvitePage: React.FC = () => {
 
   const handleSubmit = async ({ password }: { password: string; confirmPassword: string }) => {
     await acceptMutation.mutateAsync({ token, password });
-    navigate('/login?reason=invite-accepted', { replace: true });
+    const loginParams = new URLSearchParams({ reason: 'invite-accepted' });
+    if (inviteDetails?.email) {
+      loginParams.set('email', inviteDetails.email);
+    }
+    navigate(`/login?${loginParams.toString()}`, { replace: true });
   };
 
   return (

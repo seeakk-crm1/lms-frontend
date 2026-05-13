@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Mail, Lock, ArrowRight, TrendingUp, Users, Calendar, Search } from 'lucide-react';
 import { useMutation } from '@tanstack/react-query';
 import { GoogleLogin, CredentialResponse } from '@react-oauth/google';
@@ -17,9 +17,10 @@ interface LoginResponse {
 
 const Login = () => {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const setAuth = useAuthStore((state) => state.setAuth);
 
-    const [email, setEmail] = useState('');
+    const [email, setEmail] = useState(() => (searchParams.get('email') || '').trim());
     const [password, setPassword] = useState('');
 
     const loginMutation = useMutation<LoginResponse, any, any>({
