@@ -3,9 +3,18 @@ import * as usersApi from '../services/users.api';
 import { resendInviteAPI, sendInviteAPI } from '../services/invite.api';
 import { toast } from 'react-hot-toast';
 
-const handleManualInviteDelivery = async (response: { message?: string; inviteLink?: string | null }) => {
+const handleManualInviteDelivery = async (response: {
+  message?: string;
+  inviteLink?: string | null;
+  deliveryErrorMessage?: string | null;
+}) => {
   const inviteLink = response?.inviteLink || '';
-  const baseMessage = response?.message || 'Invite is ready for manual sharing.';
+  const reason = response?.deliveryErrorMessage?.trim();
+  const baseMessage = [
+    response?.message || 'Invite is ready for manual sharing.',
+    reason ? `Reason: ${reason}` : null,
+  ].filter(Boolean).join(' ');
+
   if (!inviteLink) {
     toast(baseMessage, { duration: 7000 });
     return;
