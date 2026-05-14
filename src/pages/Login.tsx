@@ -1,13 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Mail, Lock, ArrowRight, TrendingUp, Users, Calendar, Search } from 'lucide-react';
 import { useMutation } from '@tanstack/react-query';
-import { GoogleLogin, CredentialResponse } from '@react-oauth/google';
+import { CredentialResponse } from '@react-oauth/google';
 import { toast } from 'react-hot-toast';
 import useAuthStore from '../store/useAuthStore';
 import api from '../services/api';
 import { User } from '../types/user.types';
+import GoogleSignInButton from '../components/auth/GoogleSignInButton';
+import { setGoogleSignInHandlers } from '../auth/googleSignInBridge';
 
 interface LoginResponse {
     user: User;
@@ -66,18 +68,26 @@ const Login = () => {
         }
     });
 
-    const handleGoogleSuccess = (credentialResponse: CredentialResponse) => {
+    const handleGoogleSuccess = useCallback((credentialResponse: CredentialResponse) => {
         if (credentialResponse.credential) {
             googleLoginMutation.mutate(credentialResponse.credential);
             return;
         }
 
         toast.error('Google did not return a credential token.');
-    };
+    }, [googleLoginMutation]);
 
-    const handleGoogleError = () => {
+    const handleGoogleError = useCallback(() => {
         toast.error('Google Login failed completely.');
-    };
+    }, []);
+
+    useEffect(() => {
+        setGoogleSignInHandlers({
+            onCredential: handleGoogleSuccess,
+            onError: handleGoogleError,
+        });
+        return () => setGoogleSignInHandlers({ onCredential: null, onError: null });
+    }, [handleGoogleSuccess, handleGoogleError]);
     return (
         <motion.div
             initial={{ opacity: 0 }}
@@ -244,15 +254,7 @@ const Login = () => {
                     </div>
 
                     <div className="w-full mb-8 flex justify-center">
-                        <GoogleLogin
-                            onSuccess={handleGoogleSuccess}
-                            onError={handleGoogleError}
-                            use_fedcm_for_button
-                            size="large"
-                            text="signin_with"
-                            theme="outline"
-                            shape="rectangular"
-                        />
+                        <GoogleSignInButton />
                     </div>
 
                     <div className="flex items-center mb-8 w-full gap-2">

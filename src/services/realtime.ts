@@ -6,25 +6,147 @@ import {
   classifySocketErrorMessage,
   explainFailureKind,
 } from './realtimeDiagnostics';
+import {
+  isRefreshAuthFailure,
+  isAccessTokenExpired,
+  refreshAccessToken,
+} from './authToken';
 
 let socket: Socket | null = null;
+let lastSocketUserId: string | null = null;
+let authRecoveryInFlight = false;
+/** Prevents infinite connect_error → refresh → connect loops on persistent auth failure */
+let consecutiveSocketAuthRecoveries = 0;
+const MAX_SOCKET_AUTH_RECOVERIES = 5;
+
+const readStoredUserId = (): string | null => {
+  try {
+    const raw = localStorage.getItem('user');
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { id?: string };
+    return typeof parsed.id === 'string' ? parsed.id : null;
+  } catch {
+    return null;
+  }
+};
 
 /** Socket.IO uses HTTP origin only (see ENV.SOCKET_URL); never use VITE_API_URL directly if it ends with /api */
 const getRealtimeBaseUrl = (): string => ENV.SOCKET_URL;
 
-const maxAttempts = Number.parseInt(import.meta.env.VITE_SOCKET_MAX_RECONNECT_ATTEMPTS || '25', 10);
+const maxAttempts = Number.parseInt(
+  import.meta.env.VITE_SOCKET_MAX_RECONNECT_ATTEMPTS || '25',
+  10,
+);
 const safeMaxAttempts = Number.isFinite(maxAttempts) && maxAttempts > 0 ? maxAttempts : 25;
 
-export const connectRealtime = (accessToken: string): Socket => {
+const isLikelySocketAuthError = (msg: string): boolean => {
+  const lower = msg.toLowerCase();
+  return (
+    lower.includes('unauthorized') ||
+    lower.includes('token') ||
+    lower.includes('authentication') ||
+    lower.includes('jwt')
+  );
+};
+
+const attachCoreSocketHandlers = (s: Socket, baseUrl: string): void => {
+  s.on('connect', () => {
+    consecutiveSocketAuthRecoveries = 0;
+    console.info('[Socket.io] Connected', { origin: baseUrl });
+  });
+
+  s.on('connect_error', async (err: Error & { message?: string }) => {
+    const msg = err?.message || String(err);
+    const kind = classifySocketErrorMessage(msg);
+    console.warn('[Socket.io] connect_error:', msg);
+    console.warn('[Socket.io]', explainFailureKind(kind, baseUrl));
+
+    if (!isLikelySocketAuthError(msg)) return;
+
+    const refreshToken = localStorage.getItem('refreshToken');
+    if (!refreshToken) {
+      console.warn('[Socket.io] Auth handshake failed and no refresh token — clearing session');
+      useAuthStore.getState().clearAuth();
+      return;
+    }
+
+    if (authRecoveryInFlight) return;
+
+    if (consecutiveSocketAuthRecoveries >= MAX_SOCKET_AUTH_RECOVERIES) {
+      console.warn('[Socket.io] Too many auth recovery attempts — clearing session');
+      useAuthStore.getState().clearAuth();
+      return;
+    }
+    consecutiveSocketAuthRecoveries += 1;
+
+    authRecoveryInFlight = true;
+    try {
+      await refreshAccessToken();
+      s.connect();
+    } catch (e) {
+      if (isRefreshAuthFailure(e)) {
+        console.warn('[Socket.io] Refresh failed after auth error — clearing session');
+        useAuthStore.getState().clearAuth();
+      } else {
+        console.warn(
+          '[Socket.io] Auth error but refresh failed transiently; leaving session intact for retry',
+        );
+      }
+    } finally {
+      authRecoveryInFlight = false;
+    }
+  });
+
+  s.on('disconnect', (reason) => {
+    console.info('[Socket.io] disconnect:', reason);
+    if (reason === 'io server disconnect') {
+      console.warn('[Socket.io] Server closed the connection');
+    }
+  });
+
+  s.on('reconnect', (attemptNumber) => {
+    console.info('[Socket.io] Reconnected after attempts:', attemptNumber);
+  });
+
+  s.on('reconnect_error', (err: Error) => {
+    console.warn('[Socket.io] reconnect_error:', err?.message || String(err));
+  });
+
+  s.on('reconnect_failed', () => {
+    console.error(
+      `[Socket.io] Reconnect exhausted (${safeMaxAttempts} attempts). Verify ${baseUrl}/healthz returns JSON and Vercel has VITE_SOCKET_URL or VITE_API_URL (socket origin is derived from API URL).`,
+    );
+  });
+};
+
+/**
+ * Ensures a single Socket.IO client for the logged-in user.
+ * Auth payload is resolved on every Engine.IO open so reconnects use a fresh access JWT.
+ */
+export const connectRealtime = (): Socket | null => {
   const baseUrl = getRealtimeBaseUrl();
+  const userId = readStoredUserId();
+  const hasAccess = Boolean(localStorage.getItem('accessToken'));
+
+  if (!userId || !hasAccess) {
+    disconnectRealtime();
+    return null;
+  }
+
+  if (socket && lastSocketUserId === userId) {
+    if (!socket.connected) {
+      socket.connect();
+    }
+    return socket;
+  }
 
   if (socket) {
-    const currentToken = String((socket.auth as { token?: string })?.token || '');
-    if (currentToken === accessToken && socket.connected) return socket;
     socket.removeAllListeners();
     socket.disconnect();
     socket = null;
   }
+
+  lastSocketUserId = userId;
 
   socket = io(baseUrl, {
     path: SOCKET_IO_CLIENT_PATH,
@@ -32,8 +154,19 @@ export const connectRealtime = (accessToken: string): Socket => {
     upgrade: true,
     withCredentials: true,
     rememberUpgrade: true,
-    auth: {
-      token: accessToken,
+    auth: (cb) => {
+      void (async () => {
+        try {
+          let token = localStorage.getItem('accessToken') || '';
+          const rt = localStorage.getItem('refreshToken');
+          if (token && rt && isAccessTokenExpired(token)) {
+            token = await refreshAccessToken();
+          }
+          cb({ token });
+        } catch {
+          cb({ token: localStorage.getItem('accessToken') || '' });
+        }
+      })();
     },
     reconnection: true,
     reconnectionAttempts: safeMaxAttempts,
@@ -44,53 +177,15 @@ export const connectRealtime = (accessToken: string): Socket => {
     autoConnect: true,
   });
 
-  socket.on('connect', () => {
-    console.info('[Socket.io] Connected', { origin: baseUrl });
-  });
-
-  socket.on('connect_error', (err: Error & { message?: string }) => {
-    const msg = err?.message || String(err);
-    const kind = classifySocketErrorMessage(msg);
-    console.warn('[Socket.io] connect_error:', msg);
-    console.warn('[Socket.io]', explainFailureKind(kind, baseUrl));
-
-    const lower = msg.toLowerCase();
-    if (
-      lower.includes('unauthorized') ||
-      lower.includes('token') ||
-      lower.includes('authentication') ||
-      lower.includes('jwt')
-    ) {
-      console.warn('[Socket.io] Treating as auth failure — clearing session');
-      useAuthStore.getState().clearAuth();
-    }
-  });
-
-  socket.on('disconnect', (reason) => {
-    console.info('[Socket.io] disconnect:', reason);
-    if (reason === 'io server disconnect') {
-      console.warn('[Socket.io] Server closed the connection');
-    }
-  });
-
-  socket.on('reconnect', (attemptNumber) => {
-    console.info('[Socket.io] Reconnected after attempts:', attemptNumber);
-  });
-
-  socket.on('reconnect_error', (err: Error) => {
-    console.warn('[Socket.io] reconnect_error:', err?.message || String(err));
-  });
-
-  socket.on('reconnect_failed', () => {
-    console.error(
-      `[Socket.io] Reconnect exhausted (${safeMaxAttempts} attempts). Verify ${baseUrl}/healthz returns JSON and Vercel has VITE_SOCKET_URL or VITE_API_URL (socket origin is derived from API URL).`,
-    );
-  });
+  attachCoreSocketHandlers(socket, baseUrl);
 
   return socket;
 };
 
 export const disconnectRealtime = (): void => {
+  lastSocketUserId = null;
+  authRecoveryInFlight = false;
+  consecutiveSocketAuthRecoveries = 0;
   if (!socket) return;
   socket.removeAllListeners();
   socket.disconnect();

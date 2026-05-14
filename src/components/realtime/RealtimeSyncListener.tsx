@@ -41,17 +41,20 @@ const refetchDashboardIfLoaded = (): void => {
   void state.fetchDashboardData(state.selectedRange);
 };
 
-const RealtimeSyncListener: React.FC = () => {
+const RealtimeSyncListener = () => {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const accessToken = useAuthStore((state) => state.accessToken);
+  const userId = useAuthStore((state) => state.user?.id);
 
   useEffect(() => {
-    if (!isAuthenticated || !accessToken) {
+    if (!isAuthenticated || !userId) {
       disconnectRealtime();
       return;
     }
 
-    const socket = connectRealtime(accessToken);
+    const socket = connectRealtime();
+    if (!socket) {
+      return;
+    }
 
     const onRoleUpdated = () => {
       invalidatePermissionBoundQueries();
@@ -104,7 +107,7 @@ const RealtimeSyncListener: React.FC = () => {
       socket.off('lead_updated', onLeadUpdated);
       socket.off('report_updated', onReportUpdated);
     };
-  }, [accessToken, isAuthenticated]);
+  }, [isAuthenticated, userId]);
 
   return null;
 };
