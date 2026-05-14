@@ -56,10 +56,11 @@ interface DashboardState {
     lobData: LOBData[];
     meetings: Meeting[];
     error: string | null;
+    reset: () => void;
     fetchDashboardData: (range?: DashboardRange) => Promise<void>;
 }
 
-const useDashboardStore = create<DashboardState>((set) => ({
+const createInitialDashboardSlice = (): Omit<DashboardState, 'reset' | 'fetchDashboardData'> => ({
     isLoading: true,
     isRefreshing: false,
     selectedRange: '7d',
@@ -71,6 +72,12 @@ const useDashboardStore = create<DashboardState>((set) => ({
     lobData: [],
     meetings: [],
     error: null,
+});
+
+const useDashboardStore = create<DashboardState>((set) => ({
+    ...createInitialDashboardSlice(),
+
+    reset: () => set(() => ({ ...createInitialDashboardSlice(), error: null })),
 
     fetchDashboardData: async (range) => {
         const requestedRange = range ?? useDashboardStore.getState().selectedRange;

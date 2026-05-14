@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import LocationSelector from './LocationSelector';
 import type { UserFormData } from './CreateUserModal.types';
 import useAuthStore from '../../store/useAuthStore';
+import { isSuperAdmin } from '../../utils/permissions';
 
 interface CreateUserAccessTabProps {
   safeRoles: Array<{ value: string; label: string }>;
@@ -34,8 +35,8 @@ const CreateUserAccessTab: React.FC<CreateUserAccessTabProps> = ({
   } = useFormContext<UserFormData>();
 
   const { user: currentUser } = useAuthStore();
-  const canAssignSupervisor = currentUser?.permissions?.includes('USERS_ASSIGN_SUPERVISOR') || 
-                              currentUser?.role?.name?.toLowerCase() === 'superadmin';
+  const canAssignSupervisor =
+    currentUser?.permissions?.includes('USERS_ASSIGN_SUPERVISOR') || isSuperAdmin(currentUser);
 
   return (
     <div className="space-y-6">

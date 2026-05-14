@@ -12,7 +12,12 @@ interface DashboardHeaderProps {
 const DashboardHeader: React.FC<DashboardHeaderProps> = ({ isMobileMenuOpen, onToggleMobileMenu }) => {
     const { user } = useAuthStore();
     const navigate = useNavigate();
-    const displayName = typeof user?.name === 'string' && user.name.trim() ? user.name : 'Super Admin';
+    const displayName =
+        typeof user?.name === 'string' && user.name.trim()
+            ? user.name.trim()
+            : typeof user?.email === 'string' && user.email.trim()
+              ? user.email.trim()
+              : 'User';
     const displayRole = getPrimaryRoleName(user);
     const canCreateLead = hasPermission(user, 'LEADS_CREATE');
 

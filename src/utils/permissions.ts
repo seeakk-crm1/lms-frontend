@@ -45,6 +45,12 @@ export const hasAllPermissions = (
   return permissionKeys.every((permissionKey) => permissions.has(permissionKey));
 };
 
-export const getPrimaryRoleName = (user?: User | null): string =>
-  typeof user?.role === 'object' && user.role !== null ? user.role.name || 'Administrator' : String(user?.role || 'Administrator');
+export const getPrimaryRoleName = (user?: User | null): string => {
+  if (typeof user?.role === 'object' && user.role !== null) {
+    const name = user.role.name?.trim();
+    return name || 'Member';
+  }
+  if (typeof user?.role === 'string' && user.role.trim()) return user.role.trim();
+  return 'Member';
+};
 

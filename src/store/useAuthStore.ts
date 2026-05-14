@@ -27,22 +27,30 @@ if (localStorage.getItem('storeVersion') !== STORE_VERSION) {
 
 const API_URL = ENV.API_URL;
 
+/** Avoid static import of `useDashboardStore` (it pulls `api` which imports this store). */
+const resetDashboardStore = (): void => {
+    void import('./useDashboardStore').then((mod) => {
+        mod.default.getState().reset();
+    });
+};
+
 const normalizeUserRole = (role: unknown): User['role'] => {
     if (typeof role === 'object' && role !== null) {
         const normalizedRole = role as { id?: string; name?: string; status?: string; isSystemRole?: boolean };
+        const name = typeof normalizedRole.name === 'string' ? normalizedRole.name.trim() : '';
         return {
             id: normalizedRole.id,
-            name: normalizedRole.name || 'Administrator',
+            name: name || undefined,
             status: normalizedRole.status,
             isSystemRole: normalizedRole.isSystemRole,
         };
     }
 
     if (typeof role === 'string' && role.trim().length > 0) {
-        return role;
+        return role.trim();
     }
 
-    return 'Administrator';
+    return null;
 };
 
 const normalizePermissions = (permissions: unknown): string[] => {
@@ -80,6 +88,7 @@ const useAuthStore = create<AuthState>((set) => {
         localStorage.removeItem('user');
         localStorage.removeItem('jobId');
         queryClient.clear();
+        resetDashboardStore();
         set({ user: null, accessToken: null, refreshToken: null, isAuthenticated: false });
     };
 
@@ -96,10 +105,15 @@ const useAuthStore = create<AuthState>((set) => {
                 const previousUserId = state.user?.id || null;
                 const nextUserId = user?.id || null;
                 const isUserSwitch = previousUserId !== null && nextUserId !== null && previousUserId !== nextUserId;
+                const authSubjectChanged = nextUserId !== previousUserId;
 
                 if (isUserSwitch) {
                     queryClient.clear();
                     localStorage.removeItem('jobId');
+                }
+
+                if (authSubjectChanged) {
+                    resetDashboardStore();
                 }
 
                 if (accessToken) {
