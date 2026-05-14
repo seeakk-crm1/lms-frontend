@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useCallback, useEffect, useMemo, useState } from 'react';
+import React, { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Download, Filter, Plus, TrendingUp, Upload } from 'lucide-react';
 import { toast } from 'react-hot-toast';
@@ -20,8 +20,9 @@ import {
   useExtendLeadSlaMutation,
 } from '../../hooks/useLeads';
 import { LeadListItem } from '../../types/lead.types';
+import { lazyWithChunkRecovery } from '../../utils/chunkLoadRecovery';
 
-const LeadFormDrawer = lazy(() => import('./components/LeadFormDrawer'));
+const LeadFormDrawer = lazyWithChunkRecovery(() => import('./components/LeadFormDrawer'));
 
 const LeadsPage: React.FC = () => {
   const location = useLocation();

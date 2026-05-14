@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useCallback, useEffect, useMemo, useState } from 'react';
+import React, { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AlertTriangle, Download, Filter, RotateCcw, TrendingDown, WalletCards } from 'lucide-react';
 import DashboardLayout from '../../components/dashboard/DashboardLayout';
@@ -10,8 +10,9 @@ import type { LeadListItem } from '../../types/lead.types';
 import ClosedLeadFilters from './components/ClosedLeadFilters';
 import ClosedLeadsTable from './components/ClosedLeadsTable';
 import RevenueEditModal from './components/RevenueEditModal';
+import { lazyWithChunkRecovery } from '../../utils/chunkLoadRecovery';
 
-const LeadViewDrawer = lazy(() => import('./components/LeadViewDrawer'));
+const LeadViewDrawer = lazyWithChunkRecovery(() => import('./components/LeadViewDrawer'));
 
 const moneyFormatter = new Intl.NumberFormat('en-IN', {
   style: 'currency',

@@ -5,6 +5,8 @@ import { GoogleOAuthProvider } from '@react-oauth/google'
 import './index.css'
 import App from './App'
 import { queryClient } from './lib/queryClient'
+import ChunkLoadBoundary from './components/ChunkLoadBoundary'
+import { installChunkLoadRecovery } from './utils/chunkLoadRecovery'
 const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID?.trim()
 
 const rootElement = document.getElementById('root');
@@ -14,11 +16,15 @@ if (!googleClientId) {
   throw new Error('VITE_GOOGLE_CLIENT_ID is required to enable Google Sign-In');
 }
 
+installChunkLoadRecovery();
+
 createRoot(rootElement).render(
   <GoogleOAuthProvider clientId={googleClientId}>
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <App />
+        <ChunkLoadBoundary>
+          <App />
+        </ChunkLoadBoundary>
       </BrowserRouter>
     </QueryClientProvider>
   </GoogleOAuthProvider>,

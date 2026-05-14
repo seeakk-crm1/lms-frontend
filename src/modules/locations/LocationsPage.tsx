@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useEffect, useMemo, useState } from 'react';
+import React, { Suspense, useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight, ChevronRight, Pencil, Plus, Search, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -17,11 +17,12 @@ import {
   useUpdateLocationMutation,
 } from './hooks/useLocations';
 import LevelColumns from './components/LevelColumns';
+import { lazyWithChunkRecovery } from '../../utils/chunkLoadRecovery';
 
-const AddCountryModal = lazy(() => import('./components/AddCountryModal'));
-const AddLevelModal = lazy(() => import('./components/AddLevelModal'));
-const AddLocationModal = lazy(() => import('./components/AddLocationModal'));
-const DeleteLocationModal = lazy(() => import('./components/DeleteLocationModal'));
+const AddCountryModal = lazyWithChunkRecovery(() => import('./components/AddCountryModal'));
+const AddLevelModal = lazyWithChunkRecovery(() => import('./components/AddLevelModal'));
+const AddLocationModal = lazyWithChunkRecovery(() => import('./components/AddLocationModal'));
+const DeleteLocationModal = lazyWithChunkRecovery(() => import('./components/DeleteLocationModal'));
 
 const roleKey = (role: unknown) =>
   String(typeof role === 'object' && role !== null ? (role as { name?: string }).name || '' : role || '')

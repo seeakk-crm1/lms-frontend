@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useEffect, useMemo, useState } from 'react';
+import React, { Suspense, useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { BarChart3, Filter, LayoutList, Plus, Search, Sparkles } from 'lucide-react';
 import { toast } from 'react-hot-toast';
@@ -23,8 +23,9 @@ import type {
   ReportTypePayload,
   ReportTypeStatus,
 } from '../types/reportType.types';
+import { lazyWithChunkRecovery } from '../../../utils/chunkLoadRecovery';
 
-const ReportTypeModal = lazy(() => import('../components/ReportTypeModal'));
+const ReportTypeModal = lazyWithChunkRecovery(() => import('../components/ReportTypeModal'));
 
 const roleKey = (role: unknown) =>
   String(typeof role === 'object' && role !== null ? (role as { name?: string }).name || '' : role || '')

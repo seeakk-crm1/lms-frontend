@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useEffect, useMemo, useState } from 'react';
+import React, { Suspense, useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Filter, Plus, Search, Tags } from 'lucide-react';
 import DashboardLayout from '../../../components/dashboard/DashboardLayout';
@@ -11,8 +11,9 @@ import { useUpdateLOBReason } from '../hooks/useUpdateLOBReason';
 import useLOBStore from '../store/lobReasonStore';
 import LOBReasonTable from '../components/LOBReasonTable';
 import type { LOBReason, LOBReasonPayload, LOBReasonStatus } from '../types/lobReason.types';
+import { lazyWithChunkRecovery } from '../../../utils/chunkLoadRecovery';
 
-const LOBReasonModal = lazy(() => import('../components/LOBReasonModal'));
+const LOBReasonModal = lazyWithChunkRecovery(() => import('../components/LOBReasonModal'));
 
 const roleKey = (role: unknown) =>
   String(typeof role === 'object' && role !== null ? (role as { name?: string }).name || '' : role || '')
