@@ -39,12 +39,28 @@ const maxAttempts = Number.parseInt(
 );
 const safeMaxAttempts = Number.isFinite(maxAttempts) && maxAttempts > 0 ? maxAttempts : 25;
 
-/** Long-polling only — use on Render/proxies if WebSocket upgrades still fail after other fixes. */
-const socketPollingOnly = (): boolean => {
+/**
+ * Long-polling only avoids broken WebSocket upgrades (common on Render: browser shows
+ * `WebSocket connection to wss://…/socket.io/… failed` even when the app still "works" via polling).
+ *
+ * - `VITE_SOCKET_TRANSPORTS=polling` — force polling everywhere.
+ * - `VITE_SOCKET_TRANSPORTS=websocket` — allow upgrade (default for non-Render hosts below).
+ * - Hostname `*.onrender.com` — default to polling-only unless explicitly set to websocket.
+ */
+const resolveSocketPollingOnly = (baseUrl: string): boolean => {
   const v = String(import.meta.env.VITE_SOCKET_TRANSPORTS || '')
     .trim()
     .toLowerCase();
-  return v === 'polling' || v === 'poll' || v === 'long-polling';
+  if (v === 'polling' || v === 'poll' || v === 'long-polling') return true;
+  if (v === 'websocket' || v === 'ws') return false;
+
+  try {
+    const host = new URL(baseUrl).hostname.toLowerCase();
+    if (host === 'onrender.com' || host.endsWith('.onrender.com')) return true;
+  } catch {
+    /* ignore invalid SOCKET_URL */
+  }
+  return false;
 };
 
 /**
@@ -171,7 +187,7 @@ export const connectRealtime = (): Socket | null => {
 
   lastSocketUserId = userId;
 
-  const pollingOnly = socketPollingOnly();
+  const pollingOnly = resolveSocketPollingOnly(baseUrl);
   socket = io(baseUrl, {
     path: SOCKET_IO_CLIENT_PATH,
     transports: pollingOnly ? ['polling'] : ['polling', 'websocket'],
