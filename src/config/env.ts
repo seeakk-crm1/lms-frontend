@@ -4,6 +4,8 @@
  * Architecture:
  * - REST: VITE_API_URL → https://backend.example.com/api
  * - Socket.IO origin (no /api): VITE_SOCKET_URL | VITE_BACKEND_URL | derived from API URL
+ * - Optional: VITE_SOCKET_TRANSPORTS=polling — long-polling only if WebSocket upgrades fail behind a proxy
+ * - Optional: VITE_SOCKET_REMEMBER_UPGRADE=false — in dev, disable skipping polling after a prior WS success
  */
 const requireEnv = (key: string): string => {
   const value = (import.meta.env as Record<string, string | undefined>)[key];

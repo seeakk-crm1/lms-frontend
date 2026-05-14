@@ -47,6 +47,10 @@ export const explainFailureKind = (kind: ConnectionFailureKind, backendOrigin: s
     case 'socket_auth_or_handshake':
       return 'HTTP reached Socket.IO but handshake rejected (JWT / middleware). Try refreshing the session or re-login.';
     default:
-      return `See Network tab for ${backendOrigin}/socket.io — status line and response body tell the real cause.`;
+      return (
+        `Inspect ${backendOrigin}/socket.io in the Network tab (polling vs WebSocket). ` +
+        `On Render, WebSocket upgrades often fail while long-polling works: deploy a frontend build with the default Socket.IO settings, ` +
+        `or set VITE_SOCKET_TRANSPORTS=polling on Vercel for polling-only realtime.`
+      );
   }
 };

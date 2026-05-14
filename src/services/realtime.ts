@@ -39,6 +39,29 @@ const maxAttempts = Number.parseInt(
 );
 const safeMaxAttempts = Number.isFinite(maxAttempts) && maxAttempts > 0 ? maxAttempts : 25;
 
+/** Long-polling only — use on Render/proxies if WebSocket upgrades still fail after other fixes. */
+const socketPollingOnly = (): boolean => {
+  const v = String(import.meta.env.VITE_SOCKET_TRANSPORTS || '')
+    .trim()
+    .toLowerCase();
+  return v === 'polling' || v === 'poll' || v === 'long-polling';
+};
+
+/**
+ * Render / many reverse proxies handle Engine.IO long-polling reliably but intermittently drop
+ * the WebSocket upgrade. `rememberUpgrade: true` skips polling on later connects and retries WS
+ * first — that surfaces as "WebSocket connection ... failed" in DevTools while the app looks broken.
+ */
+const socketRememberUpgrade = (): boolean => {
+  if (import.meta.env.PROD) return false;
+  const v = String(import.meta.env.VITE_SOCKET_REMEMBER_UPGRADE || '')
+    .trim()
+    .toLowerCase();
+  if (v === 'true' || v === '1') return true;
+  if (v === 'false' || v === '0') return false;
+  return true;
+};
+
 const isLikelySocketAuthError = (msg: string): boolean => {
   const lower = msg.toLowerCase();
   return (
@@ -148,12 +171,13 @@ export const connectRealtime = (): Socket | null => {
 
   lastSocketUserId = userId;
 
+  const pollingOnly = socketPollingOnly();
   socket = io(baseUrl, {
     path: SOCKET_IO_CLIENT_PATH,
-    transports: ['polling', 'websocket'],
-    upgrade: true,
+    transports: pollingOnly ? ['polling'] : ['polling', 'websocket'],
+    upgrade: !pollingOnly,
     withCredentials: true,
-    rememberUpgrade: true,
+    rememberUpgrade: socketRememberUpgrade(),
     auth: (cb) => {
       void (async () => {
         try {
