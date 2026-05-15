@@ -12,7 +12,12 @@ import {
   useAllLocationsQuery,
   useDepartmentsQuery,
 } from '../../hooks/useUsersQuery';
-import { useCreateUserMutation, useUpdateUserMutation, useAssignTargetMutation } from '../../hooks/useUserMutations';
+import {
+  useCreateUserMutation,
+  useCreateInviteUserMutation,
+  useUpdateUserMutation,
+  useAssignTargetMutation,
+} from '../../hooks/useUserMutations';
 import { DEFAULT_PHONE_COUNTRY, PHONE_COUNTRIES, type PhoneCountry } from '../../constants/phoneCountries';
 import CreateUserDetailsTab from './CreateUserDetailsTab';
 import CreateUserAccessTab from './CreateUserAccessTab';
@@ -135,9 +140,11 @@ const CreateUserModal: React.FC = () => {
   const { data: allLocationsData } = useAllLocationsQuery();
 
   const createUser = useCreateUserMutation();
+  const createInviteUser = useCreateInviteUserMutation();
   const updateUser = useUpdateUserMutation();
   const assignTarget = useAssignTargetMutation();
-  const isMutationPending = createUser.isPending || updateUser.isPending || assignTarget.isPending;
+  const isMutationPending =
+    createUser.isPending || createInviteUser.isPending || updateUser.isPending || assignTarget.isPending;
 
   const methods = useForm<UserFormData>({
     defaultValues: {
@@ -316,21 +323,50 @@ const CreateUserModal: React.FC = () => {
         toast.success('User updated successfully!', { id: toastId });
       } else {
         const payload = toCreatePayload(data);
-        const newUserResponse = await createUser.mutateAsync(payload);
-        const newUserId = newUserResponse?.user?.id;
-        if (data.targetTypeId && newUserId) {
-          try {
-            await assignTarget.mutateAsync({ userId: newUserId, payload: data });
-          } catch (targetError: any) {
-            toast.error(
-              targetError?.response?.data?.message || 'User created, but target assignment failed.',
-              { id: toastId },
-            );
-            closeCreateModal();
+        const useInviteFlow = !payload.password;
+
+        if (useInviteFlow) {
+          if (!payload.roleId) {
+            toast.error('Assign a role before sending an email invitation.', { id: toastId });
             return;
           }
+          const { password: _password, ...invitePayload } = payload;
+          const inviteResponse = await createInviteUser.mutateAsync(invitePayload);
+          const newUserId = inviteResponse?.user?.id;
+          if (data.targetTypeId && newUserId) {
+            try {
+              await assignTarget.mutateAsync({ userId: newUserId, payload: data });
+            } catch (targetError: any) {
+              toast.error(
+                targetError?.response?.data?.message || 'Invite sent, but target assignment failed.',
+                { id: toastId },
+              );
+              closeCreateModal();
+              return;
+            }
+          }
+          if (inviteResponse.delivery !== 'MANUAL') {
+            toast.success(inviteResponse.message || 'Invitation email sent successfully!', { id: toastId });
+          } else {
+            toast.dismiss(toastId);
+          }
+        } else {
+          const newUserResponse = await createUser.mutateAsync(payload);
+          const newUserId = newUserResponse?.user?.id;
+          if (data.targetTypeId && newUserId) {
+            try {
+              await assignTarget.mutateAsync({ userId: newUserId, payload: data });
+            } catch (targetError: any) {
+              toast.error(
+                targetError?.response?.data?.message || 'User created, but target assignment failed.',
+                { id: toastId },
+              );
+              closeCreateModal();
+              return;
+            }
+          }
+          toast.success('User onboarded successfully!', { id: toastId });
         }
-        toast.success('User onboarded successfully!', { id: toastId });
       }
       closeCreateModal();
     } catch (error: any) {

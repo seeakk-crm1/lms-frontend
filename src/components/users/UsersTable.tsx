@@ -29,6 +29,7 @@ import {
   useResendInviteMutation,
 } from '../../hooks/useUserMutations';
 import { User } from '../../types/user.types';
+import { canSendWorkspaceInvite } from '../../utils/inviteEligibility';
 import DeleteUserModal from './DeleteUserModal';
 
 const UsersTable: React.FC = () => {
@@ -125,9 +126,7 @@ const UsersTable: React.FC = () => {
     return false;
   };
 
-  const canSendInvite = (user: User): boolean => {
-    return !user.isOnboarded;
-  };
+  const canSendInvite = (user: User): boolean => canSendWorkspaceInvite(user);
 
   const getLatestInvite = (user: User) => getLatestValidPendingInvite(user);
 
@@ -154,18 +153,26 @@ const UsersTable: React.FC = () => {
       };
     }
 
-    if (user.isOnboarded) {
+    if (user.isActive && user.isEmailVerified) {
       return {
         kind: 'HIDDEN',
-        label: 'Onboarded',
-        title: 'Invite is unavailable because this user has already completed onboarding.',
+        label: 'Active',
+        title: 'This user already has an active account.',
+      };
+    }
+
+    if (user.isEmailVerified && !user.isActive) {
+      return {
+        kind: 'HIDDEN',
+        label: 'Deactivated',
+        title: 'Reactivate this account or reset password instead of sending an invite.',
       };
     }
 
     return {
-      kind: 'SEND',
-      label: 'Send Invite',
-      title: 'Send an onboarding invite to this user.',
+      kind: 'HIDDEN',
+      label: 'Unavailable',
+      title: 'Assign a role before sending an invite.',
     };
   };
 

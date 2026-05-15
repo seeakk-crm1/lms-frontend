@@ -82,6 +82,28 @@ export const acceptInvite = async (payload: AcceptInvitePayload): Promise<Accept
   return response.data.data;
 };
 
+export type CreateInviteUserPayload = {
+  name: string;
+  email: string;
+  username?: string;
+  phone?: string;
+  roleId?: string;
+  departmentId?: string;
+  supervisorId?: string;
+  officeId?: string;
+  countryId?: string;
+  stateId?: string;
+  districtId?: string;
+  assignedLocationIds?: string[];
+};
+
+export const createInviteUserAPI = async (
+  payload: CreateInviteUserPayload,
+): Promise<SendUserInviteResponse> => {
+  const response = await api.post('/admin/users/invite', payload);
+  return response.data.data;
+};
+
 export const sendInviteAPI = async (userId: string): Promise<SendUserInviteResponse> => {
   const response = await api.post(`/admin/users/${userId}/send-invite`);
   return response.data.data;

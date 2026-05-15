@@ -216,10 +216,9 @@ const CreateUserDetailsTab: React.FC<CreateUserDetailsTabProps> = ({
             <input
               type={showPassword ? 'text' : 'password'}
               {...register('password', {
-                required: !selectedUserId ? 'Create a password for the new user.' : false,
                 validate: (value) => {
                   const trimmed = (value || '').trim();
-                  if (!trimmed && selectedUserId) return true;
+                  if (!trimmed) return true;
                   if (trimmed.length < 8) return 'Password should be at least 8 characters.';
                   if (!/[A-Z]/.test(trimmed)) return 'Include at least one uppercase letter.';
                   if (!/[a-z]/.test(trimmed)) return 'Include at least one lowercase letter.';
@@ -233,7 +232,9 @@ const CreateUserDetailsTab: React.FC<CreateUserDetailsTabProps> = ({
               {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
             {!errors.password ? (
-              <p className="text-[11px] text-gray-400 font-semibold">Use 8+ characters with uppercase, lowercase, and a number.</p>
+              <p className="text-[11px] text-gray-400 font-semibold">
+                Leave blank to email an invitation link instead. If set, use 8+ characters with uppercase, lowercase, and a number.
+              </p>
             ) : null}
             {renderFieldError(errors.password?.message)}
           </div>

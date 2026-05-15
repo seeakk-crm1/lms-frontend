@@ -9,6 +9,7 @@ export interface User {
   isOnboarded: boolean;
   workspaceId?: string;
   isActive?: boolean;
+  isEmailVerified?: boolean;
   department?: string | { id?: string; name?: string } | null;
   supervisor?: string | { id?: string; name?: string; email?: string } | null;
   office?: string | { id?: string; name?: string } | null;

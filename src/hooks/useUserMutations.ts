@@ -1,6 +1,11 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import * as usersApi from '../services/users.api';
-import { resendInviteAPI, sendInviteAPI } from '../services/invite.api';
+import {
+  createInviteUserAPI,
+  resendInviteAPI,
+  sendInviteAPI,
+  type CreateInviteUserPayload,
+} from '../services/invite.api';
 import { toast } from 'react-hot-toast';
 
 const handleManualInviteDelivery = async (response: {
@@ -46,6 +51,24 @@ export const useCreateUserMutation = () => {
     onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
       toast.success(response.message || 'User created successfully');
+    },
+  });
+};
+
+export const useCreateInviteUserMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: CreateInviteUserPayload) => createInviteUserAPI(payload),
+    onSuccess: async (response) => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      if (response.delivery === 'MANUAL') {
+        await handleManualInviteDelivery(response);
+        return;
+      }
+      toast.success(response.message || 'Invitation email sent successfully');
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || 'Failed to send invitation');
     },
   });
 };
