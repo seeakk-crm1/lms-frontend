@@ -15,6 +15,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import useAuthStore from './store/useAuthStore';
 import { hasAnyPermission } from './utils/permission.util';
+import { getLandingPage } from './utils/permissions';
 import api from './services/api';
 import FollowUpReminderListener from './components/calendar/FollowUpReminderListener';
 import RealtimeSyncListener from './components/realtime/RealtimeSyncListener';
@@ -73,15 +74,14 @@ const PermissionRoute: React.FC<RouteProps & { permissions: string[] }> = ({ chi
 const OnboardingRoute: React.FC<RouteProps> = ({ children }) => {
   const { isAuthenticated, user } = useAuthStore();
   if (!isAuthenticated) return <Navigate to="/login" replace />;
-  if (user && user.isOnboarded) return <Navigate to="/dashboard" replace />;
+  if (user && user.isOnboarded) return <Navigate to={getLandingPage(user)} replace />;
   return <>{children}</>;
 };
 
 // Protect login page from authenticated users
 const PublicRoute: React.FC<RouteProps> = ({ children }) => {
   const { isAuthenticated, user } = useAuthStore();
-  if (isAuthenticated && user?.isOnboarded) return <Navigate to="/dashboard" replace />;
-  if (isAuthenticated && !user?.isOnboarded) return <Navigate to="/workspace/setup" replace />;
+  if (isAuthenticated) return <Navigate to={getLandingPage(user)} replace />;
   return <>{children}</>;
 };
 

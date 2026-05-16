@@ -10,6 +10,7 @@ import api from '../services/api';
 import { User } from '../types/user.types';
 import GoogleSignInButton from '../components/auth/GoogleSignInButton';
 import { setGoogleSignInHandlers } from '../auth/googleSignInBridge';
+import { getLandingPage } from '../utils/permissions';
 
 interface LoginResponse {
     user: User;
@@ -33,11 +34,7 @@ const Login = () => {
         onSuccess: (data) => {
             setAuth(data.user, data.accessToken, data.refreshToken);
             toast.success(`Welcome back, ${data.user.name.split(' ')[0]}!`);
-            if (!data.user.isOnboarded) {
-                navigate('/workspace/setup', { replace: true });
-            } else {
-                navigate('/dashboard', { replace: true });
-            }
+            navigate(getLandingPage(data.user), { replace: true });
         },
         onError: (error: any) => {
             toast.error(error.response?.data?.message || 'Login failed. Please try again.');
@@ -57,11 +54,7 @@ const Login = () => {
         onSuccess: (data) => {
             setAuth(data.user, data.accessToken, data.refreshToken);
             toast.success('Successfully logged in with Google!');
-            if (!data.user.isOnboarded) {
-                navigate('/workspace/setup', { replace: true });
-            } else {
-                navigate('/dashboard', { replace: true });
-            }
+            navigate(getLandingPage(data.user), { replace: true });
         },
         onError: (error: any) => {
             toast.error(error.response?.data?.message || 'Google login failed. Please try again.');
