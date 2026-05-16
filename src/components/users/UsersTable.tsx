@@ -24,6 +24,7 @@ import {
   useDeleteUserMutation,
   useUnlockUserMutation,
   useResetPasswordMutation,
+  useSendAccessLinkMutation,
   useSendInviteMutation,
   useResendInviteMutation,
 } from '../../hooks/useUserMutations';
@@ -39,6 +40,7 @@ const UsersTable: React.FC = () => {
   const unlockUser = useUnlockUserMutation();
   const deleteUser = useDeleteUserMutation();
   const resetPassword = useResetPasswordMutation();
+  const sendAccessLink = useSendAccessLinkMutation();
   const sendInvite = useSendInviteMutation();
   const resendInvite = useResendInviteMutation();
   const [inviteActionId, setInviteActionId] = useState<string | null>(null);
@@ -167,6 +169,17 @@ const UsersTable: React.FC = () => {
       setInviteActionId(userId);
       await sendInvite.mutateAsync(userId);
       setInviteSentMap((current) => ({ ...current, [userId]: true }));
+    } catch {
+      // Error toast is handled in mutation hook.
+    } finally {
+      setInviteActionId(null);
+    }
+  };
+
+  const handleSendAccessLink = async (userId: string) => {
+    try {
+      setInviteActionId(userId);
+      await sendAccessLink.mutateAsync(userId);
     } catch {
       // Error toast is handled in mutation hook.
     } finally {
@@ -304,8 +317,8 @@ const UsersTable: React.FC = () => {
                           {shouldShowInviteNameBadge(user) && (() => {
                             const inviteAction = resolveInviteActionState(user);
                             if (!inviteAction) return null;
-                            const isActionPending = sendInvite.isPending || resendInvite.isPending;
-                            const isActiveId = inviteAction.kind === 'SEND' 
+                            const isActionPending = sendAccessLink.isPending || sendInvite.isPending || resendInvite.isPending;
+                            const isActiveId = inviteAction.kind === 'ACCESS_LINK' || inviteAction.kind === 'SEND' 
                               ? inviteActionId === user.id 
                               : inviteAction.kind === 'RESEND' 
                                 ? inviteActionId === inviteAction.inviteId 
@@ -316,7 +329,9 @@ const UsersTable: React.FC = () => {
                                 type="button"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  if (inviteAction.kind === 'SEND') {
+                                  if (inviteAction.kind === 'ACCESS_LINK') {
+                                    handleSendAccessLink(user.id);
+                                  } else if (inviteAction.kind === 'SEND') {
                                     handleSendInvite(user.id);
                                   } else if (inviteAction.kind === 'RESEND') {
                                     handleResendInvite(inviteAction.inviteId);
@@ -360,15 +375,19 @@ const UsersTable: React.FC = () => {
                       {inviteAction ? (() => {
                         const ia = inviteAction;
                         const busy =
-                          (ia.kind === 'SEND' && (inviteActionId === user.id || sendInvite.isPending || resendInvite.isPending)) ||
-                          (ia.kind === 'RESEND' && (inviteActionId === ia.inviteId || sendInvite.isPending || resendInvite.isPending));
+                          ((ia.kind === 'ACCESS_LINK' || ia.kind === 'SEND') &&
+                            (inviteActionId === user.id || sendAccessLink.isPending || sendInvite.isPending || resendInvite.isPending)) ||
+                          (ia.kind === 'RESEND' &&
+                            (inviteActionId === ia.inviteId || sendAccessLink.isPending || sendInvite.isPending || resendInvite.isPending));
                         const disabled = busy;
                         return (
                         <button
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
-                            if (ia.kind === 'SEND') {
+                            if (ia.kind === 'ACCESS_LINK') {
+                              handleSendAccessLink(user.id);
+                            } else if (ia.kind === 'SEND') {
                               handleSendInvite(user.id);
                             } else if (ia.kind === 'RESEND') {
                               handleResendInvite(ia.inviteId);
@@ -527,15 +546,19 @@ const UsersTable: React.FC = () => {
                       {inviteAction ? (() => {
                         const ia = inviteAction;
                         const busy =
-                          (ia.kind === 'SEND' && (inviteActionId === user.id || sendInvite.isPending || resendInvite.isPending)) ||
-                          (ia.kind === 'RESEND' && (inviteActionId === ia.inviteId || sendInvite.isPending || resendInvite.isPending));
+                          ((ia.kind === 'ACCESS_LINK' || ia.kind === 'SEND') &&
+                            (inviteActionId === user.id || sendAccessLink.isPending || sendInvite.isPending || resendInvite.isPending)) ||
+                          (ia.kind === 'RESEND' &&
+                            (inviteActionId === ia.inviteId || sendAccessLink.isPending || sendInvite.isPending || resendInvite.isPending));
                         const disabled = busy;
                         return (
                         <button
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
-                            if (ia.kind === 'SEND') {
+                            if (ia.kind === 'ACCESS_LINK') {
+                              handleSendAccessLink(user.id);
+                            } else if (ia.kind === 'SEND') {
                               handleSendInvite(user.id);
                             } else if (ia.kind === 'RESEND') {
                               handleResendInvite(ia.inviteId);

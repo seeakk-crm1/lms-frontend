@@ -36,6 +36,11 @@ export const resetPassword = async (id: string, payload: any) => {
   return data;
 };
 
+export const sendAccessLink = async (id: string) => {
+  const { data } = await api.post(`/admin/users/${id}/access-link`);
+  return data.data;
+};
+
 // Target Settings
 export const getTargetTypes = async () => {
   const { data } = await api.get('/admin/users/meta/target-types');

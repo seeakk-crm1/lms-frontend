@@ -37,6 +37,7 @@ export const userIsInvitePending = (user: User): boolean => {
 };
 
 export type InviteActionState =
+  | { kind: 'ACCESS_LINK'; label: string; title: string }
   | { kind: 'SEND'; label: string; title: string }
   | { kind: 'RESEND'; label: string; title: string; inviteId: string };
 
@@ -45,7 +46,15 @@ export const getInviteActionState = (
   user: User,
   options: { hasPendingInvite: boolean; pendingInviteId?: string | null },
 ): InviteActionState | null => {
-  if (userHasActivatedAccount(user) || userIsDeactivatedFormerMember(user)) {
+  if (userHasActivatedAccount(user)) {
+    return {
+      kind: 'ACCESS_LINK',
+      label: 'Send access link',
+      title: 'Send password setup link and copy it',
+    };
+  }
+
+  if (userIsDeactivatedFormerMember(user)) {
     return null;
   }
 

@@ -6,7 +6,7 @@ import {
   sendInviteAPI,
   type CreateInviteUserPayload,
 } from '../services/invite.api';
-import { handleAccessLinkCopied, handleInviteDeliverySuccess } from '../utils/inviteDelivery';
+import { handleAccessLinkDeliverySuccess, handleInviteDeliverySuccess } from '../utils/inviteDelivery';
 import { toast } from 'react-hot-toast';
 
 export const useCreateUserMutation = () => {
@@ -106,6 +106,18 @@ export const useResetPasswordMutation = () => {
   return useMutation({
     mutationFn: ({ id, payload }: { id: string; payload?: any }) =>
       usersApi.resetPassword(id, payload ?? {}),
+  });
+};
+
+export const useSendAccessLinkMutation = () => {
+  return useMutation({
+    mutationFn: (userId: string) => usersApi.sendAccessLink(userId),
+    onSuccess: async (response) => {
+      await handleAccessLinkDeliverySuccess(response);
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || 'Failed to send access link');
+    },
   });
 };
 

@@ -5,6 +5,7 @@ export type InviteDeliveryResponse = {
   message?: string;
   delivery?: 'EMAIL' | 'MANUAL' | 'CLIPBOARD';
   inviteLink?: string | null;
+  accessLink?: string | null;
   deliveryErrorMessage?: string | null;
 };
 
@@ -28,7 +29,7 @@ export const resolvePasswordSetupLink = (apiLink: string | null | undefined): st
 
 /** Users table mail icon: copy access link only (no email, no active-account warnings). */
 export const handleAccessLinkCopied = async (response: InviteDeliveryResponse): Promise<void> => {
-  const setupLink = resolvePasswordSetupLink(response.inviteLink);
+  const setupLink = resolvePasswordSetupLink(response.accessLink || response.inviteLink);
 
   if (!setupLink || !/^https?:\/\//i.test(setupLink)) {
     toast.error('Could not generate an access link. Check FRONTEND_URL on the server.', { duration: 8000 });
@@ -42,6 +43,42 @@ export const handleAccessLinkCopied = async (response: InviteDeliveryResponse): 
   }
 
   toast.error(`Copy failed. Open or share this link: ${setupLink}`, { duration: 12000 });
+};
+
+/** Active-user mail action: email the access link when possible and always return a shareable copy. */
+export const handleAccessLinkDeliverySuccess = async (response: InviteDeliveryResponse): Promise<void> => {
+  const setupLink = resolvePasswordSetupLink(response.accessLink || response.inviteLink);
+  const copied = setupLink ? await copyTextToClipboard(setupLink) : false;
+
+  if (response.delivery === 'EMAIL') {
+    toast.success(
+      copied
+        ? 'Access link emailed. Link copied to clipboard.'
+        : response.message || 'Access link emailed.',
+      { duration: copied ? 7000 : 5000 },
+    );
+    return;
+  }
+
+  const reason = response.deliveryErrorMessage?.trim();
+  const baseMessage = [
+    response.message || 'Access link generated.',
+    reason ? `Reason: ${reason}` : null,
+  ]
+    .filter(Boolean)
+    .join(' ');
+
+  if (copied) {
+    toast.success(`${baseMessage} Link copied to clipboard.`, { duration: 7000 });
+    return;
+  }
+
+  if (setupLink) {
+    toast(`${baseMessage} Link: ${setupLink}`, { duration: 10000 });
+    return;
+  }
+
+  toast.error('Could not generate an access link. Check BACKEND_URL on the server.', { duration: 8000 });
 };
 
 /** Create-user invite modal: may still send email when configured. */
