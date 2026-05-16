@@ -345,11 +345,7 @@ const CreateUserModal: React.FC = () => {
               return;
             }
           }
-          if (inviteResponse.delivery !== 'MANUAL') {
-            toast.success(inviteResponse.message || 'Invitation email sent successfully!', { id: toastId });
-          } else {
-            toast.dismiss(toastId);
-          }
+          toast.dismiss(toastId);
         } else {
           const newUserResponse = await createUser.mutateAsync(payload);
           const newUserId = newUserResponse?.user?.id;

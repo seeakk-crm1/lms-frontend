@@ -6,43 +6,8 @@ import {
   sendInviteAPI,
   type CreateInviteUserPayload,
 } from '../services/invite.api';
+import { handleInviteDeliverySuccess } from '../utils/inviteDelivery';
 import { toast } from 'react-hot-toast';
-
-const handleManualInviteDelivery = async (response: {
-  message?: string;
-  inviteLink?: string | null;
-  deliveryErrorMessage?: string | null;
-}) => {
-  const inviteLink = response?.inviteLink || '';
-  const reason = response?.deliveryErrorMessage?.trim();
-  const baseMessage = [
-    response?.message || 'Invite is ready for manual sharing.',
-    reason ? `Reason: ${reason}` : null,
-  ].filter(Boolean).join(' ');
-
-  if (!inviteLink) {
-    toast(baseMessage, { duration: 7000 });
-    return;
-  }
-
-  try {
-    if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
-      await navigator.clipboard.writeText(inviteLink);
-      toast(
-        `${baseMessage} Invite link copied to clipboard.`,
-        { duration: 7000 },
-      );
-      return;
-    }
-  } catch {
-    // Fall through to showing the raw link in toast.
-  }
-
-  toast(
-    `${baseMessage} Link: ${inviteLink}`,
-    { duration: 9000 },
-  );
-};
 
 export const useCreateUserMutation = () => {
   const queryClient = useQueryClient();
@@ -61,11 +26,7 @@ export const useCreateInviteUserMutation = () => {
     mutationFn: (payload: CreateInviteUserPayload) => createInviteUserAPI(payload),
     onSuccess: async (response) => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
-      if (response.delivery === 'MANUAL') {
-        await handleManualInviteDelivery(response);
-        return;
-      }
-      toast.success(response.message || 'Invitation email sent successfully');
+      await handleInviteDeliverySuccess(response);
     },
     onError: (error: any) => {
       toast.error(error?.response?.data?.message || 'Failed to send invitation');
@@ -154,12 +115,7 @@ export const useSendInviteMutation = () => {
     mutationFn: (userId: string) => sendInviteAPI(userId),
     onSuccess: async (response) => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
-      if (response.delivery === 'MANUAL') {
-        await handleManualInviteDelivery(response);
-        return;
-      }
-
-      toast.success(response.message || 'Invite email sent');
+      await handleInviteDeliverySuccess(response);
     },
     onError: (error: any) => {
       toast.error(error?.response?.data?.message || 'Failed to send invite');
@@ -173,12 +129,7 @@ export const useResendInviteMutation = () => {
     mutationFn: (inviteId: string) => resendInviteAPI(inviteId),
     onSuccess: async (response) => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
-      if (response.delivery === 'MANUAL') {
-        await handleManualInviteDelivery(response);
-        return;
-      }
-
-      toast.success(response.message || 'Invite resent successfully');
+      await handleInviteDeliverySuccess(response);
     },
     onError: (error: any) => {
       toast.error(error?.response?.data?.message || 'Failed to resend invite');
