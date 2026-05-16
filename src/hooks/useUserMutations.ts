@@ -6,7 +6,7 @@ import {
   sendInviteAPI,
   type CreateInviteUserPayload,
 } from '../services/invite.api';
-import { handleInviteDeliverySuccess } from '../utils/inviteDelivery';
+import { handleAccessLinkCopied, handleInviteDeliverySuccess } from '../utils/inviteDelivery';
 import { toast } from 'react-hot-toast';
 
 export const useCreateUserMutation = () => {
@@ -115,10 +115,10 @@ export const useSendInviteMutation = () => {
     mutationFn: (userId: string) => sendInviteAPI(userId),
     onSuccess: async (response) => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
-      await handleInviteDeliverySuccess(response);
+      await handleAccessLinkCopied(response);
     },
     onError: (error: any) => {
-      toast.error(error?.response?.data?.message || 'Failed to send invite');
+      toast.error(error?.response?.data?.message || 'Failed to generate access link');
     },
   });
 };
@@ -129,7 +129,7 @@ export const useResendInviteMutation = () => {
     mutationFn: (inviteId: string) => resendInviteAPI(inviteId),
     onSuccess: async (response) => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
-      await handleInviteDeliverySuccess(response);
+      await handleAccessLinkCopied(response);
     },
     onError: (error: any) => {
       toast.error(error?.response?.data?.message || 'Failed to resend invite');

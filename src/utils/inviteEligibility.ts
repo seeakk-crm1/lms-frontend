@@ -15,7 +15,7 @@ const hasRoleAssignment = (user: User): boolean => {
   return false;
 };
 
-/** Matches backend `userHasActivatedAccount`. */
+/** Matches backend `userHasActivatedAccount` — status badge only. */
 export const userHasActivatedAccount = (user: User): boolean => {
   if (user.hasPassword === false) return false;
   if (user.isOnboarded === false) return false;
@@ -29,67 +29,35 @@ export const userHasActivatedAccount = (user: User): boolean => {
 export const userIsDeactivatedFormerMember = (user: User): boolean =>
   user.isEmailVerified === true && user.isActive !== true;
 
-/** Matches backend `userIsInvitePending` — used for status badges. */
+/** Status badge: pending onboarding. */
 export const userIsInvitePending = (user: User): boolean => {
   if (userIsDeactivatedFormerMember(user)) return false;
   if (!hasRoleAssignment(user)) return false;
   return !userHasActivatedAccount(user);
 };
 
-/** Any user with a role may receive an invite; backend reprovisions active accounts when needed. */
-export const canSendWorkspaceInvite = (user: User): boolean => {
-  if (userIsDeactivatedFormerMember(user)) return false;
-  return hasRoleAssignment(user);
-};
-
 export type InviteActionState =
   | { kind: 'SEND'; label: string; title: string }
-  | { kind: 'RESEND'; label: string; title: string; inviteId: string }
-  | { kind: 'HIDDEN'; label: string; title: string };
+  | { kind: 'RESEND'; label: string; title: string; inviteId: string };
 
+/** Mail icon in Users Management — always copy access link (no active-account gate). */
 export const getInviteActionState = (
   user: User,
   options: { hasPendingInvite: boolean; pendingInviteId?: string | null },
 ): InviteActionState => {
   if (options.hasPendingInvite && options.pendingInviteId) {
-      return {
-        kind: 'RESEND',
-        label: 'Resend Invite',
-        title: 'Refresh the password setup link and copy it to your clipboard.',
-        inviteId: options.pendingInviteId,
-      };
-  }
-
-  if (!hasRoleAssignment(user)) {
     return {
-      kind: 'HIDDEN',
-      label: 'Unavailable',
-      title: 'Assign a role before sending an invite.',
-    };
-  }
-
-  if (userIsDeactivatedFormerMember(user)) {
-    return {
-      kind: 'HIDDEN',
-      label: 'Deactivated',
-      title: 'Reactivate this account or reset password instead of sending an invite.',
-    };
-  }
-
-  if (canSendWorkspaceInvite(user)) {
-    return {
-      kind: 'SEND',
-      label: userHasActivatedAccount(user) ? 'Re-invite' : 'Send Invite',
-      title: userHasActivatedAccount(user)
-        ? 'Generate a new password setup link and copy it to your clipboard.'
-        : 'Generate password setup link and copy to clipboard.',
+      kind: 'RESEND',
+      label: 'Copy link',
+      title: 'Generate access link and copy to clipboard',
+      inviteId: options.pendingInviteId,
     };
   }
 
   return {
-    kind: 'HIDDEN',
-    label: 'Unavailable',
-    title: 'Invitation is not available for this user.',
+    kind: 'SEND',
+    label: 'Copy link',
+    title: 'Generate access link and copy to clipboard',
   };
 };
 

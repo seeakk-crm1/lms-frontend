@@ -57,14 +57,14 @@ export interface SendUserInviteResponse {
       name?: string;
     } | null;
   };
-  delivery?: 'EMAIL' | 'MANUAL';
+  delivery?: 'EMAIL' | 'MANUAL' | 'CLIPBOARD';
   deliveryErrorMessage?: string | null;
   inviteLink?: string | null;
 }
 
 export interface ResendInviteResponse {
   message: string;
-  delivery?: 'EMAIL' | 'MANUAL';
+  delivery?: 'EMAIL' | 'MANUAL' | 'CLIPBOARD';
   deliveryErrorMessage?: string | null;
   inviteLink?: string | null;
 }
