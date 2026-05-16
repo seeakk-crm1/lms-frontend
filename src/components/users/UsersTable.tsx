@@ -159,7 +159,8 @@ const UsersTable: React.FC = () => {
   const shouldShowInviteSent = (user: User): boolean => inviteSentMap[user.id] || hasPendingInvite(user);
 
   /** Show mail badge beside name when invite can be sent, resent, or is pending. */
-  const shouldShowInviteNameBadge = (): boolean => true;
+  const shouldShowInviteNameBadge = (user: User): boolean => true;
+
 
   const handleSendInvite = async (userId: string) => {
     try {
