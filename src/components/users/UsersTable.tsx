@@ -15,7 +15,8 @@ import {
   UserPlus,
   Pencil,
   Trash2,
-  Key
+  Key,
+  Loader2,
 } from 'lucide-react';
 import { useUsersStore } from '../../store/useUsersStore';
 import { useUsersQuery } from '../../hooks/useUsersQuery';
@@ -156,10 +157,8 @@ const UsersTable: React.FC = () => {
     });
   };
 
-  const getInviteActionKey = (user: User, action: ReturnType<typeof resolveInviteActionState>): string | null => {
-    if (action.disabled) return null;
-    return action.kind === 'RESEND' ? `invite:${action.inviteId}` : `user:${user.id}`;
-  };
+  const getInviteActionKey = (user: User, action: ReturnType<typeof resolveInviteActionState>): string =>
+    action.kind === 'RESEND' ? `invite:${action.inviteId}` : `user:${user.id}`;
 
   const isInviteActionPending = (
     user: User,
@@ -207,12 +206,37 @@ const UsersTable: React.FC = () => {
   };
 
   const handleInviteAction = (user: User, action: ReturnType<typeof resolveInviteActionState>) => {
-    if (action.disabled) return;
     if (action.kind === 'SEND') {
       handleSendInvite(user.id);
       return;
     }
     handleResendInvite(action.inviteId);
+  };
+
+  const renderAccessLinkButton = (
+    user: User,
+    options: { size?: 'sm' | 'md'; stopRowClick?: boolean } = {},
+  ) => {
+    const inviteAction = resolveInviteActionState(user);
+    const busy = isInviteActionPending(user, inviteAction);
+    const sizeClass = options.size === 'sm' ? 'p-1.5' : 'p-2';
+    const iconClass = options.size === 'sm' ? 'w-3.5 h-3.5' : 'w-4 h-4';
+
+    return (
+      <button
+        type="button"
+        onClick={(e) => {
+          if (options.stopRowClick) e.stopPropagation();
+          handleInviteAction(user, inviteAction);
+        }}
+        disabled={busy}
+        className={`${sizeClass} shrink-0 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-600 shadow-sm transition-colors hover:bg-emerald-100 disabled:cursor-wait disabled:opacity-70`}
+        title={inviteAction.title}
+        aria-label={inviteAction.label}
+      >
+        {busy ? <Loader2 className={`${iconClass} animate-spin`} /> : <Mail className={iconClass} />}
+      </button>
+    );
   };
 
   const confirmDelete = () => {
@@ -271,13 +295,13 @@ const UsersTable: React.FC = () => {
 
       {/* Desktop Table View */}
       <div className="hidden md:block overflow-x-auto">
-        <table className="w-full text-left border-collapse min-w-[800px]">
+        <table className="w-full text-left border-collapse min-w-[920px]">
           <thead>
             <tr className="bg-gray-50/50">
               <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">User</th>
               <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Role / Dept</th>
               <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Status</th>
-              <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider text-right">Actions</th>
+              <th className="min-w-[280px] px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
@@ -331,31 +355,6 @@ const UsersTable: React.FC = () => {
                           className="text-sm font-bold text-gray-900 truncate flex items-center gap-2"
                         >
                           {user.name || 'Invited User'}
-                          {(() => {
-                            const inviteAction = resolveInviteActionState(user);
-                            const isActionPending = isInviteActionPending(user, inviteAction);
-                            const disabled = inviteAction.disabled || isActionPending;
-
-                            return (
-                              <button 
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleInviteAction(user, inviteAction);
-                                }}
-                                disabled={disabled}
-                                title={inviteAction.title} 
-                                aria-label={inviteAction.label}
-                                className={`flex items-center justify-center p-0.5 rounded-md transition-colors disabled:cursor-not-allowed ${
-                                  inviteAction.disabled
-                                    ? 'bg-gray-100 text-gray-300'
-                                    : 'bg-emerald-50 text-emerald-500 hover:bg-emerald-100 disabled:opacity-40'
-                                }`}
-                              >
-                                <Mail className="w-3 h-3" />
-                              </button>
-                            );
-                          })()}
                         </div>
                         <div className="flex flex-col">
                             <span className="text-[10px] text-gray-400 font-medium truncate">{user.email}</span>
@@ -378,69 +377,52 @@ const UsersTable: React.FC = () => {
                       {renderActivationStatusBadge(user)}
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-right">
-                    {(() => {
-                      const inviteAction = resolveInviteActionState(user);
-                      const disabled = inviteAction.disabled || isInviteActionPending(user, inviteAction);
-                      return (
-                    <div className="flex items-center justify-end gap-2">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleInviteAction(user, inviteAction);
-                        }}
-                        disabled={disabled}
-                        className={`p-1.5 rounded-lg transition-colors disabled:cursor-not-allowed ${
-                          inviteAction.disabled
-                            ? 'text-gray-300'
-                            : 'text-emerald-600 hover:bg-emerald-50 disabled:opacity-40'
-                        }`}
-                        title={inviteAction.title}
-                        aria-label={inviteAction.label}
-                      >
-                        <Mail className="w-4 h-4" />
-                      </button>
+                  <td className="min-w-[280px] px-4 py-4 text-right">
+                    <motion.div className="flex items-center justify-end gap-1.5 whitespace-nowrap">
                       {user.isLocked && (
                         <button
+                          type="button"
                           onClick={(e) => { e.stopPropagation(); handleUnlock(user.id); }}
-                          className="p-1.5 text-amber-500 hover:bg-amber-50 rounded-lg transition-colors"
+                          className="shrink-0 p-1.5 text-amber-500 hover:bg-amber-50 rounded-lg transition-colors"
                           title="Unlock Account"
                         >
                           <Unlock className="w-4 h-4" />
                         </button>
                       )}
                       <button
+                        type="button"
                         onClick={(e) => { e.stopPropagation(); handleResetPassword(user.id, user.email); }}
-                        className="p-1.5 text-amber-500 hover:bg-amber-50 rounded-lg transition-colors"
+                        className="shrink-0 p-1.5 text-amber-500 hover:bg-amber-50 rounded-lg transition-colors"
                         title="Send Reset Password Link"
                       >
                         <Key className="w-4 h-4" />
                       </button>
                       <button
+                        type="button"
                         onClick={(e) => { e.stopPropagation(); openCreateModal(user.id); }}
-                        className="p-1.5 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
+                        className="shrink-0 p-1.5 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
                         title="Edit User"
                       >
                         <Pencil className="w-4 h-4" />
                       </button>
                       <button
+                        type="button"
                         onClick={(e) => { e.stopPropagation(); handleDelete(user.id, user.name || user.email); }}
-                        className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                        className="shrink-0 p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                         title="Delete User"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
                       <button
+                        type="button"
                         onClick={(e) => { e.stopPropagation(); handleStatusToggle(user.id, !!user.isActive); }}
-                        className={`p-1.5 rounded-lg transition-colors ${user.isActive ? 'text-orange-500 hover:bg-orange-50' : 'text-emerald-500 hover:bg-emerald-50'}`}
+                        className={`shrink-0 p-1.5 rounded-lg transition-colors ${user.isActive ? 'text-orange-500 hover:bg-orange-50' : 'text-emerald-500 hover:bg-emerald-50'}`}
                         title={user.isActive ? 'Deactivate' : 'Activate'}
                       >
                         {user.isActive ? <UserX className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}
                       </button>
-                    </div>
-                      );
-                    })()}
+                      {renderAccessLinkButton(user, { stopRowClick: true })}
+                    </motion.div>
                   </td>
                 </motion.tr>
               ))
@@ -474,11 +456,7 @@ const UsersTable: React.FC = () => {
           </div>
         ) : (
           users.map((user: User) => (
-            (() => {
-              const inviteAction = resolveInviteActionState(user);
-              const isInviteButtonDisabled = inviteAction.disabled || isInviteActionPending(user, inviteAction);
-              return (
-            <div 
+            <motion.div 
                 key={user.id} 
                 onClick={(e) => {
                   const target = e.target as HTMLElement;
@@ -494,18 +472,8 @@ const UsersTable: React.FC = () => {
                     {user.name?.charAt(0) || user.email.charAt(0).toUpperCase()}
                   </div>
                   <div className="min-w-0">
-                    <div className="text-sm font-black text-gray-900 truncate flex items-center gap-2">
+                    <div className="text-sm font-black text-gray-900 truncate">
                       {user.name || 'Invited User'}
-                      <span
-                        title={inviteAction.title}
-                        className={`flex items-center justify-center p-0.5 rounded-md ${
-                          inviteAction.disabled
-                            ? 'bg-gray-100 text-gray-300'
-                            : 'bg-emerald-50 text-emerald-500'
-                        }`}
-                      >
-                        <Mail className="w-3 h-3" />
-                      </span>
                     </div>
                     <div className="text-[11px] text-gray-400 font-medium truncate mb-1">{user.email}</div>
                     <div className="flex items-center gap-1.5">
@@ -541,23 +509,7 @@ const UsersTable: React.FC = () => {
                       </div>
                   </div>
                   <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleInviteAction(user, inviteAction);
-                        }}
-                        disabled={isInviteButtonDisabled}
-                        className={`p-2 rounded-lg border shadow-sm disabled:cursor-not-allowed ${
-                          inviteAction.disabled
-                            ? 'bg-gray-50 text-gray-300 border-gray-100'
-                            : 'bg-emerald-50 text-emerald-600 border-emerald-100 disabled:opacity-40'
-                        }`}
-                        title={inviteAction.title}
-                        aria-label={inviteAction.label}
-                      >
-                        <Mail className="w-4 h-4" />
-                      </button>
+                      {renderAccessLinkButton(user, { size: 'sm', stopRowClick: true })}
                       <button
                         onClick={(e) => { e.stopPropagation(); handleResetPassword(user.id, user.email); }}
                         className="p-2 text-amber-500 bg-white border border-gray-100 rounded-lg shadow-sm"
@@ -573,9 +525,7 @@ const UsersTable: React.FC = () => {
                       </button>
                   </div>
               </div>
-            </div>
-              );
-            })()
+            </motion.div>
           ))
         )}
       </div>

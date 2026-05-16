@@ -1,20 +1,5 @@
 import type { User } from '../types/user.types';
 
-const hasRoleAssignment = (user: User): boolean => {
-  const directRoleId = (user as { roleId?: string }).roleId;
-  if (directRoleId && String(directRoleId).trim().length > 0) return true;
-
-  if (user.role && typeof user.role === 'object' && !Array.isArray(user.role)) {
-    const nestedRoleId = user.role.id;
-    const nestedRoleName = user.role.name;
-    if (nestedRoleId && String(nestedRoleId).trim().length > 0) return true;
-    if (nestedRoleName && String(nestedRoleName).trim().length > 0) return true;
-  }
-
-  if (user.role && typeof user.role === 'string' && String(user.role).trim().length > 0) return true;
-  return false;
-};
-
 /** Matches backend `userHasActivatedAccount` — status badge only. */
 export const userHasActivatedAccount = (user: User): boolean => {
   if (user.hasPassword === false) return false;
@@ -29,6 +14,19 @@ export const userHasActivatedAccount = (user: User): boolean => {
 export const userIsDeactivatedFormerMember = (user: User): boolean =>
   user.isEmailVerified === true && user.isActive !== true;
 
+const hasRoleAssignment = (user: User): boolean => {
+  const directRoleId = (user as { roleId?: string }).roleId;
+  if (directRoleId && String(directRoleId).trim().length > 0) return true;
+
+  if (user.role && typeof user.role === 'object' && !Array.isArray(user.role)) {
+    if (user.role.id && String(user.role.id).trim().length > 0) return true;
+    if (user.role.name && String(user.role.name).trim().length > 0) return true;
+  }
+
+  if (user.role && typeof user.role === 'string' && String(user.role).trim().length > 0) return true;
+  return false;
+};
+
 /** Status badge: pending onboarding. */
 export const userIsInvitePending = (user: User): boolean => {
   if (userIsDeactivatedFormerMember(user)) return false;
@@ -37,50 +35,27 @@ export const userIsInvitePending = (user: User): boolean => {
 };
 
 export type InviteActionState =
-  | { kind: 'SEND'; label: string; title: string; disabled: false }
-  | { kind: 'RESEND'; label: string; title: string; inviteId: string; disabled: false }
-  | { kind: 'DISABLED'; label: string; title: string; disabled: true };
+  | { kind: 'SEND'; label: string; title: string }
+  | { kind: 'RESEND'; label: string; title: string; inviteId: string };
 
-/** Mail icon in Users Management — always allow invitation/re-onboarding. */
+/** Mail icon — always available; copies access link (no active-account gate). */
 export const getInviteActionState = (
-  user: User,
+  _user: User,
   options: { hasPendingInvite: boolean; pendingInviteId?: string | null },
 ): InviteActionState => {
   if (options.hasPendingInvite && options.pendingInviteId) {
     return {
       kind: 'RESEND',
-      label: 'Resend invite',
-      title: 'Resend invitation email and refresh invitation link',
+      label: 'Copy access link',
+      title: 'Refresh access link and copy to clipboard',
       inviteId: options.pendingInviteId,
-      disabled: false,
-    };
-  }
-
-  if (userIsDeactivatedFormerMember(user)) {
-    return {
-      kind: 'DISABLED',
-      label: 'Invitation unavailable',
-      title: 'Reactivate this account before sending a new invitation.',
-      disabled: true,
-    };
-  }
-
-  if (!userIsInvitePending(user) && !userHasActivatedAccount(user)) {
-    return {
-      kind: 'DISABLED',
-      label: 'Invitation unavailable',
-      title: 'Assign a role before sending an invitation.',
-      disabled: true,
     };
   }
 
   return {
     kind: 'SEND',
-    label: userHasActivatedAccount(user) ? 'Send re-onboarding invite' : 'Send invite',
-    title: userHasActivatedAccount(user) 
-      ? 'Send invitation email to re-onboard this active user' 
-      : 'Send invitation email and generate invitation link',
-    disabled: false,
+    label: 'Copy access link',
+    title: 'Generate access link and copy to clipboard',
   };
 };
 
