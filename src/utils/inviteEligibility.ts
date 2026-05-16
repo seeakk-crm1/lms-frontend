@@ -37,20 +37,31 @@ export const userIsInvitePending = (user: User): boolean => {
 };
 
 export type InviteActionState =
-  | { kind: 'SEND'; label: string; title: string }
-  | { kind: 'RESEND'; label: string; title: string; inviteId: string };
+  | { kind: 'SEND'; label: string; title: string; disabled: false }
+  | { kind: 'RESEND'; label: string; title: string; inviteId: string; disabled: false }
+  | { kind: 'DISABLED'; label: string; title: string; disabled: true };
 
 /** Mail icon in Users Management — invitation flow only for users pending first-time onboarding. */
 export const getInviteActionState = (
   user: User,
   options: { hasPendingInvite: boolean; pendingInviteId?: string | null },
-): InviteActionState | null => {
+): InviteActionState => {
   if (userHasActivatedAccount(user)) {
-    return null;
+    return {
+      kind: 'DISABLED',
+      label: 'Invitation unavailable',
+      title: 'Invitation is unavailable after account activation.',
+      disabled: true,
+    };
   }
 
   if (userIsDeactivatedFormerMember(user)) {
-    return null;
+    return {
+      kind: 'DISABLED',
+      label: 'Invitation unavailable',
+      title: 'Reactivate this account before sending a new invitation.',
+      disabled: true,
+    };
   }
 
   if (options.hasPendingInvite && options.pendingInviteId) {
@@ -59,17 +70,24 @@ export const getInviteActionState = (
       label: 'Resend invite',
       title: 'Resend invitation email and refresh invitation link',
       inviteId: options.pendingInviteId,
+      disabled: false,
     };
   }
 
   if (!userIsInvitePending(user)) {
-    return null;
+    return {
+      kind: 'DISABLED',
+      label: 'Invitation unavailable',
+      title: 'Assign a role before sending an invitation.',
+      disabled: true,
+    };
   }
 
   return {
     kind: 'SEND',
     label: 'Send invite',
     title: 'Send invitation email and generate invitation link',
+    disabled: false,
   };
 };
 

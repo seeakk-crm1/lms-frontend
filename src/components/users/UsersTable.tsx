@@ -156,11 +156,8 @@ const UsersTable: React.FC = () => {
     });
   };
 
-  /** Show mail badge only when invite actions are valid for the user's account state. */
-  const shouldShowInviteNameBadge = (user: User): boolean => Boolean(resolveInviteActionState(user));
-
   const getInviteActionKey = (user: User, action: ReturnType<typeof resolveInviteActionState>): string | null => {
-    if (!action) return null;
+    if (action.disabled) return null;
     return action.kind === 'RESEND' ? `invite:${action.inviteId}` : `user:${user.id}`;
   };
 
@@ -207,6 +204,15 @@ const UsersTable: React.FC = () => {
         // Error toast is handled in mutation hook.
       }
     });
+  };
+
+  const handleInviteAction = (user: User, action: ReturnType<typeof resolveInviteActionState>) => {
+    if (action.disabled) return;
+    if (action.kind === 'SEND') {
+      handleSendInvite(user.id);
+      return;
+    }
+    handleResendInvite(action.inviteId);
   };
 
   const confirmDelete = () => {
@@ -325,25 +331,26 @@ const UsersTable: React.FC = () => {
                           className="text-sm font-bold text-gray-900 truncate flex items-center gap-2"
                         >
                           {user.name || 'Invited User'}
-                          {shouldShowInviteNameBadge(user) && (() => {
+                          {(() => {
                             const inviteAction = resolveInviteActionState(user);
-                            if (!inviteAction) return null;
                             const isActionPending = isInviteActionPending(user, inviteAction);
+                            const disabled = inviteAction.disabled || isActionPending;
 
                             return (
                               <button 
                                 type="button"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  if (inviteAction.kind === 'SEND') {
-                                    handleSendInvite(user.id);
-                                  } else if (inviteAction.kind === 'RESEND') {
-                                    handleResendInvite(inviteAction.inviteId);
-                                  }
+                                  handleInviteAction(user, inviteAction);
                                 }}
-                                disabled={isActionPending}
+                                disabled={disabled}
                                 title={inviteAction.title} 
-                                className="flex items-center justify-center p-0.5 rounded-md transition-colors disabled:opacity-40 disabled:cursor-not-allowed bg-emerald-50 text-emerald-500 hover:bg-emerald-100"
+                                aria-label={inviteAction.label}
+                                className={`flex items-center justify-center p-0.5 rounded-md transition-colors disabled:cursor-not-allowed ${
+                                  inviteAction.disabled
+                                    ? 'bg-gray-100 text-gray-300'
+                                    : 'bg-emerald-50 text-emerald-500 hover:bg-emerald-100 disabled:opacity-40'
+                                }`}
                               >
                                 <Mail className="w-3 h-3" />
                               </button>
@@ -374,31 +381,26 @@ const UsersTable: React.FC = () => {
                   <td className="px-6 py-4 text-right">
                     {(() => {
                       const inviteAction = resolveInviteActionState(user);
+                      const disabled = inviteAction.disabled || isInviteActionPending(user, inviteAction);
                       return (
                     <div className="flex items-center justify-end gap-2">
-                      {inviteAction ? (() => {
-                        const ia = inviteAction;
-                        const disabled = isInviteActionPending(user, ia);
-                        return (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (ia.kind === 'SEND') {
-                              handleSendInvite(user.id);
-                            } else if (ia.kind === 'RESEND') {
-                              handleResendInvite(ia.inviteId);
-                            }
-                          }}
-                          disabled={disabled}
-                          className="p-1.5 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed text-emerald-600 hover:bg-emerald-50"
-                          title={ia.title}
-                          aria-label={ia.label}
-                        >
-                          <Mail className="w-4 h-4" />
-                        </button>
-                        );
-                      })() : null}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleInviteAction(user, inviteAction);
+                        }}
+                        disabled={disabled}
+                        className={`p-1.5 rounded-lg transition-colors disabled:cursor-not-allowed ${
+                          inviteAction.disabled
+                            ? 'text-gray-300'
+                            : 'text-emerald-600 hover:bg-emerald-50 disabled:opacity-40'
+                        }`}
+                        title={inviteAction.title}
+                        aria-label={inviteAction.label}
+                      >
+                        <Mail className="w-4 h-4" />
+                      </button>
                       {user.isLocked && (
                         <button
                           onClick={(e) => { e.stopPropagation(); handleUnlock(user.id); }}
@@ -474,6 +476,7 @@ const UsersTable: React.FC = () => {
           users.map((user: User) => (
             (() => {
               const inviteAction = resolveInviteActionState(user);
+              const isInviteButtonDisabled = inviteAction.disabled || isInviteActionPending(user, inviteAction);
               return (
             <div 
                 key={user.id} 
@@ -493,18 +496,16 @@ const UsersTable: React.FC = () => {
                   <div className="min-w-0">
                     <div className="text-sm font-black text-gray-900 truncate flex items-center gap-2">
                       {user.name || 'Invited User'}
-                      {shouldShowInviteNameBadge(user) && (
-                        <span
-                          title={
-                            hasPendingInvite(user)
-                              ? 'Invitation pending — resend from actions'
-                              : 'Send invitation from row actions'
-                          }
-                          className="flex items-center justify-center p-0.5 bg-emerald-50 text-emerald-500 rounded-md"
-                        >
-                          <Mail className="w-3 h-3" />
-                        </span>
-                      )}
+                      <span
+                        title={inviteAction.title}
+                        className={`flex items-center justify-center p-0.5 rounded-md ${
+                          inviteAction.disabled
+                            ? 'bg-gray-100 text-gray-300'
+                            : 'bg-emerald-50 text-emerald-500'
+                        }`}
+                      >
+                        <Mail className="w-3 h-3" />
+                      </span>
                     </div>
                     <div className="text-[11px] text-gray-400 font-medium truncate mb-1">{user.email}</div>
                     <div className="flex items-center gap-1.5">
@@ -540,29 +541,23 @@ const UsersTable: React.FC = () => {
                       </div>
                   </div>
                   <div className="flex items-center gap-2">
-                      {inviteAction ? (() => {
-                        const ia = inviteAction;
-                        const disabled = isInviteActionPending(user, ia);
-                        return (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (ia.kind === 'SEND') {
-                              handleSendInvite(user.id);
-                            } else if (ia.kind === 'RESEND') {
-                              handleResendInvite(ia.inviteId);
-                            }
-                          }}
-                          disabled={disabled}
-                          className="p-2 rounded-lg border shadow-sm disabled:opacity-40 disabled:cursor-not-allowed bg-emerald-50 text-emerald-600 border-emerald-100"
-                          title={ia.title}
-                          aria-label={ia.label}
-                        >
-                          <Mail className="w-4 h-4" />
-                        </button>
-                        );
-                      })() : null}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleInviteAction(user, inviteAction);
+                        }}
+                        disabled={isInviteButtonDisabled}
+                        className={`p-2 rounded-lg border shadow-sm disabled:cursor-not-allowed ${
+                          inviteAction.disabled
+                            ? 'bg-gray-50 text-gray-300 border-gray-100'
+                            : 'bg-emerald-50 text-emerald-600 border-emerald-100 disabled:opacity-40'
+                        }`}
+                        title={inviteAction.title}
+                        aria-label={inviteAction.label}
+                      >
+                        <Mail className="w-4 h-4" />
+                      </button>
                       <button
                         onClick={(e) => { e.stopPropagation(); handleResetPassword(user.id, user.email); }}
                         className="p-2 text-amber-500 bg-white border border-gray-100 rounded-lg shadow-sm"
