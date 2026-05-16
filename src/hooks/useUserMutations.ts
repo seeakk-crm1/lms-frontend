@@ -6,7 +6,7 @@ import {
   sendInviteAPI,
   type CreateInviteUserPayload,
 } from '../services/invite.api';
-import { handleAccessLinkCopied, handleInviteDeliverySuccess } from '../utils/inviteDelivery';
+import { handleInviteDeliverySuccess, handleMailIconInviteSuccess } from '../utils/inviteDelivery';
 import { toast } from 'react-hot-toast';
 
 export const useCreateUserMutation = () => {
@@ -115,10 +115,18 @@ export const useSendInviteMutation = () => {
     mutationFn: (userId: string) => sendInviteAPI(userId),
     onSuccess: async (response) => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
-      await handleAccessLinkCopied(response);
+      await handleMailIconInviteSuccess(response);
     },
     onError: (error: any) => {
-      toast.error(error?.response?.data?.message || 'Failed to generate access link');
+      const message = error?.response?.data?.message || '';
+      if (message.toLowerCase().includes('already has an active account')) {
+        toast.error(
+          'Your API is running an older backend build. Redeploy the backend on Render, or point VITE_API_URL to your local server.',
+          { duration: 10000 },
+        );
+        return;
+      }
+      toast.error(message || 'Failed to generate access link');
     },
   });
 };
@@ -129,7 +137,7 @@ export const useResendInviteMutation = () => {
     mutationFn: (inviteId: string) => resendInviteAPI(inviteId),
     onSuccess: async (response) => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
-      await handleAccessLinkCopied(response);
+      await handleMailIconInviteSuccess(response);
     },
     onError: (error: any) => {
       toast.error(error?.response?.data?.message || 'Failed to resend invite');
