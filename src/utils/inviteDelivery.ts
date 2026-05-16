@@ -26,8 +26,8 @@ export const resolvePasswordSetupLink = (apiLink: string | null | undefined): st
   return trimmed;
 };
 
-/** Users Management mail icon: copy link + optional invitation email. */
-export const handleMailIconInviteSuccess = async (response: InviteDeliveryResponse): Promise<void> => {
+/** Users table mail icon: copy access link only (no email, no active-account warnings). */
+export const handleAccessLinkCopied = async (response: InviteDeliveryResponse): Promise<void> => {
   const setupLink = resolvePasswordSetupLink(response.inviteLink);
 
   if (!setupLink || !/^https?:\/\//i.test(setupLink)) {
@@ -36,42 +36,39 @@ export const handleMailIconInviteSuccess = async (response: InviteDeliveryRespon
   }
 
   const copied = await copyTextToClipboard(setupLink);
-  const emailSent = response.delivery === 'EMAIL';
-
-  if (copied && emailSent) {
-    toast.success('Access link copied to clipboard. Invitation email sent.', { duration: 7000 });
-    return;
-  }
-
   if (copied) {
     toast.success('Access link copied to clipboard', { duration: 7000 });
-    if (response.deliveryErrorMessage) {
-      toast(response.deliveryErrorMessage, { duration: 8000 });
-    }
     return;
   }
 
-  if (emailSent) {
-    toast.success(`Invitation email sent. Copy this link: ${setupLink}`, { duration: 10000 });
-    return;
-  }
-
-  toast.error(
-    response.deliveryErrorMessage?.trim() ||
-      `Copy failed. Open or share this link: ${setupLink}`,
-    { duration: 12000 },
-  );
+  toast.error(`Copy failed. Open or share this link: ${setupLink}`, { duration: 12000 });
 };
 
 /** Create-user invite modal: may still send email when configured. */
 export const handleInviteDeliverySuccess = async (response: InviteDeliveryResponse): Promise<void> => {
-  if (response.delivery === 'CLIPBOARD' || response.delivery === 'EMAIL') {
-    await handleMailIconInviteSuccess(response);
+  if (response.delivery === 'CLIPBOARD') {
+    await handleAccessLinkCopied(response);
     return;
   }
 
   const setupLink = resolvePasswordSetupLink(response.inviteLink);
+  const emailSent = response.delivery === 'EMAIL';
   const copied = setupLink ? await copyTextToClipboard(setupLink) : false;
+
+  if (emailSent) {
+    if (copied) {
+      toast.success('Invitation email sent. Invite link copied to clipboard.', { duration: 7000 });
+      return;
+    }
+
+    toast.success(
+      setupLink
+        ? `${response.message || 'Invitation email sent.'} Copy link: ${setupLink}`
+        : response.message || 'Invitation email sent.',
+      { duration: setupLink ? 10000 : 5000 },
+    );
+    return;
+  }
 
   const reason = response.deliveryErrorMessage?.trim();
   const baseMessage = [
@@ -93,6 +90,3 @@ export const handleInviteDeliverySuccess = async (response: InviteDeliveryRespon
 
   toast(baseMessage, { duration: 7000 });
 };
-
-/** @deprecated Use handleMailIconInviteSuccess */
-export const handleAccessLinkCopied = handleMailIconInviteSuccess;

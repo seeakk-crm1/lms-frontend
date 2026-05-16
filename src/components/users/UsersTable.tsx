@@ -363,7 +363,7 @@ const UsersTable: React.FC = () => {
                           disabled={disabled}
                           className="p-1.5 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed text-emerald-600 hover:bg-emerald-50"
                           title={ia.title}
-                          aria-label="Copy access link to clipboard"
+                          aria-label="Send invitation email"
                         >
                           <Mail className="w-4 h-4" />
                         </button>
@@ -525,7 +525,7 @@ const UsersTable: React.FC = () => {
                           disabled={disabled}
                           className="p-2 rounded-lg border shadow-sm disabled:opacity-40 disabled:cursor-not-allowed bg-emerald-50 text-emerald-600 border-emerald-100"
                           title={ia.title}
-                          aria-label="Copy access link to clipboard"
+                          aria-label="Send invitation email"
                         >
                           <Mail className="w-4 h-4" />
                         </button>

@@ -48,17 +48,18 @@ export const getInviteActionState = (
   if (options.hasPendingInvite && options.pendingInviteId) {
     return {
       kind: 'RESEND',
-      label: 'Copy link',
-      title: 'Generate access link and copy to clipboard',
+      label: 'Resend invite',
+      title: 'Resend invitation email and refresh access link',
       inviteId: options.pendingInviteId,
     };
   }
 
   return {
     kind: 'SEND',
-    label: 'Copy link',
-    title: 'Generate access link and copy to clipboard',
+    label: 'Send invite',
+    title: 'Send invitation email and generate access link',
   };
+
 };
 
 /** Status badge for the users table. */
