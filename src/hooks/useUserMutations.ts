@@ -130,7 +130,7 @@ export const useSendInviteMutation = () => {
       await handleInviteDeliverySuccess(response);
     },
     onError: (error: any) => {
-      toast.error(error?.response?.data?.message || 'Failed to generate access link');
+      toast.error(error?.response?.data?.message || 'Failed to send invitation');
     },
   });
 };

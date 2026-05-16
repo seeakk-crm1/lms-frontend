@@ -37,21 +37,16 @@ export const userIsInvitePending = (user: User): boolean => {
 };
 
 export type InviteActionState =
-  | { kind: 'ACCESS_LINK'; label: string; title: string }
   | { kind: 'SEND'; label: string; title: string }
   | { kind: 'RESEND'; label: string; title: string; inviteId: string };
 
-/** Mail icon in Users Management — invite flow for pending users, access-link flow for active users. */
+/** Mail icon in Users Management — invitation flow only for users pending first-time onboarding. */
 export const getInviteActionState = (
   user: User,
   options: { hasPendingInvite: boolean; pendingInviteId?: string | null },
 ): InviteActionState | null => {
   if (userHasActivatedAccount(user)) {
-    return {
-      kind: 'ACCESS_LINK',
-      label: 'Send access link',
-      title: 'Send password setup link and copy it',
-    };
+    return null;
   }
 
   if (userIsDeactivatedFormerMember(user)) {
@@ -62,7 +57,7 @@ export const getInviteActionState = (
     return {
       kind: 'RESEND',
       label: 'Resend invite',
-      title: 'Resend invitation email and refresh access link',
+      title: 'Resend invitation email and refresh invitation link',
       inviteId: options.pendingInviteId,
     };
   }
@@ -74,7 +69,7 @@ export const getInviteActionState = (
   return {
     kind: 'SEND',
     label: 'Send invite',
-    title: 'Send invitation email and generate access link',
+    title: 'Send invitation email and generate invitation link',
   };
 };
 

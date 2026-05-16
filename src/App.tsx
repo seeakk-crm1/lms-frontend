@@ -193,6 +193,7 @@ function App() {
           </PublicRoute>
         } />
 
+        <Route path="/activate-account" element={<InvitePage />} />
         <Route path="/invite" element={<InvitePage />} />
         <Route path="/invite/accept" element={<InvitePage />} />
 

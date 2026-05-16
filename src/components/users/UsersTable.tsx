@@ -24,7 +24,6 @@ import {
   useDeleteUserMutation,
   useUnlockUserMutation,
   useResetPasswordMutation,
-  useSendAccessLinkMutation,
   useSendInviteMutation,
   useResendInviteMutation,
 } from '../../hooks/useUserMutations';
@@ -40,12 +39,10 @@ const UsersTable: React.FC = () => {
   const unlockUser = useUnlockUserMutation();
   const deleteUser = useDeleteUserMutation();
   const resetPassword = useResetPasswordMutation();
-  const sendAccessLink = useSendAccessLinkMutation();
   const sendInvite = useSendInviteMutation();
   const resendInvite = useResendInviteMutation();
   const pendingInviteActionKeysRef = useRef(new Set<string>());
   const [pendingInviteActionKeys, setPendingInviteActionKeys] = useState<Record<string, boolean>>({});
-  const [inviteSentMap, setInviteSentMap] = useState<Record<string, boolean>>({});
 
   const [deleteModal, setDeleteModal] = useState<{ open: boolean; userId: string; userName: string }>({
     open: false,
@@ -159,15 +156,10 @@ const UsersTable: React.FC = () => {
     });
   };
 
-  const shouldShowInviteSent = (user: User): boolean => inviteSentMap[user.id] || hasPendingInvite(user);
-
   /** Show mail badge only when invite actions are valid for the user's account state. */
   const shouldShowInviteNameBadge = (user: User): boolean => Boolean(resolveInviteActionState(user));
 
-  const getInviteActionKey = (
-    user: User,
-    action: ReturnType<typeof resolveInviteActionState>,
-  ): string | null => {
+  const getInviteActionKey = (user: User, action: ReturnType<typeof resolveInviteActionState>): string | null => {
     if (!action) return null;
     return action.kind === 'RESEND' ? `invite:${action.inviteId}` : `user:${user.id}`;
   };
@@ -201,17 +193,6 @@ const UsersTable: React.FC = () => {
     await runInviteAction(`user:${userId}`, async () => {
       try {
         await sendInvite.mutateAsync(userId);
-        setInviteSentMap((current) => ({ ...current, [userId]: true }));
-      } catch {
-        // Error toast is handled in mutation hook.
-      }
-    });
-  };
-
-  const handleSendAccessLink = async (userId: string) => {
-    await runInviteAction(`user:${userId}`, async () => {
-      try {
-        await sendAccessLink.mutateAsync(userId);
       } catch {
         // Error toast is handled in mutation hook.
       }
@@ -354,9 +335,7 @@ const UsersTable: React.FC = () => {
                                 type="button"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  if (inviteAction.kind === 'ACCESS_LINK') {
-                                    handleSendAccessLink(user.id);
-                                  } else if (inviteAction.kind === 'SEND') {
+                                  if (inviteAction.kind === 'SEND') {
                                     handleSendInvite(user.id);
                                   } else if (inviteAction.kind === 'RESEND') {
                                     handleResendInvite(inviteAction.inviteId);
@@ -405,9 +384,7 @@ const UsersTable: React.FC = () => {
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
-                            if (ia.kind === 'ACCESS_LINK') {
-                              handleSendAccessLink(user.id);
-                            } else if (ia.kind === 'SEND') {
+                            if (ia.kind === 'SEND') {
                               handleSendInvite(user.id);
                             } else if (ia.kind === 'RESEND') {
                               handleResendInvite(ia.inviteId);
@@ -571,9 +548,7 @@ const UsersTable: React.FC = () => {
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
-                            if (ia.kind === 'ACCESS_LINK') {
-                              handleSendAccessLink(user.id);
-                            } else if (ia.kind === 'SEND') {
+                            if (ia.kind === 'SEND') {
                               handleSendInvite(user.id);
                             } else if (ia.kind === 'RESEND') {
                               handleResendInvite(ia.inviteId);
