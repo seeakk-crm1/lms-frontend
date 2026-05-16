@@ -4,6 +4,8 @@ import { ArrowRight, Clock3, Link2Off, LoaderCircle, ShieldAlert } from 'lucide-
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import InviteForm from '../components/InviteForm';
 import { useAcceptInviteMutation, useInviteValidation } from '../hooks/useInvite';
+import useAuthStore from '../store/useAuthStore';
+import { User } from '../types/user.types';
 
 const InvitePage: React.FC = () => {
   const navigate = useNavigate();
@@ -22,8 +24,17 @@ const InvitePage: React.FC = () => {
     ) || 'This invitation is invalid, expired, or has already been used.';
   }, [token, validationQuery.error]);
 
+  const setAuth = useAuthStore((state) => state.setAuth);
+
   const handleSubmit = async ({ password }: { password: string; confirmPassword: string }) => {
-    await acceptMutation.mutateAsync({ token, password });
+    const result = await acceptMutation.mutateAsync({ token, password });
+    
+    if (result.accessToken && result.refreshToken && result.user) {
+      setAuth(result.user as User, result.accessToken, result.refreshToken);
+      navigate('/dashboard', { replace: true });
+      return;
+    }
+
     const loginParams = new URLSearchParams({ reason: 'invite-accepted' });
     if (inviteDetails?.email) {
       loginParams.set('email', inviteDetails.email);

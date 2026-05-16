@@ -27,11 +27,15 @@ export interface AcceptInvitePayload {
 
 export interface AcceptInviteResponse {
   message: string;
+  accessToken: string;
+  refreshToken: string;
   user: {
     id: string;
     name: string | null;
     email: string;
-    workspaceId?: string;
+    workspaceId?: string | null;
+    isOnboarded?: boolean;
+    permissions?: string[];
     role: {
       id?: string;
       name?: string;
