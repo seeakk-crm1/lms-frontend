@@ -278,16 +278,28 @@ const UsersTable: React.FC = () => {
                   layout
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  onClick={() => openCreateModal(user.id)}
+                  onClick={(e) => {
+                    const target = e.target as HTMLElement;
+                    // Only open modal if clicking the row background or cells, not buttons/links
+                    if (target.tagName === 'TD' || target.classList.contains('group')) {
+                      openCreateModal(user.id);
+                    }
+                  }}
                   className="hover:bg-gray-50/50 transition-colors group cursor-pointer"
                 >
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-600 font-bold shrink-0">
+                      <div 
+                        onClick={(e) => e.stopPropagation()}
+                        className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-600 font-bold shrink-0"
+                      >
                         {user.name?.charAt(0) || user.email.charAt(0).toUpperCase()}
                       </div>
                       <div className="min-w-0">
-                        <div className="text-sm font-bold text-gray-900 truncate flex items-center gap-2">
+                        <div 
+                          onClick={(e) => e.stopPropagation()}
+                          className="text-sm font-bold text-gray-900 truncate flex items-center gap-2"
+                        >
                           {user.name || 'Invited User'}
                           {shouldShowInviteNameBadge(user) && (() => {
                             const inviteAction = resolveInviteActionState(user);
@@ -448,7 +460,12 @@ const UsersTable: React.FC = () => {
               return (
             <div 
                 key={user.id} 
-                onClick={() => openCreateModal(user.id)}
+                onClick={(e) => {
+                  const target = e.target as HTMLElement;
+                  // Stop modal if clicking specific action buttons (handled by their own stopPropagation, but this is a safety net)
+                  if (target.closest('button')) return;
+                  openCreateModal(user.id);
+                }}
                 className="p-5 space-y-4 hover:bg-gray-50/50 transition-colors cursor-pointer"
             >
               <div className="flex items-start justify-between">
