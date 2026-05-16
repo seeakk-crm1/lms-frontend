@@ -41,7 +41,7 @@ export type InviteActionState =
   | { kind: 'SEND'; label: string; title: string }
   | { kind: 'RESEND'; label: string; title: string; inviteId: string };
 
-/** Mail icon in Users Management — only for accounts still in the invite workflow. */
+/** Mail icon in Users Management — invite flow for pending users, access-link flow for active users. */
 export const getInviteActionState = (
   user: User,
   options: { hasPendingInvite: boolean; pendingInviteId?: string | null },
