@@ -14,6 +14,7 @@ import LOBModal from './LOBModal';
 import StageRulesTransitionModal, { StageRuleValueEntry } from './StageRulesTransitionModal';
 import { getLeadTransitionStageRules, getStageRules } from '../../../services/stageRule.api';
 import type { ListStageRulesResponse, StageRule } from '../../../types/stageRule.types';
+import useAuthStore from '../../../store/useAuthStore';
 
 interface LeadFormDrawerProps {
   isOpen: boolean;
@@ -118,6 +119,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
   const createMutation = useCreateLeadMutation();
   const updateMutation = useUpdateLeadMutation();
   const changeStageMutation = useChangeLeadStageMutation();
+  const currentUser = useAuthStore((state) => state.user);
 
   const [formValues, setFormValues] = useState<LeadFormValues>(createEmptyLeadFormValues());
   const [lobModalOpen, setLobModalOpen] = useState(false);
@@ -155,6 +157,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
 
     setFormValues({
       ...createEmptyLeadFormValues(),
+      assignedToId: currentUser?.id || '',
     });
     setPreviousStageId('');
   }, [hydratedLead, isOpen, mode]);
@@ -596,7 +599,9 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
                             />
                           ) : (
                             <div className={`${inputClassName} flex min-h-[50px] items-center`}>
-                              {hydratedLead?.assignedTo?.displayName || hydratedLead?.assignedTo?.name || 'Unassigned'}
+                              {hydratedLead?.assignedTo?.displayName || 
+                               hydratedLead?.assignedTo?.name || 
+                               (mode === 'create' ? currentUser?.name : 'Unassigned')}
                             </div>
                           )}
                         </div>
