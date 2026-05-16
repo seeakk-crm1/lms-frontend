@@ -40,11 +40,15 @@ export type InviteActionState =
   | { kind: 'SEND'; label: string; title: string }
   | { kind: 'RESEND'; label: string; title: string; inviteId: string };
 
-/** Mail icon in Users Management — always copy access link (no active-account gate). */
+/** Mail icon in Users Management — only for accounts still in the invite workflow. */
 export const getInviteActionState = (
   user: User,
   options: { hasPendingInvite: boolean; pendingInviteId?: string | null },
-): InviteActionState => {
+): InviteActionState | null => {
+  if (userHasActivatedAccount(user) || userIsDeactivatedFormerMember(user)) {
+    return null;
+  }
+
   if (options.hasPendingInvite && options.pendingInviteId) {
     return {
       kind: 'RESEND',
@@ -54,12 +58,15 @@ export const getInviteActionState = (
     };
   }
 
+  if (!userIsInvitePending(user)) {
+    return null;
+  }
+
   return {
     kind: 'SEND',
     label: 'Send invite',
     title: 'Send invitation email and generate access link',
   };
-
 };
 
 /** Status badge for the users table. */

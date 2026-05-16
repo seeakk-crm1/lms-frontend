@@ -158,8 +158,8 @@ const UsersTable: React.FC = () => {
 
   const shouldShowInviteSent = (user: User): boolean => inviteSentMap[user.id] || hasPendingInvite(user);
 
-  /** Show mail badge beside name when invite can be sent, resent, or is pending. */
-  const shouldShowInviteNameBadge = (user: User): boolean => true;
+  /** Show mail badge only when invite actions are valid for the user's account state. */
+  const shouldShowInviteNameBadge = (user: User): boolean => Boolean(resolveInviteActionState(user));
 
 
   const handleSendInvite = async (userId: string) => {
@@ -303,6 +303,7 @@ const UsersTable: React.FC = () => {
                           {user.name || 'Invited User'}
                           {shouldShowInviteNameBadge(user) && (() => {
                             const inviteAction = resolveInviteActionState(user);
+                            if (!inviteAction) return null;
                             const isActionPending = sendInvite.isPending || resendInvite.isPending;
                             const isActiveId = inviteAction.kind === 'SEND' 
                               ? inviteActionId === user.id 
@@ -356,7 +357,7 @@ const UsersTable: React.FC = () => {
                       const inviteAction = resolveInviteActionState(user);
                       return (
                     <div className="flex items-center justify-end gap-2">
-                      {(() => {
+                      {inviteAction ? (() => {
                         const ia = inviteAction;
                         const busy =
                           (ia.kind === 'SEND' && (inviteActionId === user.id || sendInvite.isPending || resendInvite.isPending)) ||
@@ -381,7 +382,7 @@ const UsersTable: React.FC = () => {
                           <Mail className="w-4 h-4" />
                         </button>
                         );
-                      })()}
+                      })() : null}
                       {user.isLocked && (
                         <button
                           onClick={(e) => { e.stopPropagation(); handleUnlock(user.id); }}
@@ -523,7 +524,7 @@ const UsersTable: React.FC = () => {
                       </div>
                   </div>
                   <div className="flex items-center gap-2">
-                      {(() => {
+                      {inviteAction ? (() => {
                         const ia = inviteAction;
                         const busy =
                           (ia.kind === 'SEND' && (inviteActionId === user.id || sendInvite.isPending || resendInvite.isPending)) ||
@@ -548,7 +549,7 @@ const UsersTable: React.FC = () => {
                           <Mail className="w-4 h-4" />
                         </button>
                         );
-                      })()}
+                      })() : null}
                       <button
                         onClick={(e) => { e.stopPropagation(); handleResetPassword(user.id, user.email); }}
                         className="p-2 text-amber-500 bg-white border border-gray-100 rounded-lg shadow-sm"
