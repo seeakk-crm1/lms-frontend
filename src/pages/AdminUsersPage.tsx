@@ -18,7 +18,7 @@ const AdminUsersPage: React.FC = () => {
   const { openCreateModal } = useUsersStore();
   
   const { data: usersData } = useUsersQuery();
-  const totalUsers = usersData?.total || 0;
+  const totalUsers = usersData?.pagination?.total || 0;
   
   // Calculate stats dynamically
   const activeUsers = usersData?.users?.filter((u: any) => u.isActive).length || 0;

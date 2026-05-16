@@ -28,7 +28,7 @@ import {
   useResendInviteMutation,
 } from '../../hooks/useUserMutations';
 import { User } from '../../types/user.types';
-import { canSendWorkspaceInvite } from '../../utils/inviteEligibility';
+import { getInviteActionState, getUserActivationStatus } from '../../utils/inviteEligibility';
 import DeleteUserModal from './DeleteUserModal';
 
 const UsersTable: React.FC = () => {
@@ -110,77 +110,57 @@ const UsersTable: React.FC = () => {
 
   const hasPendingInvite = (user: User): boolean => Boolean(getLatestValidPendingInvite(user));
 
-  const hasRoleAssignment = (user: User): boolean => {
-    const directRoleId = (user as any).roleId;
-    if (directRoleId && String(directRoleId).trim().length > 0) return true;
-
-    if (user.role && typeof user.role === 'object' && !Array.isArray(user.role)) {
-      const nestedRoleId = (user.role as any).id;
-      const nestedRoleName = (user.role as any).name;
-      if (nestedRoleId && String(nestedRoleId).trim().length > 0) return true;
-      if (nestedRoleName && String(nestedRoleName).trim().length > 0) return true;
+  const renderActivationStatusBadge = (user: User, compact = false) => {
+    if (user.isLocked) {
+      return (
+        <span
+          className={`inline-flex items-center gap-1 rounded-full bg-red-50 text-red-600 font-bold uppercase tracking-tight w-fit ${
+            compact ? 'px-2 py-0.5 text-[9px]' : 'px-2 py-0.5 text-[10px]'
+          }`}
+        >
+          <Lock className={compact ? 'w-2.5 h-2.5' : 'w-2.5 h-2.5'} />
+          Locked
+        </span>
+      );
     }
 
-    if (user.role && typeof user.role === 'string' && String(user.role).trim().length > 0) return true;
-    return false;
+    const status = getUserActivationStatus(user);
+    const toneClass =
+      status.tone === 'pending'
+        ? 'bg-amber-50 text-amber-600'
+        : status.tone === 'active'
+          ? 'bg-emerald-50 text-emerald-600'
+          : 'bg-gray-100 text-gray-500';
+
+    return (
+      <span
+        className={`inline-flex items-center gap-1 rounded-full font-bold uppercase tracking-tight w-fit ${toneClass} ${
+          compact ? 'px-2 py-0.5 text-[9px]' : 'px-2 py-0.5 text-[10px]'
+        }`}
+      >
+        {status.tone === 'inactive' ? (
+          <UserX className="w-2.5 h-2.5" />
+        ) : (
+          <UserCheck className="w-2.5 h-2.5" />
+        )}
+        {status.label}
+      </span>
+    );
   };
 
-  const canSendInvite = (user: User): boolean => canSendWorkspaceInvite(user);
-
-  const getLatestInvite = (user: User) => getLatestValidPendingInvite(user);
-
-  const getInviteActionState = (user: User):
-    | { kind: 'SEND'; label: string; title: string }
-    | { kind: 'RESEND'; label: string; title: string; inviteId: string }
-    | { kind: 'HIDDEN'; label: string; title: string } => {
-    const latestInvite = getLatestInvite(user);
-
-    if (hasPendingInvite(user) && latestInvite?.id) {
-      return {
-        kind: 'RESEND',
-        label: 'Resend Invite',
-        title: 'Resend the current pending invite.',
-        inviteId: latestInvite.id,
-      };
-    }
-
-    if (canSendInvite(user)) {
-      return {
-        kind: 'SEND',
-        label: 'Send Invite',
-        title: 'Send an onboarding invite to this user.',
-      };
-    }
-
-    if (user.isActive && user.isEmailVerified) {
-      return {
-        kind: 'HIDDEN',
-        label: 'Active',
-        title:
-          'Invitations are for users who have not activated yet. Use Add (leave password blank) to email an invite, or switch to the Inactive tab.',
-      };
-    }
-
-    if (user.isEmailVerified && !user.isActive) {
-      return {
-        kind: 'HIDDEN',
-        label: 'Deactivated',
-        title: 'Reactivate this account or reset password instead of sending an invite.',
-      };
-    }
-
-    return {
-      kind: 'HIDDEN',
-      label: 'Unavailable',
-      title: 'Assign a role before sending an invite.',
-    };
+  const resolveInviteActionState = (user: User) => {
+    const latestInvite = getLatestValidPendingInvite(user);
+    return getInviteActionState(user, {
+      hasPendingInvite: hasPendingInvite(user),
+      pendingInviteId: latestInvite?.id,
+    });
   };
 
   const shouldShowInviteSent = (user: User): boolean => inviteSentMap[user.id] || hasPendingInvite(user);
 
   /** Show mail badge beside name when invite can be sent, resent, or is pending. */
   const shouldShowInviteNameBadge = (user: User): boolean => {
-    const state = getInviteActionState(user);
+    const state = resolveInviteActionState(user);
     if (state.kind === 'SEND' || state.kind === 'RESEND') return true;
     return shouldShowInviteSent(user);
   };
@@ -313,7 +293,7 @@ const UsersTable: React.FC = () => {
                         <div className="text-sm font-bold text-gray-900 truncate flex items-center gap-2">
                           {user.name || 'Invited User'}
                           {shouldShowInviteNameBadge(user) && (() => {
-                            const inviteAction = getInviteActionState(user);
+                            const inviteAction = resolveInviteActionState(user);
                             const isActionPending = sendInvite.isPending || resendInvite.isPending;
                             const isActiveId = inviteAction.kind === 'SEND' 
                               ? inviteActionId === user.id 
@@ -367,27 +347,12 @@ const UsersTable: React.FC = () => {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex flex-col gap-1.5">
-                      {user.isLocked ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-50 text-red-600 text-[10px] font-bold uppercase tracking-tight w-fit">
-                          <Lock className="w-2.5 h-2.5" />
-                          Locked
-                        </span>
-                      ) : user.isActive ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 text-[10px] font-bold uppercase tracking-tight w-fit">
-                          <UserCheck className="w-2.5 h-2.5" />
-                          Active
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 text-[10px] font-bold uppercase tracking-tight w-fit">
-                          <UserX className="w-2.5 h-2.5" />
-                          Inactive
-                        </span>
-                      )}
+                      {renderActivationStatusBadge(user)}
                     </div>
                   </td>
                   <td className="px-6 py-4 text-right">
                     {(() => {
-                      const inviteAction = getInviteActionState(user);
+                      const inviteAction = resolveInviteActionState(user);
                       return (
                     <div className="flex items-center justify-end gap-2">
                       {(() => {
@@ -500,7 +465,7 @@ const UsersTable: React.FC = () => {
         ) : (
           users.map((user: User) => (
             (() => {
-              const inviteAction = getInviteActionState(user);
+              const inviteAction = resolveInviteActionState(user);
               return (
             <div 
                 key={user.id} 
@@ -530,16 +495,7 @@ const UsersTable: React.FC = () => {
                     </div>
                     <div className="text-[11px] text-gray-400 font-medium truncate mb-1">{user.email}</div>
                     <div className="flex items-center gap-1.5">
-                        {user.isLocked ? (
-                            <span className="px-2 py-0.5 rounded-md bg-red-50 text-red-600 text-[9px] font-bold uppercase tracking-tight flex items-center gap-1">
-                                <Lock className="w-2.5 h-2.5" /> Locked
-                            </span>
-                        ) : (
-                            <span className={`px-2 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-tight flex items-center gap-1 ${user.isActive ? 'bg-emerald-50 text-emerald-600' : 'bg-gray-100 text-gray-500'}`}>
-                                {user.isActive ? <UserCheck className="w-2.5 h-2.5" /> : <UserX className="w-2.5 h-2.5" />}
-                                {user.isActive ? 'Active' : 'Inactive'}
-                            </span>
-                        )}
+                        {renderActivationStatusBadge(user, true)}
                     </div>
                   </div>
                 </div>
