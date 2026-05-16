@@ -41,17 +41,18 @@ export type InviteActionState =
   | { kind: 'RESEND'; label: string; title: string; inviteId: string; disabled: false }
   | { kind: 'DISABLED'; label: string; title: string; disabled: true };
 
-/** Mail icon in Users Management — invitation flow only for users pending first-time onboarding. */
+/** Mail icon in Users Management — always allow invitation/re-onboarding. */
 export const getInviteActionState = (
   user: User,
   options: { hasPendingInvite: boolean; pendingInviteId?: string | null },
 ): InviteActionState => {
-  if (userHasActivatedAccount(user)) {
+  if (options.hasPendingInvite && options.pendingInviteId) {
     return {
-      kind: 'DISABLED',
-      label: 'Invitation unavailable',
-      title: 'Invitation is unavailable after account activation.',
-      disabled: true,
+      kind: 'RESEND',
+      label: 'Resend invite',
+      title: 'Resend invitation email and refresh invitation link',
+      inviteId: options.pendingInviteId,
+      disabled: false,
     };
   }
 
@@ -64,17 +65,7 @@ export const getInviteActionState = (
     };
   }
 
-  if (options.hasPendingInvite && options.pendingInviteId) {
-    return {
-      kind: 'RESEND',
-      label: 'Resend invite',
-      title: 'Resend invitation email and refresh invitation link',
-      inviteId: options.pendingInviteId,
-      disabled: false,
-    };
-  }
-
-  if (!userIsInvitePending(user)) {
+  if (!userIsInvitePending(user) && !userHasActivatedAccount(user)) {
     return {
       kind: 'DISABLED',
       label: 'Invitation unavailable',
@@ -85,8 +76,10 @@ export const getInviteActionState = (
 
   return {
     kind: 'SEND',
-    label: 'Send invite',
-    title: 'Send invitation email and generate invitation link',
+    label: userHasActivatedAccount(user) ? 'Send re-onboarding invite' : 'Send invite',
+    title: userHasActivatedAccount(user) 
+      ? 'Send invitation email to re-onboard this active user' 
+      : 'Send invitation email and generate invitation link',
     disabled: false,
   };
 };
