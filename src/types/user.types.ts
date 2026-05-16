@@ -10,6 +10,8 @@ export interface User {
   workspaceId?: string;
   isActive?: boolean;
   isEmailVerified?: boolean;
+  /** True when the user has set or been assigned a login password. */
+  hasPassword?: boolean;
   department?: string | { id?: string; name?: string } | null;
   supervisor?: string | { id?: string; name?: string; email?: string } | null;
   office?: string | { id?: string; name?: string } | null;
