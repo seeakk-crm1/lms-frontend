@@ -52,12 +52,12 @@ export const getInviteActionState = (
   options: { hasPendingInvite: boolean; pendingInviteId?: string | null },
 ): InviteActionState => {
   if (options.hasPendingInvite && options.pendingInviteId) {
-    return {
-      kind: 'RESEND',
-      label: 'Resend Invite',
-      title: 'Resend the current pending invite.',
-      inviteId: options.pendingInviteId,
-    };
+      return {
+        kind: 'RESEND',
+        label: 'Resend Invite',
+        title: 'Refresh the password setup link and copy it to your clipboard.',
+        inviteId: options.pendingInviteId,
+      };
   }
 
   if (!hasRoleAssignment(user)) {
@@ -81,8 +81,8 @@ export const getInviteActionState = (
       kind: 'SEND',
       label: userHasActivatedAccount(user) ? 'Re-invite' : 'Send Invite',
       title: userHasActivatedAccount(user)
-        ? 'Send a new invitation email. They will set a fresh password when accepting.'
-        : 'Send an onboarding invite to this user.',
+        ? 'Generate a new password setup link and copy it to your clipboard.'
+        : 'Generate password setup link and copy to clipboard.',
     };
   }
 
