@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-hot-toast';
 import { 
@@ -43,7 +43,8 @@ const UsersTable: React.FC = () => {
   const sendAccessLink = useSendAccessLinkMutation();
   const sendInvite = useSendInviteMutation();
   const resendInvite = useResendInviteMutation();
-  const [inviteActionId, setInviteActionId] = useState<string | null>(null);
+  const pendingInviteActionKeysRef = useRef(new Set<string>());
+  const [pendingInviteActionKeys, setPendingInviteActionKeys] = useState<Record<string, boolean>>({});
   const [inviteSentMap, setInviteSentMap] = useState<Record<string, boolean>>({});
 
   const [deleteModal, setDeleteModal] = useState<{ open: boolean; userId: string; userName: string }>({
@@ -163,39 +164,68 @@ const UsersTable: React.FC = () => {
   /** Show mail badge only when invite actions are valid for the user's account state. */
   const shouldShowInviteNameBadge = (user: User): boolean => Boolean(resolveInviteActionState(user));
 
+  const getInviteActionKey = (
+    user: User,
+    action: ReturnType<typeof resolveInviteActionState>,
+  ): string | null => {
+    if (!action) return null;
+    return action.kind === 'RESEND' ? `invite:${action.inviteId}` : `user:${user.id}`;
+  };
+
+  const isInviteActionPending = (
+    user: User,
+    action: ReturnType<typeof resolveInviteActionState>,
+  ): boolean => {
+    const key = getInviteActionKey(user, action);
+    return Boolean(key && pendingInviteActionKeys[key]);
+  };
+
+  const runInviteAction = async (actionKey: string, action: () => Promise<void>) => {
+    if (pendingInviteActionKeysRef.current.has(actionKey)) return;
+
+    pendingInviteActionKeysRef.current.add(actionKey);
+    setPendingInviteActionKeys((current) => ({ ...current, [actionKey]: true }));
+    try {
+      await action();
+    } finally {
+      pendingInviteActionKeysRef.current.delete(actionKey);
+      setPendingInviteActionKeys((current) => {
+        const next = { ...current };
+        delete next[actionKey];
+        return next;
+      });
+    }
+  };
 
   const handleSendInvite = async (userId: string) => {
-    try {
-      setInviteActionId(userId);
-      await sendInvite.mutateAsync(userId);
-      setInviteSentMap((current) => ({ ...current, [userId]: true }));
-    } catch {
-      // Error toast is handled in mutation hook.
-    } finally {
-      setInviteActionId(null);
-    }
+    await runInviteAction(`user:${userId}`, async () => {
+      try {
+        await sendInvite.mutateAsync(userId);
+        setInviteSentMap((current) => ({ ...current, [userId]: true }));
+      } catch {
+        // Error toast is handled in mutation hook.
+      }
+    });
   };
 
   const handleSendAccessLink = async (userId: string) => {
-    try {
-      setInviteActionId(userId);
-      await sendAccessLink.mutateAsync(userId);
-    } catch {
-      // Error toast is handled in mutation hook.
-    } finally {
-      setInviteActionId(null);
-    }
+    await runInviteAction(`user:${userId}`, async () => {
+      try {
+        await sendAccessLink.mutateAsync(userId);
+      } catch {
+        // Error toast is handled in mutation hook.
+      }
+    });
   };
 
   const handleResendInvite = async (inviteId: string) => {
-    try {
-      setInviteActionId(inviteId);
-      await resendInvite.mutateAsync(inviteId);
-    } catch {
-      // Error toast is handled in mutation hook.
-    } finally {
-      setInviteActionId(null);
-    }
+    await runInviteAction(`invite:${inviteId}`, async () => {
+      try {
+        await resendInvite.mutateAsync(inviteId);
+      } catch {
+        // Error toast is handled in mutation hook.
+      }
+    });
   };
 
   const confirmDelete = () => {
@@ -317,12 +347,7 @@ const UsersTable: React.FC = () => {
                           {shouldShowInviteNameBadge(user) && (() => {
                             const inviteAction = resolveInviteActionState(user);
                             if (!inviteAction) return null;
-                            const isActionPending = sendAccessLink.isPending || sendInvite.isPending || resendInvite.isPending;
-                            const isActiveId = inviteAction.kind === 'ACCESS_LINK' || inviteAction.kind === 'SEND' 
-                              ? inviteActionId === user.id 
-                              : inviteAction.kind === 'RESEND' 
-                                ? inviteActionId === inviteAction.inviteId 
-                                : false;
+                            const isActionPending = isInviteActionPending(user, inviteAction);
 
                             return (
                               <button 
@@ -337,7 +362,7 @@ const UsersTable: React.FC = () => {
                                     handleResendInvite(inviteAction.inviteId);
                                   }
                                 }}
-                                disabled={isActionPending || isActiveId}
+                                disabled={isActionPending}
                                 title={inviteAction.title} 
                                 className="flex items-center justify-center p-0.5 rounded-md transition-colors disabled:opacity-40 disabled:cursor-not-allowed bg-emerald-50 text-emerald-500 hover:bg-emerald-100"
                               >
@@ -374,12 +399,7 @@ const UsersTable: React.FC = () => {
                     <div className="flex items-center justify-end gap-2">
                       {inviteAction ? (() => {
                         const ia = inviteAction;
-                        const busy =
-                          ((ia.kind === 'ACCESS_LINK' || ia.kind === 'SEND') &&
-                            (inviteActionId === user.id || sendAccessLink.isPending || sendInvite.isPending || resendInvite.isPending)) ||
-                          (ia.kind === 'RESEND' &&
-                            (inviteActionId === ia.inviteId || sendAccessLink.isPending || sendInvite.isPending || resendInvite.isPending));
-                        const disabled = busy;
+                        const disabled = isInviteActionPending(user, ia);
                         return (
                         <button
                           type="button"
@@ -396,7 +416,7 @@ const UsersTable: React.FC = () => {
                           disabled={disabled}
                           className="p-1.5 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed text-emerald-600 hover:bg-emerald-50"
                           title={ia.title}
-                          aria-label="Send invitation email"
+                          aria-label={ia.label}
                         >
                           <Mail className="w-4 h-4" />
                         </button>
@@ -545,12 +565,7 @@ const UsersTable: React.FC = () => {
                   <div className="flex items-center gap-2">
                       {inviteAction ? (() => {
                         const ia = inviteAction;
-                        const busy =
-                          ((ia.kind === 'ACCESS_LINK' || ia.kind === 'SEND') &&
-                            (inviteActionId === user.id || sendAccessLink.isPending || sendInvite.isPending || resendInvite.isPending)) ||
-                          (ia.kind === 'RESEND' &&
-                            (inviteActionId === ia.inviteId || sendAccessLink.isPending || sendInvite.isPending || resendInvite.isPending));
-                        const disabled = busy;
+                        const disabled = isInviteActionPending(user, ia);
                         return (
                         <button
                           type="button"
@@ -567,7 +582,7 @@ const UsersTable: React.FC = () => {
                           disabled={disabled}
                           className="p-2 rounded-lg border shadow-sm disabled:opacity-40 disabled:cursor-not-allowed bg-emerald-50 text-emerald-600 border-emerald-100"
                           title={ia.title}
-                          aria-label="Send invitation email"
+                          aria-label={ia.label}
                         >
                           <Mail className="w-4 h-4" />
                         </button>
