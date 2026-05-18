@@ -184,6 +184,7 @@ export interface BulkAssignPayload {
   assignmentType: BulkAssignAssignmentType;
   assignTo?: string;
   assignToIds?: string[];
+  leadIds?: string[];
 }
 
 export interface BulkAssignProgress {

@@ -2,6 +2,7 @@ import React, { memo } from 'react';
 import { motion } from 'framer-motion';
 import { CalendarClock, DatabaseZap, Info, UsersRound } from 'lucide-react';
 import type { BulkAssignFilters, BulkAssignPreviewLead, LeadMetaOptions } from '../../../types/lead.types';
+import useBulkAssignStore from '../../../store/bulkAssignStore';
 
 interface BulkAssignPreviewProps {
   previewCount: number | null;
@@ -20,6 +21,7 @@ const BulkAssignPreview: React.FC<BulkAssignPreviewProps> = ({
   filters,
   meta,
 }) => {
+  const { selectedLeadIds, toggleLeadSelection, toggleAllLeadsSelection } = useBulkAssignStore();
   const filterSummary = [
     filters.stageId ? `Stage: ${meta?.stages.find((item) => item.id === filters.stageId)?.label || 'Selected'}` : null,
     filters.assignedTo ? `Current owner: ${meta?.users.find((item) => item.id === filters.assignedTo)?.label || 'Selected'}` : null,
@@ -114,33 +116,58 @@ const BulkAssignPreview: React.FC<BulkAssignPreviewProps> = ({
 
             <div className="rounded-3xl border border-gray-100 bg-gray-50/70 p-4">
               <div className="mb-3 flex items-center justify-between gap-3">
-                <div className="text-[11px] font-black uppercase tracking-[0.24em] text-gray-400">Preview List</div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={previewLeads.length > 0 && previewLeads.every((lead) => selectedLeadIds.includes(lead.id))}
+                    onChange={() => toggleAllLeadsSelection()}
+                    className="h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                  />
+                  <div className="text-[11px] font-black uppercase tracking-[0.24em] text-gray-400">Select All</div>
+                </div>
                 <div className="text-xs font-bold text-gray-500">
-                  Showing {previewLeads.length} of {previewCount ?? 0}
+                  {selectedLeadIds.length > 0 ? `${selectedLeadIds.length} selected (${previewLeads.length} total)` : `Showing ${previewLeads.length} of ${previewCount ?? 0}`}
                 </div>
               </div>
 
               {previewLeads.length ? (
-                <div className="space-y-2">
-                  {previewLeads.map((lead) => (
-                    <div
-                      key={lead.id}
-                      className="flex items-start justify-between gap-3 rounded-2xl border border-white bg-white px-4 py-3 shadow-sm"
-                    >
-                      <div className="min-w-0">
-                        <div className="truncate text-sm font-black text-gray-900">{lead.name}</div>
-                        <div className="mt-1 flex flex-wrap gap-2 text-xs font-semibold text-gray-500">
-                          {lead.stage ? <span>{lead.stage.name}</span> : null}
-                          {lead.source ? <span>{lead.source.name}</span> : null}
-                          {lead.lifecycle ? <span>{lead.lifecycle.name}</span> : null}
+                <div className="space-y-2 max-h-[300px] overflow-y-auto custom-scrollbar pr-1">
+                  {previewLeads.map((lead) => {
+                    const isSelected = selectedLeadIds.includes(lead.id);
+                    return (
+                      <div
+                        key={lead.id}
+                        onClick={() => toggleLeadSelection(lead.id)}
+                        className={`flex items-start justify-between gap-3 rounded-2xl border px-4 py-3 shadow-sm cursor-pointer transition-all ${
+                          isSelected ? 'border-emerald-500 bg-emerald-50/20' : 'border-white bg-white hover:border-gray-200'
+                        }`}
+                      >
+                        <div className="flex items-start gap-3 min-w-0">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={(e) => {
+                              e.stopPropagation();
+                              toggleLeadSelection(lead.id);
+                            }}
+                            className="mt-0.5 h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                          />
+                          <div className="min-w-0">
+                            <div className="truncate text-sm font-black text-gray-900">{lead.name}</div>
+                            <div className="mt-1 flex flex-wrap gap-2 text-xs font-semibold text-gray-500">
+                              {lead.stage ? <span>{lead.stage.name}</span> : null}
+                              {lead.source ? <span>{lead.source.name}</span> : null}
+                              {lead.lifecycle ? <span>{lead.lifecycle.name}</span> : null}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right text-xs font-semibold text-gray-500">
+                          <div>{lead.assignedTo?.label || 'Unassigned'}</div>
+                          <div className="mt-1">{new Date(lead.createdAt).toLocaleDateString()}</div>
                         </div>
                       </div>
-                      <div className="text-right text-xs font-semibold text-gray-500">
-                        <div>{lead.assignedTo?.label || 'Unassigned'}</div>
-                        <div className="mt-1">{new Date(lead.createdAt).toLocaleDateString()}</div>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
                 <p className="text-sm font-semibold text-gray-500">

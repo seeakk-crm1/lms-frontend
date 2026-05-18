@@ -44,7 +44,7 @@ export const useBulkPreviewQuery = () => {
 
 export const useBulkAssignMutation = () => {
   const queryClient = useQueryClient();
-  const { setLastResult, setProgress } = useBulkAssignStore();
+  const { setLastResult, setProgress, setSelectedLeadIds } = useBulkAssignStore();
 
   return useMutation({
     mutationFn: (payload: BulkAssignPayload) => bulkAssignLeads(payload),
@@ -62,6 +62,7 @@ export const useBulkAssignMutation = () => {
     onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: ['leads'] });
       queryClient.invalidateQueries({ queryKey: ['bulk-assign-preview'] });
+      setSelectedLeadIds([]);
       setLastResult({
         updatedCount: response.updated_count,
         failedCount: response.failed_count,

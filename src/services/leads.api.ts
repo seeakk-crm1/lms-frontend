@@ -45,6 +45,7 @@ const mapAssignmentPayloadToApi = (payload: BulkAssignPayload) => ({
   assignment_type: payload.assignmentType,
   assign_to: payload.assignTo || undefined,
   assign_to_ids: payload.assignToIds?.length ? payload.assignToIds : undefined,
+  lead_ids: payload.leadIds?.length ? payload.leadIds : undefined,
 });
 
 export const getLeads = async (params: Record<string, unknown>, signal?: AbortSignal): Promise<ListLeadsResponse> => {
@@ -100,7 +101,7 @@ export const extendLeadSla = async (id: string, payload: ExtendLeadSlaPayload) =
 export const previewBulkAssign = async (filters: BulkAssignFilters): Promise<BulkAssignPreviewResponse> => {
   const response = await api.post('/leads/bulk-assign/preview', {
     ...mapBulkAssignFiltersToApi(filters),
-    sample_limit: 5,
+    sample_limit: 5000,
   });
   return response.data;
 };

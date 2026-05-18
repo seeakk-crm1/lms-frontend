@@ -21,6 +21,7 @@ interface BulkAssignStoreState {
   assignmentType: BulkAssignAssignmentType;
   selectedAssignee: string;
   selectedAssigneeIds: string[];
+  selectedLeadIds: string[];
   previewCount: number | null;
   previewLeads: BulkAssignPreviewLead[];
   lastResult: BulkAssignResultSummary | null;
@@ -34,6 +35,9 @@ interface BulkAssignStoreState {
   addRoundRobinAssignee: (assigneeId: string) => void;
   removeRoundRobinAssignee: (assigneeId: string) => void;
   clearRoundRobinAssignees: () => void;
+  setSelectedLeadIds: (ids: string[]) => void;
+  toggleLeadSelection: (id: string) => void;
+  toggleAllLeadsSelection: () => void;
   setPreviewCount: (previewCount: number | null) => void;
   setPreviewLeads: (previewLeads: BulkAssignPreviewLead[]) => void;
   setLastResult: (result: BulkAssignResultSummary | null) => void;
@@ -58,6 +62,7 @@ const useBulkAssignStore = create<BulkAssignStoreState>((set) => ({
   assignmentType: 'SINGLE',
   selectedAssignee: '',
   selectedAssigneeIds: [],
+  selectedLeadIds: [],
   previewCount: null,
   previewLeads: [],
   lastResult: null,
@@ -83,6 +88,7 @@ const useBulkAssignStore = create<BulkAssignStoreState>((set) => ({
       assignmentType: 'SINGLE',
       selectedAssignee: '',
       selectedAssigneeIds: [],
+      selectedLeadIds: [],
       previewCount: null,
       previewLeads: [],
       lastResult: null,
@@ -109,6 +115,29 @@ const useBulkAssignStore = create<BulkAssignStoreState>((set) => ({
       selectedAssigneeIds: state.selectedAssigneeIds.filter((value) => value !== assigneeId),
     })),
   clearRoundRobinAssignees: () => set({ selectedAssigneeIds: [] }),
+  setSelectedLeadIds: (selectedLeadIds) => set({ selectedLeadIds }),
+  toggleLeadSelection: (id) =>
+    set((state) => ({
+      selectedLeadIds: state.selectedLeadIds.includes(id)
+        ? state.selectedLeadIds.filter((x) => x !== id)
+        : [...state.selectedLeadIds, id],
+    })),
+  toggleAllLeadsSelection: () =>
+    set((state) => {
+      const allIds = state.previewLeads.map((l) => l.id);
+      const allSelected = allIds.every((id) => state.selectedLeadIds.includes(id));
+      if (allSelected) {
+        // Deselect all preview leads
+        return {
+          selectedLeadIds: state.selectedLeadIds.filter((id) => !allIds.includes(id)),
+        };
+      } else {
+        // Select all preview leads, keeping any other selected ones
+        return {
+          selectedLeadIds: Array.from(new Set([...state.selectedLeadIds, ...allIds])),
+        };
+      }
+    }),
   setPreviewCount: (previewCount) => set({ previewCount }),
   setPreviewLeads: (previewLeads) => set({ previewLeads }),
   setLastResult: (lastResult) => set({ lastResult }),

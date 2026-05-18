@@ -22,6 +22,7 @@ const BulkAssignPage: React.FC = () => {
     assignmentType,
     selectedAssignee,
     selectedAssigneeIds,
+    selectedLeadIds,
     previewCount,
     previewLeads,
     lastResult,
@@ -128,9 +129,11 @@ const BulkAssignPage: React.FC = () => {
   const handleConfirmAssign = useCallback(async () => {
     if (!previewCount) return;
 
+    const assignCount = selectedLeadIds.length > 0 ? selectedLeadIds.length : previewCount;
+
     setProgress({
       current: 0,
-      total: previewCount,
+      total: assignCount,
       status: 'IN_PROGRESS',
       transport: 'SYNC_READY_FOR_WEBSOCKET',
     });
@@ -141,13 +144,14 @@ const BulkAssignPage: React.FC = () => {
         assignmentType,
         assignTo: assignmentType === 'SINGLE' ? selectedAssignee : undefined,
         assignToIds: assignmentType === 'ROUND_ROBIN' ? selectedAssigneeIds : undefined,
+        leadIds: selectedLeadIds.length > 0 ? selectedLeadIds : undefined,
       });
 
       setIsConfirmOpen(false);
     } catch {
       // The mutation hook already surfaces the user-facing error state.
     }
-  }, [appliedFilters, assignmentType, bulkAssignMutation, previewCount, selectedAssignee, selectedAssigneeIds, setProgress]);
+  }, [appliedFilters, assignmentType, bulkAssignMutation, previewCount, selectedAssignee, selectedAssigneeIds, selectedLeadIds, setProgress]);
 
   return (
     <DashboardLayout>
