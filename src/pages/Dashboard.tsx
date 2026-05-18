@@ -52,10 +52,10 @@ const Dashboard: React.FC<DashboardProps> = ({ mode = 'operations' }) => {
         'LEADS_VIEW_TEAM',
         'SYSTEM_CONFIG',
     ]);
-    const canSeeRevenue = hasAnyPermission(user?.permissions || [], [
-        'LEAD_APPROVAL_VIEW',
-        'LEAD_APPROVAL_APPROVE',
-        'LOB_ANALYSIS_VIEW',
+    const isPrivileged = user?.role?.name === 'superadmin' || user?.role?.name === 'admin';
+    const canSeeRevenue = isPrivileged || hasAnyPermission(user?.permissions || [], [
+        'VIEW_TOTAL_REVENUE',
+        'VIEW_OWN_REVENUE',
     ]);
     const hasAnyDashboardSection = [canSeeMetrics, canSeeGrowth, canQuickAddLead, canSeeActivity, canSeeLOB, canSeeCalendar, canSeeRevenue].some(Boolean);
     const shouldFetchDashboardData = [canSeeMetrics, canSeeGrowth, canSeeActivity, canSeeLOB, canSeeCalendar].some(Boolean);

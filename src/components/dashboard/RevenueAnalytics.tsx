@@ -6,6 +6,7 @@ import { getRevenueAnalytics, type RevenueAnalyticsFilters, type RevenueAnalytic
 import { getLeadMeta } from '../../services/leads.api';
 import { getSupervisors } from '../../services/users.api';
 import { connectRealtime } from '../../services/realtime';
+import useAuthStore from '../../store/useAuthStore';
 
 const formatCurrency = (val: number) => {
   return new Intl.NumberFormat('en-US', {
@@ -17,6 +18,12 @@ const formatCurrency = (val: number) => {
 };
 
 const RevenueAnalytics: React.FC = () => {
+  const user = useAuthStore((state) => state.user);
+  const userPermissions = user?.permissions || [];
+  const isPrivileged = user?.role?.name === 'superadmin' || user?.role?.name === 'admin';
+  const hasTotalRevenue = isPrivileged || userPermissions.includes('VIEW_TOTAL_REVENUE');
+  const hasOwnRevenue = isPrivileged || userPermissions.includes('VIEW_OWN_REVENUE');
+
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -174,19 +181,21 @@ const RevenueAnalytics: React.FC = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:flex xl:items-center gap-3 w-full xl:w-auto">
             {/* User Dropdown */}
-            <select
-              value={filters.userId || ''}
-              onChange={(e) => handleFilterChange('userId', e.target.value)}
-              className="min-w-[170px] rounded-2xl border border-gray-200 bg-gray-50/50 px-4 py-2.5 text-xs font-bold text-gray-700 outline-none transition-all focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
-              aria-label="Filter by Closing User"
-            >
-              <option value="">All Closing Users</option>
-              {metaOptions.users.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.label}
-                </option>
-              ))}
-            </select>
+            {hasTotalRevenue && (
+              <select
+                value={filters.userId || ''}
+                onChange={(e) => handleFilterChange('userId', e.target.value)}
+                className="min-w-[170px] rounded-2xl border border-gray-200 bg-gray-50/50 px-4 py-2.5 text-xs font-bold text-gray-700 outline-none transition-all focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
+                aria-label="Filter by Closing User"
+              >
+                <option value="">All Closing Users</option>
+                {metaOptions.users.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.label}
+                  </option>
+                ))}
+              </select>
+            )}
 
             {/* Stage Dropdown */}
             <select
@@ -204,19 +213,21 @@ const RevenueAnalytics: React.FC = () => {
             </select>
 
             {/* Supervisor Dropdown */}
-            <select
-              value={filters.supervisorId || ''}
-              onChange={(e) => handleFilterChange('supervisorId', e.target.value)}
-              className="min-w-[170px] rounded-2xl border border-gray-200 bg-gray-50/50 px-4 py-2.5 text-xs font-bold text-gray-700 outline-none transition-all focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
-              aria-label="Filter by Supervisor"
-            >
-              <option value="">All Supervisors</option>
-              {metaOptions.supervisors.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-            </select>
+            {hasTotalRevenue && (
+              <select
+                value={filters.supervisorId || ''}
+                onChange={(e) => handleFilterChange('supervisorId', e.target.value)}
+                className="min-w-[170px] rounded-2xl border border-gray-200 bg-gray-50/50 px-4 py-2.5 text-xs font-bold text-gray-700 outline-none transition-all focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
+                aria-label="Filter by Supervisor"
+              >
+                <option value="">All Supervisors</option>
+                {metaOptions.supervisors.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+            )}
 
             {/* Date From */}
             <input
@@ -432,47 +443,49 @@ const RevenueAnalytics: React.FC = () => {
       </motion.div>
 
       {/* Breakdown Widgets Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className={`grid grid-cols-1 ${hasTotalRevenue ? 'lg:grid-cols-2' : ''} gap-6`}>
         {/* Top Closing Performers */}
-        <motion.div
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-[32px] border border-gray-100 p-6 shadow-sm"
-        >
-          <div className="flex items-center gap-2.5 mb-6 pb-3 border-b border-gray-50">
-            <Trophy className="h-5 w-5 text-amber-500" />
-            <div>
-              <h3 className="text-sm font-black text-gray-900 leading-tight">Top Performance Leaderboard</h3>
-              <p className="text-[11px] font-semibold text-gray-400 mt-0.5">Top closers based on cumulative approved closure revenue</p>
+        {hasTotalRevenue && (
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white rounded-[32px] border border-gray-100 p-6 shadow-sm"
+          >
+            <div className="flex items-center gap-2.5 mb-6 pb-3 border-b border-gray-50">
+              <Trophy className="h-5 w-5 text-amber-500" />
+              <div>
+                <h3 className="text-sm font-black text-gray-900 leading-tight">Top Performance Leaderboard</h3>
+                <p className="text-[11px] font-semibold text-gray-400 mt-0.5">Top closers based on cumulative approved closure revenue</p>
+              </div>
             </div>
-          </div>
 
-          <div className="space-y-4">
-            {!data?.metrics.topPerformers || data.metrics.topPerformers.length === 0 ? (
-              <p className="text-xs font-semibold text-gray-400 py-6 text-center">No closing events registered yet.</p>
-            ) : (
-              data.metrics.topPerformers.map((user, index) => (
-                <div key={user.id} className="flex items-center justify-between p-3 rounded-2xl hover:bg-gray-50 transition-colors">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gray-100 font-black text-xs text-gray-700 uppercase">
-                      {user.name.slice(0, 2)}
+            <div className="space-y-4">
+              {!data?.metrics.topPerformers || data.metrics.topPerformers.length === 0 ? (
+                <p className="text-xs font-semibold text-gray-400 py-6 text-center">No closing events registered yet.</p>
+              ) : (
+                data.metrics.topPerformers.map((user, index) => (
+                  <div key={user.id} className="flex items-center justify-between p-3 rounded-2xl hover:bg-gray-50 transition-colors">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gray-100 font-black text-xs text-gray-700 uppercase">
+                        {user.name.slice(0, 2)}
+                      </div>
+                      <div>
+                        <div className="text-xs font-black text-gray-800">{user.name}</div>
+                        <div className="text-[10px] font-semibold text-gray-400">{user.email}</div>
+                      </div>
                     </div>
-                    <div>
-                      <div className="text-xs font-black text-gray-800">{user.name}</div>
-                      <div className="text-[10px] font-semibold text-gray-400">{user.email}</div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs font-black text-emerald-600">{formatCurrency(user.amount)}</span>
+                      <span className="text-[10px] font-black bg-amber-50 text-amber-600 px-2 py-0.5 rounded-md">
+                        #{index + 1}
+                      </span>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-xs font-black text-emerald-600">{formatCurrency(user.amount)}</span>
-                    <span className="text-[10px] font-black bg-amber-50 text-amber-600 px-2 py-0.5 rounded-md">
-                      #{index + 1}
-                    </span>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </motion.div>
+                ))
+              )}
+            </div>
+          </motion.div>
+        )}
 
         {/* Revenue by Stage */}
         <motion.div
