@@ -20,6 +20,29 @@ export const getCalendarData = async (params: CalendarQueryParams) => {
   return response.data;
 };
 
+export const getAdvancedCalendarSummary = async (params: { startDate: string; endDate: string; userId?: string }) => {
+  const response = await api.get<import('../types/followup.types').AdvancedCalendarSummaryResponse>(
+    '/followups/calendar/advanced/summary',
+    { params },
+  );
+  return response.data;
+};
+
+export const getAdvancedCalendarDetails = async (params: {
+  date: string;
+  type: string;
+  stageId?: string;
+  userId?: string;
+  page?: number;
+  limit?: number;
+}) => {
+  const response = await api.get<import('../types/followup.types').AdvancedCalendarDetailsResponse>(
+    '/followups/calendar/advanced/details',
+    { params },
+  );
+  return response.data;
+};
+
 export const getTodayFollowUps = async (userId?: string) => {
   const response = await api.get<TodayFollowUpsResponse>('/followups/today', {
     params: userId ? { userId } : undefined,

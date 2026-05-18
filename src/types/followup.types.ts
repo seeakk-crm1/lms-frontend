@@ -55,6 +55,33 @@ export interface CalendarResponse {
   };
 }
 
+export interface AdvancedCalendarSummaryResponse {
+  success: boolean;
+  message: string;
+  data: {
+    timeZone: string;
+    summary: Array<{
+      date: string;
+      leadsCreated: number;
+      totalFollowUps: number;
+      stageTransitions: Array<{ stageId: string; count: number; name: string; color: string }>;
+      stageFollowUps: Array<{ stageId: string; count: number; name: string; color: string }>;
+    }>;
+  };
+}
+
+export interface AdvancedCalendarDetailsResponse {
+  success: boolean;
+  message: string;
+  items: any[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
 export interface TodayFollowUpsResponse {
   success: boolean;
   message: string;

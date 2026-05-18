@@ -14,12 +14,12 @@ import CompleteFollowUpModal from '../../components/calendar/CompleteFollowUpMod
 import FollowUpActionModal from '../../components/calendar/FollowUpActionModal';
 import SnoozeFollowUpModal from '../../components/calendar/SnoozeFollowUpModal';
 import {
-  useCalendarQuery,
   useCompleteFollowUpMutation,
   useCreateFollowUpMutation,
   useFollowUpLeadsQuery,
   useSnoozeFollowUpMutation,
   useFollowUpUsersQuery,
+  useAdvancedCalendarSummaryQuery,
 } from '../../hooks/useFollowUps';
 import useFollowupStore from '../../store/followupStore';
 import type { CreateFollowUpInput } from '../../types/followup.types';
@@ -44,7 +44,7 @@ const CalendarPage: React.FC = () => {
   const { view, selectedDate, selectedUser, modalOpen, selectedFollowUp, setView, setDate, setUser, openModal, closeModal } =
     useFollowupStore();
 
-  const calendarQuery = useCalendarQuery();
+  const advancedSummaryQuery = useAdvancedCalendarSummaryQuery();
   const usersQuery = useFollowUpUsersQuery();
   const leadsQuery = useFollowUpLeadsQuery();
   const createMutation = useCreateFollowUpMutation();
@@ -68,9 +68,9 @@ const CalendarPage: React.FC = () => {
     },
   });
 
-  const calendarItems = useMemo(
-    () => calendarQuery.data?.data.items || calendarQuery.data?.data.groups?.flatMap((group) => group.items) || [],
-    [calendarQuery.data],
+  const calendarSummary = useMemo(
+    () => advancedSummaryQuery.data?.data.summary || [],
+    [advancedSummaryQuery.data],
   );
 
   const onScheduleFollowUp = useCallback(
@@ -118,8 +118,7 @@ const CalendarPage: React.FC = () => {
             <CalendarView
               view={view}
               selectedDate={selectedDate}
-              items={calendarItems}
-              groups={calendarQuery.data?.data.groups}
+              summary={calendarSummary}
               onSelectDate={setDate}
               onComplete={(item) => {
                 setActionFollowUp(item);

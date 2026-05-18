@@ -12,6 +12,8 @@ import {
   snoozeFollowUp,
   getFollowUpUsers,
   getTodayFollowUps,
+  getAdvancedCalendarSummary,
+  getAdvancedCalendarDetails,
 } from '../services/followupService';
 import type { CalendarQueryParams, CompleteFollowUpInput, CreateFollowUpInput, FollowUp, SnoozeFollowUpInput } from '../types/followup.types';
 
@@ -70,6 +72,51 @@ export const useCalendarQuery = () => {
       if (status === 401 || status === 403 || status === 422 || status === 503) return false;
       return failureCount < 2;
     },
+  });
+};
+
+export const useAdvancedCalendarSummaryQuery = () => {
+  const { view, selectedDate, selectedUser } = useFollowupStore();
+
+  const params = useMemo(() => {
+    const range = buildDateRange(view, selectedDate);
+    return {
+      startDate: range.startDate,
+      endDate: range.endDate,
+      ...(selectedUser ? { userId: selectedUser } : {}),
+    };
+  }, [selectedDate, selectedUser, view]);
+
+  return useQuery({
+    queryKey: ['followups', 'advanced-calendar', params],
+    queryFn: () => getAdvancedCalendarSummary(params),
+    staleTime: 60_000,
+    gcTime: 300_000,
+    refetchOnWindowFocus: false,
+    placeholderData: (previousData) => previousData,
+    retry: (failureCount, error: any) => {
+      const status = error?.response?.status;
+      if (status === 401 || status === 403 || status === 422 || status === 503) return false;
+      return failureCount < 2;
+    },
+  });
+};
+
+export const useAdvancedCalendarDetailsQuery = (params: {
+  date: string;
+  type: string;
+  stageId?: string;
+  userId?: string;
+  page?: number;
+  limit?: number;
+}) => {
+  return useQuery({
+    queryKey: ['followups', 'advanced-calendar-details', params],
+    queryFn: () => getAdvancedCalendarDetails(params),
+    enabled: Boolean(params.date && params.type),
+    staleTime: 30_000,
+    gcTime: 300_000,
+    refetchOnWindowFocus: false,
   });
 };
 
