@@ -179,31 +179,13 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
   const activeLifeCycle = lifeCycleOptions.find((item) => item.id === formValues.lifecycleId);
   const stageTransitionMap = useMemo(() => buildAllowedStageMap(activeLifeCycle), [activeLifeCycle]);
 
-  const allowedStages = useMemo(() => {
-    if (mode === 'create' || !currentStageId || stageTransitionMap.size === 0) {
-      return stageOptions;
-    }
+  const allowedStages = stageOptions;
 
-    const allowedIds = stageTransitionMap.get(currentStageId);
-    if (!allowedIds || allowedIds.size === 0) {
-      return stageOptions;
-    }
-
-    return stageOptions.filter((stage) => stage.id === currentStageId || allowedIds.has(stage.id));
-  }, [currentStageId, mode, stageOptions, stageTransitionMap]);
-
-  const disabledStageIds = useMemo(() => {
-    const allowed = new Set(allowedStages.map((item) => item.id));
-    return new Set(stageOptions.filter((item) => !allowed.has(item.id)).map((item) => item.id));
-  }, [allowedStages, stageOptions]);
+  const disabledStageIds = useMemo(() => new Set<string>(), []);
 
   const handleFieldChange = (field: keyof LeadFormValues, value: any) => {
     if (field === 'stageId') {
       const nextStage = stageOptions.find((item) => item.id === value);
-      if (disabledStageIds.has(value)) {
-        toast.error('That stage transition is not allowed for the selected life cycle.');
-        return;
-      }
       if (isLobStageOption(nextStage)) {
         stageIdBeforeLobRef.current = formValues.stageId;
         revertFormBeforeRulesRef.current = {
