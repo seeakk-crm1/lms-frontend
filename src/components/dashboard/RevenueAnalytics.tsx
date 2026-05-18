@@ -404,7 +404,7 @@ const RevenueAnalytics: React.FC = () => {
                   tickFormatter={(val) => `$${val}`}
                 />
                 <Tooltip
-                  formatter={(val: number) => [formatCurrency(val), 'Revenue']}
+                  formatter={(val: any) => [formatCurrency(Number(val || 0)), 'Revenue'] as [any, any]}
                   contentStyle={{
                     borderRadius: '16px',
                     border: 'none',
