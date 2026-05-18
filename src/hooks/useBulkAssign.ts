@@ -74,7 +74,11 @@ export const useBulkAssignMutation = () => {
         status: response.progress.status,
         transport: response.progress.transport,
       });
-      toast.success(response.message || 'Leads assigned successfully');
+      toast.success(
+        response.message
+          ? `${response.message} (${response.updated_count} lead${response.updated_count === 1 ? '' : 's'} assigned)`
+          : `Successfully assigned ${response.updated_count} lead${response.updated_count === 1 ? '' : 's'}`
+      );
     },
     onError: (error: any) => {
       setProgress({

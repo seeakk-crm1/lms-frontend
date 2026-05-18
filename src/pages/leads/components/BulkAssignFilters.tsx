@@ -92,48 +92,70 @@ const BulkAssignFilters: React.FC<BulkAssignFiltersProps> = ({
           onChange={(event) => onFilterChange({ sourceId: event.target.value || undefined })}
         />
 
-        <div className="relative">
-          <CalendarRange className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-          <input
-            type="date"
-            value={filters.followupDateFrom || ''}
-            onChange={(event) => onFilterChange({ followupDateFrom: event.target.value || undefined })}
-            className={inputClassName}
-            aria-label="Follow-up from date"
-          />
+        {/* Follow-up Date Range Section */}
+        <div className="col-span-full border-t border-gray-100 my-2 pt-4">
+          <h4 className="text-xs font-black uppercase tracking-[0.2em] text-gray-400 mb-3">Follow-up Date Range</h4>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div>
+              <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wider">From Date</label>
+              <div className="relative">
+                <CalendarRange className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="date"
+                  value={filters.followupDateFrom || ''}
+                  onChange={(event) => onFilterChange({ followupDateFrom: event.target.value || undefined })}
+                  className={inputClassName}
+                  aria-label="Follow-up from date"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wider">To Date</label>
+              <div className="relative">
+                <CalendarRange className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="date"
+                  value={filters.followupDateTo || ''}
+                  onChange={(event) => onFilterChange({ followupDateTo: event.target.value || undefined })}
+                  className={inputClassName}
+                  aria-label="Follow-up to date"
+                />
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div className="relative">
-          <CalendarRange className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-          <input
-            type="date"
-            value={filters.followupDateTo || ''}
-            onChange={(event) => onFilterChange({ followupDateTo: event.target.value || undefined })}
-            className={inputClassName}
-            aria-label="Follow-up to date"
-          />
-        </div>
-
-        <div className="relative">
-          <CalendarRange className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-          <input
-            type="date"
-            value={filters.createdDateFrom || ''}
-            onChange={(event) => onFilterChange({ createdDateFrom: event.target.value || undefined })}
-            className={inputClassName}
-            aria-label="Created from date"
-          />
-        </div>
-
-        <div className="relative">
-          <CalendarRange className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-          <input
-            type="date"
-            value={filters.createdDateTo || ''}
-            onChange={(event) => onFilterChange({ createdDateTo: event.target.value || undefined })}
-            className={inputClassName}
-            aria-label="Created to date"
-          />
+        {/* Lead Created Date Range Section */}
+        <div className="col-span-full border-t border-gray-100 my-2 pt-4">
+          <h4 className="text-xs font-black uppercase tracking-[0.2em] text-gray-400 mb-3">Lead Created Date Range</h4>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div>
+              <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wider">From Date</label>
+              <div className="relative">
+                <CalendarRange className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="date"
+                  value={filters.createdDateFrom || ''}
+                  onChange={(event) => onFilterChange({ createdDateFrom: event.target.value || undefined })}
+                  className={inputClassName}
+                  aria-label="Created from date"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wider">To Date</label>
+              <div className="relative">
+                <CalendarRange className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="date"
+                  value={filters.createdDateTo || ''}
+                  onChange={(event) => onFilterChange({ createdDateTo: event.target.value || undefined })}
+                  className={inputClassName}
+                  aria-label="Created to date"
+                />
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
