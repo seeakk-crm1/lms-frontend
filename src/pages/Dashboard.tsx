@@ -10,6 +10,7 @@ import LOBAnalysisWidget from '../components/dashboard/LOBAnalysisWidget';
 import CalendarWidget from '../components/dashboard/CalendarWidget';
 import useDashboardStore from '../store/useDashboardStore';
 import useAuthStore from '../store/useAuthStore';
+import RevenueAnalytics from '../components/dashboard/RevenueAnalytics';
 import { hasAnyPermission, hasPermission } from '../utils/permission.util';
 
 interface DashboardProps {
@@ -51,7 +52,12 @@ const Dashboard: React.FC<DashboardProps> = ({ mode = 'operations' }) => {
         'LEADS_VIEW_TEAM',
         'SYSTEM_CONFIG',
     ]);
-    const hasAnyDashboardSection = [canSeeMetrics, canSeeGrowth, canQuickAddLead, canSeeActivity, canSeeLOB, canSeeCalendar].some(Boolean);
+    const canSeeRevenue = hasAnyPermission(user?.permissions || [], [
+        'LEAD_APPROVAL_VIEW',
+        'LEAD_APPROVAL_APPROVE',
+        'LOB_ANALYSIS_VIEW',
+    ]);
+    const hasAnyDashboardSection = [canSeeMetrics, canSeeGrowth, canQuickAddLead, canSeeActivity, canSeeLOB, canSeeCalendar, canSeeRevenue].some(Boolean);
     const shouldFetchDashboardData = [canSeeMetrics, canSeeGrowth, canSeeActivity, canSeeLOB, canSeeCalendar].some(Boolean);
 
     useEffect(() => {
@@ -88,6 +94,18 @@ const Dashboard: React.FC<DashboardProps> = ({ mode = 'operations' }) => {
                         ) : null}
 
                         {canSeeMetrics && <KPICards />}
+
+                        {canSeeRevenue && (
+                            <div className="pt-4 pb-2">
+                                <div className="mb-6 flex items-center justify-between">
+                                    <div>
+                                        <h2 className="text-2xl font-black text-gray-900 tracking-tight">Revenue Analytics Hub</h2>
+                                        <p className="text-xs font-semibold text-gray-400 mt-1">Real-time workspace closing values and revenue trends</p>
+                                    </div>
+                                </div>
+                                <RevenueAnalytics />
+                            </div>
+                        )}
 
                         {canSeeGrowth && (
                             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

@@ -112,7 +112,7 @@ const PendingApprovalPage: React.FC = () => {
   }, [setFilters]);
 
   const handleSubmitApproval = useCallback(
-    async (payload: { action: LeadApprovalAction; comment: string }) => {
+    async (payload: { action: LeadApprovalAction; comment: string; earnedRevenue?: number }) => {
       if (!selectedApproval) return;
       await approvalActionMutation.mutateAsync({
         id: selectedApproval.id,

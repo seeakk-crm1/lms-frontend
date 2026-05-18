@@ -11,7 +11,7 @@ interface ApprovalModalProps {
   canApprove: boolean;
   canDeny: boolean;
   onClose: () => void;
-  onSubmit: (payload: { action: LeadApprovalAction; comment: string }) => Promise<void> | void;
+  onSubmit: (payload: { action: LeadApprovalAction; comment: string; earnedRevenue?: number }) => Promise<void> | void;
 }
 
 const ApprovalModal: React.FC<ApprovalModalProps> = ({
@@ -25,16 +25,25 @@ const ApprovalModal: React.FC<ApprovalModalProps> = ({
 }) => {
   const [comment, setComment] = useState('');
   const [touched, setTouched] = useState(false);
+  const [revenueInput, setRevenueInput] = useState('');
+  const [revenueTouched, setRevenueTouched] = useState(false);
 
   useEffect(() => {
     setComment(approval?.comment || '');
     setTouched(false);
+    setRevenueInput('');
+    setRevenueTouched(false);
   }, [approval]);
 
   const isOpen = Boolean(approval);
   const isPending = approval?.status === 'PENDING';
   const showActionButtons = Boolean(isPending && canAct);
   const hasError = touched && comment.trim().length === 0;
+
+  const isClosed = Boolean(approval?.toStage?.isClosed);
+  const isRevenueRequired = isPending && isClosed;
+  const parsedRevenue = parseFloat(revenueInput);
+  const revenueError = isRevenueRequired && revenueTouched && (!revenueInput.trim() || Number.isNaN(parsedRevenue) || parsedRevenue <= 0);
 
   if (!approval) {
     return null;
@@ -54,8 +63,19 @@ const ApprovalModal: React.FC<ApprovalModalProps> = ({
 
   const handleAction = async (action: LeadApprovalAction) => {
     setTouched(true);
+    if (isRevenueRequired && action === 'APPROVE') {
+      setRevenueTouched(true);
+      if (!revenueInput.trim() || Number.isNaN(parsedRevenue) || parsedRevenue <= 0) {
+        return;
+      }
+    }
     if (!comment.trim()) return;
-    await onSubmit({ action, comment: comment.trim() });
+
+    await onSubmit({
+      action,
+      comment: comment.trim(),
+      earnedRevenue: isRevenueRequired && action === 'APPROVE' ? parsedRevenue : undefined,
+    });
   };
 
   return (
@@ -165,6 +185,48 @@ const ApprovalModal: React.FC<ApprovalModalProps> = ({
                   <div className="mt-2 text-sm font-black text-gray-900">{new Date(approval.updatedAt).toLocaleString()}</div>
                 </div>
               </div>
+
+              {(!isPending && ((approval.lead as any)?.generatedRevenue || (approval.lead as any)?.earnedRevenue)) ? (
+                <div className="rounded-2xl border border-emerald-100 bg-emerald-50/20 p-4">
+                  <div className="text-[11px] font-black uppercase tracking-[0.2em] text-emerald-800">Approved Closure Revenue</div>
+                  <div className="mt-2 text-lg font-black text-emerald-950">
+                    ${new Intl.NumberFormat('en-US', { minimumFractionDigits: 2 }).format(
+                      Number((approval.lead as any)?.generatedRevenue || (approval.lead as any)?.earnedRevenue || 0)
+                    )}
+                  </div>
+                </div>
+              ) : null}
+
+              {isClosed && isPending ? (
+                <div>
+                  <label className="mb-2 block text-[11px] font-black uppercase tracking-[0.22em] text-gray-400">
+                    Earned Revenue ($) <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={revenueInput}
+                    onChange={(event) => {
+                      const val = event.target.value;
+                      if (/^\d*\.?\d*$/.test(val)) {
+                        setRevenueInput(val);
+                      }
+                    }}
+                    onBlur={() => setRevenueTouched(true)}
+                    placeholder="Enter closed lead earned revenue (e.g., 1500.00)"
+                    className={`w-full rounded-3xl border bg-gray-50 px-4 py-4 text-sm font-semibold text-gray-900 outline-none transition-all placeholder:text-gray-400 ${
+                      revenueError
+                        ? 'border-rose-300 ring-2 ring-rose-100'
+                        : 'border-gray-200 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100'
+                    }`}
+                    aria-invalid={revenueError}
+                  />
+                  {revenueError ? (
+                    <p className="mt-2 text-sm font-bold text-rose-500">
+                      Earned revenue is mandatory and must be a strictly positive decimal.
+                    </p>
+                  ) : null}
+                </div>
+              ) : null}
 
               <div>
                 <label className="mb-2 block text-[11px] font-black uppercase tracking-[0.22em] text-gray-400">

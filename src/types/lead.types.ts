@@ -269,6 +269,7 @@ export interface LeadApprovalListResponse {
 export interface LeadApprovalActionPayload {
   action: LeadApprovalAction;
   comment: string;
+  earnedRevenue?: number;
 }
 
 export interface LeadDynamicValuePayload {

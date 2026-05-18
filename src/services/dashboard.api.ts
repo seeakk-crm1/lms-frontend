@@ -56,3 +56,41 @@ export const getDashboardSummary = async (range: DashboardRange): Promise<Dashbo
 
   return response.data;
 };
+
+export interface RevenueAnalyticsFilters {
+  dateFrom?: string;
+  dateTo?: string;
+  userId?: string;
+  stageId?: string;
+  supervisorId?: string;
+}
+
+export interface RevenueAnalyticsResponse {
+  success: boolean;
+  data: {
+    kpis: {
+      totalRevenue: number;
+      todayRevenue: number;
+      thisMonthRevenue: number;
+      thisYearRevenue: number;
+    };
+    graphs: {
+      dailyRevenue: Array<{ name: string; revenue: number }>;
+      monthlyRevenue: Array<{ name: string; revenue: number }>;
+      yearlyRevenue: Array<{ name: string; revenue: number }>;
+    };
+    metrics: {
+      revenueByUser: Array<{ id: string; name: string; email: string; amount: number }>;
+      revenueByStage: Array<{ id: string; name: string; color: string; amount: number }>;
+      revenueConversionTrends: Array<{ month: string; revenue: number; count: number }>;
+      topPerformers: Array<{ id: string; name: string; email: string; amount: number }>;
+    };
+  };
+}
+
+export const getRevenueAnalytics = async (filters: RevenueAnalyticsFilters): Promise<RevenueAnalyticsResponse> => {
+  const response = await api.get('/dashboard/revenue', {
+    params: filters,
+  });
+  return response.data;
+};
