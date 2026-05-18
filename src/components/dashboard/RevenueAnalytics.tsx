@@ -293,9 +293,9 @@ const RevenueAnalytics: React.FC = () => {
         <motion.div
           whileHover={{ y: -4 }}
           transition={{ duration: 0.2 }}
-          className="relative overflow-hidden rounded-3xl border border-gray-100 bg-white p-6 shadow-sm flex flex-col justify-between h-32"
+          className="relative overflow-hidden rounded-3xl border border-gray-100 bg-white p-6 shadow-sm flex flex-col justify-between h-36"
         >
-          <div className="absolute right-0 top-0 -z-10 h-32 w-32 translate-x-4 -translate-y-4 rounded-full bg-emerald-50/50 blur-2xl" />
+          <div className="absolute right-0 top-0 -z-10 h-36 w-36 translate-x-4 -translate-y-4 rounded-full bg-emerald-50/50 blur-2xl" />
           <div className="flex items-center justify-between">
             <div className="text-[11px] font-black uppercase tracking-[0.24em] text-gray-400">Total Earned Revenue</div>
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
@@ -312,9 +312,9 @@ const RevenueAnalytics: React.FC = () => {
         <motion.div
           whileHover={{ y: -4 }}
           transition={{ duration: 0.2 }}
-          className="relative overflow-hidden rounded-3xl border border-gray-100 bg-white p-6 shadow-sm flex flex-col justify-between h-32"
+          className="relative overflow-hidden rounded-3xl border border-gray-100 bg-white p-6 shadow-sm flex flex-col justify-between h-36"
         >
-          <div className="absolute right-0 top-0 -z-10 h-32 w-32 translate-x-4 -translate-y-4 rounded-full bg-indigo-50/50 blur-2xl" />
+          <div className="absolute right-0 top-0 -z-10 h-36 w-36 translate-x-4 -translate-y-4 rounded-full bg-indigo-50/50 blur-2xl" />
           <div className="flex items-center justify-between">
             <div className="text-[11px] font-black uppercase tracking-[0.24em] text-gray-400">Today's Closings</div>
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
@@ -331,9 +331,9 @@ const RevenueAnalytics: React.FC = () => {
         <motion.div
           whileHover={{ y: -4 }}
           transition={{ duration: 0.2 }}
-          className="relative overflow-hidden rounded-3xl border border-gray-100 bg-white p-6 shadow-sm flex flex-col justify-between h-32"
+          className="relative overflow-hidden rounded-3xl border border-gray-100 bg-white p-6 shadow-sm flex flex-col justify-between h-36"
         >
-          <div className="absolute right-0 top-0 -z-10 h-32 w-32 translate-x-4 -translate-y-4 rounded-full bg-rose-50/50 blur-2xl" />
+          <div className="absolute right-0 top-0 -z-10 h-36 w-36 translate-x-4 -translate-y-4 rounded-full bg-rose-50/50 blur-2xl" />
           <div className="flex items-center justify-between">
             <div className="text-[11px] font-black uppercase tracking-[0.24em] text-gray-400">Monthly Yield</div>
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-50 text-rose-600">
@@ -350,9 +350,9 @@ const RevenueAnalytics: React.FC = () => {
         <motion.div
           whileHover={{ y: -4 }}
           transition={{ duration: 0.2 }}
-          className="relative overflow-hidden rounded-3xl border border-gray-100 bg-white p-6 shadow-sm flex flex-col justify-between h-32"
+          className="relative overflow-hidden rounded-3xl border border-gray-100 bg-white p-6 shadow-sm flex flex-col justify-between h-36"
         >
-          <div className="absolute right-0 top-0 -z-10 h-32 w-32 translate-x-4 -translate-y-4 rounded-full bg-amber-50/50 blur-2xl" />
+          <div className="absolute right-0 top-0 -z-10 h-36 w-36 translate-x-4 -translate-y-4 rounded-full bg-amber-50/50 blur-2xl" />
           <div className="flex items-center justify-between">
             <div className="text-[11px] font-black uppercase tracking-[0.24em] text-gray-400">Yearly Target Tracking</div>
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
