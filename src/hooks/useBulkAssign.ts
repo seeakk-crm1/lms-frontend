@@ -1,3 +1,4 @@
+import React from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-hot-toast';
 import { bulkAssignLeads, previewBulkAssign } from '../services/leads.api';
@@ -7,7 +8,7 @@ import type { BulkAssignPayload, BulkAssignPreviewResponse } from '../types/lead
 export const useBulkPreviewQuery = () => {
   const { appliedFilters, hasApplied, applyVersion, setPreviewCount, setPreviewLeads } = useBulkAssignStore();
 
-  return useQuery<BulkAssignPreviewResponse, Error>({
+  const query = useQuery<BulkAssignPreviewResponse, Error>({
     queryKey: ['bulk-assign-preview', appliedFilters, applyVersion],
     queryFn: () => previewBulkAssign(appliedFilters),
     enabled: hasApplied,
@@ -19,15 +20,26 @@ export const useBulkPreviewQuery = () => {
       if (status === 401 || status === 403 || status === 422) return false;
       return failureCount < 1;
     },
-    onSuccess: (response) => {
-      setPreviewCount(response.count);
-      setPreviewLeads(response.sampleLeads || []);
-    },
-    onError: () => {
+  });
+
+  const queryData = query.data;
+  const queryError = query.error;
+
+  React.useEffect(() => {
+    if (queryData) {
+      setPreviewCount(queryData.count);
+      setPreviewLeads(queryData.sampleLeads || []);
+    }
+  }, [queryData, setPreviewCount, setPreviewLeads]);
+
+  React.useEffect(() => {
+    if (queryError) {
       setPreviewCount(null);
       setPreviewLeads([]);
-    },
-  });
+    }
+  }, [queryError, setPreviewCount, setPreviewLeads]);
+
+  return query;
 };
 
 export const useBulkAssignMutation = () => {

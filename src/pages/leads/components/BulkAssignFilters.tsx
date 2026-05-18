@@ -57,6 +57,8 @@ const BulkAssignFilters: React.FC<BulkAssignFiltersProps> = ({
           value={filters.stageId || ''}
           options={(meta?.stages || []).map((item) => ({ value: item.id, label: item.label }))}
           placeholder="Select Stage"
+          allowClear
+          clearLabel="All stages"
           onChange={(event) => onFilterChange({ stageId: event.target.value || undefined })}
         />
 
@@ -65,6 +67,8 @@ const BulkAssignFilters: React.FC<BulkAssignFiltersProps> = ({
           value={filters.assignedTo || ''}
           options={(meta?.users || []).map((item) => ({ value: item.id, label: item.label }))}
           placeholder="Select Assignee"
+          allowClear
+          clearLabel="All owners / Unassigned"
           onChange={(event) => onFilterChange({ assignedTo: event.target.value || undefined })}
         />
 
@@ -83,6 +87,8 @@ const BulkAssignFilters: React.FC<BulkAssignFiltersProps> = ({
           value={filters.sourceId || ''}
           options={(meta?.sources || []).map((item) => ({ value: item.id, label: item.label }))}
           placeholder="Select Lead Source"
+          allowClear
+          clearLabel="All sources"
           onChange={(event) => onFilterChange({ sourceId: event.target.value || undefined })}
         />
 
