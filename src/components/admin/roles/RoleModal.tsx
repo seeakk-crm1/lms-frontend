@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Role, CreateRoleInput } from '../../../types/role.types';
 import { useRoleMutations } from '../../../hooks/useRoleMutations';
-import { usePermissionsQuery } from '../../../hooks/useRolesQuery';
+import { usePermissionsQuery, useRoleDetailsQuery } from '../../../hooks/useRolesQuery';
 import useRoleStore from '../../../store/useRoleStore';
 import PermissionTree from './PermissionTree';
 import { toast } from 'react-hot-toast';
@@ -111,6 +111,7 @@ interface RoleModalProps {
 const RoleModal: React.FC<RoleModalProps> = ({ isOpen, onClose, role, onDelete }) => {
   const { setPermissions } = useRoleStore();
   const { data: permissionsData } = usePermissionsQuery();
+  const { data: fullRole, isLoading: isRoleLoading } = useRoleDetailsQuery(isOpen ? role?.id || null : null);
   const { createRole, updateRole } = useRoleMutations();
   const [activeTab, setActiveTab] = useState<'details' | 'permissions'>('details');
   const canDeleteRole = !role?.isSystemRole && (role?.usersCount ?? 0) === 0;
@@ -152,7 +153,7 @@ const RoleModal: React.FC<RoleModalProps> = ({ isOpen, onClose, role, onDelete }
         name: role.name,
         status: role.status,
         description: role.description || '',
-        permissions: role.permissions || [],
+        permissions: fullRole?.permissions || role.permissions || [],
       });
     } else {
       reset({
@@ -162,8 +163,11 @@ const RoleModal: React.FC<RoleModalProps> = ({ isOpen, onClose, role, onDelete }
         permissions: [],
       });
     }
-    setActiveTab('details');
-  }, [role, reset, isOpen]);
+    // Only switch to details tab when modal first opens
+    if (isOpen && !fullRole) {
+      setActiveTab('details');
+    }
+  }, [role, fullRole, reset, isOpen]);
 
   const onSubmit = async (data: CreateRoleInput) => {
     try {
@@ -409,7 +413,7 @@ const RoleModal: React.FC<RoleModalProps> = ({ isOpen, onClose, role, onDelete }
                         name: role.name,
                         status: role.status,
                         description: role.description || '',
-                        permissions: role.permissions || [],
+                        permissions: fullRole?.permissions || role.permissions || [],
                     });
                 } else {
                     reset({ name: '', status: 'ACTIVE', description: '', permissions: [] });
