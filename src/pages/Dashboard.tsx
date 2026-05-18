@@ -52,7 +52,14 @@ const Dashboard: React.FC<DashboardProps> = ({ mode = 'operations' }) => {
         'LEADS_VIEW_TEAM',
         'SYSTEM_CONFIG',
     ]);
-    const isPrivileged = user?.role?.name === 'superadmin' || user?.role?.name === 'admin';
+    const getRoleName = (role: any): string => {
+        if (typeof role === 'object' && role !== null) {
+            return role.name || '';
+        }
+        return typeof role === 'string' ? role : '';
+    };
+    const roleName = getRoleName(user?.role).toLowerCase();
+    const isPrivileged = roleName === 'superadmin' || roleName === 'admin';
     const canSeeRevenue = isPrivileged || hasAnyPermission(user?.permissions || [], [
         'VIEW_TOTAL_REVENUE',
         'VIEW_OWN_REVENUE',

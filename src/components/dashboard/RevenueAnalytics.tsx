@@ -20,7 +20,16 @@ const formatCurrency = (val: number) => {
 const RevenueAnalytics: React.FC = () => {
   const user = useAuthStore((state) => state.user);
   const userPermissions = user?.permissions || [];
-  const isPrivileged = user?.role?.name === 'superadmin' || user?.role?.name === 'admin';
+  
+  const getRoleName = (role: any): string => {
+    if (typeof role === 'object' && role !== null) {
+      return role.name || '';
+    }
+    return typeof role === 'string' ? role : '';
+  };
+  const roleName = getRoleName(user?.role).toLowerCase();
+  const isPrivileged = roleName === 'superadmin' || roleName === 'admin';
+  
   const hasTotalRevenue = isPrivileged || userPermissions.includes('VIEW_TOTAL_REVENUE');
   const hasOwnRevenue = isPrivileged || userPermissions.includes('VIEW_OWN_REVENUE');
 
