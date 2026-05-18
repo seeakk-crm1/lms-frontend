@@ -125,6 +125,9 @@ const CalendarPage: React.FC = () => {
                 openModal(item);
               }}
               onOpenFollowUp={setActionFollowUp}
+              onOpenLead={(lead) => {
+                navigate('/leads', { state: { openLeadId: lead.id } });
+              }}
             />
           </div>
         </div>

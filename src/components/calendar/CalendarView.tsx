@@ -17,11 +17,12 @@ interface Props {
   onSelectDate: (date: string) => void;
   onComplete: (followUp: FollowUp) => void;
   onOpenFollowUp: (followUp: FollowUp) => void;
+  onOpenLead: (lead: any) => void;
 }
 
 const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-const CalendarView: React.FC<Props> = ({ view, selectedDate, summary = [], onSelectDate, onComplete, onOpenFollowUp }) => {
+const CalendarView: React.FC<Props> = ({ view, selectedDate, summary = [], onSelectDate, onComplete, onOpenFollowUp, onOpenLead }) => {
   const selected = parseISO(selectedDate);
   const [detailsModal, setDetailsModal] = useState<{
     isOpen: boolean;
@@ -108,7 +109,7 @@ const CalendarView: React.FC<Props> = ({ view, selectedDate, summary = [], onSel
                   <div className="flex flex-1 flex-col gap-1.5 overflow-y-auto">
                     {data?.leadsCreated > 0 ? (
                       <button
-                        onClick={() => openDetails(day.toISOString(), 'LEADS_CREATED', 'Leads Created')}
+                        onClick={() => openDetails(key, 'LEADS_CREATED', 'Leads Created')}
                         className="flex w-full items-center justify-between rounded-lg border border-blue-200 bg-blue-50 px-2 py-1 text-left hover:bg-blue-100"
                       >
                         <span className="truncate text-[10px] font-bold text-blue-800">Leads Created</span>
@@ -119,7 +120,7 @@ const CalendarView: React.FC<Props> = ({ view, selectedDate, summary = [], onSel
                     {data?.stageTransitions?.map((st: any) => (
                       <button
                         key={`trans-${st.stageId}`}
-                        onClick={() => openDetails(day.toISOString(), 'STAGE_CREATED', `Stage: ${st.name}`, st.stageId)}
+                        onClick={() => openDetails(key, 'STAGE_CREATED', `Stage: ${st.name}`, st.stageId)}
                         className="flex w-full items-center justify-between rounded-lg border px-2 py-1 text-left transition-colors"
                         style={{ borderColor: `${st.color}40`, backgroundColor: `${st.color}15` }}
                       >
@@ -130,7 +131,7 @@ const CalendarView: React.FC<Props> = ({ view, selectedDate, summary = [], onSel
 
                     {data?.totalFollowUps > 0 ? (
                       <button
-                        onClick={() => openDetails(day.toISOString(), 'TOTAL_FOLLOWUPS', 'Total Follow-ups')}
+                        onClick={() => openDetails(key, 'TOTAL_FOLLOWUPS', 'Total Follow-ups')}
                         className="flex w-full items-center justify-between rounded-lg border border-red-200 bg-red-50 px-2 py-1 text-left hover:bg-red-100 mt-1"
                       >
                         <span className="truncate text-[10px] font-bold text-red-800">Total Follow-ups</span>
@@ -141,7 +142,7 @@ const CalendarView: React.FC<Props> = ({ view, selectedDate, summary = [], onSel
                     {data?.stageFollowUps?.map((sf: any) => (
                       <button
                         key={`fup-${sf.stageId}`}
-                        onClick={() => openDetails(day.toISOString(), 'STAGE_FOLLOWUPS', `Follow-ups: ${sf.name}`, sf.stageId)}
+                        onClick={() => openDetails(key, 'STAGE_FOLLOWUPS', `Follow-ups: ${sf.name}`, sf.stageId)}
                         className="flex w-full items-center justify-between rounded-lg border px-2 py-1 text-left transition-colors"
                         style={{ borderColor: `${sf.color}40`, backgroundColor: `${sf.color}15` }}
                       >
@@ -166,7 +167,7 @@ const CalendarView: React.FC<Props> = ({ view, selectedDate, summary = [], onSel
         onClose={() => setDetailsModal({ ...detailsModal, isOpen: false })}
         onOpenFollowUp={onOpenFollowUp}
         onCompleteFollowUp={onComplete}
-        onOpenLead={() => {}} 
+        onOpenLead={onOpenLead}
       />
     </>
   );

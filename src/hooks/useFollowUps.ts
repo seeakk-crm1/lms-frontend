@@ -110,10 +110,13 @@ export const useAdvancedCalendarDetailsQuery = (params: {
   page?: number;
   limit?: number;
 }) => {
+  const { selectedUser } = useFollowupStore();
+  const queryParams = { ...params, ...(selectedUser ? { userId: selectedUser } : {}) };
+
   return useQuery({
-    queryKey: ['followups', 'advanced-calendar-details', params],
-    queryFn: () => getAdvancedCalendarDetails(params),
-    enabled: Boolean(params.date && params.type),
+    queryKey: ['followups', 'advanced-calendar-details', queryParams],
+    queryFn: () => getAdvancedCalendarDetails(queryParams),
+    enabled: Boolean(queryParams.date && queryParams.type),
     staleTime: 30_000,
     gcTime: 300_000,
     refetchOnWindowFocus: false,
