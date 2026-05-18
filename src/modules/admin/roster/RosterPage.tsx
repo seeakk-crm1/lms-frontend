@@ -69,14 +69,20 @@ const RosterPage: React.FC = () => {
   const totalUsers = usersResp?.pagination?.total || 0;
 
   const departmentOptions = useMemo(() => {
-    const raw = Array.isArray(departmentsResp) ? departmentsResp : [];
+    let raw = Array.isArray(departmentsResp) ? departmentsResp : [];
+    if (!Array.isArray(departmentsResp) && departmentsResp && Array.isArray((departmentsResp as any).departments)) {
+      raw = (departmentsResp as any).departments;
+    }
     return raw
       .filter((item: any) => item?.id && item?.name)
       .map((item: any) => ({ id: item.id as string, name: item.name as string }));
   }, [departmentsResp]);
 
   const supervisorOptions = useMemo(() => {
-    const raw = Array.isArray(supervisorsResp) ? supervisorsResp : [];
+    let raw = Array.isArray(supervisorsResp) ? supervisorsResp : [];
+    if (!Array.isArray(supervisorsResp) && supervisorsResp && Array.isArray((supervisorsResp as any).supervisors)) {
+      raw = (supervisorsResp as any).supervisors;
+    }
     return raw
       .filter((item: any) => item?.id && (item?.name || item?.email))
       .map((item: any) => ({ id: item.id as string, name: (item.name || item.email) as string }));

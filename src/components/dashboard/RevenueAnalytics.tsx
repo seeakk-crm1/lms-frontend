@@ -52,10 +52,17 @@ const RevenueAnalytics: React.FC = () => {
         getSupervisors(),
       ]);
 
+      let supervisors: any[] = [];
+      if (Array.isArray(supervisorsList)) {
+        supervisors = supervisorsList;
+      } else if (supervisorsList && Array.isArray((supervisorsList as any).supervisors)) {
+        supervisors = (supervisorsList as any).supervisors;
+      }
+
       setMetaOptions({
         users: leadMeta.users || [],
         stages: (leadMeta.stages || []).filter((s) => s.isClosed),
-        supervisors: supervisorsList || [],
+        supervisors,
       });
     } catch (err: any) {
       console.error('Failed to load filters metadata', err);
