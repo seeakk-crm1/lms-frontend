@@ -192,7 +192,7 @@ const RoleModal: React.FC<RoleModalProps> = ({ isOpen, onClose, role, onDelete }
   };
 
   const applyRoleExample = (example: RoleTemplateDefinition) => {
-    const availablePermissionKeys = new Set((permissionsData ?? []).map((permission) => permission.key));
+    const availablePermissionKeys = new Set<string>((permissionsData ?? []).map((permission: any) => permission.key));
     const recommendedPermissions = example.permissionStrategy(availablePermissionKeys);
 
     setValue('name', example.name, { shouldDirty: true, shouldValidate: true });
