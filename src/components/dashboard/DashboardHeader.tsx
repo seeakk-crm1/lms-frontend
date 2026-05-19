@@ -28,7 +28,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ isMobileMenuOpen, onT
     };
 
     return (
-        <header className="h-16 sm:h-20 bg-white border-b border-gray-100 flex items-center justify-between px-4 sm:px-6 shrink-0 relative z-10 w-full transition-colors duration-300">
+        <header className="h-16 sm:h-20 bg-white border-b border-gray-100 flex items-center justify-between px-4 sm:px-6 shrink-0 relative z-30 w-full transition-colors duration-300">
             {/* Left Section: Mobile Menu Toggle & Search */}
             <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
                 {/* Mobile Hamburger (hidden on large screens) */}
