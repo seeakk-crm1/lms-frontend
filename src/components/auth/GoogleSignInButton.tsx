@@ -19,13 +19,13 @@ const GoogleSignInButton: React.FC = () => {
   useEffect(() => {
     if (!scriptLoadedSuccessfully || !clientId || !containerRef.current) return;
 
-    const gsi = window.google?.accounts?.id;
+    const gsi = (window as any).google?.accounts?.id;
     if (!gsi) return;
 
     if (gsiInitializedForClientId !== clientId) {
       gsi.initialize({
         client_id: clientId,
-        callback: (credentialResponse) => {
+        callback: (credentialResponse: any) => {
           if (!credentialResponse?.credential) {
             dispatchGoogleSignInError();
             return;

@@ -42,8 +42,8 @@ const RowActions: React.FC<{
 
   const items = useMemo(
     () => [
-      { label: 'Edit', icon: PencilLine, onClick: () => onEdit(row), show: canManage },
-      { label: row.status === 'ACTIVE' ? 'Deactivate' : 'Activate', icon: Power, onClick: () => onToggleStatus(row), show: canManage },
+      { label: 'Edit', icon: PencilLine, onClick: () => onEdit(row), show: canManage, destructive: false },
+      { label: row.status === 'ACTIVE' ? 'Deactivate' : 'Activate', icon: Power, onClick: () => onToggleStatus(row), show: canManage, destructive: row.status === 'ACTIVE' },
     ].filter((item) => item.show),
     [canManage, onEdit, onToggleStatus, row],
   );

@@ -44,7 +44,7 @@ const AddLocationModal: React.FC<AddLocationModalProps> = ({
     watch,
     setValue,
   } = useForm<FormValues>({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(schema) as any,
     defaultValues: {
       name: '',
       isActive: true,

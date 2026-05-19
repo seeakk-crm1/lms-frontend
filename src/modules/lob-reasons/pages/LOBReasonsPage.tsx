@@ -104,7 +104,7 @@ const LOBReasonsPage: React.FC = () => {
 
                 <SearchableSelect
                   options={statusOptions.map((option) => ({ value: option.value, label: option.label }))}
-                  value={status === 'ALL' ? '' : status}
+                  value={status === 'ALL' ? '' : status || ''}
                   onChange={(event) => setStatus((event.target.value as LOBReasonStatus | '') || 'ALL')}
                   placeholder="Filter status"
                   name="status"

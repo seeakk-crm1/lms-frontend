@@ -38,7 +38,7 @@ const AddCountryModal: React.FC<AddCountryModalProps> = ({
     watch,
     setValue,
   } = useForm<FormValues>({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(schema) as any,
     defaultValues: {
       name: '',
       code: '',

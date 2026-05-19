@@ -41,7 +41,7 @@ const AddLevelModal: React.FC<AddLevelModalProps> = ({ open, country, levels, de
     watch,
     formState: { errors },
   } = useForm<FormValues>({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(schema) as any,
     defaultValues: { levels: [] },
   });
 
@@ -82,13 +82,13 @@ const AddLevelModal: React.FC<AddLevelModalProps> = ({ open, country, levels, de
     if (!country) return;
     await onSubmit({
       countryId: country.id,
-      levels: values.levels
-        .map((level) => ({
+      levels: (values.levels || [])
+        .map((level: any) => ({
           name: level.name.trim(),
           order: Number(level.order),
           isActive: level.isActive,
         }))
-        .sort((a, b) => a.order - b.order),
+        .sort((a: any, b: any) => a.order - b.order),
     });
   });
 
