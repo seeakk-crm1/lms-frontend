@@ -56,6 +56,9 @@ const filterFieldLabels: Record<AllowedReportFilterKey, string> = {
   department: 'Department',
   office: 'Office',
   status: 'Status',
+  user: 'User',
+  module: 'Module',
+  action: 'Activity Type',
 };
 
 const statusFilterOptions = [
@@ -253,6 +256,24 @@ const ReportTypePage: React.FC = () => {
       department: departmentOptions,
       office: officeOptions,
       status: statusFilterOptions,
+      user: (leadMetaQuery.data?.users || []).map((item) => ({ value: item.id, label: item.label })),
+      module: [
+        { value: 'LEADS', label: 'Leads' },
+        { value: 'USERS', label: 'Users' },
+        { value: 'REPORTS', label: 'Reports' },
+        { value: 'TARGETS', label: 'Targets' },
+        { value: 'FOLLOWUPS', label: 'Follow-ups' },
+      ],
+      action: [
+        { value: 'CREATE', label: 'Create' },
+        { value: 'UPDATE', label: 'Update' },
+        { value: 'DELETE', label: 'Delete' },
+        { value: 'LOGIN', label: 'Login' },
+        { value: 'EXPORT', label: 'Export' },
+        { value: 'IMPORT', label: 'Import' },
+        { value: 'APPROVE', label: 'Approve' },
+        { value: 'REJECT', label: 'Reject' },
+      ],
     }),
     [departmentOptions, leadMetaQuery.data, officeOptions, roleOptions],
   );
