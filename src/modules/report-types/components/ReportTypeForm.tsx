@@ -23,12 +23,14 @@ const moduleOptions: Array<{ value: ReportModule; label: string }> = [
   { value: 'REPORTS', label: 'Reports' },
   { value: 'TARGETS', label: 'Targets' },
   { value: 'FOLLOWUPS', label: 'Follow-ups' },
+  { value: 'ACTIVITY', label: 'Activity Logs' },
 ];
 
 const sourceOptions: Array<{ value: ReportBaseDataSource; label: string }> = [
   { value: 'LEADS', label: 'Leads' },
   { value: 'USERS', label: 'Users' },
   { value: 'FOLLOWUPS', label: 'Follow-ups' },
+  { value: 'ACTIVITY', label: 'Activity Logs' },
 ];
 
 const statusOptions: Array<{ value: ReportTypeStatus; label: string }> = [
@@ -40,6 +42,7 @@ const FILTERS_BY_SOURCE: Record<ReportBaseDataSource, AllowedReportFilterKey[]> 
   LEADS: ['stage', 'assignee', 'lead_source', 'created_date', 'follow_up_date'],
   USERS: ['created_date', 'role', 'department', 'office', 'status'],
   FOLLOWUPS: ['stage', 'assignee', 'lead_source', 'created_date', 'follow_up_date', 'status'],
+  ACTIVITY: ['created_date', 'user', 'module', 'action'],
 };
 
 interface ReportTypeFormProps {

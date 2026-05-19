@@ -1,6 +1,6 @@
 export type ReportTypeStatus = 'ACTIVE' | 'INACTIVE';
-export type ReportModule = 'LEADS' | 'USERS' | 'REPORTS' | 'TARGETS' | 'FOLLOWUPS';
-export type ReportBaseDataSource = 'LEADS' | 'USERS' | 'FOLLOWUPS';
+export type ReportModule = 'LEADS' | 'USERS' | 'REPORTS' | 'TARGETS' | 'FOLLOWUPS' | 'ACTIVITY';
+export type ReportBaseDataSource = 'LEADS' | 'USERS' | 'FOLLOWUPS' | 'ACTIVITY';
 export type AllowedReportFilterKey =
   | 'stage'
   | 'assignee'
@@ -10,7 +10,10 @@ export type AllowedReportFilterKey =
   | 'role'
   | 'department'
   | 'office'
-  | 'status';
+  | 'status'
+  | 'user'
+  | 'module'
+  | 'action';
 
 export interface ReportTypeActor {
   id: string;

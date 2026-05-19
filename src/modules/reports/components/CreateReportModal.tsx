@@ -33,6 +33,9 @@ const filterLabels: Record<AllowedReportFilterKey, string> = {
   department: 'Department',
   office: 'Office',
   status: 'Status',
+  user: 'User',
+  module: 'Module',
+  action: 'Activity Type',
 };
 
 const isRangeFilter = (key: AllowedReportFilterKey) => key === 'created_date' || key === 'follow_up_date';

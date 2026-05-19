@@ -14,12 +14,16 @@ const FILTER_OPTIONS: Array<{ value: AllowedReportFilterKey; label: string }> = 
   { value: 'department', label: 'Department' },
   { value: 'office', label: 'Office' },
   { value: 'status', label: 'Status' },
+  { value: 'user', label: 'User' },
+  { value: 'module', label: 'Module' },
+  { value: 'action', label: 'Activity Type' },
 ];
 
 const FILTERS_BY_SOURCE: Record<ReportBaseDataSource, AllowedReportFilterKey[]> = {
   LEADS: ['stage', 'assignee', 'lead_source', 'created_date', 'follow_up_date'],
   USERS: ['created_date', 'role', 'department', 'office', 'status'],
   FOLLOWUPS: ['stage', 'assignee', 'lead_source', 'created_date', 'follow_up_date', 'status'],
+  ACTIVITY: ['created_date', 'user', 'module', 'action'],
 };
 
 interface FilterSelectorProps {
