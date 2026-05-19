@@ -7,6 +7,7 @@ import { X, User as UserIcon, Mail, Phone, Lock, Eye, EyeOff, KeyRound, Check, S
 import { toast } from 'react-hot-toast';
 import useAuthStore from '../../store/useAuthStore';
 import api from '../../services/api';
+import { getPrimaryRoleName } from '../../utils/permissions';
 
 const schema = z
   .object({
@@ -190,7 +191,7 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({ open, onClose }) =>
                   <p className="text-sm font-semibold text-emerald-100 mt-0.5">{user?.email}</p>
                   <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-white backdrop-blur-sm">
                     <Shield className="h-3 w-3" />
-                    {user?.role && typeof user.role === 'object' ? user.role.name : user?.role || 'Staff'}
+                    {getPrimaryRoleName(user)}
                   </div>
                 </div>
               </div>
