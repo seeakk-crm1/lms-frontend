@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Search, Bell, Menu, Plus, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import useAuthStore from '../../store/useAuthStore';
 import { getPrimaryRoleName, hasPermission } from '../../utils/permissions';
+import UserProfileModal from './UserProfileModal';
 
 interface DashboardHeaderProps {
     isMobileMenuOpen: boolean;
@@ -12,6 +13,7 @@ interface DashboardHeaderProps {
 const DashboardHeader: React.FC<DashboardHeaderProps> = ({ isMobileMenuOpen, onToggleMobileMenu }) => {
     const { user } = useAuthStore();
     const navigate = useNavigate();
+    const [profileOpen, setProfileOpen] = useState(false);
     const displayName =
         typeof user?.name === 'string' && user.name.trim()
             ? user.name.trim()
@@ -107,7 +109,11 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ isMobileMenuOpen, onT
                 </button>
 
                 {/* User Dropdown Trigger */}
-                <button className="flex items-center gap-3 pl-2 sm:pl-4 focus:outline-none group">
+                {/* User Dropdown Trigger */}
+                <button
+                    onClick={() => setProfileOpen(true)}
+                    className="flex items-center gap-3 pl-2 sm:pl-4 focus:outline-none group"
+                >
                     <div className="hidden sm:flex flex-col items-end">
                         <span className="text-sm font-bold text-gray-900 group-hover:text-emerald-600 transition-colors leading-tight">
                             {displayName}
@@ -124,6 +130,8 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ isMobileMenuOpen, onT
                     </div>
                 </button>
             </div>
+
+            <UserProfileModal open={profileOpen} onClose={() => setProfileOpen(false)} />
         </header>
     );
 };
