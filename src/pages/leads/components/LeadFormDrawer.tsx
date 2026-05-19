@@ -15,6 +15,8 @@ import StageRulesTransitionModal, { StageRuleValueEntry } from './StageRulesTran
 import { getLeadTransitionStageRules, getStageRules } from '../../../services/stageRule.api';
 import type { ListStageRulesResponse, StageRule } from '../../../types/stageRule.types';
 import useAuthStore from '../../../store/useAuthStore';
+import { getCountries } from '../../../services/locations.api';
+import type { Country } from '../../../services/locations.api';
 
 interface LeadFormDrawerProps {
   isOpen: boolean;
@@ -134,6 +136,23 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
   const hydratedLead = leadDetails?.id ? (leadDetails as LeadListItem) : lead;
   const currentStageId = hydratedLead?.stageId || previousStageId || '';
 
+  const [countries, setCountries] = useState<Country[]>([]);
+  const [selectedCountry, setSelectedCountry] = useState<string>('');
+  const [streetAddress, setStreetAddress] = useState<string>('');
+
+  useEffect(() => {
+    if (isOpen) {
+      void (async () => {
+        try {
+          const res = await getCountries({ isActive: true, limit: 250 });
+          setCountries(res.data || []);
+        } catch (error) {
+          console.error('Failed to load countries', error);
+        }
+      })();
+    }
+  }, [isOpen]);
+
   useEffect(() => {
     if (!meta?.dynamicFields) return;
     setDynamicFields(meta.dynamicFields);
@@ -146,12 +165,19 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
       setPendingTransitionStageId(null);
       setStageRuleSubmitPayload([]);
       revertFormBeforeRulesRef.current = null;
+      setStreetAddress('');
+      setSelectedCountry('');
       return;
     }
 
     if (mode === 'edit' && hydratedLead && !isBusy) {
       setFormValues(fromLeadToForm(hydratedLead));
       setPreviousStageId(hydratedLead.stageId || '');
+      
+      const fullAddress = hydratedLead.address || '';
+      const parts = fullAddress.split(' | Country: ');
+      setStreetAddress(parts[0] || '');
+      setSelectedCountry(parts[1] || '');
       return;
     }
 
@@ -160,6 +186,8 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
       assignedToId: currentUser?.id || '',
     });
     setPreviousStageId('');
+    setStreetAddress('');
+    setSelectedCountry('');
   }, [hydratedLead, isOpen, mode]);
 
   const stageOptions = meta?.stages || [];
@@ -239,6 +267,22 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
     setFormValues((current) => ({
       ...current,
       [field]: value,
+    }));
+  };
+
+  const handleStreetAddressChange = (val: string) => {
+    setStreetAddress(val);
+    setFormValues((current) => ({
+      ...current,
+      address: selectedCountry ? `${val.trim()} | Country: ${selectedCountry}` : val.trim(),
+    }));
+  };
+
+  const handleCountryChange = (val: string) => {
+    setSelectedCountry(val);
+    setFormValues((current) => ({
+      ...current,
+      address: val ? `${streetAddress.trim()} | Country: ${val}` : streetAddress.trim(),
     }));
   };
 
@@ -324,6 +368,22 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
     if (!formValues.name.trim()) {
       toast.error('Lead name is required');
       return;
+    }
+
+    if (formValues.email && formValues.email.trim()) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formValues.email.trim())) {
+        toast.error('Please enter a valid email address');
+        return;
+      }
+    }
+
+    if (formValues.phone && formValues.phone.trim()) {
+      const phoneRegex = /^\+?[0-9\s\-()]{7,20}$/;
+      if (!phoneRegex.test(formValues.phone.trim())) {
+        toast.error('Please enter a valid mobile number (between 7 and 20 digits)');
+        return;
+      }
     }
 
     if (formValues.nextFollowUpAt) {
@@ -559,13 +619,29 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
                         </div>
 
                         <div className="md:col-span-2">
-                          <label className="mb-2 block text-sm font-black text-gray-900">Address</label>
+                          <label className="mb-2 block text-sm font-black text-gray-900">Street Address</label>
                           <textarea
-                            rows={3}
-                            value={formValues.address}
-                            onChange={(event) => handleFieldChange('address', event.target.value)}
+                            rows={2}
+                            value={streetAddress}
+                            onChange={(event) => handleStreetAddressChange(event.target.value)}
                             className={`${inputClassName} resize-none`}
                             placeholder="Street, city, state, PIN"
+                          />
+                        </div>
+
+                        <div className="md:col-span-2">
+                          <label className="mb-2 block text-sm font-black text-gray-900">Country</label>
+                          <SearchableSelect
+                            name="country"
+                            value={selectedCountry}
+                            options={countries.map((c) => ({
+                              value: c.name,
+                              label: c.name,
+                            }))}
+                            placeholder="Select country"
+                            onChange={(event) => handleCountryChange(event.target.value)}
+                            allowClear
+                            clearLabel="No country"
                           />
                         </div>
 
