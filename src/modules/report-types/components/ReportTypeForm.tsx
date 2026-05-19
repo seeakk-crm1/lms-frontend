@@ -13,6 +13,14 @@ const schema = z.object({
   description: z.string().trim().optional(),
   allowedFilters: z.array(z.string()).min(1, 'Select at least one allowed filter'),
   status: z.enum(['ACTIVE', 'INACTIVE']),
+  category: z.string().optional(),
+  trackModules: z.array(z.string()).optional(),
+  enableUserFilter: z.boolean().optional(),
+  enableDateFilter: z.boolean().optional(),
+  trackActivityTypes: z.array(z.string()).optional(),
+  allowExport: z.boolean().optional(),
+  showSummary: z.boolean().optional(),
+  showDetailedLogs: z.boolean().optional(),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -36,6 +44,48 @@ const sourceOptions: Array<{ value: ReportBaseDataSource; label: string }> = [
 const statusOptions: Array<{ value: ReportTypeStatus; label: string }> = [
   { value: 'ACTIVE', label: 'Active' },
   { value: 'INACTIVE', label: 'Inactive' },
+];
+
+const categoryOptions = [
+  { value: 'Leads Report', label: 'Leads Report' },
+  { value: 'Revenue Report', label: 'Revenue Report' },
+  { value: 'Follow-up Report', label: 'Follow-up Report' },
+  { value: 'User Activity Report', label: 'User Activity Report' },
+  { value: 'Attendance Report', label: 'Attendance Report' },
+  { value: 'Approval Report', label: 'Approval Report' },
+  { value: 'Calendar Report', label: 'Calendar Report' },
+];
+
+const trackModulesOptions = [
+  { value: 'Leads', label: 'Leads' },
+  { value: 'Follow-ups', label: 'Follow-ups' },
+  { value: 'Calendar', label: 'Calendar' },
+  { value: 'Reports', label: 'Reports' },
+  { value: 'Revenue', label: 'Revenue' },
+  { value: 'Pending Approval', label: 'Pending Approval' },
+  { value: 'Bulk Assign', label: 'Bulk Assign' },
+  { value: 'Dashboard', label: 'Dashboard' },
+  { value: 'Attendance', label: 'Attendance' },
+  { value: 'Users', label: 'Users' },
+  { value: 'Masters', label: 'Masters' },
+  { value: 'Lead Stages', label: 'Lead Stages' },
+  { value: 'LOB Analysis', label: 'LOB Analysis' },
+];
+
+const trackActivityTypesOptions = [
+  { value: 'Create', label: 'Create' },
+  { value: 'Edit', label: 'Edit' },
+  { value: 'Delete', label: 'Delete' },
+  { value: 'Assign', label: 'Assign' },
+  { value: 'Approve', label: 'Approve' },
+  { value: 'Reject', label: 'Reject' },
+  { value: 'Login', label: 'Login' },
+  { value: 'Logout', label: 'Logout' },
+  { value: 'Export', label: 'Export' },
+  { value: 'Follow-up Complete', label: 'Follow-up Complete' },
+  { value: 'Stage Change', label: 'Stage Change' },
+  { value: 'Revenue Added', label: 'Revenue Added' },
+  { value: 'Attendance Added', label: 'Attendance Added' },
 ];
 
 const FILTERS_BY_SOURCE: Record<ReportBaseDataSource, AllowedReportFilterKey[]> = {
@@ -67,6 +117,14 @@ const ReportTypeForm: React.FC<ReportTypeFormProps> = ({ initialValue, onSubmit,
       description: initialValue?.description || '',
       allowedFilters: initialValue?.allowedFilters || [],
       status: initialValue?.status || 'ACTIVE',
+      category: initialValue?.category || 'Leads Report',
+      trackModules: initialValue?.trackModules || [],
+      enableUserFilter: initialValue?.enableUserFilter || false,
+      enableDateFilter: initialValue?.enableDateFilter || false,
+      trackActivityTypes: initialValue?.trackActivityTypes || [],
+      allowExport: initialValue?.allowExport || false,
+      showSummary: initialValue?.showSummary || false,
+      showDetailedLogs: initialValue?.showDetailedLogs || false,
     }),
     [initialValue],
   );
@@ -91,6 +149,7 @@ const ReportTypeForm: React.FC<ReportTypeFormProps> = ({ initialValue, onSubmit,
   const selectedBaseDataSource = watch('baseDataSource');
   const selectedAllowedFilters = watch('allowedFilters');
   const selectedStatus = watch('status');
+  const selectedCategory = watch('category');
 
   useEffect(() => {
     if (!selectedBaseDataSource) {
@@ -118,12 +177,20 @@ const ReportTypeForm: React.FC<ReportTypeFormProps> = ({ initialValue, onSubmit,
           description: values.description?.trim() || undefined,
           allowedFilters: values.allowedFilters as AllowedReportFilterKey[],
           status: values.status,
+          category: values.category,
+          trackModules: values.trackModules,
+          enableUserFilter: values.enableUserFilter,
+          enableDateFilter: values.enableDateFilter,
+          trackActivityTypes: values.trackActivityTypes,
+          allowExport: values.allowExport,
+          showSummary: values.showSummary,
+          showDetailedLogs: values.showDetailedLogs,
         });
       })}
       className="space-y-5"
     >
-      <div className="grid gap-4 md:grid-cols-2">
-        <label className="relative block">
+      <div className="grid gap-4 md:grid-cols-3">
+        <label className="relative block md:col-span-3">
           <input {...register('name')} placeholder="Report Type Name" className={inputStyles} />
           <span className={floatingLabelStyles}>Report Type Name</span>
           {errors.name ? <span className="mt-2 block text-xs font-bold text-rose-500">{errors.name.message}</span> : null}
@@ -164,6 +231,23 @@ const ReportTypeForm: React.FC<ReportTypeFormProps> = ({ initialValue, onSubmit,
           />
           {errors.baseDataSource ? <span className="block text-xs font-bold text-rose-500">{errors.baseDataSource.message}</span> : null}
         </div>
+
+        <div className="space-y-2">
+          <span className="block text-[11px] font-black uppercase tracking-[0.18em] text-gray-400">Report Category</span>
+          <Controller
+            control={control}
+            name="category"
+            render={({ field }) => (
+              <SearchableSelect
+                options={categoryOptions}
+                value={field.value}
+                onChange={field.onChange}
+                placeholder="Select category"
+                name={field.name}
+              />
+            )}
+          />
+        </div>
       </div>
 
       <label className="relative block">
@@ -175,6 +259,150 @@ const ReportTypeForm: React.FC<ReportTypeFormProps> = ({ initialValue, onSubmit,
         />
         <span className={floatingLabelStyles}>Description</span>
       </label>
+
+      {selectedCategory === 'User Activity Report' && (
+        <div className="space-y-5 rounded-2xl border border-dashed border-gray-300 bg-gray-50/50 p-5">
+          <h4 className="text-xs font-black uppercase tracking-wider text-gray-600">User Activity Report Configurations</h4>
+          
+          <div className="space-y-2">
+            <span className="block text-[11px] font-black uppercase tracking-[0.18em] text-gray-400">Track Modules</span>
+            <Controller
+              control={control}
+              name="trackModules"
+              render={({ field }) => {
+                const currentVal = field.value || [];
+                const toggleVal = (v: string) => {
+                  const updated = currentVal.includes(v)
+                    ? currentVal.filter((x) => x !== v)
+                    : [...currentVal, v];
+                  field.onChange(updated);
+                };
+                return (
+                  <div className="flex flex-wrap gap-2">
+                    {trackModulesOptions.map((opt) => {
+                      const active = currentVal.includes(opt.value);
+                      return (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => toggleVal(opt.value)}
+                          className={`rounded-xl border px-3 py-1.5 text-xs font-bold transition-all ${
+                            active
+                              ? 'border-emerald-500 bg-emerald-50 text-emerald-700 shadow-sm'
+                              : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                );
+              }}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <span className="block text-[11px] font-black uppercase tracking-[0.18em] text-gray-400">Track Activity Types</span>
+            <Controller
+              control={control}
+              name="trackActivityTypes"
+              render={({ field }) => {
+                const currentVal = field.value || [];
+                const toggleVal = (v: string) => {
+                  const updated = currentVal.includes(v)
+                    ? currentVal.filter((x) => x !== v)
+                    : [...currentVal, v];
+                  field.onChange(updated);
+                };
+                return (
+                  <div className="flex flex-wrap gap-2">
+                    {trackActivityTypesOptions.map((opt) => {
+                      const active = currentVal.includes(opt.value);
+                      return (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => toggleVal(opt.value)}
+                          className={`rounded-xl border px-3 py-1.5 text-xs font-bold transition-all ${
+                            active
+                              ? 'border-emerald-500 bg-emerald-50 text-emerald-700 shadow-sm'
+                              : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                );
+              }}
+            />
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 rounded-xl border border-gray-200 bg-white p-4">
+            <label className="flex items-center gap-3 cursor-pointer group">
+              <input
+                type="checkbox"
+                {...register('enableUserFilter')}
+                className="h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+              />
+              <div className="select-none">
+                <span className="block text-xs font-bold text-gray-700 group-hover:text-gray-900 transition-colors">Enable User Filter</span>
+                <span className="block text-[10px] text-gray-400">Allow selecting specific users</span>
+              </div>
+            </label>
+
+            <label className="flex items-center gap-3 cursor-pointer group">
+              <input
+                type="checkbox"
+                {...register('enableDateFilter')}
+                className="h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+              />
+              <div className="select-none">
+                <span className="block text-xs font-bold text-gray-700 group-hover:text-gray-900 transition-colors">Enable Date Range</span>
+                <span className="block text-[10px] text-gray-400">Show From and To date fields</span>
+              </div>
+            </label>
+
+            <label className="flex items-center gap-3 cursor-pointer group">
+              <input
+                type="checkbox"
+                {...register('allowExport')}
+                className="h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+              />
+              <div className="select-none">
+                <span className="block text-xs font-bold text-gray-700 group-hover:text-gray-900 transition-colors">Allow Export</span>
+                <span className="block text-[10px] text-gray-400">Excel, PDF, CSV formats</span>
+              </div>
+            </label>
+
+            <label className="flex items-center gap-3 cursor-pointer group">
+              <input
+                type="checkbox"
+                {...register('showSummary')}
+                className="h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+              />
+              <div className="select-none">
+                <span className="block text-xs font-bold text-gray-700 group-hover:text-gray-900 transition-colors">Show Summary</span>
+                <span className="block text-[10px] text-gray-400">Display activity totals</span>
+              </div>
+            </label>
+
+            <label className="flex items-center gap-3 cursor-pointer group">
+              <input
+                type="checkbox"
+                {...register('showDetailedLogs')}
+                className="h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+              />
+              <div className="select-none">
+                <span className="block text-xs font-bold text-gray-700 group-hover:text-gray-900 transition-colors">Show Detailed Logs</span>
+                <span className="block text-[10px] text-gray-400">Display itemized action logs</span>
+              </div>
+            </label>
+          </div>
+        </div>
+      )}
 
       <div>
         <div className="mb-2 flex items-center justify-between gap-3">

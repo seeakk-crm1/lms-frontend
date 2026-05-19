@@ -32,6 +32,14 @@ export interface ReportType {
   description: string | null;
   allowedFilters: AllowedReportFilterKey[];
   status: ReportTypeStatus;
+  category?: string;
+  trackModules?: string[];
+  enableUserFilter?: boolean;
+  enableDateFilter?: boolean;
+  trackActivityTypes?: string[];
+  allowExport?: boolean;
+  showSummary?: boolean;
+  showDetailedLogs?: boolean;
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
@@ -67,6 +75,14 @@ export interface ReportTypePayload {
   description?: string;
   allowedFilters: AllowedReportFilterKey[];
   status?: ReportTypeStatus;
+  category?: string;
+  trackModules?: string[];
+  enableUserFilter?: boolean;
+  enableDateFilter?: boolean;
+  trackActivityTypes?: string[];
+  allowExport?: boolean;
+  showSummary?: boolean;
+  showDetailedLogs?: boolean;
 }
 
 export interface ReportExecutionFilter {
