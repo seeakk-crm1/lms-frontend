@@ -323,16 +323,23 @@ const ReportTypePage: React.FC = () => {
                 </p>
               </motion.div>
 
-              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(260px,1fr)_220px_220px_auto]">
-                <label className="relative">
-                  <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                  <input
-                    value={searchDraft}
-                    onChange={(event) => setSearchDraft(event.target.value)}
-                    placeholder="Search report types"
-                    className="w-full rounded-2xl border border-gray-200 bg-white py-3 pl-11 pr-4 text-sm font-semibold text-gray-900 shadow-sm outline-none transition-all placeholder:text-gray-400 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
-                  />
-                </label>
+              <div className="grid w-full min-w-0 items-center gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(260px,1fr)_220px_220px_auto]">
+                <div className="relative min-w-0 sm:col-span-2 xl:col-span-1">
+                  <label htmlFor="report-type-search" className="sr-only">
+                    Search report types
+                  </label>
+                  <div className="flex h-11 w-full items-center gap-3 rounded-2xl border border-gray-200 bg-white px-4 shadow-sm transition-all focus-within:border-emerald-400 focus-within:ring-2 focus-within:ring-emerald-100">
+                    <Search className="h-4 w-4 shrink-0 text-gray-400" aria-hidden />
+                    <input
+                      id="report-type-search"
+                      type="search"
+                      value={searchDraft}
+                      onChange={(event) => setSearchDraft(event.target.value)}
+                      placeholder="Search report types"
+                      className="min-w-0 flex-1 border-0 bg-transparent p-0 text-left text-sm font-semibold text-gray-900 outline-none placeholder:text-gray-400"
+                    />
+                  </div>
+                </div>
 
                 <SearchableSelect
                   options={[{ value: '', label: 'All Statuses' }, ...statusOptions]}
@@ -357,7 +364,7 @@ const ReportTypePage: React.FC = () => {
                       setModalReportType(null);
                       setIsModalOpen(true);
                     }}
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-500 px-5 py-3 text-sm font-black text-white shadow-[0_18px_40px_-18px_rgba(16,185,129,0.8)] transition-all hover:bg-emerald-600 sm:col-span-2 xl:col-span-1"
+                    className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-emerald-500 px-5 text-sm font-black text-white shadow-[0_18px_40px_-18px_rgba(16,185,129,0.8)] transition-all hover:bg-emerald-600 sm:col-span-2 xl:col-span-1"
                   >
                     <Plus className="h-4 w-4" />
                     Add Report Type
