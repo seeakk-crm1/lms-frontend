@@ -35,6 +35,7 @@ export interface ReportType {
   allowedFilters: AllowedReportFilterKey[];
   status: ReportTypeStatus;
   category?: string;
+  categories?: string[];
   trackModules?: string[];
   enableUserFilter?: boolean;
   enableDateFilter?: boolean;
@@ -80,6 +81,7 @@ export interface ReportTypePayload {
   allowedFilters: AllowedReportFilterKey[];
   status?: ReportTypeStatus;
   category?: string;
+  categories?: string[];
   trackModules?: string[];
   enableUserFilter?: boolean;
   enableDateFilter?: boolean;

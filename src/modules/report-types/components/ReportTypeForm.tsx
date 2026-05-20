@@ -14,7 +14,7 @@ const schema = z.object({
   description: z.string().trim().optional(),
   allowedFilters: z.array(z.string()).min(1, 'Select at least one allowed filter'),
   status: z.enum(['ACTIVE', 'INACTIVE']),
-  category: z.string().optional(),
+  categories: z.array(z.string()).min(1, 'Select at least one report category'),
   trackModules: z.array(z.string()).optional(),
   enableUserFilter: z.boolean().optional(),
   enableDateFilter: z.boolean().optional(),
@@ -126,7 +126,11 @@ const ReportTypeForm: React.FC<ReportTypeFormProps> = ({ initialValue, onSubmit,
       description: initialValue?.description || '',
       allowedFilters: initialValue?.allowedFilters || [],
       status: initialValue?.status || 'ACTIVE',
-      category: initialValue?.category || 'Leads Report',
+      categories: initialValue?.categories?.length
+        ? initialValue.categories
+        : initialValue?.category
+          ? [initialValue.category]
+          : ['Leads Report'],
       trackModules: initialValue?.trackModules || [],
       enableUserFilter: initialValue?.enableUserFilter || false,
       enableDateFilter: initialValue?.enableDateFilter || false,
@@ -158,7 +162,12 @@ const ReportTypeForm: React.FC<ReportTypeFormProps> = ({ initialValue, onSubmit,
   const selectedBaseDataSources = watch('baseDataSources');
   const selectedAllowedFilters = watch('allowedFilters');
   const selectedStatus = watch('status');
-  const selectedCategory = watch('category');
+  const selectedCategories = watch('categories');
+
+  const showUserActivityConfig = useMemo(
+    () => selectedCategories.includes('User Activity Report'),
+    [selectedCategories],
+  );
 
   useEffect(() => {
     if (!selectedBaseDataSources.length) {
@@ -197,7 +206,8 @@ const ReportTypeForm: React.FC<ReportTypeFormProps> = ({ initialValue, onSubmit,
           description: values.description?.trim() || undefined,
           allowedFilters: values.allowedFilters as AllowedReportFilterKey[],
           status: values.status,
-          category: values.category,
+          category: values.categories[0],
+          categories: values.categories,
           trackModules: values.trackModules,
           enableUserFilter: values.enableUserFilter,
           enableDateFilter: values.enableDateFilter,
@@ -258,17 +268,20 @@ const ReportTypeForm: React.FC<ReportTypeFormProps> = ({ initialValue, onSubmit,
           <span className="block text-[11px] font-black uppercase tracking-[0.18em] text-gray-400">Report Category</span>
           <Controller
             control={control}
-            name="category"
+            name="categories"
             render={({ field }) => (
-              <SearchableSelect
+              <MultiSearchableSelect
                 options={categoryOptions}
-                value={field.value}
+                values={field.value || []}
                 onChange={field.onChange}
-                placeholder="Select category"
+                placeholder="Select categories"
                 name={field.name}
               />
             )}
           />
+          {errors.categories ? (
+            <span className="block text-xs font-bold text-rose-500">{errors.categories.message}</span>
+          ) : null}
         </div>
       </div>
 
@@ -282,7 +295,7 @@ const ReportTypeForm: React.FC<ReportTypeFormProps> = ({ initialValue, onSubmit,
         <span className={floatingLabelStyles}>Description</span>
       </label>
 
-      {selectedCategory === 'User Activity Report' && (
+      {showUserActivityConfig && (
         <div className="space-y-5 rounded-2xl border border-dashed border-gray-300 bg-gray-50/50 p-5">
           <h4 className="text-xs font-black uppercase tracking-wider text-gray-600">User Activity Report Configurations</h4>
           
