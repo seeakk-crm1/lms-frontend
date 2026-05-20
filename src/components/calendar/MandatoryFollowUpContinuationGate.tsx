@@ -1,10 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { useBlocker } from 'react-router-dom';
 import {
   useSaveMandatoryFollowUpContinuationMutation,
 } from '../../hooks/useMandatoryFollowUpContinuation';
 import { useMandatoryFollowUpBlocked } from '../../hooks/useMandatoryFollowUpBlocked';
+import { useMandatoryNavigationLock } from '../../hooks/useMandatoryNavigationLock';
 import MandatoryFollowUpContinuationModal from './MandatoryFollowUpContinuationModal';
 
 interface Props {
@@ -37,7 +37,7 @@ const MandatoryFollowUpContinuationGate: React.FC<Props> = ({ children }) => {
     setQueueIndex(0);
   }, [items.length, items[0]?.leadId]);
 
-  useBlocker(() => blocked);
+  useMandatoryNavigationLock(blocked);
 
   useEffect(() => {
     if (!blocked) return undefined;
