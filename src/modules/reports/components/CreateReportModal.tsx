@@ -190,9 +190,9 @@ const CreateReportModal: React.FC<CreateReportModalProps> = ({
             exit={{ opacity: 0, scale: 0.96, y: 10 }}
             transition={{ duration: 0.2 }}
             onClick={(event) => event.stopPropagation()}
-            className="max-h-[92vh] w-full max-w-4xl overflow-hidden rounded-[32px] border border-white/70 bg-white shadow-[0_40px_120px_-45px_rgba(15,23,42,0.45)]"
+            className="flex max-h-[min(92vh,900px)] w-full max-w-4xl flex-col overflow-hidden rounded-[32px] border border-white/70 bg-white shadow-[0_40px_120px_-45px_rgba(15,23,42,0.45)]"
           >
-            <div className="flex items-start justify-between border-b border-gray-100 px-6 py-5">
+            <div className="flex shrink-0 items-start justify-between border-b border-gray-100 px-6 py-5">
               <div>
                 <p className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-black uppercase tracking-[0.22em] text-emerald-600">
                   <FilePlus2 size={14} />
@@ -214,7 +214,7 @@ const CreateReportModal: React.FC<CreateReportModalProps> = ({
               </button>
             </div>
 
-            <div className="max-h-[calc(92vh-170px)] overflow-y-auto px-6 py-6">
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 py-6">
               <div className="grid gap-5 md:grid-cols-2">
                 <label>
                   <span className="mb-2 block text-[11px] font-black uppercase tracking-[0.18em] text-gray-400">Report Name</span>
@@ -379,7 +379,7 @@ const CreateReportModal: React.FC<CreateReportModalProps> = ({
               </div>
             </div>
 
-            <div className="flex flex-col gap-3 border-t border-gray-100 px-6 py-5 sm:flex-row sm:justify-end">
+            <div className="flex shrink-0 flex-col gap-3 border-t border-gray-100 bg-white px-6 py-5 shadow-[0_-12px_32px_-24px_rgba(15,23,42,0.18)] sm:flex-row sm:justify-end">
               <button
                 type="button"
                 onClick={onClose}
