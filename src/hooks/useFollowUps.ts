@@ -16,6 +16,7 @@ import {
   getAdvancedCalendarDetails,
 } from '../services/followupService';
 import type { CalendarQueryParams, CompleteFollowUpInput, CreateFollowUpInput, FollowUp, SnoozeFollowUpInput } from '../types/followup.types';
+import { MANDATORY_FOLLOWUP_QUERY_KEY } from './useMandatoryFollowUpContinuation';
 
 const buildDateRange = (view: 'month' | 'week' | 'day' | 'list', selectedDate: string) => {
   const baseDate = parseISO(selectedDate);
@@ -190,6 +191,7 @@ export const useCreateFollowUpMutation = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['followups', 'calendar'] });
       queryClient.invalidateQueries({ queryKey: ['followups', 'today'] });
+      queryClient.invalidateQueries({ queryKey: MANDATORY_FOLLOWUP_QUERY_KEY });
       toast.success('Follow-up scheduled');
     },
     onError: (error: any) => {
@@ -228,6 +230,9 @@ export const useCompleteFollowUpMutation = () => {
       queryClient.invalidateQueries({ queryKey: ['followups', 'calendar'] });
       queryClient.invalidateQueries({ queryKey: ['followups', 'today'] });
       queryClient.invalidateQueries({ queryKey: ['followups', 'history'] });
+      queryClient.invalidateQueries({ queryKey: MANDATORY_FOLLOWUP_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: ['leads'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
       toast.success('Follow-up completed');
     },
   });
@@ -241,6 +246,7 @@ export const useSnoozeFollowUpMutation = () => {
       queryClient.invalidateQueries({ queryKey: ['followups', 'calendar'] });
       queryClient.invalidateQueries({ queryKey: ['followups', 'today'] });
       queryClient.invalidateQueries({ queryKey: ['followups', 'alerts'] });
+      queryClient.invalidateQueries({ queryKey: MANDATORY_FOLLOWUP_QUERY_KEY });
       toast.success('Follow-up snoozed');
     },
     onError: (error: any) => {

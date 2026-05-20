@@ -50,6 +50,23 @@ export const getTodayFollowUps = async (userId?: string) => {
   return response.data;
 };
 
+export const getMandatoryFollowUpContinuation = async () => {
+  const response = await api.get<import('../types/mandatoryFollowup.types').MandatoryFollowUpContinuationResponse>(
+    '/followups/mandatory-continuation',
+  );
+  return response.data;
+};
+
+export const saveMandatoryFollowUpContinuation = async (
+  payload: import('../types/mandatoryFollowup.types').SaveMandatoryFollowUpContinuationInput,
+) => {
+  const response = await api.post<import('../types/mandatoryFollowup.types').SaveMandatoryFollowUpContinuationResponse>(
+    '/followups/mandatory-continuation',
+    payload,
+  );
+  return response.data;
+};
+
 export const getFollowUpReminderAlerts = async (params?: {
   userId?: string;
   minutesAhead?: number;

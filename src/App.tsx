@@ -16,7 +16,9 @@ import { Toaster } from 'react-hot-toast';
 import useAuthStore from './store/useAuthStore';
 import { hasAnyPermission } from './utils/permission.util';
 import api from './services/api';
+import { queryClient } from './lib/queryClient';
 import FollowUpReminderListener from './components/calendar/FollowUpReminderListener';
+import MandatoryFollowUpContinuationGate from './components/calendar/MandatoryFollowUpContinuationGate';
 import RealtimeSyncListener from './components/realtime/RealtimeSyncListener';
 import Login from './pages/Login';
 import InvitePage from './pages/InvitePage';
@@ -108,6 +110,9 @@ function App() {
       .then((response) => {
         if (cancelled || !response.data?.user) return;
         updateUser(response.data.user);
+        if (response.data?.session?.mandatoryFollowupRequired) {
+          void queryClient.invalidateQueries({ queryKey: ['followups', 'mandatory-continuation'] });
+        }
       })
       .catch((error) => {
         if (cancelled) return;
@@ -171,6 +176,7 @@ function App() {
         )}
       </AnimatePresence>
 
+      <MandatoryFollowUpContinuationGate>
       <Routes>
         <Route path="/" element={
           <div className="min-h-screen bg-white font-sans selection:bg-emerald-200 selection:text-emerald-900 overflow-x-hidden">
@@ -361,6 +367,7 @@ function App() {
 
         <Route path="/master/stage-rules" element={<Navigate to="/admin/stage-rules" replace />} />
       </Routes>
+      </MandatoryFollowUpContinuationGate>
     </>
   );
 }

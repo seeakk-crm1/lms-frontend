@@ -21,6 +21,7 @@ import {
   useFollowUpUsersQuery,
   useAdvancedCalendarSummaryQuery,
 } from '../../hooks/useFollowUps';
+import { useMandatoryFollowUpContinuationQuery } from '../../hooks/useMandatoryFollowUpContinuation';
 import useFollowupStore from '../../store/followupStore';
 import type { CreateFollowUpInput } from '../../types/followup.types';
 import type { FollowUp } from '../../types/followup.types';
@@ -45,6 +46,8 @@ const CalendarPage: React.FC = () => {
     useFollowupStore();
 
   const advancedSummaryQuery = useAdvancedCalendarSummaryQuery();
+  const mandatoryContinuationQuery = useMandatoryFollowUpContinuationQuery();
+  const mandatoryCount = mandatoryContinuationQuery.data?.items?.length ?? 0;
   const usersQuery = useFollowUpUsersQuery();
   const leadsQuery = useFollowUpLeadsQuery();
   const createMutation = useCreateFollowUpMutation();
@@ -94,6 +97,13 @@ const CalendarPage: React.FC = () => {
           <div className="pointer-events-none absolute right-0 top-0 -z-10 h-[520px] w-[820px] bg-gradient-to-bl from-emerald-50/80 via-transparent to-transparent" />
 
           <div className="mx-auto max-w-[1480px] space-y-6">
+            {mandatoryCount > 0 ? (
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900">
+                {mandatoryCount} lifecycle lead{mandatoryCount === 1 ? '' : 's'} need a future follow-up scheduled.
+                Complete the mandatory follow-up dialog to unlock the rest of the app.
+              </div>
+            ) : null}
+
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <CalendarHeader
                 view={view}

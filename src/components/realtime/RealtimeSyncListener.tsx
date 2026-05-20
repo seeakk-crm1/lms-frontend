@@ -81,6 +81,7 @@ const RealtimeSyncListener = () => {
       queryClient.invalidateQueries({ queryKey: ['lead'] });
       queryClient.invalidateQueries({ queryKey: ['lead-meta'] });
       queryClient.invalidateQueries({ queryKey: ['followups'] });
+      queryClient.invalidateQueries({ queryKey: ['followups', 'mandatory-continuation'] });
       queryClient.invalidateQueries({ queryKey: ['lead-approvals'] });
       queryClient.invalidateQueries({ queryKey: ['closed-leads'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
