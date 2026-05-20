@@ -6,6 +6,8 @@ import {
   isRefreshAuthFailure,
   refreshAccessToken,
 } from './authToken';
+import { MANDATORY_FOLLOWUP_QUERY_KEY } from '../constants/mandatoryFollowup.constants';
+import { queryClient } from '../lib/queryClient';
 
 const API_URL = ENV.API_URL;
 
@@ -103,6 +105,19 @@ api.interceptors.response.use(
       originalRequest.url.includes('/auth/google') ||
       originalRequest.url.includes('/auth/refresh')
     ) {
+      return Promise.reject(error);
+    }
+
+    if (error.response?.status === 423) {
+      const payload = error.response.data as {
+        mandatoryFollowupRequired?: boolean;
+        mandatoryFollowupCount?: number;
+      };
+      useAuthStore.getState().setMandatoryFollowupBlock(
+        true,
+        payload?.mandatoryFollowupCount ?? 0,
+      );
+      void queryClient.invalidateQueries({ queryKey: MANDATORY_FOLLOWUP_QUERY_KEY });
       return Promise.reject(error);
     }
 

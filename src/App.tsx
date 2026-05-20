@@ -110,8 +110,12 @@ function App() {
       .then((response) => {
         if (cancelled || !response.data?.user) return;
         updateUser(response.data.user);
-        if (response.data?.session?.mandatoryFollowupRequired) {
+        const session = response.data?.session;
+        if (session?.mandatoryFollowupRequired) {
+          useAuthStore.getState().setMandatoryFollowupBlock(true, session.mandatoryFollowupCount ?? 0);
           void queryClient.invalidateQueries({ queryKey: ['followups', 'mandatory-continuation'] });
+        } else {
+          useAuthStore.getState().clearMandatoryFollowupBlock();
         }
       })
       .catch((error) => {
@@ -129,8 +133,6 @@ function App() {
 
   return (
     <>
-      {isAuthenticated ? <FollowUpReminderListener /> : null}
-      {isAuthenticated ? <RealtimeSyncListener /> : null}
       <Toaster
         position="top-center"
         toastOptions={{
@@ -177,6 +179,8 @@ function App() {
       </AnimatePresence>
 
       <MandatoryFollowUpContinuationGate>
+      {isAuthenticated ? <FollowUpReminderListener /> : null}
+      {isAuthenticated ? <RealtimeSyncListener /> : null}
       <Routes>
         <Route path="/" element={
           <div className="min-h-screen bg-white font-sans selection:bg-emerald-200 selection:text-emerald-900 overflow-x-hidden">

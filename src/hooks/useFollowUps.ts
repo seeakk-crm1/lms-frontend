@@ -16,7 +16,7 @@ import {
   getAdvancedCalendarDetails,
 } from '../services/followupService';
 import type { CalendarQueryParams, CompleteFollowUpInput, CreateFollowUpInput, FollowUp, SnoozeFollowUpInput } from '../types/followup.types';
-import { MANDATORY_FOLLOWUP_QUERY_KEY } from './useMandatoryFollowUpContinuation';
+import { MANDATORY_FOLLOWUP_QUERY_KEY } from '../constants/mandatoryFollowup.constants';
 
 const buildDateRange = (view: 'month' | 'week' | 'day' | 'list', selectedDate: string) => {
   const baseDate = parseISO(selectedDate);

@@ -15,6 +15,10 @@ interface LoginResponse {
     user: User;
     accessToken: string;
     refreshToken: string;
+    session?: {
+        mandatoryFollowupRequired?: boolean;
+        mandatoryFollowupCount?: number;
+    };
 }
 
 const Login = () => {
@@ -31,7 +35,7 @@ const Login = () => {
             return response.data;
         },
         onSuccess: (data) => {
-            setAuth(data.user, data.accessToken, data.refreshToken);
+            setAuth(data.user, data.accessToken, data.refreshToken, data.session);
             toast.success(`Welcome back, ${data.user.name.split(' ')[0]}!`);
             if (!data.user.isOnboarded) {
                 navigate('/workspace/setup', { replace: true });
@@ -55,7 +59,7 @@ const Login = () => {
             return response.data;
         },
         onSuccess: (data) => {
-            setAuth(data.user, data.accessToken, data.refreshToken);
+            setAuth(data.user, data.accessToken, data.refreshToken, data.session);
             toast.success('Successfully logged in with Google!');
             if (!data.user.isOnboarded) {
                 navigate('/workspace/setup', { replace: true });

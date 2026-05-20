@@ -4,12 +4,26 @@ import { User } from '../types/user.types';
 import { queryClient } from '../lib/queryClient';
 import { ENV } from '../config/env';
 
+interface AuthSessionFlags {
+  mandatoryFollowupRequired?: boolean;
+  mandatoryFollowupCount?: number;
+}
+
 interface AuthState {
   user: User | null;
   accessToken: string | null;
   refreshToken: string | null;
   isAuthenticated: boolean;
-  setAuth: (user: User | null, accessToken: string | null, refreshToken: string | null) => void;
+  mandatoryFollowupRequired: boolean;
+  mandatoryFollowupCount: number;
+  setAuth: (
+    user: User | null,
+    accessToken: string | null,
+    refreshToken: string | null,
+    session?: AuthSessionFlags,
+  ) => void;
+  setMandatoryFollowupBlock: (required: boolean, count?: number) => void;
+  clearMandatoryFollowupBlock: () => void;
   updateUser: (updatedFields: Partial<User>) => void;
   clearAuth: () => void;
   logout: () => Promise<void>;
@@ -89,7 +103,14 @@ const useAuthStore = create<AuthState>((set) => {
         localStorage.removeItem('jobId');
         queryClient.clear();
         resetDashboardStore();
-        set({ user: null, accessToken: null, refreshToken: null, isAuthenticated: false });
+        set({
+            user: null,
+            accessToken: null,
+            refreshToken: null,
+            isAuthenticated: false,
+            mandatoryFollowupRequired: false,
+            mandatoryFollowupCount: 0,
+        });
     };
 
     return {
@@ -97,8 +118,22 @@ const useAuthStore = create<AuthState>((set) => {
         accessToken: localStorage.getItem('accessToken') || null,
         refreshToken: localStorage.getItem('refreshToken') || null,
         isAuthenticated: !!localStorage.getItem('accessToken'),
+        mandatoryFollowupRequired: false,
+        mandatoryFollowupCount: 0,
 
-        setAuth: (rawUser, accessToken, refreshToken) => {
+        setMandatoryFollowupBlock: (required, count = 0) =>
+            set({
+                mandatoryFollowupRequired: required,
+                mandatoryFollowupCount: Math.max(0, count),
+            }),
+
+        clearMandatoryFollowupBlock: () =>
+            set({
+                mandatoryFollowupRequired: false,
+                mandatoryFollowupCount: 0,
+            }),
+
+        setAuth: (rawUser, accessToken, refreshToken, session) => {
             const user = normalizeStoredUser(rawUser);
 
             set((state) => {
@@ -130,7 +165,14 @@ const useAuthStore = create<AuthState>((set) => {
                     localStorage.removeItem('user');
                 }
 
-                return { user, accessToken, refreshToken, isAuthenticated: !!accessToken };
+                return {
+                    user,
+                    accessToken,
+                    refreshToken,
+                    isAuthenticated: !!accessToken,
+                    mandatoryFollowupRequired: Boolean(session?.mandatoryFollowupRequired),
+                    mandatoryFollowupCount: session?.mandatoryFollowupCount ?? 0,
+                };
             });
         },
 

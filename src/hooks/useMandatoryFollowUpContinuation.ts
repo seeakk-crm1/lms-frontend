@@ -5,8 +5,11 @@ import {
   saveMandatoryFollowUpContinuation,
 } from '../services/followupService';
 import type { SaveMandatoryFollowUpContinuationInput } from '../types/mandatoryFollowup.types';
+import useAuthStore from '../store/useAuthStore';
 
-export const MANDATORY_FOLLOWUP_QUERY_KEY = ['followups', 'mandatory-continuation'] as const;
+import { MANDATORY_FOLLOWUP_QUERY_KEY } from '../constants/mandatoryFollowup.constants';
+
+export { MANDATORY_FOLLOWUP_QUERY_KEY };
 
 export const useMandatoryFollowUpContinuationQuery = (enabled = true) =>
   useQuery({
@@ -29,15 +32,24 @@ export const useSaveMandatoryFollowUpContinuationMutation = () => {
   return useMutation({
     mutationFn: (payload: SaveMandatoryFollowUpContinuationInput) => saveMandatoryFollowUpContinuation(payload),
     onSuccess: (response) => {
+      const session = response.data?.session ?? {
+        mandatoryFollowupRequired: false,
+        mandatoryFollowupCount: 0,
+        items: [],
+      };
+
       queryClient.setQueryData(MANDATORY_FOLLOWUP_QUERY_KEY, {
         success: true,
         message: response.message,
-        data: response.data?.session ?? {
-          mandatoryFollowupRequired: false,
-          mandatoryFollowupCount: 0,
-          items: [],
-        },
+        data: session,
       });
+
+      if (session.mandatoryFollowupRequired) {
+        useAuthStore.getState().setMandatoryFollowupBlock(true, session.mandatoryFollowupCount);
+      } else {
+        useAuthStore.getState().clearMandatoryFollowupBlock();
+      }
+
       queryClient.invalidateQueries({ queryKey: ['followups'] });
       queryClient.invalidateQueries({ queryKey: ['leads'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
