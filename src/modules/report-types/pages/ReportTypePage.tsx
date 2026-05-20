@@ -146,6 +146,15 @@ const ReportTypePage: React.FC = () => {
 
   const canManage = ['admin', 'superadmin'].includes(roleKey(user?.role));
 
+  const openCreateReportType = () => {
+    if (!canManage) {
+      toast.error('You need permission to add report types.');
+      return;
+    }
+    setModalReportType(null);
+    setIsModalOpen(true);
+  };
+
   useEffect(() => {
     setSearchDraft(search);
   }, [search]);
@@ -311,20 +320,24 @@ const ReportTypePage: React.FC = () => {
           <div className="absolute right-0 top-0 -z-10 h-[440px] w-[760px] bg-gradient-to-bl from-emerald-50 via-transparent to-transparent" />
 
           <div className="mx-auto max-w-[1520px] space-y-6 md:space-y-8">
-            <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
+            <div className="space-y-5">
               <motion.div initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }}>
                 <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.26em] text-emerald-600">
                   <BarChart3 className="h-3.5 w-3.5" />
                   <span>Dynamic Report Engine</span>
                 </div>
-                <h1 className="max-w-3xl text-3xl font-black tracking-tight text-gray-900 md:text-4xl">Report Type Management</h1>
+                <h1 className="text-3xl font-black tracking-tight text-gray-900 md:text-4xl">Report Type Management</h1>
                 <p className="mt-2 max-w-3xl text-sm font-semibold text-gray-500">
                   Configure reusable report templates, control which filters are allowed, and generate live result sets without hard-coded screens.
                 </p>
               </motion.div>
 
-              <div className="grid w-full min-w-0 items-center gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(260px,1fr)_220px_220px_auto]">
-                <div className="relative min-w-0 sm:col-span-2 xl:col-span-1">
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex min-w-0 flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-center"
+              >
+                <div className="relative min-w-0 w-full lg:max-w-sm lg:flex-1">
                   <label htmlFor="report-type-search" className="sr-only">
                     Search report types
                   </label>
@@ -341,36 +354,36 @@ const ReportTypePage: React.FC = () => {
                   </div>
                 </div>
 
-                <SearchableSelect
-                  options={[{ value: '', label: 'All Statuses' }, ...statusOptions]}
-                  value={filters.status || ''}
-                  onChange={(event) => setFilters({ status: event.target.value as ReportTypeStatus | '' })}
-                  placeholder="Filter status"
-                  name="status"
-                />
+                <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 lg:flex lg:flex-1 lg:items-center lg:gap-3">
+                  <div className="min-w-0 w-full sm:min-w-[160px] lg:max-w-[220px] lg:flex-1">
+                    <SearchableSelect
+                      options={[{ value: '', label: 'All Statuses' }, ...statusOptions]}
+                      value={filters.status || ''}
+                      onChange={(event) => setFilters({ status: event.target.value as ReportTypeStatus | '' })}
+                      placeholder="Filter status"
+                      name="status"
+                    />
+                  </div>
+                  <div className="min-w-0 w-full sm:min-w-[160px] lg:max-w-[220px] lg:flex-1">
+                    <SearchableSelect
+                      options={[{ value: '', label: 'All Modules' }, ...moduleOptions]}
+                      value={filters.module || ''}
+                      onChange={(event) => setFilters({ module: event.target.value as ReportModule | '' })}
+                      placeholder="Filter module"
+                      name="module"
+                    />
+                  </div>
+                </div>
 
-                <SearchableSelect
-                  options={[{ value: '', label: 'All Modules' }, ...moduleOptions]}
-                  value={filters.module || ''}
-                  onChange={(event) => setFilters({ module: event.target.value as ReportModule | '' })}
-                  placeholder="Filter module"
-                  name="module"
-                />
-
-                {canManage ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setModalReportType(null);
-                      setIsModalOpen(true);
-                    }}
-                    className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-emerald-500 px-5 text-sm font-black text-white shadow-[0_18px_40px_-18px_rgba(16,185,129,0.8)] transition-all hover:bg-emerald-600 sm:col-span-2 xl:col-span-1"
-                  >
-                    <Plus className="h-4 w-4" />
-                    Add Report Type
-                  </button>
-                ) : null}
-              </div>
+                <button
+                  type="button"
+                  onClick={openCreateReportType}
+                  className="inline-flex h-11 w-full shrink-0 items-center justify-center gap-2 rounded-2xl bg-emerald-500 px-5 text-sm font-black text-white shadow-[0_18px_40px_-18px_rgba(16,185,129,0.8)] transition-all hover:bg-emerald-600 lg:ml-auto lg:w-auto lg:min-w-[168px]"
+                >
+                  <Plus className="h-4 w-4" />
+                  Add Report Type
+                </button>
+              </motion.div>
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
@@ -425,14 +438,11 @@ const ReportTypePage: React.FC = () => {
                 onRun={(reportType) => setSelected(reportType)}
               />
 
-              {!reportTypesQuery.isLoading && !rows.length && canManage ? (
+              {!reportTypesQuery.isLoading && !rows.length ? (
                 <div className="mt-5 flex justify-center">
                   <button
                     type="button"
-                    onClick={() => {
-                      setModalReportType(null);
-                      setIsModalOpen(true);
-                    }}
+                    onClick={openCreateReportType}
                     className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-500 px-5 py-3 text-sm font-black text-white shadow-[0_18px_40px_-18px_rgba(16,185,129,0.8)] transition-all hover:bg-emerald-600"
                   >
                     <Plus className="h-4 w-4" />
