@@ -3,13 +3,14 @@ import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import SearchableSelect from '../../../components/SearchableSelect';
+import MultiSearchableSelect from '../../../components/MultiSearchableSelect';
 import FilterSelector from './FilterSelector';
 import type { AllowedReportFilterKey, ReportBaseDataSource, ReportModule, ReportType, ReportTypePayload, ReportTypeStatus } from '../types/reportType.types';
 
 const schema = z.object({
   name: z.string().trim().min(3, 'Report type name must be at least 3 characters'),
-  module: z.string().min(1, 'Module is required'),
-  baseDataSource: z.string().min(1, 'Base data source is required'),
+  modules: z.array(z.string()).min(1, 'Select at least one module'),
+  baseDataSources: z.array(z.string()).min(1, 'Select at least one base data source'),
   description: z.string().trim().optional(),
   allowedFilters: z.array(z.string()).min(1, 'Select at least one allowed filter'),
   status: z.enum(['ACTIVE', 'INACTIVE']),
@@ -112,8 +113,16 @@ const ReportTypeForm: React.FC<ReportTypeFormProps> = ({ initialValue, onSubmit,
   const defaultValues = useMemo<FormValues>(
     () => ({
       name: initialValue?.name || '',
-      module: initialValue?.module || '',
-      baseDataSource: initialValue?.baseDataSource || '',
+      modules: initialValue?.modules?.length
+        ? initialValue.modules
+        : initialValue?.module
+          ? [initialValue.module]
+          : [],
+      baseDataSources: initialValue?.baseDataSources?.length
+        ? initialValue.baseDataSources
+        : initialValue?.baseDataSource
+          ? [initialValue.baseDataSource]
+          : [],
       description: initialValue?.description || '',
       allowedFilters: initialValue?.allowedFilters || [],
       status: initialValue?.status || 'ACTIVE',
@@ -146,34 +155,45 @@ const ReportTypeForm: React.FC<ReportTypeFormProps> = ({ initialValue, onSubmit,
     reset(defaultValues);
   }, [defaultValues, reset]);
 
-  const selectedBaseDataSource = watch('baseDataSource');
+  const selectedBaseDataSources = watch('baseDataSources');
   const selectedAllowedFilters = watch('allowedFilters');
   const selectedStatus = watch('status');
   const selectedCategory = watch('category');
 
   useEffect(() => {
-    if (!selectedBaseDataSource) {
+    if (!selectedBaseDataSources.length) {
       if (selectedAllowedFilters.length) {
         setValue('allowedFilters', [], { shouldValidate: true });
       }
       return;
     }
 
-    const supported = new Set(FILTERS_BY_SOURCE[selectedBaseDataSource as ReportBaseDataSource]);
+    const supported = new Set<AllowedReportFilterKey>();
+    for (const source of selectedBaseDataSources) {
+      for (const filterKey of FILTERS_BY_SOURCE[source as ReportBaseDataSource] || []) {
+        supported.add(filterKey);
+      }
+    }
+
     const filtered = selectedAllowedFilters.filter((filter) => supported.has(filter as AllowedReportFilterKey));
 
     if (filtered.length !== selectedAllowedFilters.length) {
       setValue('allowedFilters', filtered, { shouldValidate: true });
     }
-  }, [selectedAllowedFilters, selectedBaseDataSource, setValue]);
+  }, [selectedAllowedFilters, selectedBaseDataSources, setValue]);
 
   return (
     <form
       onSubmit={handleSubmit(async (values) => {
+        const modules = values.modules as ReportModule[];
+        const baseDataSources = values.baseDataSources as ReportBaseDataSource[];
+
         await onSubmit({
           name: values.name.trim(),
-          module: values.module as ReportModule,
-          baseDataSource: values.baseDataSource as ReportBaseDataSource,
+          module: modules[0],
+          modules,
+          baseDataSource: baseDataSources[0],
+          baseDataSources,
           description: values.description?.trim() || undefined,
           allowedFilters: values.allowedFilters as AllowedReportFilterKey[],
           status: values.status,
@@ -200,36 +220,38 @@ const ReportTypeForm: React.FC<ReportTypeFormProps> = ({ initialValue, onSubmit,
           <span className="block text-[11px] font-black uppercase tracking-[0.18em] text-gray-400">Module</span>
           <Controller
             control={control}
-            name="module"
+            name="modules"
             render={({ field }) => (
-              <SearchableSelect
+              <MultiSearchableSelect
                 options={moduleOptions}
-                value={field.value}
+                values={field.value || []}
                 onChange={field.onChange}
-                placeholder="Select module"
+                placeholder="Select modules"
                 name={field.name}
               />
             )}
           />
-          {errors.module ? <span className="block text-xs font-bold text-rose-500">{errors.module.message}</span> : null}
+          {errors.modules ? <span className="block text-xs font-bold text-rose-500">{errors.modules.message}</span> : null}
         </div>
 
         <div className="space-y-2">
           <span className="block text-[11px] font-black uppercase tracking-[0.18em] text-gray-400">Base Data Source</span>
           <Controller
             control={control}
-            name="baseDataSource"
+            name="baseDataSources"
             render={({ field }) => (
-              <SearchableSelect
+              <MultiSearchableSelect
                 options={sourceOptions}
-                value={field.value}
+                values={field.value || []}
                 onChange={field.onChange}
-                placeholder="Select data source"
+                placeholder="Select data sources"
                 name={field.name}
               />
             )}
           />
-          {errors.baseDataSource ? <span className="block text-xs font-bold text-rose-500">{errors.baseDataSource.message}</span> : null}
+          {errors.baseDataSources ? (
+            <span className="block text-xs font-bold text-rose-500">{errors.baseDataSources.message}</span>
+          ) : null}
         </div>
 
         <div className="space-y-2">
@@ -418,7 +440,7 @@ const ReportTypeForm: React.FC<ReportTypeFormProps> = ({ initialValue, onSubmit,
             <FilterSelector
               value={field.value as AllowedReportFilterKey[]}
               onChange={field.onChange}
-              baseDataSource={selectedBaseDataSource as ReportBaseDataSource | ''}
+              baseDataSources={selectedBaseDataSources as ReportBaseDataSource[]}
             />
           )}
         />

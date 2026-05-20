@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Calendar, FilePlus2, X } from 'lucide-react';
 import SearchableSelect from '../../../components/SearchableSelect';
+import MultiSearchableSelect from '../../../components/MultiSearchableSelect';
 import type { AllowedReportFilterKey, ReportType } from '../../report-types/types/reportType.types';
 import type { SavedReport, SavedReportPayload } from '../types/report.types';
 
@@ -19,7 +20,7 @@ interface CreateReportModalProps {
   onSubmit: (payload: SavedReportPayload) => Promise<void>;
 }
 
-type DraftFilterState = Record<AllowedReportFilterKey, { scalar: string; from: string; to: string }>;
+type DraftFilterState = Record<AllowedReportFilterKey, { scalars: string[]; from: string; to: string }>;
 
 const EMPTY_ALLOWED_FILTERS: AllowedReportFilterKey[] = [];
 
@@ -90,14 +91,18 @@ const CreateReportModal: React.FC<CreateReportModalProps> = ({
         if (isRangeFilter(filter.key)) {
           const value = (filter.value || {}) as { from?: string; to?: string };
           nextDraft[filter.key] = {
-            scalar: '',
+            scalars: [],
             from: value.from ? String(value.from).slice(0, 10) : '',
             to: value.to ? String(value.to).slice(0, 10) : '',
           };
         } else {
-          const values = Array.isArray(filter.value) ? filter.value : [filter.value];
+          const values = Array.isArray(filter.value)
+            ? filter.value.map((item) => String(item)).filter(Boolean)
+            : filter.value
+              ? [String(filter.value)]
+              : [];
           nextDraft[filter.key] = {
-            scalar: String(values[0] ?? ''),
+            scalars: values,
             from: '',
             to: '',
           };
@@ -151,10 +156,11 @@ const CreateReportModal: React.FC<CreateReportModalProps> = ({
           };
         }
 
-        if (!value.scalar.trim()) return null;
+        const selected = value.scalars.map((item) => item.trim()).filter(Boolean);
+        if (selected.length === 0) return null;
         return {
           key,
-          value: [value.scalar],
+          value: selected,
         };
       })
       .filter(Boolean) as SavedReportPayload['filters'];
@@ -293,7 +299,7 @@ const CreateReportModal: React.FC<CreateReportModalProps> = ({
                 ) : (
                   <div className="mt-4 grid gap-4 md:grid-cols-2">
                     {allowedFilters.map((key) => {
-                      const current = filterDraft[key] || { scalar: '', from: '', to: '' };
+                      const current = filterDraft[key] || { scalars: [], from: '', to: '' };
 
                       if (isRangeFilter(key)) {
                         return (
@@ -333,13 +339,13 @@ const CreateReportModal: React.FC<CreateReportModalProps> = ({
                           <p className="text-[11px] font-black uppercase tracking-[0.18em] text-gray-400">{filterLabels[key]}</p>
                           <div className="mt-3">
                             {options.length > 0 ? (
-                              <SearchableSelect
+                              <MultiSearchableSelect
                                 options={options}
-                                value={current.scalar}
-                                onChange={(event) =>
+                                values={current.scalars}
+                                onChange={(nextValues) =>
                                   setFilterDraft((state) => ({
                                     ...state,
-                                    [key]: { ...current, scalar: event.target.value },
+                                    [key]: { ...current, scalars: nextValues },
                                   }))
                                 }
                                 placeholder={`Select ${filterLabels[key]}`}
@@ -347,14 +353,20 @@ const CreateReportModal: React.FC<CreateReportModalProps> = ({
                               />
                             ) : (
                               <input
-                                value={current.scalar}
+                                value={current.scalars.join(', ')}
                                 onChange={(event) =>
                                   setFilterDraft((state) => ({
                                     ...state,
-                                    [key]: { ...current, scalar: event.target.value },
+                                    [key]: {
+                                      ...current,
+                                      scalars: event.target.value
+                                        .split(',')
+                                        .map((item) => item.trim())
+                                        .filter(Boolean),
+                                    },
                                   }))
                                 }
-                                placeholder={`Enter ${filterLabels[key]}`}
+                                placeholder={`Enter ${filterLabels[key]} (comma-separated)`}
                                 className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-semibold text-gray-700 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
                               />
                             )}

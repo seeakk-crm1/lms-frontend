@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, X } from 'lucide-react';
-import SearchableSelect from '../../../components/SearchableSelect';
+import MultiSearchableSelect from '../../../components/MultiSearchableSelect';
 import type { AllowedReportFilterKey, ReportBaseDataSource } from '../types/reportType.types';
 
 const FILTER_OPTIONS: Array<{ value: AllowedReportFilterKey; label: string }> = [
@@ -29,16 +29,21 @@ const FILTERS_BY_SOURCE: Record<ReportBaseDataSource, AllowedReportFilterKey[]> 
 interface FilterSelectorProps {
   value: AllowedReportFilterKey[];
   onChange: (next: AllowedReportFilterKey[]) => void;
-  baseDataSource?: ReportBaseDataSource | '';
+  baseDataSources?: ReportBaseDataSource[];
 }
 
-const FilterSelector: React.FC<FilterSelectorProps> = ({ value, onChange, baseDataSource }) => {
-  const [draft, setDraft] = useState('');
+const FilterSelector: React.FC<FilterSelectorProps> = ({ value, onChange, baseDataSources = [] }) => {
+  const [draft, setDraft] = useState<string[]>([]);
 
-  const supportedFilters = useMemo(
-    () => (baseDataSource ? FILTERS_BY_SOURCE[baseDataSource] : []),
-    [baseDataSource],
-  );
+  const supportedFilters = useMemo(() => {
+    const supported = new Set<AllowedReportFilterKey>();
+    for (const source of baseDataSources) {
+      for (const filterKey of FILTERS_BY_SOURCE[source] || []) {
+        supported.add(filterKey);
+      }
+    }
+    return Array.from(supported);
+  }, [baseDataSources]);
 
   const availableOptions = useMemo(
     () =>
@@ -48,32 +53,40 @@ const FilterSelector: React.FC<FilterSelectorProps> = ({ value, onChange, baseDa
     [supportedFilters, value],
   );
 
-  const addFilter = () => {
-    if (!draft || value.includes(draft as AllowedReportFilterKey) || value.length >= 10) return;
-    onChange([...value, draft as AllowedReportFilterKey]);
-    setDraft('');
+  const addFilters = () => {
+    if (!draft.length) return;
+    const merged = [...value];
+    for (const item of draft) {
+      if (merged.length >= 10) break;
+      if (!merged.includes(item as AllowedReportFilterKey)) {
+        merged.push(item as AllowedReportFilterKey);
+      }
+    }
+    onChange(merged);
+    setDraft([]);
   };
 
   return (
     <div className="space-y-3">
-      <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
-        <SearchableSelect
+      <motion.div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
+        <MultiSearchableSelect
           options={availableOptions}
-          value={draft}
-          onChange={(event) => setDraft(event.target.value)}
-          placeholder={baseDataSource ? 'Select filter' : 'Select data source first'}
+          values={draft}
+          onChange={setDraft}
+          placeholder={baseDataSources.length ? 'Select filters' : 'Select data source first'}
           name="report-filter"
+          maxSelections={Math.max(0, 10 - value.length)}
         />
         <button
           type="button"
-          onClick={addFilter}
-          disabled={!draft || value.length >= 10 || !baseDataSource}
+          onClick={addFilters}
+          disabled={!draft.length || value.length >= 10 || !baseDataSources.length}
           className="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-black text-white shadow-[0_16px_30px_-16px_rgba(16,185,129,0.8)] transition-all hover:bg-emerald-600 disabled:cursor-not-allowed disabled:bg-gray-300"
         >
           <Plus className="h-4 w-4" />
-          Add Filter
+          Add Filters
         </button>
-      </div>
+      </motion.div>
 
       <div className="flex min-h-11 flex-wrap gap-2 rounded-2xl border border-dashed border-gray-200 bg-gray-50/70 p-3">
         <AnimatePresence initial={false}>
@@ -97,7 +110,7 @@ const FilterSelector: React.FC<FilterSelectorProps> = ({ value, onChange, baseDa
         </AnimatePresence>
         {!value.length ? (
           <span className="self-center text-sm font-semibold text-gray-400">
-            {baseDataSource
+            {baseDataSources.length
               ? 'Choose up to 10 filters for this report type.'
               : 'Pick a base data source first to unlock matching filters.'}
           </span>

@@ -28,7 +28,9 @@ export interface ReportType {
   workspaceId: string;
   name: string;
   module: ReportModule;
+  modules?: ReportModule[];
   baseDataSource: ReportBaseDataSource;
+  baseDataSources?: ReportBaseDataSource[];
   description: string | null;
   allowedFilters: AllowedReportFilterKey[];
   status: ReportTypeStatus;
@@ -71,7 +73,9 @@ export interface ReportTypeQueryParams extends ReportTypeFilters {
 export interface ReportTypePayload {
   name: string;
   module: ReportModule;
+  modules?: ReportModule[];
   baseDataSource: ReportBaseDataSource;
+  baseDataSources?: ReportBaseDataSource[];
   description?: string;
   allowedFilters: AllowedReportFilterKey[];
   status?: ReportTypeStatus;

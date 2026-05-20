@@ -4,6 +4,7 @@ import { BarChart3, Filter, LayoutList, Plus, Search, Sparkles } from 'lucide-re
 import { toast } from 'react-hot-toast';
 import DashboardLayout from '../../../components/dashboard/DashboardLayout';
 import SearchableSelect from '../../../components/SearchableSelect';
+import MultiSearchableSelect from '../../../components/MultiSearchableSelect';
 import { useLeadMetaQuery } from '../../../hooks/useLeads';
 import { useDepartmentsQuery, useRolesQuery } from '../../../hooks/useUsersQuery';
 import { useOfficesQuery } from '../../../hooks/admin/office/useOfficeQuery';
@@ -128,7 +129,7 @@ const ReportTypePage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalReportType, setModalReportType] = useState<ReportType | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<ReportType | null>(null);
-  const [executorDraft, setExecutorDraft] = useState<Record<string, { scalar: string; from: string; to: string }>>({});
+  const [executorDraft, setExecutorDraft] = useState<Record<string, { scalars: string[]; from: string; to: string }>>({});
 
   const { user } = useAuthStore();
   const { search, filters, selected, page, limit, setSearch, setFilters, setSelected, resetFilters, setPage } = useReportTypeStore();
@@ -295,13 +296,11 @@ const ReportTypePage: React.FC = () => {
           };
         }
 
-        if (!value.scalar.trim()) return null;
+        const selected = value.scalars.map((item) => item.trim()).filter(Boolean);
+        if (selected.length === 0) return null;
         return {
           key: filterKey,
-          value: value.scalar
-            .split(',')
-            .map((item) => item.trim())
-            .filter(Boolean),
+          value: selected,
         };
       })
       .filter(Boolean) as ReportExecutionFilter[];
@@ -497,7 +496,7 @@ const ReportTypePage: React.FC = () => {
                                   setExecutorDraft((state) => ({
                                     ...state,
                                     [filterKey]: {
-                                      scalar: '',
+                                      scalars: [],
                                       from: event.target.value,
                                       to: state[filterKey]?.to || '',
                                     },
@@ -512,7 +511,7 @@ const ReportTypePage: React.FC = () => {
                                   setExecutorDraft((state) => ({
                                     ...state,
                                     [filterKey]: {
-                                      scalar: '',
+                                      scalars: [],
                                       from: state[filterKey]?.from || '',
                                       to: event.target.value,
                                     },
@@ -522,14 +521,14 @@ const ReportTypePage: React.FC = () => {
                               />
                             </div>
                           ) : executionOptions[filterKey]?.length ? (
-                            <SearchableSelect
+                            <MultiSearchableSelect
                               options={executionOptions[filterKey]}
-                              value={executorDraft[filterKey]?.scalar || ''}
-                              onChange={(event) =>
+                              values={executorDraft[filterKey]?.scalars || []}
+                              onChange={(nextValues) =>
                                 setExecutorDraft((state) => ({
                                   ...state,
                                   [filterKey]: {
-                                    scalar: event.target.value,
+                                    scalars: nextValues,
                                     from: '',
                                     to: '',
                                   },
@@ -540,12 +539,15 @@ const ReportTypePage: React.FC = () => {
                             />
                           ) : (
                             <input
-                              value={executorDraft[filterKey]?.scalar || ''}
+                              value={(executorDraft[filterKey]?.scalars || []).join(', ')}
                               onChange={(event) =>
                                 setExecutorDraft((state) => ({
                                   ...state,
                                   [filterKey]: {
-                                    scalar: event.target.value,
+                                    scalars: event.target.value
+                                      .split(',')
+                                      .map((item) => item.trim())
+                                      .filter(Boolean),
                                     from: '',
                                     to: '',
                                   },
