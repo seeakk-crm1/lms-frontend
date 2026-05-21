@@ -31,7 +31,8 @@ const sidebarMenus: SidebarSection[] = [
     {
         title: 'MAIN',
         items: [
-            { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' }
+            { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
+            { icon: CalendarIcon, label: 'Attendance', path: '/attendance', requiredPermissions: ['view_attendance', 'mark_attendance'] }
         ]
     },
     {

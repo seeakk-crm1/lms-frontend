@@ -49,6 +49,7 @@ import ReportTypePage from './modules/report-types/pages/ReportTypePage';
 import ReportsPage from './modules/reports/ReportsPage';
 import LOBAnalysisPage from './modules/lob-analysis/LOBAnalysisPage';
 import LOBReasonsPage from './modules/lob-reasons/pages/LOBReasonsPage';
+import AttendancePage from './pages/attendance/AttendancePage';
 
 interface RouteProps {
   children: ReactNode;
@@ -375,6 +376,12 @@ function App() {
         <Route path="/locations" element={
           <PermissionRoute permissions={['LOCATION_VIEW', 'LOCATION_MANAGE', 'SYSTEM_CONFIG']}>
             <LocationsPage />
+          </PermissionRoute>
+        } />
+
+        <Route path="/attendance" element={
+          <PermissionRoute permissions={['view_attendance', 'mark_attendance']}>
+            <AttendancePage />
           </PermissionRoute>
         } />
 
