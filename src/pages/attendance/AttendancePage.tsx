@@ -115,6 +115,14 @@ const AttendancePage: React.FC = () => {
     try {
       const res = await attendanceApi.getTodayStatus();
       setTodayStatus(res.data);
+      const profile = res.data?.officeNetworks?.[0];
+      if (profile && res.data?.attendanceApplyType === 'FROM_OFFICE') {
+        setWifiSsidInput(profile.wifiSsid || '');
+        setRouterIpInput(profile.routerIp || '');
+        setSubnetInput(profile.subnet || '255.255.255.0');
+        setDeviceIpInput(profile.sampleDeviceIp || '');
+        setNetworkPreset('office');
+      }
     } catch (err) {
       console.error(err);
     }
@@ -238,10 +246,11 @@ const AttendancePage: React.FC = () => {
   const handlePresetChange = (preset: string) => {
     setNetworkPreset(preset);
     if (preset === 'office') {
-      setWifiSsidInput('MISSION 2050-2G');
-      setRouterIpInput('192.168.220.1');
-      setDeviceIpInput('192.168.220.105');
-      setSubnetInput('255.255.255.0');
+      const profile = todayStatus?.officeNetworks?.[0];
+      setWifiSsidInput(profile?.wifiSsid || 'MISSION 2050-2G');
+      setRouterIpInput(profile?.routerIp || '192.168.220.1');
+      setDeviceIpInput(profile?.sampleDeviceIp || '192.168.220.105');
+      setSubnetInput(profile?.subnet || '255.255.255.0');
     } else if (preset === 'home') {
       setWifiSsidInput('HomeNet_5G');
       setRouterIpInput('192.168.1.1');

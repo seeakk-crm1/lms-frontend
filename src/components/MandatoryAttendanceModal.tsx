@@ -10,6 +10,13 @@ interface MandatoryAttendanceModalProps {
     isLocked?: boolean;
     attendanceApplyType?: string;
     record?: any;
+    officeNetworks?: Array<{
+      wifiSsid: string;
+      routerIp: string;
+      subnet: string;
+      sampleDeviceIp: string;
+      allowedIpRanges?: string;
+    }>;
   };
   onSuccess?: () => void;
 }
@@ -27,13 +34,24 @@ export const MandatoryAttendanceModal: React.FC<MandatoryAttendanceModalProps> =
   const [subnet, setSubnet] = useState('255.255.255.0');
   const [networkPreset, setNetworkPreset] = useState('office');
 
+  useEffect(() => {
+    const profile = status?.officeNetworks?.[0];
+    if (!profile) return;
+    setWifiSsid(profile.wifiSsid || '');
+    setRouterIp(profile.routerIp || '');
+    setSubnet(profile.subnet || '255.255.255.0');
+    setDeviceIp(profile.sampleDeviceIp || '192.168.220.105');
+    setNetworkPreset('office');
+  }, [status?.officeNetworks]);
+
   const handlePresetChange = (preset: string) => {
     setNetworkPreset(preset);
     if (preset === 'office') {
-      setWifiSsid('MISSION 2050-2G');
-      setRouterIp('192.168.220.1');
-      setDeviceIp('192.168.220.105');
-      setSubnet('255.255.255.0');
+      const profile = status.officeNetworks?.[0];
+      setWifiSsid(profile?.wifiSsid || 'MISSION 2050-2G');
+      setRouterIp(profile?.routerIp || '192.168.220.1');
+      setDeviceIp(profile?.sampleDeviceIp || '192.168.220.105');
+      setSubnet(profile?.subnet || '255.255.255.0');
     } else if (preset === 'home') {
       setWifiSsid('MyHome_WiFi_5G');
       setRouterIp('192.168.1.1');
@@ -76,11 +94,15 @@ export const MandatoryAttendanceModal: React.FC<MandatoryAttendanceModalProps> =
       }
     } catch (err: any) {
       const data = err.response?.data;
-      const detailHint =
-        data?.errorCode === 'OFFICE_NETWORK_VALIDATION_FAILED' && data?.details?.expectedSsid
-          ? ` Expected office WiFi: ${data.details.expectedSsid}, router: ${data.details.expectedRouterIp}.`
-          : '';
-      toast.error((data?.message || 'Failed to submit attendance.') + detailHint);
+      let detailHint = '';
+      if (data?.errorCode === 'PERMISSION_DENIED') {
+        detailHint = ' Ask your admin to grant attendance permissions or redeploy the latest backend.';
+      } else if (data?.errorCode === 'OFFICE_NETWORK_VALIDATION_FAILED' && data?.details?.expectedSsid) {
+        detailHint = ` Use WiFi "${data.details.expectedSsid}", router ${data.details.expectedRouterIp}, IP in range ${data.details.expectedIpRange}.`;
+      } else if (data?.errorCode === 'WORKSPACE_NOT_LINKED') {
+        detailHint = ' Your account is not linked to a workspace.';
+      }
+      toast.error((data?.message || 'Failed to submit attendance.') + detailHint, { duration: 6000 });
     } finally {
       setSubmitting(false);
     }
