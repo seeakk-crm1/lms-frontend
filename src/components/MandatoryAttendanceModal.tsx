@@ -77,6 +77,7 @@ export const MandatoryAttendanceModal: React.FC<MandatoryAttendanceModalProps> =
         networkName: wifiSsid,
         routerIp,
         subnet,
+        clientChannel: 'web',
         deviceInfo: navigator.userAgent,
         geoLocation: 'Office HQ',
         notes,
@@ -101,6 +102,10 @@ export const MandatoryAttendanceModal: React.FC<MandatoryAttendanceModalProps> =
         detailHint = ` Use WiFi "${data.details.expectedSsid}", router ${data.details.expectedRouterIp}, IP in range ${data.details.expectedIpRange}.`;
       } else if (data?.errorCode === 'WORKSPACE_NOT_LINKED') {
         detailHint = ' Your account is not linked to a workspace.';
+      } else if (data?.errorCode === 'ONBOARDING_REQUIRED') {
+        detailHint = ' Complete workspace setup, then try again.';
+      } else if (data?.errorCode === 'OFFICE_NETWORK_METADATA_REQUIRED') {
+        detailHint = ' Select the Office preset so SSID and router match your admin network settings.';
       }
       toast.error((data?.message || 'Failed to submit attendance.') + detailHint, { duration: 6000 });
     } finally {

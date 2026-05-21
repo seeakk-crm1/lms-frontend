@@ -140,6 +140,15 @@ const attachCoreSocketHandlers = (s: Socket, baseUrl: string): void => {
     console.info('[Socket.io] disconnect:', reason);
     if (reason === 'io server disconnect') {
       console.warn('[Socket.io] Server closed the connection');
+      return;
+    }
+    // Stale Engine.IO session on Render (400 on polling) — force a fresh handshake without logging out.
+    if (reason === 'transport error' || reason === 'ping timeout') {
+      console.warn('[Socket.io] Transport dropped — opening a new session');
+      s.disconnect();
+      setTimeout(() => {
+        if (s.disconnected) s.connect();
+      }, 400);
     }
   });
 

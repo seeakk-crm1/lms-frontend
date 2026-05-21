@@ -277,6 +277,7 @@ const AttendancePage: React.FC = () => {
         networkName: wifiSsidInput,
         routerIp: routerIpInput,
         subnet: subnetInput,
+        clientChannel: 'web',
         deviceInfo: navigator.userAgent,
         geoLocation: 'OfficeHQ coordinates',
         notes,

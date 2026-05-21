@@ -17,6 +17,7 @@ export const markAttendance = async (data: {
   geoLocation?: string | null;
   notes?: string | null;
   attachmentUrl?: string | null;
+  clientChannel?: 'web' | 'mobile';
 }) => {
   const response = await api.post('/attendance/check-in', data);
   return response.data;
