@@ -4,6 +4,7 @@ import { queryClient } from '../../lib/queryClient';
 import { connectRealtime, disconnectRealtime } from '../../services/realtime';
 import useAuthStore from '../../store/useAuthStore';
 import useDashboardStore from '../../store/useDashboardStore';
+import { dispatchAttendanceRefresh } from '../../utils/attendanceRefresh';
 
 const refreshAuthenticatedUser = async (): Promise<void> => {
   const { updateUser, clearAuth } = useAuthStore.getState();
@@ -95,11 +96,16 @@ const RealtimeSyncListener = () => {
       refetchDashboardIfLoaded();
     };
 
+    const onAttendanceUpdated = () => {
+      dispatchAttendanceRefresh({ action: 'realtime' });
+    };
+
     socket.on('role_updated', onRoleUpdated);
     socket.on('permissions_updated', onPermissionsUpdated);
     socket.on('user_updated', onUserUpdated);
     socket.on('lead_updated', onLeadUpdated);
     socket.on('report_updated', onReportUpdated);
+    socket.on('attendance_updated', onAttendanceUpdated);
 
     return () => {
       socket.off('role_updated', onRoleUpdated);
@@ -107,6 +113,7 @@ const RealtimeSyncListener = () => {
       socket.off('user_updated', onUserUpdated);
       socket.off('lead_updated', onLeadUpdated);
       socket.off('report_updated', onReportUpdated);
+      socket.off('attendance_updated', onAttendanceUpdated);
     };
   }, [isAuthenticated, userId]);
 

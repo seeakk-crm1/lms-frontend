@@ -19,6 +19,7 @@ import api from './services/api';
 import { queryClient } from './lib/queryClient';
 import FollowUpReminderListener from './components/calendar/FollowUpReminderListener';
 import MandatoryFollowUpContinuationGate from './components/calendar/MandatoryFollowUpContinuationGate';
+import MandatoryAttendanceGate from './components/MandatoryAttendanceGate';
 import RealtimeSyncListener from './components/realtime/RealtimeSyncListener';
 import Login from './pages/Login';
 import InvitePage from './pages/InvitePage';
@@ -50,7 +51,6 @@ import ReportsPage from './modules/reports/ReportsPage';
 import LOBAnalysisPage from './modules/lob-analysis/LOBAnalysisPage';
 import LOBReasonsPage from './modules/lob-reasons/pages/LOBReasonsPage';
 import AttendancePage from './pages/attendance/AttendancePage';
-import { MandatoryAttendanceModal } from './components/MandatoryAttendanceModal';
 
 interface RouteProps {
   children: ReactNode;
@@ -190,9 +190,9 @@ function App() {
       </AnimatePresence>
 
       <MandatoryFollowUpContinuationGate>
+      <MandatoryAttendanceGate>
       {isAuthenticated ? <FollowUpReminderListener /> : null}
       {isAuthenticated ? <RealtimeSyncListener /> : null}
-      {isAuthenticated ? <MandatoryAttendanceModal /> : null}
       <Routes>
         <Route path="/" element={
           <div className="min-h-screen bg-white font-sans selection:bg-emerald-200 selection:text-emerald-900 overflow-x-hidden">
@@ -389,6 +389,7 @@ function App() {
 
         <Route path="/master/stage-rules" element={<Navigate to="/admin/stage-rules" replace />} />
       </Routes>
+      </MandatoryAttendanceGate>
       </MandatoryFollowUpContinuationGate>
     </>
   );

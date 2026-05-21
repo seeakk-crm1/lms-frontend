@@ -30,6 +30,7 @@ import useAuthStore from '../../store/useAuthStore';
 import { hasPermission } from '../../utils/permission.util';
 import * as attendanceApi from '../../services/attendance.api';
 import LockedScreen from '../../components/LockedScreen';
+import { dispatchAttendanceRefresh, subscribeAttendanceRefresh } from '../../utils/attendanceRefresh';
 
 const AttendancePage: React.FC = () => {
   const { user } = useAuthStore();
@@ -80,7 +81,7 @@ const AttendancePage: React.FC = () => {
   const [notifications, setNotifications] = useState<any[]>([]);
 
   // Filters
-  const [historyFilters, setHistoryFilters] = useState({ startDate: '', endDate: '' });
+  const [historyFilters, setHistoryFilters] = useState({ startDate: '', endDate: '', approvalStatus: 'APPROVED' });
   const [adminFilters, setAdminFilters] = useState({
     startDate: '',
     endDate: '',
@@ -88,7 +89,7 @@ const AttendancePage: React.FC = () => {
     attendanceType: '',
     approvalStatus: '',
     page: 1,
-    limit: 10
+    limit: 50
   });
 
   // Mark form inputs
@@ -200,17 +201,30 @@ const AttendancePage: React.FC = () => {
 
   const loadAll = async () => {
     setLoading(true);
+    const tasks: Promise<void>[] = [fetchTodayStatus(), fetchStats(), fetchNotifications(), fetchHistory(), fetchPendingQueue()];
+    if (hasPermission(permissions, 'view_all_attendance')) {
+      tasks.push(fetchUsersList());
+    }
+    await Promise.all(tasks);
+    setLoading(false);
+  };
+
+  const refreshAll = async () => {
     await Promise.all([
       fetchTodayStatus(),
       fetchStats(),
-      fetchNotifications()
+      fetchNotifications(),
+      fetchHistory(),
+      fetchPendingQueue(),
+      fetchUsersList()
     ]);
-    setLoading(false);
   };
 
   useEffect(() => {
     loadAll();
   }, []);
+
+  useEffect(() => subscribeAttendanceRefresh(() => void refreshAll()), []);
 
   useEffect(() => {
     if (activeTab === 'history') fetchHistory();
@@ -261,12 +275,12 @@ const AttendancePage: React.FC = () => {
       });
       if (response.success) {
         toast.success(
-          response.data.status === 'PENDING'
+          response.data?.approvalStatus === 'PENDING'
             ? 'Attendance request submitted for supervisor approval.'
             : 'Attendance marked successfully.'
         );
-        fetchTodayStatus();
-        fetchStats();
+        dispatchAttendanceRefresh({ action: 'check-in' });
+        await refreshAll();
         setActiveTab('dashboard');
       }
     } catch (err: any) {
@@ -287,7 +301,7 @@ const AttendancePage: React.FC = () => {
     try {
       await attendanceApi.reviewAttendance(recordId, 'APPROVE');
       toast.success('Attendance request approved.');
-      fetchPendingQueue();
+      refreshAll();
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Failed to review request');
     }
@@ -302,7 +316,7 @@ const AttendancePage: React.FC = () => {
       await attendanceApi.reviewAttendance(rejectRecordId!, 'REJECT', rejectionReason);
       toast.success('Attendance request rejected.');
       setRejectRecordId(null);
-      fetchPendingQueue();
+      refreshAll();
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Failed to reject request');
     }
@@ -313,7 +327,7 @@ const AttendancePage: React.FC = () => {
     try {
       await attendanceApi.updateUserApplyType(userId, type);
       toast.success('Apply type updated successfully.');
-      fetchUsersList();
+      refreshAll();
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Failed to update user apply type');
     }
@@ -380,7 +394,7 @@ const AttendancePage: React.FC = () => {
     try {
       await attendanceApi.unlockUser(userId);
       toast.success('User unlocked and warnings cleared.');
-      fetchUsersList();
+      refreshAll();
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Failed to unlock user');
     }
@@ -426,7 +440,7 @@ const AttendancePage: React.FC = () => {
               <p className="text-sm text-gray-500 mt-1">Configure WiFi network validation, apply types, approve requests, and export reports.</p>
             </div>
             
-            {todayStatus && !todayStatus.isMarked && !todayStatus.isHoliday && (
+            {todayStatus && todayStatus.requiresMandatoryPopup && !todayStatus.isHoliday && (
               <button
                 onClick={() => setActiveTab('mark')}
                 className="flex items-center gap-2 px-6 py-3 bg-emerald-500 text-white rounded-2xl text-sm font-bold shadow-lg shadow-emerald-500/20 active:scale-95 transition-all hover:bg-emerald-600 cursor-pointer"
@@ -483,16 +497,18 @@ const AttendancePage: React.FC = () => {
                         <span className="px-3 py-1 bg-blue-50 text-blue-600 text-xs font-bold rounded-full">
                           Holiday: {todayStatus.holidayName || 'Public Holiday'}
                         </span>
-                      ) : todayStatus?.isMarked ? (
+                      ) : todayStatus?.submissionState === 'APPROVED' || todayStatus?.submissionState === 'PENDING' ? (
                         <span className={`px-3 py-1 text-xs font-bold rounded-full flex items-center gap-1 ${
-                          todayStatus.record?.approvalStatus === 'APPROVED'
+                          todayStatus.submissionState === 'APPROVED'
                             ? 'bg-emerald-50 text-emerald-600'
-                            : todayStatus.record?.approvalStatus === 'REJECTED'
-                            ? 'bg-rose-50 text-rose-600'
                             : 'bg-amber-50 text-amber-600'
                         }`}>
-                          <CheckCircle size={14} /> 
-                          {todayStatus.record?.approvalStatus === 'APPROVED' ? 'Approved' : todayStatus.record?.approvalStatus === 'REJECTED' ? 'Rejected' : 'Pending Approval'} ({todayStatus.record?.attendanceType})
+                          <CheckCircle size={14} />
+                          {todayStatus.submissionState === 'APPROVED' ? 'Approved' : 'Pending Approval'} ({todayStatus.record?.attendanceType})
+                        </span>
+                      ) : todayStatus?.submissionState === 'REJECTED' ? (
+                        <span className="px-3 py-1 text-xs font-bold rounded-full flex items-center gap-1 bg-rose-50 text-rose-600">
+                          Rejected — resubmit required
                         </span>
                       ) : (
                         <span className="px-3 py-1 bg-amber-50 text-amber-600 text-xs font-bold rounded-full">
@@ -556,13 +572,14 @@ const AttendancePage: React.FC = () => {
                 {hasPermission(permissions, 'view_all_attendance') && adminStats && (
                   <div className="space-y-4 pt-4 border-t border-gray-50">
                     <h3 className="text-base font-black text-gray-800">Workspace Compliance Dashboard</h3>
-                    <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+                    <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
                       {[
-                        { label: 'Present Today', value: adminStats.totalPresent, color: 'emerald' },
-                        { label: 'Absent Today', value: adminStats.totalAbsent, color: 'rose' },
-                        { label: 'Holidays Active', value: adminStats.totalHolidays, color: 'blue' },
-                        { label: 'Locked Users', value: adminStats.totalLocked, color: 'red' },
-                        { label: 'Total Warnings Logged', value: adminStats.totalWarnings, color: 'amber' }
+                        { label: 'Present Today', value: adminStats.totalPresent },
+                        { label: 'Pending Approvals', value: adminStats.totalPending ?? 0 },
+                        { label: 'Approved Today', value: adminStats.totalApproved ?? 0 },
+                        { label: 'Late Users', value: adminStats.totalLate ?? 0 },
+                        { label: 'Absent / Not Submitted', value: adminStats.totalAbsent },
+                        { label: 'Rejected', value: adminStats.totalRejected ?? 0 },
                       ].map(stat => (
                         <div key={stat.label} className="p-4 bg-white rounded-2xl border border-gray-100 shadow-sm text-center">
                           <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{stat.label}</p>
@@ -590,11 +607,47 @@ const AttendancePage: React.FC = () => {
                   <div className="p-4 bg-blue-50 border border-blue-100 rounded-2xl text-center text-blue-700 text-xs font-semibold">
                     Today is a holiday ({todayStatus.holidayName}). Attendance registration is not required.
                   </div>
-                ) : todayStatus?.isMarked ? (
-                  <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-2xl text-center text-emerald-700 text-xs font-semibold">
-                    Today's check-in has been registered as {todayStatus.record?.attendanceType}. Approval status: {todayStatus.record?.approvalStatus}.
+                ) : todayStatus?.submissionState === 'APPROVED' ? (
+                  <div className="space-y-4">
+                    <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-4 text-center text-emerald-800">
+                      <p className="text-sm font-black">Attendance Approved</p>
+                      <p className="mt-2 text-xs font-semibold">
+                        Type: {todayStatus.record?.attendanceType?.replace(/_/g, ' ')} · Check-in:{' '}
+                        {todayStatus.record?.checkInTime
+                          ? new Date(todayStatus.record.checkInTime).toLocaleString()
+                          : '—'}
+                      </p>
+                      <p className="mt-1 text-xs">
+                        Network: {todayStatus.record?.networkName || 'Anywhere'} ({todayStatus.record?.ipAddress || '—'})
+                      </p>
+                      <p className="mt-1 text-xs">
+                        Apply type: {todayStatus.record?.attendanceApplyType === 'FROM_OFFICE' ? 'From Office' : 'From Anywhere'}
+                        {todayStatus.record?.isOfficeNetwork ? ' · Office network validated' : ''}
+                      </p>
+                    </div>
+                  </div>
+                ) : todayStatus?.submissionState === 'PENDING' ? (
+                  <div className="rounded-2xl border border-amber-100 bg-amber-50 p-4 text-center text-amber-800">
+                    <p className="text-sm font-black">Attendance Pending Approval</p>
+                    <p className="mt-2 text-xs font-semibold">
+                      Submitted as {todayStatus.record?.attendanceType?.replace(/_/g, ' ')} at{' '}
+                      {todayStatus.record?.checkInTime
+                        ? new Date(todayStatus.record.checkInTime).toLocaleString()
+                        : '—'}
+                    </p>
+                    <p className="mt-1 text-xs text-amber-700">You cannot submit again until your supervisor reviews this request.</p>
                   </div>
                 ) : (
+                  <>
+                    {todayStatus?.submissionState === 'REJECTED' ? (
+                      <div className="mb-4 rounded-2xl border border-rose-100 bg-rose-50 p-4 text-center text-rose-800">
+                        <p className="text-sm font-black">Attendance Rejected</p>
+                        {todayStatus.record?.rejectedReason ? (
+                          <p className="mt-2 text-xs">Reason: {todayStatus.record.rejectedReason}</p>
+                        ) : null}
+                        <p className="mt-2 text-xs">Please resubmit your attendance below.</p>
+                      </div>
+                    ) : null}
                   <form onSubmit={handleCheckIn} className="space-y-5">
                     {/* Simulated presets helper */}
                     {todayStatus?.attendanceApplyType === 'FROM_OFFICE' && (
@@ -681,6 +734,7 @@ const AttendancePage: React.FC = () => {
                       {submitting ? 'Registering...' : 'Register Daily Attendance'}
                     </button>
                   </form>
+                  </>
                 )}
               </div>
             )}
@@ -707,6 +761,19 @@ const AttendancePage: React.FC = () => {
                       className="border border-gray-200 rounded-xl px-3 py-1.5 text-xs focus:outline-emerald-500"
                     />
                   </div>
+                  <div className="flex flex-col">
+                    <label className="text-[9px] font-bold text-gray-400 uppercase mb-1">Approval Status</label>
+                    <select
+                      value={historyFilters.approvalStatus}
+                      onChange={e => setHistoryFilters({ ...historyFilters, approvalStatus: e.target.value })}
+                      className="border border-gray-200 rounded-xl px-3 py-1.5 text-xs focus:outline-emerald-500 bg-white"
+                    >
+                      <option value="APPROVED">Approved Only</option>
+                      <option value="PENDING">Pending Approval</option>
+                      <option value="REJECTED">Rejected</option>
+                      <option value="ALL">All Statuses</option>
+                    </select>
+                  </div>
                 </div>
 
                 <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
@@ -714,17 +781,22 @@ const AttendancePage: React.FC = () => {
                     <thead>
                       <tr className="bg-gray-50 border-b border-gray-100 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
                         <th className="p-4">Date</th>
-                        <th className="p-4">Check-In Time</th>
+                        <th className="p-4">User</th>
                         <th className="p-4">Type</th>
                         <th className="p-4">Approval Status</th>
+                        <th className="p-4">Approved By</th>
+                        <th className="p-4">Approved At</th>
                         <th className="p-4">Network Info</th>
+                        <th className="p-4">Apply Type</th>
+                        <th className="p-4">Work Location</th>
+                        <th className="p-4">Late Status</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-50 text-xs text-gray-600">
                       {history?.records?.map((record: any) => (
                         <tr key={record.id} className="hover:bg-gray-50/50">
                           <td className="p-4 font-bold">{new Date(record.date).toLocaleDateString()}</td>
-                          <td className="p-4">{record.checkInTime ? new Date(record.checkInTime).toLocaleTimeString() : '-'}</td>
+                          <td className="p-4 font-bold text-gray-900">{record.user?.name || '-'}</td>
                           <td className="p-4">
                             <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
                               record.attendanceType === 'PRESENT' ? 'bg-emerald-100 text-emerald-600' :
@@ -747,14 +819,33 @@ const AttendancePage: React.FC = () => {
                               <p className="text-[10px] text-rose-500 mt-1 font-medium">Reason: {record.rejectedReason}</p>
                             )}
                           </td>
+                          <td className="p-4">{record.approvedByName || '-'}</td>
+                          <td className="p-4">{record.approvedAt ? new Date(record.approvedAt).toLocaleString() : '-'}</td>
                           <td className="p-4 text-gray-400 font-mono text-[10px]">
                             {record.networkName ? `${record.networkName} (${record.ipAddress})` : 'Anywhere'}
+                          </td>
+                          <td className="p-4 font-semibold text-gray-500">
+                            {record.attendanceApplyType === 'FROM_OFFICE' ? 'From Office' : 'From Anywhere'}
+                          </td>
+                          <td className="p-4">
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                              record.isOfficeNetwork ? 'bg-indigo-50 text-indigo-600' : 'bg-gray-100 text-gray-600'
+                            }`}>
+                              {record.isOfficeNetwork ? 'Office' : 'Remote'}
+                            </span>
+                          </td>
+                          <td className="p-4">
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                              record.warningCount > 0 ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600'
+                            }`}>
+                              {record.warningCount > 0 ? 'Late' : 'On Time'}
+                            </span>
                           </td>
                         </tr>
                       ))}
                       {(!history?.records || history.records.length === 0) && (
                         <tr>
-                          <td colSpan={5} className="text-center p-8 text-gray-400 font-semibold">
+                          <td colSpan={10} className="text-center p-8 text-gray-400 font-semibold">
                             No attendance history logs found.
                           </td>
                         </tr>
@@ -847,6 +938,7 @@ const AttendancePage: React.FC = () => {
                         className="border border-gray-200 rounded-xl px-3 py-1.5 text-xs focus:outline-emerald-500"
                       >
                         <option value="">All Statuses</option>
+                        <option value="NOT_SUBMITTED">Not Submitted</option>
                         <option value="APPROVED">Approved</option>
                         <option value="PENDING">Pending</option>
                         <option value="REJECTED">Rejected</option>
@@ -868,11 +960,13 @@ const AttendancePage: React.FC = () => {
                     <thead>
                       <tr className="bg-gray-50 border-b border-gray-100 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
                         <th className="p-4">Employee</th>
+                        <th className="p-4">Role</th>
                         <th className="p-4">Supervisor</th>
                         <th className="p-4">Apply Type</th>
+                        <th className="p-4">Attendance Status</th>
                         <th className="p-4">Last Check-In Time</th>
                         <th className="p-4">Network / IP</th>
-                        <th className="p-4">Compliance Status</th>
+                        <th className="p-4">Compliance</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-50 text-xs text-gray-600">
@@ -882,11 +976,12 @@ const AttendancePage: React.FC = () => {
                             <p className="font-bold text-gray-900">{record.user?.name}</p>
                             <p className="text-[10px] text-gray-400 mt-0.5">{record.user?.email}</p>
                           </td>
+                          <td className="p-4">{record.user?.role?.name || '—'}</td>
                           <td className="p-4">{record.user?.supervisor?.name || 'No Supervisor'}</td>
                           <td className="p-4">
                             {hasPermission(permissions, 'edit_attendance_apply_type') ? (
                               <select
-                                value={record.user?.attendanceApplyType || 'FROM_OFFICE'}
+                                value={record.attendanceApplyType || record.user?.attendanceApplyType || 'FROM_OFFICE'}
                                 onChange={e => handleInlineApplyTypeChange(record.user.id, e.target.value)}
                                 className="border border-gray-200 rounded-lg px-2 py-1 text-xs focus:outline-emerald-500 font-bold bg-white text-gray-700"
                               >
@@ -895,9 +990,28 @@ const AttendancePage: React.FC = () => {
                               </select>
                             ) : (
                               <span className="font-bold text-gray-700">
-                                {record.user?.attendanceApplyType === 'FROM_OFFICE' ? 'From Office' : 'From Anywhere'}
+                                {(record.attendanceApplyType || record.user?.attendanceApplyType) === 'FROM_OFFICE'
+                                  ? 'From Office'
+                                  : 'From Anywhere'}
                               </span>
                             )}
+                          </td>
+                          <td className="p-4">
+                            <span
+                              className={`rounded px-2 py-0.5 text-[10px] font-bold ${
+                                record.approvalStatus === 'APPROVED'
+                                  ? 'bg-emerald-50 text-emerald-600'
+                                  : record.approvalStatus === 'PENDING'
+                                  ? 'bg-amber-50 text-amber-600'
+                                  : record.approvalStatus === 'REJECTED'
+                                  ? 'bg-rose-50 text-rose-600'
+                                  : 'bg-gray-100 text-gray-600'
+                              }`}
+                            >
+                              {record.approvalStatus === 'NOT_SUBMITTED'
+                                ? 'Not Submitted'
+                                : `${record.approvalStatus} (${record.attendanceType})`}
+                            </span>
                           </td>
                           <td className="p-4">{record.checkInTime ? new Date(record.checkInTime).toLocaleString() : '-'}</td>
                           <td className="p-4 font-mono text-[10px] text-gray-500">
@@ -929,8 +1043,8 @@ const AttendancePage: React.FC = () => {
                       ))}
                       {(!usersOverview?.records || usersOverview.records.length === 0) && (
                         <tr>
-                          <td colSpan={6} className="text-center p-8 text-gray-400 font-semibold">
-                            No attendance records found.
+                          <td colSpan={8} className="text-center p-8 text-gray-400 font-semibold">
+                            No users found for this workspace.
                           </td>
                         </tr>
                       )}
