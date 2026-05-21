@@ -7,6 +7,8 @@ import useApprovalStore from '../../store/approvalStore';
 import type { LeadApprovalAction, LeadApprovalListItem } from '../../types/lead.types';
 import ApprovalModal from './pending-approval/components/ApprovalModal';
 import ApprovalTable from './pending-approval/components/ApprovalTable';
+import useAuthStore from '../../store/useAuthStore';
+import { hasPermission } from '../../utils/permission.util';
 
 const statusOrder: Record<string, number> = {
   PENDING: 0,
@@ -45,9 +47,10 @@ const PendingApprovalPage: React.FC = () => {
     return () => window.clearTimeout(timer);
   }, [searchDraft, setFilters]);
 
-  const canApprove = true;
-  const canDeny = true;
-  const canAct = true;
+  const user = useAuthStore((state) => state.user);
+  const canApprove = hasPermission(user?.permissions || [], 'LEAD_APPROVAL_APPROVE');
+  const canDeny = hasPermission(user?.permissions || [], 'LEAD_APPROVAL_DENY');
+  const canAct = canApprove || canDeny;
 
   const sortedApprovals = useMemo(() => {
     const items = [...approvals];

@@ -14,7 +14,7 @@ import Footer from './components/Footer';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import useAuthStore from './store/useAuthStore';
-import { hasAnyPermission } from './utils/permission.util';
+import { hasAnyPermission, canAccessPendingApproval } from './utils/permission.util';
 import api from './services/api';
 import { queryClient } from './lib/queryClient';
 import FollowUpReminderListener from './components/calendar/FollowUpReminderListener';
@@ -68,6 +68,15 @@ const PermissionRoute: React.FC<RouteProps & { permissions: string[] }> = ({ chi
   if (!isAuthenticated) return <Navigate to="/login" replace />;
   if (user && !user.isOnboarded) return <Navigate to="/workspace/setup" replace />;
   if (!hasAnyPermission(user?.permissions || [], permissions)) return <Navigate to="/dashboard" replace />;
+  return <>{children}</>;
+};
+
+// Protect pending approval routes
+const PendingApprovalRoute: React.FC<RouteProps> = ({ children }) => {
+  const { isAuthenticated, user } = useAuthStore();
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (user && !user.isOnboarded) return <Navigate to="/workspace/setup" replace />;
+  if (!canAccessPendingApproval(user?.permissions || [])) return <Navigate to="/dashboard" replace />;
   return <>{children}</>;
 };
 
@@ -358,9 +367,9 @@ function App() {
         } />
 
         <Route path="/leads/pending-approval" element={
-          <ProtectedRoute>
+          <PendingApprovalRoute>
             <PendingApprovalPage />
-          </ProtectedRoute>
+          </PendingApprovalRoute>
         } />
 
         <Route path="/locations" element={

@@ -11,3 +11,8 @@ export const hasAnyPermission = (permissions: string[] = [], keys: string[]) => 
 export const hasAllPermissions = (permissions: string[] = [], keys: string[]) => {
   return keys.every(k => hasPermission(permissions, k));
 };
+
+export const canAccessPendingApproval = (permissions: string[] = []) => {
+  return hasPermission(permissions, 'LEAD_APPROVAL_VIEW');
+};
+

@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import useAuthStore from '../../store/useAuthStore';
-import { hasAnyPermission, hasPermission } from '../../utils/permission.util';
+import { hasAnyPermission, hasPermission, canAccessPendingApproval } from '../../utils/permission.util';
 
 interface SubMenuItem {
     label: string;
@@ -74,7 +74,7 @@ const sidebarMenus: SidebarSection[] = [
                     { label: 'All Leads', path: '/leads', requiredPermissions: ['LEADS_VIEW_ALL', 'LEADS_VIEW_OWN', 'LEADS_VIEW_TEAM', 'LEADS_CREATE'] },
                     { label: 'Closed Leads', path: '/leads/closed', requiredPermissions: ['LEADS_CLOSE', 'LEADS_REOPEN', 'LEADS_VIEW_ALL', 'LEADS_VIEW_OWN', 'LEADS_VIEW_TEAM'] },
                     { label: 'Bulk Assign', path: '/leads/bulk-assign', requiredPermissions: ['LEADS_BULK_ASSIGN', 'LEADS_ASSIGN'] },
-                    { label: 'Pending Approval', path: '/leads/pending-approval' },
+                    { label: 'Pending Approval', path: '/leads/pending-approval', requiredPermissions: ['LEAD_APPROVAL_VIEW'] },
                 ]
             },
             { icon: FileText, label: 'Reports', path: '/reports', requiredPermissions: ['REPORTS_VIEW', 'REPORTS_GENERATE'] },
@@ -207,9 +207,13 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ isCollapsed, toggle
                 .map((item) => {
                     if (item.subItems?.length) {
                         const visibleSubItems = item.subItems.filter(
-                            (subItem) =>
-                                !subItem.requiredPermissions ||
-                                hasAnyPermission(user?.permissions || [], subItem.requiredPermissions),
+                            (subItem) => {
+                                if (subItem.path === '/leads/pending-approval') {
+                                    return canAccessPendingApproval(user?.permissions || []);
+                                }
+                                return !subItem.requiredPermissions ||
+                                    hasAnyPermission(user?.permissions || [], subItem.requiredPermissions);
+                            }
                         );
 
                         if (visibleSubItems.length === 0) return null;
