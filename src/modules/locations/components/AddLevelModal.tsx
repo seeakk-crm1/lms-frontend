@@ -131,7 +131,7 @@ const AddLevelModal: React.FC<AddLevelModalProps> = ({ open, country, levels, de
             <form onSubmit={submitHandler} className="flex-1 overflow-y-auto p-4 sm:p-8">
               <div className="space-y-4">
                 {fields.map((field, index) => (
-                  <div key={field.id} className="grid gap-3 rounded-3xl border border-gray-100 bg-gray-50/60 p-4 md:grid-cols-[minmax(0,1fr)_120px_120px_auto]">
+                  <div key={field.id} className="grid gap-3 rounded-3xl border border-gray-100 bg-gray-50/60 p-4 md:grid-cols-[minmax(0,1fr)_100px_180px_auto]">
                     <div>
                       <label className="mb-2 block text-[11px] font-black uppercase tracking-[0.22em] text-gray-400">Level Name</label>
                       <input
@@ -157,11 +157,11 @@ const AddLevelModal: React.FC<AddLevelModalProps> = ({ open, country, levels, de
 
                     <div>
                       <label className="mb-2 block text-[11px] font-black uppercase tracking-[0.22em] text-gray-400">Status</label>
-                      <div className="inline-flex rounded-2xl border border-gray-200 bg-white p-1">
+                      <div className="flex w-full rounded-2xl border border-gray-200 bg-white p-1">
                         <button
                           type="button"
                           onClick={() => setValue(`levels.${index}.isActive`, true)}
-                          className={`rounded-2xl px-3 py-2 text-xs font-black transition-colors ${
+                          className={`flex-1 rounded-2xl px-3 py-2 text-xs font-black transition-colors ${
                             watch(`levels.${index}.isActive`) ? 'bg-emerald-500 text-white' : 'text-gray-500'
                           }`}
                         >
@@ -170,7 +170,7 @@ const AddLevelModal: React.FC<AddLevelModalProps> = ({ open, country, levels, de
                         <button
                           type="button"
                           onClick={() => setValue(`levels.${index}.isActive`, false)}
-                          className={`rounded-2xl px-3 py-2 text-xs font-black transition-colors ${
+                          className={`flex-1 rounded-2xl px-3 py-2 text-xs font-black transition-colors ${
                             !watch(`levels.${index}.isActive`) ? 'bg-gray-900 text-white' : 'text-gray-500'
                           }`}
                         >
