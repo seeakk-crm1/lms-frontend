@@ -75,7 +75,12 @@ export const MandatoryAttendanceModal: React.FC<MandatoryAttendanceModalProps> =
         onSuccess?.();
       }
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to submit attendance.');
+      const data = err.response?.data;
+      const detailHint =
+        data?.errorCode === 'OFFICE_NETWORK_VALIDATION_FAILED' && data?.details?.expectedSsid
+          ? ` Expected office WiFi: ${data.details.expectedSsid}, router: ${data.details.expectedRouterIp}.`
+          : '';
+      toast.error((data?.message || 'Failed to submit attendance.') + detailHint);
     } finally {
       setSubmitting(false);
     }
