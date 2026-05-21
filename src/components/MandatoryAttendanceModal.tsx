@@ -1,8 +1,23 @@
-import React, { useState, useEffect } from 'react';
-import { ShieldAlert, CheckCircle2, AlertTriangle, Wifi, Globe, MapPin, FileText, Loader2 } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { ShieldAlert, CheckCircle2, AlertTriangle, Globe, MapPin, Loader2 } from 'lucide-react';
 import { markAttendance } from '../services/attendance.api';
 import { dispatchAttendanceRefresh } from '../utils/attendanceRefresh';
+import {
+  AttendanceGeolocationError,
+  captureAttendanceLocation,
+  previewDistanceMeters,
+  type CapturedAttendanceLocation,
+} from '../utils/attendanceGeolocation';
 import toast from 'react-hot-toast';
+
+interface OfficeLocationProfile {
+  id: string;
+  officeName: string;
+  branch?: string;
+  latitude: number;
+  longitude: number;
+  radiusMeters: number;
+}
 
 interface MandatoryAttendanceModalProps {
   status: {
@@ -10,76 +25,93 @@ interface MandatoryAttendanceModalProps {
     isLocked?: boolean;
     attendanceApplyType?: string;
     record?: any;
-    officeNetworks?: Array<{
-      wifiSsid: string;
-      routerIp: string;
-      subnet: string;
-      sampleDeviceIp: string;
-      allowedIpRanges?: string;
-    }>;
+    assignedOfficeLocation?: OfficeLocationProfile | null;
+    officeLocations?: OfficeLocationProfile[];
   };
   onSuccess?: () => void;
 }
 
 export const MandatoryAttendanceModal: React.FC<MandatoryAttendanceModalProps> = ({ status, onSuccess }) => {
   const [submitting, setSubmitting] = useState(false);
-
+  const [locating, setLocating] = useState(false);
   const [attendanceType, setAttendanceType] = useState('PRESENT');
   const [notes, setNotes] = useState('');
   const [attachmentUrl, setAttachmentUrl] = useState('');
+  const [liveLocation, setLiveLocation] = useState<CapturedAttendanceLocation | null>(null);
+  const [distanceMeters, setDistanceMeters] = useState<number | null>(null);
 
-  const [wifiSsid, setWifiSsid] = useState('MISSION 2050-2G');
-  const [routerIp, setRouterIp] = useState('192.168.220.1');
-  const [deviceIp, setDeviceIp] = useState('192.168.220.105');
-  const [subnet, setSubnet] = useState('255.255.255.0');
-  const [networkPreset, setNetworkPreset] = useState('office');
+  const office = status.assignedOfficeLocation || status.officeLocations?.[0] || null;
+  const isRestricted = status.attendanceApplyType === 'FROM_OFFICE';
+  const needsGps = isRestricted && !['WORK_FROM_HOME', 'LEAVE'].includes(attendanceType);
+
+  const refreshLocationPreview = useCallback(async () => {
+    if (!needsGps || !office) {
+      setLiveLocation(null);
+      setDistanceMeters(null);
+      return;
+    }
+    setLocating(true);
+    try {
+      const captured = await captureAttendanceLocation();
+      setLiveLocation(captured);
+      setDistanceMeters(
+        previewDistanceMeters(
+          captured.latitude,
+          captured.longitude,
+          office.latitude,
+          office.longitude,
+        ),
+      );
+    } catch (err) {
+      setLiveLocation(null);
+      setDistanceMeters(null);
+      if (err instanceof AttendanceGeolocationError) {
+        toast.error(err.message);
+      }
+    } finally {
+      setLocating(false);
+    }
+  }, [needsGps, office]);
 
   useEffect(() => {
-    const profile = status?.officeNetworks?.[0];
-    if (!profile) return;
-    setWifiSsid(profile.wifiSsid || '');
-    setRouterIp(profile.routerIp || '');
-    setSubnet(profile.subnet || '255.255.255.0');
-    setDeviceIp(profile.sampleDeviceIp || '192.168.220.105');
-    setNetworkPreset('office');
-  }, [status?.officeNetworks]);
+    void refreshLocationPreview();
+  }, [refreshLocationPreview]);
 
-  const handlePresetChange = (preset: string) => {
-    setNetworkPreset(preset);
-    if (preset === 'office') {
-      const profile = status.officeNetworks?.[0];
-      setWifiSsid(profile?.wifiSsid || 'MISSION 2050-2G');
-      setRouterIp(profile?.routerIp || '192.168.220.1');
-      setDeviceIp(profile?.sampleDeviceIp || '192.168.220.105');
-      setSubnet(profile?.subnet || '255.255.255.0');
-    } else if (preset === 'home') {
-      setWifiSsid('MyHome_WiFi_5G');
-      setRouterIp('192.168.1.1');
-      setDeviceIp('192.168.1.15');
-      setSubnet('255.255.255.0');
-    } else {
-      setWifiSsid('Cellular Hotspot');
-      setRouterIp('172.20.10.1');
-      setDeviceIp('172.20.10.4');
-      setSubnet('255.255.255.240');
-    }
-  };
+  const withinRadius =
+    distanceMeters != null && office ? distanceMeters <= office.radiusMeters : !needsGps;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
     try {
+      let locationPayload: Partial<CapturedAttendanceLocation> = {};
+      if (needsGps) {
+        const captured = liveLocation ?? (await captureAttendanceLocation());
+        locationPayload = captured;
+        if (office) {
+          const dist = previewDistanceMeters(
+            captured.latitude,
+            captured.longitude,
+            office.latitude,
+            office.longitude,
+          );
+          if (dist > office.radiusMeters) {
+            toast.error('You can only mark attendance from office location.');
+            return;
+          }
+        }
+      }
+
       const response = await markAttendance({
         attendanceType,
         checkInTime: new Date().toISOString(),
         date: status.date,
-        ipAddress: deviceIp,
-        networkName: wifiSsid,
-        routerIp,
-        subnet,
+        latitude: locationPayload.latitude,
+        longitude: locationPayload.longitude,
+        gpsAccuracy: locationPayload.gpsAccuracy,
+        locationCapturedAt: locationPayload.locationCapturedAt,
         clientChannel: 'web',
         deviceInfo: navigator.userAgent,
-        geoLocation: 'Office HQ',
         notes,
         attachmentUrl,
       });
@@ -95,25 +127,11 @@ export const MandatoryAttendanceModal: React.FC<MandatoryAttendanceModalProps> =
       }
     } catch (err: any) {
       const data = err.response?.data;
-      let detailHint = '';
-      if (data?.errorCode === 'PERMISSION_DENIED') {
-        detailHint = ' Ask your admin to grant attendance permissions or redeploy the latest backend.';
-      } else if (data?.errorCode === 'OFFICE_NETWORK_VALIDATION_FAILED' && data?.details?.expectedSsid) {
-        detailHint = ` Use WiFi "${data.details.expectedSsid}", router ${data.details.expectedRouterIp}, IP in range ${data.details.expectedIpRange}.`;
-      } else if (data?.errorCode === 'WORKSPACE_NOT_LINKED') {
-        detailHint = ' Your account is not linked to a workspace.';
-      } else if (data?.errorCode === 'ONBOARDING_REQUIRED') {
-        detailHint = ' Complete workspace setup, then try again.';
-      } else if (data?.errorCode === 'OFFICE_NETWORK_METADATA_REQUIRED') {
-        detailHint = ' Select the Office preset so SSID and router match your admin network settings.';
-      }
-      toast.error((data?.message || 'Failed to submit attendance.') + detailHint, { duration: 6000 });
+      toast.error(data?.message || 'Failed to submit attendance.', { duration: 6000 });
     } finally {
       setSubmitting(false);
     }
   };
-
-  const isRestricted = status.attendanceApplyType === 'FROM_OFFICE';
 
   return (
     <div
@@ -162,12 +180,53 @@ export const MandatoryAttendanceModal: React.FC<MandatoryAttendanceModalProps> =
                 <p className="font-bold">Attendance Apply Type: {isRestricted ? 'From Office' : 'From Anywhere'}</p>
                 <p className="mt-1 opacity-90">
                   {isRestricted
-                    ? 'Office network validation (SSID, router IP, subnet) is required before submission.'
-                    : 'You may check in from any network.'}
+                    ? 'You must be within your assigned office branch radius to submit attendance.'
+                    : 'You may check in from any location.'}
                 </p>
-                <p className="mt-2 font-mono text-[10px]">Device IP: {deviceIp}</p>
               </div>
             </div>
+
+            {needsGps && office && (
+              <div className="space-y-3 rounded-2xl border border-gray-100 bg-gray-50 p-4 text-xs">
+                <div className="flex items-center justify-between">
+                  <label className="font-bold uppercase tracking-wider text-gray-500">Office Location</label>
+                  <button
+                    type="button"
+                    onClick={() => void refreshLocationPreview()}
+                    className="rounded-lg border border-gray-200 bg-white px-2.5 py-1 text-[10px] font-bold text-gray-700"
+                  >
+                    Refresh GPS
+                  </button>
+                </div>
+                <p className="font-semibold text-gray-800">
+                  {office.officeName}
+                  {office.branch ? ` · ${office.branch}` : ''}
+                </p>
+                <p className="font-mono text-[10px] text-gray-500">
+                  Office: {office.latitude.toFixed(5)}, {office.longitude.toFixed(5)} · Radius {office.radiusMeters}m
+                </p>
+                {locating ? (
+                  <p className="flex items-center gap-2 text-gray-500">
+                    <Loader2 className="h-3 w-3 animate-spin" /> Detecting your location…
+                  </p>
+                ) : liveLocation ? (
+                  <>
+                    <p className="font-mono text-[10px] text-gray-600">
+                      You: {liveLocation.latitude.toFixed(5)}, {liveLocation.longitude.toFixed(5)}
+                      {liveLocation.gpsAccuracy != null ? ` · ±${Math.round(liveLocation.gpsAccuracy)}m` : ''}
+                    </p>
+                    <p
+                      className={`font-bold ${withinRadius ? 'text-emerald-700' : 'text-rose-600'}`}
+                    >
+                      Distance: {distanceMeters != null ? `${Math.round(distanceMeters)} m` : '—'} —{' '}
+                      {withinRadius ? 'Inside office radius' : 'Outside office radius'}
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-rose-600">Location not detected. Enable GPS and refresh.</p>
+                )}
+              </div>
+            )}
 
             <div className="space-y-2">
               <label className="block text-xs font-bold uppercase tracking-wider text-gray-400">Attendance Type</label>
@@ -194,46 +253,6 @@ export const MandatoryAttendanceModal: React.FC<MandatoryAttendanceModalProps> =
               </div>
             </div>
 
-            {isRestricted && (
-              <div className="space-y-3 rounded-2xl border border-gray-100 bg-gray-50 p-4">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-bold uppercase tracking-wider text-gray-500">Network Validation</label>
-                  <div className="flex gap-1.5">
-                    {['office', 'home', 'mobile'].map((p) => (
-                      <button
-                        key={p}
-                        type="button"
-                        onClick={() => handlePresetChange(p)}
-                        className={`rounded-lg border px-2.5 py-1 text-[10px] font-bold ${
-                          networkPreset === p ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 bg-white text-gray-600'
-                        }`}
-                      >
-                        {p.toUpperCase()}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-3 text-xs">
-                  <div>
-                    <label className="mb-1 block text-gray-400">SSID</label>
-                    <input type="text" value={wifiSsid} onChange={(e) => setWifiSsid(e.target.value)} className="w-full rounded-xl border border-gray-200 px-3 py-1.5 font-mono text-[11px]" />
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-gray-400">Router IP</label>
-                    <input type="text" value={routerIp} onChange={(e) => setRouterIp(e.target.value)} className="w-full rounded-xl border border-gray-200 px-3 py-1.5 font-mono text-[11px]" />
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-gray-400">Device IP</label>
-                    <input type="text" value={deviceIp} onChange={(e) => setDeviceIp(e.target.value)} className="w-full rounded-xl border border-gray-200 px-3 py-1.5 font-mono text-[11px]" />
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-gray-400">Subnet</label>
-                    <input type="text" value={subnet} onChange={(e) => setSubnet(e.target.value)} className="w-full rounded-xl border border-gray-200 px-3 py-1.5 font-mono text-[11px]" />
-                  </div>
-                </div>
-              </div>
-            )}
-
             <div className="space-y-2">
               <label className="block text-xs font-bold uppercase tracking-wider text-gray-400">Notes</label>
               <textarea
@@ -258,10 +277,10 @@ export const MandatoryAttendanceModal: React.FC<MandatoryAttendanceModalProps> =
 
             <button
               type="submit"
-              disabled={submitting}
+              disabled={submitting || locating || (needsGps && !withinRadius)}
               className="flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 py-4 text-sm font-bold text-white shadow-md hover:bg-emerald-700 disabled:opacity-50"
             >
-              {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+              {submitting || locating ? <Loader2 className="h-4 w-4 animate-spin" /> : <MapPin className="h-4 w-4" />}
               Save &amp; Continue
             </button>
           </form>

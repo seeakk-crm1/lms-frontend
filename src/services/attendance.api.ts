@@ -9,10 +9,10 @@ export const markAttendance = async (data: {
   attendanceType: string;
   checkInTime?: string | null;
   date?: string;
-  ipAddress?: string | null;
-  networkName?: string | null;
-  routerIp?: string | null;
-  subnet?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  gpsAccuracy?: number | null;
+  locationCapturedAt?: string | null;
   deviceInfo?: string | null;
   geoLocation?: string | null;
   notes?: string | null;
@@ -63,7 +63,6 @@ export const exportAttendance = async (filters: any) => {
   return response.data;
 };
 
-// Pending Approvals
 export const getPendingApprovals = async () => {
   const response = await api.get('/attendance/pending');
   return response.data;
@@ -74,34 +73,42 @@ export const reviewAttendance = async (recordId: string, action: 'APPROVE' | 'RE
   return response.data;
 };
 
-// User list setting inline updates
 export const updateUserApplyType = async (userId: string, applyType: string) => {
   const response = await api.put(`/attendance/apply-type/${userId}`, { attendanceApplyType: applyType });
   return response.data;
 };
 
-// Network settings CRUD
-export const getNetworks = async () => {
-  const response = await api.get('/attendance/networks');
+export const updateUserOfficeBranch = async (userId: string, attendanceOfficeLocationId: string | null) => {
+  const response = await api.put(`/attendance/office-branch/${userId}`, { attendanceOfficeLocationId });
   return response.data;
 };
 
-export const createNetwork = async (data: any) => {
-  const response = await api.post('/attendance/networks', data);
+export const getOfficeLocations = async () => {
+  const response = await api.get('/attendance/locations');
   return response.data;
 };
 
-export const updateNetwork = async (id: string, data: any) => {
-  const response = await api.put(`/attendance/networks/${id}`, data);
+export const createOfficeLocation = async (data: any) => {
+  const response = await api.post('/attendance/locations', data);
   return response.data;
 };
 
-export const deleteNetwork = async (id: string) => {
-  const response = await api.delete(`/attendance/networks/${id}`);
+export const updateOfficeLocation = async (id: string, data: any) => {
+  const response = await api.put(`/attendance/locations/${id}`, data);
   return response.data;
 };
 
-// Notifications list
+export const deleteOfficeLocation = async (id: string) => {
+  const response = await api.delete(`/attendance/locations/${id}`);
+  return response.data;
+};
+
+/** Backward-compatible aliases */
+export const getNetworks = getOfficeLocations;
+export const createNetwork = createOfficeLocation;
+export const updateNetwork = updateOfficeLocation;
+export const deleteNetwork = deleteOfficeLocation;
+
 export const getNotifications = async () => {
   const response = await api.get('/attendance/notifications');
   return response.data;
