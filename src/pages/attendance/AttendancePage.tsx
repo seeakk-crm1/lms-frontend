@@ -324,7 +324,15 @@ const AttendancePage: React.FC = () => {
       }
     } catch (err: any) {
       const data = err.response?.data;
-      toast.error(data?.message || 'Failed to check in');
+      let hint = '';
+      if (data?.errorCode === 'OFFICE_LOCATION_OUT_OF_RADIUS' && data?.details?.allowedRadiusMeters) {
+        hint = ` You are ${data.details.distanceMeters}m away; allowed radius is ${data.details.allowedRadiusMeters}m.`;
+      } else if (data?.errorCode === 'GPS_LOCATION_REQUIRED') {
+        hint = ' Enable location permission in your browser and try again.';
+      } else if (data?.errorCode === 'OFFICE_LOCATION_NOT_CONFIGURED') {
+        hint = ' Ask admin to configure Attendance → Location Settings.';
+      }
+      toast.error((data?.message || 'Failed to check in') + hint, { duration: 7000 });
     } finally {
       setSubmitting(false);
     }
