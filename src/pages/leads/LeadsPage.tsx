@@ -23,6 +23,7 @@ import { LeadListItem } from '../../types/lead.types';
 import { lazyWithChunkRecovery } from '../../utils/chunkLoadRecovery';
 
 const LeadFormDrawer = lazyWithChunkRecovery(() => import('./components/LeadFormDrawer'));
+const LeadViewDrawer = lazyWithChunkRecovery(() => import('./components/LeadViewDrawer'));
 
 const LeadsPage: React.FC = () => {
   const location = useLocation();
@@ -41,6 +42,7 @@ const LeadsPage: React.FC = () => {
   });
   const [dismissedSlaLeadIds, setDismissedSlaLeadIds] = useState<string[]>([]);
   const [slaModalLead, setSlaModalLead] = useState<LeadListItem | null>(null);
+  const [viewLead, setViewLead] = useState<LeadListItem | null>(null);
 
   const {
     leads,
@@ -210,6 +212,22 @@ const LeadsPage: React.FC = () => {
       isBulk: true,
     });
   }, [selectedLeadIds.length]);
+
+  const handleViewLead = useCallback((lead: LeadListItem) => {
+    setViewLead(lead);
+  }, []);
+
+  const handleCloseViewLead = useCallback(() => {
+    setViewLead(null);
+  }, []);
+
+  const handleEditFromView = useCallback(
+    (lead: LeadListItem) => {
+      setViewLead(null);
+      openEditDrawer(lead);
+    },
+    [openEditDrawer],
+  );
 
   const handleDelete = useCallback(
     (lead: LeadListItem) => {
@@ -470,6 +488,7 @@ const LeadsPage: React.FC = () => {
               onSelectAll={handleSelectAll}
               onPageChange={(value: number) => setPagination({ page: value })}
               onLimitChange={(value: number) => setPagination({ limit: value, page: 1 })}
+              onView={handleViewLead}
               onEdit={openEditDrawer}
               onDelete={handleDelete}
             />
@@ -482,6 +501,12 @@ const LeadsPage: React.FC = () => {
             mode={drawerState.mode}
             lead={selectedLead}
             onClose={closeDrawer}
+          />
+          <LeadViewDrawer
+            isOpen={Boolean(viewLead)}
+            lead={viewLead}
+            onClose={handleCloseViewLead}
+            onEdit={handleEditFromView}
           />
         </Suspense>
 

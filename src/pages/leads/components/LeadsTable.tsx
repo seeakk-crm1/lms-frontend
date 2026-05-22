@@ -18,6 +18,7 @@ interface LeadsTableProps {
   onSelectAll: () => void;
   onPageChange: (page: number) => void;
   onLimitChange: (limit: number) => void;
+  onView: (lead: LeadListItem) => void;
   onEdit: (lead: LeadListItem) => void;
   onDelete: (lead: LeadListItem) => void;
 }
@@ -42,6 +43,7 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
   onSelectAll,
   onPageChange,
   onLimitChange,
+  onView,
   onEdit,
   onDelete,
 }) => {
@@ -129,7 +131,8 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.03 }}
-                  className={`group transition-colors hover:bg-emerald-50/35 ${isSelectionMode && isSelected ? 'bg-emerald-50/20' : ''}`}
+                  onClick={() => onView(lead)}
+                  className={`group cursor-pointer transition-colors hover:bg-emerald-50/35 ${isSelectionMode && isSelected ? 'bg-emerald-50/20' : ''}`}
                 >
                   {isSelectionMode && (
                     <motion.td 
@@ -141,6 +144,7 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
                         type="checkbox"
                         checked={isSelected}
                         onChange={() => onToggleSelection(lead.id)}
+                        onClick={(e) => e.stopPropagation()}
                         className="h-4 w-4 rounded border-gray-300 text-emerald-500 focus:ring-emerald-500 transition-all cursor-pointer shadow-sm hover:scale-110"
                         aria-label={`Select ${lead.name}`}
                       />
@@ -196,7 +200,7 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
                     <div className="text-sm font-black text-gray-900">{format(new Date(lead.createdAt), 'dd MMM yyyy')}</div>
                     <div className="text-xs font-semibold text-gray-400">{format(new Date(lead.createdAt), 'hh:mm a')}</div>
                   </td>
-                  <td className="px-6 py-5">
+                  <td className="px-6 py-5" onClick={(e) => e.stopPropagation()}>
                     <div className="flex items-center justify-end gap-2">
                       {lead.deletedAt ? (
                         <span className="rounded-full bg-gray-100 px-3 py-1 text-[11px] font-black uppercase tracking-wider text-gray-500">
