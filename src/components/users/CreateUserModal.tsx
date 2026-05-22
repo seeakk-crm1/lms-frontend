@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, User, Target, Save, Loader2, Shield } from 'lucide-react';
 import { useForm, FormProvider, SubmitHandler } from 'react-hook-form';
@@ -125,9 +125,13 @@ type CreateUserPayload = {
   assignedLocationIds?: string[];
 };
 
+const normalizeTargetCycleId = (value?: string | null): string | null =>
+  value?.trim() ? value.trim() : null;
+
 const CreateUserModal: React.FC = () => {
   const { isCreateModalOpen, selectedUserId, closeCreateModal } = useUsersStore();
   const [activeTab, setActiveTab] = useState<'details' | 'access' | 'targets'>('details');
+  const initialTargetCycleIdRef = useRef<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [selectedPhoneCountry, setSelectedPhoneCountry] = useState<PhoneCountry>(DEFAULT_PHONE_COUNTRY);
   
@@ -252,8 +256,13 @@ const CreateUserModal: React.FC = () => {
         districtId: u.district?.id || '',
         isActive: u.isActive,
         assignedLocationIds: u.assignedLocations?.map((l: any) => l.location.id) || [],
+        assignedTargetCycleId: u.assignedTargetCycleId || u.assignedTargetCycle?.id || '',
       });
+      initialTargetCycleIdRef.current = normalizeTargetCycleId(
+        u.assignedTargetCycleId || u.assignedTargetCycle?.id || null,
+      );
     } else if (isCreateModalOpen && !selectedUserId) {
+        initialTargetCycleIdRef.current = null;
         setSelectedPhoneCountry(DEFAULT_PHONE_COUNTRY);
         reset({
             name: '',
@@ -271,6 +280,7 @@ const CreateUserModal: React.FC = () => {
             districtId: '',
             isActive: true,
             assignedLocationIds: [],
+            assignedTargetCycleId: '',
         });
     }
   }, [userDetail, reset, isCreateModalOpen, selectedUserId]);
@@ -301,12 +311,14 @@ const CreateUserModal: React.FC = () => {
     try {
       if (selectedUserId) {
         await updateUser.mutateAsync({ id: selectedUserId, payload: toUpdatePayload(data) });
-        if (data.assignedTargetCycleId !== undefined) {
+
+        const nextTargetCycleId = normalizeTargetCycleId(data.assignedTargetCycleId);
+        const targetCycleChanged = nextTargetCycleId !== initialTargetCycleIdRef.current;
+
+        if (targetCycleChanged) {
           try {
-            await assignUserTargetCycleAdmin(
-              selectedUserId,
-              data.assignedTargetCycleId?.trim() ? data.assignedTargetCycleId : null,
-            );
+            await assignUserTargetCycleAdmin(selectedUserId, nextTargetCycleId);
+            initialTargetCycleIdRef.current = nextTargetCycleId;
           } catch (targetError: any) {
             toast.error(
               targetError?.response?.data?.message || 'User updated, but target cycle assignment failed.',
@@ -329,9 +341,10 @@ const CreateUserModal: React.FC = () => {
           const { password: _password, ...invitePayload } = payload;
           const inviteResponse = await createInviteUser.mutateAsync(invitePayload);
           const newUserId = inviteResponse?.user?.id;
-          if (data.assignedTargetCycleId?.trim() && newUserId) {
+          const inviteTargetCycleId = normalizeTargetCycleId(data.assignedTargetCycleId);
+          if (inviteTargetCycleId && newUserId) {
             try {
-              await assignUserTargetCycleAdmin(newUserId, data.assignedTargetCycleId);
+              await assignUserTargetCycleAdmin(newUserId, inviteTargetCycleId);
             } catch (targetError: any) {
               toast.error(
                 targetError?.response?.data?.message || 'Invite sent, but target cycle assignment failed.',
@@ -345,9 +358,10 @@ const CreateUserModal: React.FC = () => {
         } else {
           const newUserResponse = await createUser.mutateAsync(payload);
           const newUserId = newUserResponse?.user?.id;
-          if (data.assignedTargetCycleId?.trim() && newUserId) {
+          const createTargetCycleId = normalizeTargetCycleId(data.assignedTargetCycleId);
+          if (createTargetCycleId && newUserId) {
             try {
-              await assignUserTargetCycleAdmin(newUserId, data.assignedTargetCycleId);
+              await assignUserTargetCycleAdmin(newUserId, createTargetCycleId);
             } catch (targetError: any) {
               toast.error(
                 targetError?.response?.data?.message || 'User created, but target cycle assignment failed.',
