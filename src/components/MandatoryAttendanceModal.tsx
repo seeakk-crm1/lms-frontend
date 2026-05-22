@@ -26,7 +26,10 @@ interface MandatoryAttendanceModalProps {
     attendanceApplyType?: string;
     record?: any;
     assignedOfficeLocation?: OfficeLocationProfile | null;
-    officeLocations?: OfficeLocationProfile[];
+    locationValidationActive?: boolean;
+    locationSetupMessage?: string | null;
+    officeLocationConfigured?: boolean;
+    officeBranchAssigned?: boolean;
   };
   onSuccess?: () => void;
 }
@@ -40,9 +43,16 @@ export const MandatoryAttendanceModal: React.FC<MandatoryAttendanceModalProps> =
   const [liveLocation, setLiveLocation] = useState<CapturedAttendanceLocation | null>(null);
   const [distanceMeters, setDistanceMeters] = useState<number | null>(null);
 
-  const office = status.assignedOfficeLocation || status.officeLocations?.[0] || null;
+  const office = status.assignedOfficeLocation ?? null;
   const isRestricted = status.attendanceApplyType === 'FROM_OFFICE';
-  const needsGps = isRestricted && !['WORK_FROM_HOME', 'LEAVE'].includes(attendanceType);
+  const needsOfficeGps =
+    isRestricted && !['WORK_FROM_HOME', 'LEAVE'].includes(attendanceType);
+  const locationValidationActive = Boolean(status.locationValidationActive);
+  const needsGps = needsOfficeGps && locationValidationActive;
+  const setupBlocked = needsOfficeGps && !locationValidationActive;
+  const setupMessage =
+    status.locationSetupMessage ||
+    'Office location is not configured yet. Please contact administrator.';
 
   const refreshLocationPreview = useCallback(async () => {
     if (!needsGps || !office) {
@@ -82,6 +92,10 @@ export const MandatoryAttendanceModal: React.FC<MandatoryAttendanceModalProps> =
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (setupBlocked) {
+      toast.error(setupMessage, { duration: 7000 });
+      return;
+    }
     setSubmitting(true);
     try {
       let locationPayload: Partial<CapturedAttendanceLocation> = {};
@@ -186,6 +200,19 @@ export const MandatoryAttendanceModal: React.FC<MandatoryAttendanceModalProps> =
               </div>
             </div>
 
+            {setupBlocked && (
+              <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-900">
+                <AlertTriangle size={18} className="mt-0.5 shrink-0 text-amber-600" />
+                <div>
+                  <p className="font-bold">Office location setup required</p>
+                  <p className="mt-1 opacity-90">{setupMessage}</p>
+                  {!status.officeLocationConfigured ? (
+                    <p className="mt-1 text-[10px] opacity-75">Waiting for admin setup in Attendance → Location Settings.</p>
+                  ) : null}
+                </div>
+              </div>
+            )}
+
             {needsGps && office && (
               <div className="space-y-3 rounded-2xl border border-gray-100 bg-gray-50 p-4 text-xs">
                 <div className="flex items-center justify-between">
@@ -277,7 +304,7 @@ export const MandatoryAttendanceModal: React.FC<MandatoryAttendanceModalProps> =
 
             <button
               type="submit"
-              disabled={submitting || locating || (needsGps && !withinRadius)}
+              disabled={submitting || locating || setupBlocked || (needsGps && !withinRadius)}
               className="flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 py-4 text-sm font-bold text-white shadow-md hover:bg-emerald-700 disabled:opacity-50"
             >
               {submitting || locating ? <Loader2 className="h-4 w-4 animate-spin" /> : <MapPin className="h-4 w-4" />}

@@ -241,8 +241,12 @@ const AttendancePage: React.FC = () => {
   }, [activeTab, historyFilters, adminFilters]);
 
   const refreshMarkGpsPreview = async () => {
-    const office = todayStatus?.assignedOfficeLocation || todayStatus?.officeLocations?.[0];
-    if (todayStatus?.attendanceApplyType !== 'FROM_OFFICE' || !office) {
+    const office = todayStatus?.assignedOfficeLocation;
+    if (
+      todayStatus?.attendanceApplyType !== 'FROM_OFFICE' ||
+      !todayStatus?.locationValidationActive ||
+      !office
+    ) {
       setMarkGpsPreview(null);
       return;
     }
@@ -274,20 +278,34 @@ const AttendancePage: React.FC = () => {
 
   useEffect(() => {
     if (activeTab === 'mark') void refreshMarkGpsPreview();
-  }, [activeTab, attendanceType, todayStatus?.assignedOfficeLocation?.id]);
+  }, [
+    activeTab,
+    attendanceType,
+    todayStatus?.assignedOfficeLocation?.id,
+    todayStatus?.locationValidationActive,
+  ]);
 
   const handleCheckIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
     try {
-      const needsGps =
+      const needsOfficeGps =
         todayStatus?.attendanceApplyType === 'FROM_OFFICE' &&
         !['WORK_FROM_HOME', 'LEAVE'].includes(attendanceType);
+      if (needsOfficeGps && !todayStatus?.locationValidationActive) {
+        toast.error(
+          todayStatus?.locationSetupMessage ||
+            'Office location is not configured yet. Please contact administrator.',
+          { duration: 7000 },
+        );
+        return;
+      }
+      const needsGps = needsOfficeGps && Boolean(todayStatus?.locationValidationActive);
       let locationPayload = {};
       if (needsGps) {
         const captured = await captureAttendanceLocation();
         locationPayload = captured;
-        const office = todayStatus?.assignedOfficeLocation || todayStatus?.officeLocations?.[0];
+        const office = todayStatus?.assignedOfficeLocation;
         if (office) {
           const dist = previewDistanceMeters(
             captured.latitude,
@@ -717,50 +735,70 @@ const AttendancePage: React.FC = () => {
                     {todayStatus?.attendanceApplyType === 'FROM_OFFICE' &&
                       !['WORK_FROM_HOME', 'LEAVE'].includes(attendanceType) && (
                       <div className="space-y-3 bg-gray-50 p-4 rounded-2xl border border-gray-100 text-xs">
-                        <div className="flex justify-between items-center">
-                          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Live GPS Check</label>
-                          <button
-                            type="button"
-                            onClick={() => void refreshMarkGpsPreview()}
-                            className="px-2 py-0.5 text-[9px] rounded font-bold border bg-white text-gray-700"
-                          >
-                            Refresh
-                          </button>
-                        </div>
-                        {todayStatus.assignedOfficeLocation ? (
-                          <p className="font-bold text-gray-800">
-                            {todayStatus.assignedOfficeLocation.officeName}
-                            {todayStatus.assignedOfficeLocation.branch
-                              ? ` · ${todayStatus.assignedOfficeLocation.branch}`
-                              : ''}{' '}
-                            (radius {todayStatus.assignedOfficeLocation.radiusMeters}m)
-                          </p>
+                        {!todayStatus.locationValidationActive ? (
+                          <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-amber-900">
+                            <p className="font-bold">Office location setup required</p>
+                            <p className="mt-1">
+                              {todayStatus.locationSetupMessage ||
+                                'Office location is not configured yet. Please contact administrator.'}
+                            </p>
+                            {!todayStatus.officeLocationConfigured ? (
+                              <p className="mt-1 text-[10px] opacity-75">
+                                Waiting for admin setup in Location Settings.
+                              </p>
+                            ) : !todayStatus.officeBranchAssigned ? (
+                              <p className="mt-1 text-[10px] opacity-75">
+                                No office branch assigned to your account yet.
+                              </p>
+                            ) : null}
+                          </div>
                         ) : (
-                          <p className="text-amber-700">No office branch assigned — contact admin.</p>
-                        )}
-                        {markGpsLoading ? (
-                          <p className="text-gray-500">Detecting location…</p>
-                        ) : markGpsPreview ? (
                           <>
-                            <p className="font-mono text-[10px]">
-                              {markGpsPreview.latitude.toFixed(5)}, {markGpsPreview.longitude.toFixed(5)}
+                            <div className="flex justify-between items-center">
+                              <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">
+                                Live GPS Check
+                              </label>
+                              <button
+                                type="button"
+                                onClick={() => void refreshMarkGpsPreview()}
+                                className="px-2 py-0.5 text-[9px] rounded font-bold border bg-white text-gray-700"
+                              >
+                                Refresh
+                              </button>
+                            </div>
+                            <p className="font-bold text-gray-800">
+                              {todayStatus.assignedOfficeLocation?.officeName}
+                              {todayStatus.assignedOfficeLocation?.branch
+                                ? ` · ${todayStatus.assignedOfficeLocation.branch}`
+                                : ''}{' '}
+                              (radius {todayStatus.assignedOfficeLocation?.radiusMeters}m)
                             </p>
-                            <p
-                              className={`font-bold ${
-                                markGpsPreview.distanceMeters != null &&
-                                todayStatus.assignedOfficeLocation &&
-                                markGpsPreview.distanceMeters <= todayStatus.assignedOfficeLocation.radiusMeters
-                                  ? 'text-emerald-700'
-                                  : 'text-rose-600'
-                              }`}
-                            >
-                              {markGpsPreview.distanceMeters != null
-                                ? `${Math.round(markGpsPreview.distanceMeters)} m from office`
-                                : 'Distance unknown'}
-                            </p>
+                            {markGpsLoading ? (
+                              <p className="text-gray-500">Detecting location…</p>
+                            ) : markGpsPreview ? (
+                              <>
+                                <p className="font-mono text-[10px]">
+                                  {markGpsPreview.latitude.toFixed(5)}, {markGpsPreview.longitude.toFixed(5)}
+                                </p>
+                                <p
+                                  className={`font-bold ${
+                                    markGpsPreview.distanceMeters != null &&
+                                    todayStatus.assignedOfficeLocation &&
+                                    markGpsPreview.distanceMeters <=
+                                      todayStatus.assignedOfficeLocation.radiusMeters
+                                      ? 'text-emerald-700'
+                                      : 'text-rose-600'
+                                  }`}
+                                >
+                                  {markGpsPreview.distanceMeters != null
+                                    ? `${Math.round(markGpsPreview.distanceMeters)} m from office`
+                                    : 'Distance unknown'}
+                                </p>
+                              </>
+                            ) : (
+                              <p className="text-rose-600">Enable location services to mark attendance.</p>
+                            )}
                           </>
-                        ) : (
-                          <p className="text-rose-600">Enable location services to mark attendance.</p>
                         )}
                       </div>
                     )}
@@ -1269,7 +1307,8 @@ const AttendancePage: React.FC = () => {
                   ))}
                   {officeLocations.length === 0 && (
                     <div className="col-span-full bg-white p-8 rounded-3xl border border-gray-100 text-center text-gray-400 font-semibold">
-                      No office locations configured yet. A default HQ location is created on first use.
+                      No office locations configured yet. Add your first office location to enable GPS
+                      validation.
                     </div>
                   )}
                 </div>
@@ -1446,7 +1485,7 @@ const AttendancePage: React.FC = () => {
                       required
                       value={locationForm.latitude}
                       onChange={e => setLocationForm({ ...locationForm, latitude: e.target.value })}
-                      placeholder="e.g. 28.6139"
+                      placeholder="Latitude"
                       className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-emerald-500 font-mono"
                     />
                   </div>
@@ -1458,7 +1497,7 @@ const AttendancePage: React.FC = () => {
                       required
                       value={locationForm.longitude}
                       onChange={e => setLocationForm({ ...locationForm, longitude: e.target.value })}
-                      placeholder="e.g. 77.2090"
+                      placeholder="Longitude"
                       className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-emerald-500 font-mono"
                     />
                   </div>
