@@ -50,7 +50,7 @@ const LeadFilters: React.FC<LeadFiltersProps> = ({
       <SearchableSelect
         name="stage"
         value={filters.stage || ''}
-        options={(meta?.stages || []).map((item) => ({ value: item.id, label: item.label }))}
+        options={(meta?.stages || []).map((item) => ({ value: item.id, label: item.label, color: item.color }))}
         placeholder="Stage"
         onChange={(event) => onFilterChange({ stage: event.target.value || undefined })}
       />

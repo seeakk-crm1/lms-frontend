@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Archive, ChevronLeft, ChevronRight, Pencil } from 'lucide-react';
 import type { LeadListItem } from '../../../types/lead.types';
 import FollowUpBadge from './FollowUpBadge';
+import { stageBadgeStyle } from '../../../utils/leadStageColor';
 
 interface LeadsTableProps {
   items: LeadListItem[];
@@ -24,11 +25,6 @@ interface LeadsTableProps {
 }
 
 const emptyCell = 'text-gray-300';
-
-const stageBadgeClass = (color?: string | null) =>
-  color
-    ? { backgroundColor: `${color}18`, color }
-    : { backgroundColor: '#f3f4f6', color: '#6b7280' };
 
 const LeadsTable: React.FC<LeadsTableProps> = ({
   items,
@@ -185,7 +181,7 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
                   <td className="px-6 py-5">
                     <span
                       className="inline-flex rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-widest"
-                      style={stageBadgeClass(lead.stage?.color)}
+                      style={stageBadgeStyle(lead.stage?.color)}
                     >
                       {lead.stage?.name || 'No stage'}
                     </span>

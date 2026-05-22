@@ -3,6 +3,7 @@ import { format } from 'date-fns';
 import { motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Eye, History, RotateCcw, Wallet } from 'lucide-react';
 import type { LeadListItem } from '../../../types/lead.types';
+import { stageBadgeStyle } from '../../../utils/leadStageColor';
 
 interface ClosedLeadsTableProps {
   items: LeadListItem[];
@@ -24,11 +25,6 @@ const moneyFormatter = new Intl.NumberFormat('en-IN', {
   currency: 'INR',
   maximumFractionDigits: 0,
 });
-
-const stageBadgeClass = (color?: string | null) =>
-  color
-    ? { backgroundColor: `${color}18`, color }
-    : { backgroundColor: '#f3f4f6', color: '#6b7280' };
 
 const ClosedLeadsTable: React.FC<ClosedLeadsTableProps> = ({
   items,
@@ -174,7 +170,7 @@ const ClosedLeadsTable: React.FC<ClosedLeadsTableProps> = ({
                   <td className="px-6 py-5">
                     <span
                       className="inline-flex rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-widest"
-                      style={stageBadgeClass(lead.stage?.color)}
+                      style={stageBadgeStyle(lead.stage?.color)}
                     >
                       {lead.stage?.name || 'Closed'}
                     </span>

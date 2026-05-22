@@ -7,6 +7,8 @@ import { getLeadMeta } from '../../services/leads.api';
 import { getSupervisors } from '../../services/users.api';
 import { connectRealtime } from '../../services/realtime';
 import useAuthStore from '../../store/useAuthStore';
+import { DEFAULT_STAGE_COLOR } from '../../utils/leadStageColor';
+import { LEAD_STAGE_UPDATED_EVENT, type LeadStageColorPatch } from '../../utils/syncLeadStageColor';
 
 const formatCurrency = (val: number) => {
   return new Intl.NumberFormat('en-US', {
@@ -127,6 +129,32 @@ const RevenueAnalytics: React.FC = () => {
       socket.off('revenue_updated', onRevenueUpdated);
     };
   }, [fetchRevenueData]);
+
+  useEffect(() => {
+    const onLeadStageUpdated = (event: Event) => {
+      const patch = (event as CustomEvent<LeadStageColorPatch | undefined>).detail;
+      if (patch?.id) {
+        setMetaOptions((previous) => ({
+          ...previous,
+          stages: previous.stages.map((stage) =>
+            stage.id === patch.id
+              ? {
+                  ...stage,
+                  ...(patch.name !== undefined ? { label: patch.name } : {}),
+                  ...(patch.color !== undefined ? { color: patch.color } : {}),
+                }
+              : stage,
+          ),
+        }));
+      }
+
+      void fetchMetadata();
+      void fetchRevenueData(true);
+    };
+
+    window.addEventListener(LEAD_STAGE_UPDATED_EVENT, onLeadStageUpdated);
+    return () => window.removeEventListener(LEAD_STAGE_UPDATED_EVENT, onLeadStageUpdated);
+  }, [fetchMetadata, fetchRevenueData]);
 
   const handleFilterChange = (key: keyof RevenueAnalyticsFilters, value: string) => {
     setFilters((prev) => ({
@@ -519,7 +547,7 @@ const RevenueAnalytics: React.FC = () => {
                   <div className="flex items-center gap-2.5">
                     <span
                       className="h-3 w-3 rounded-full shrink-0"
-                      style={{ backgroundColor: stage.color || '#10b981' }}
+                      style={{ backgroundColor: stage.color || DEFAULT_STAGE_COLOR }}
                     />
                     <span className="text-xs font-black text-gray-800">{stage.name}</span>
                   </div>

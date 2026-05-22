@@ -2,6 +2,12 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-hot-toast';
 import { createLeadStage, deleteLeadStage, updateLeadStage } from '../services/leadStage.api';
 import { CreateLeadStageInput, LeadStage, ListLeadStagesResponse, UpdateLeadStageInput } from '../types/leadStage.types';
+import {
+  invalidateLeadStageConsumers,
+  notifyLeadStageConsumersUpdated,
+  syncLeadStageAcrossCaches,
+  toStageColorPatch,
+} from '../utils/syncLeadStageColor';
 
 const updateLeadStageListCache = (
   oldData: ListLeadStagesResponse | undefined,
@@ -9,6 +15,16 @@ const updateLeadStageListCache = (
 ): ListLeadStagesResponse | undefined => {
   if (!oldData) return oldData;
   return { ...oldData, data: updater(oldData.data || []) };
+};
+
+const refreshLeadStageConsumers = (queryClient: ReturnType<typeof useQueryClient>, stage?: LeadStage) => {
+  if (stage) {
+    const patch = toStageColorPatch(stage);
+    syncLeadStageAcrossCaches(queryClient, patch);
+    notifyLeadStageConsumersUpdated(patch);
+  }
+
+  invalidateLeadStageConsumers(queryClient);
 };
 
 export const useCreateLeadStageMutation = () => {
@@ -48,8 +64,8 @@ export const useCreateLeadStageMutation = () => {
       }
       toast.error(error?.response?.data?.message || 'Failed to create lead stage');
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['lead-stages'] });
+    onSuccess: (createdStage) => {
+      refreshLeadStageConsumers(queryClient, createdStage);
       toast.success('Stage created successfully');
     },
   });
@@ -62,7 +78,7 @@ export const useUpdateLeadStageMutation = () => {
     mutationFn: ({ id, data }: { id: string; data: UpdateLeadStageInput }) => updateLeadStage(id, data),
     onMutate: async ({ id, data }) => {
       await queryClient.cancelQueries({ queryKey: ['lead-stages'] });
-      const previous = queryClient.getQueriesData<ListLeadStagesResponse>({ queryKey: ['lead-stages'] });
+      const previousLeadStages = queryClient.getQueriesData<ListLeadStagesResponse>({ queryKey: ['lead-stages'] });
 
       queryClient.setQueriesData<ListLeadStagesResponse>({ queryKey: ['lead-stages'] }, (oldData) =>
         updateLeadStageListCache(oldData, (list) =>
@@ -70,16 +86,20 @@ export const useUpdateLeadStageMutation = () => {
         ),
       );
 
-      return { previous };
+      if (data.color || data.name || data.isLOB !== undefined || data.isClosed !== undefined) {
+        syncLeadStageAcrossCaches(queryClient, { id, ...data });
+      }
+
+      return { previousLeadStages };
     },
     onError: (error: any, _variables, context) => {
-      if (context?.previous) {
-        context.previous.forEach(([queryKey, data]) => queryClient.setQueryData(queryKey, data));
+      if (context?.previousLeadStages) {
+        context.previousLeadStages.forEach(([queryKey, data]) => queryClient.setQueryData(queryKey, data));
       }
       toast.error(error?.response?.data?.message || 'Failed to update lead stage');
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['lead-stages'] });
+    onSuccess: (updatedStage) => {
+      refreshLeadStageConsumers(queryClient, updatedStage);
       toast.success('Stage updated');
     },
   });
@@ -107,7 +127,8 @@ export const useDeleteLeadStageMutation = () => {
       toast.error(error?.response?.data?.message || 'Failed to delete lead stage');
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['lead-stages'] });
+      invalidateLeadStageConsumers(queryClient);
+      notifyLeadStageConsumersUpdated();
       toast.success('Stage deleted');
     },
   });

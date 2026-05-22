@@ -15,6 +15,7 @@ import { format } from 'date-fns';
 import { useLeadDetailQuery } from '../../../hooks/useLeads';
 import type { LeadListItem } from '../../../types/lead.types';
 import FollowUpBadge from './FollowUpBadge';
+import { stageBadgeStyle } from '../../../utils/leadStageColor';
 
 interface LeadViewDrawerProps {
   isOpen: boolean;
@@ -34,11 +35,6 @@ const moneyFormatter = new Intl.NumberFormat('en-IN', {
   currency: 'INR',
   maximumFractionDigits: 0,
 });
-
-const stageBadgeClass = (color?: string | null) =>
-  color
-    ? { backgroundColor: `${color}18`, color }
-    : { backgroundColor: '#f3f4f6', color: '#6b7280' };
 
 const DetailRow: React.FC<{ label: string; value: React.ReactNode }> = ({ label, value }) => (
   <div className="flex items-start justify-between gap-4 py-2.5 border-b border-gray-50 last:border-0">
@@ -134,7 +130,7 @@ const LeadViewDrawer: React.FC<LeadViewDrawerProps> = ({
                   {resolvedLead?.stage?.name ? (
                     <span
                       className="mt-2 inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide"
-                      style={stageBadgeClass(resolvedLead.stage.color)}
+                      style={stageBadgeStyle(resolvedLead.stage.color)}
                     >
                       {resolvedLead.stage.name}
                     </span>

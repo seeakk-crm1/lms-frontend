@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAdvancedCalendarDetailsQuery } from '../../hooks/useFollowUps';
 import FollowUpCard from './FollowUpCard';
 import type { FollowUp } from '../../types/followup.types';
+import { stageBadgeStyle } from '../../utils/leadStageColor';
 
 interface CalendarDetailsModalProps {
   isOpen: boolean;
@@ -86,7 +87,7 @@ const CalendarDetailsModal: React.FC<CalendarDetailsModalProps> = ({
                         <div className="flex items-center justify-between">
                           <h4 className="text-sm font-black text-gray-900">{item.name}</h4>
                           {item.stage ? (
-                            <span className="rounded-full px-2 py-0.5 text-[10px] font-black" style={{ backgroundColor: `${item.stage.color}15`, color: item.stage.color }}>
+                            <span className="rounded-full px-2 py-0.5 text-[10px] font-black" style={stageBadgeStyle(item.stage.color)}>
                               {item.stage.name}
                             </span>
                           ) : null}

@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 export interface Option {
     value: string;
     label: string;
+    color?: string;
 }
 
 interface SearchableSelectProps {
@@ -72,8 +73,14 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
                     setSearchTerm(''); // Reset search on open
                 }}
             >
-                <span className={selectedOption ? "text-gray-900 truncate" : "text-gray-400"}>
-                    {selectedOption ? selectedOption.label : placeholder}
+                <span className={`flex min-w-0 items-center gap-2 ${selectedOption ? "text-gray-900" : "text-gray-400"}`}>
+                    {selectedOption?.color ? (
+                        <span
+                            className="h-2.5 w-2.5 shrink-0 rounded-full border border-gray-200"
+                            style={{ backgroundColor: selectedOption.color }}
+                        />
+                    ) : null}
+                    <span className="truncate">{selectedOption ? selectedOption.label : placeholder}</span>
                 </span>
                 <ChevronDown size={16} className={`text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
             </div>
@@ -110,7 +117,15 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
                                             setIsOpen(false);
                                         }}
                                     >
-                                        <span className="truncate pr-4">{opt.label}</span>
+                                        <span className="flex min-w-0 items-center gap-2 truncate pr-4">
+                                            {opt.color ? (
+                                                <span
+                                                    className="h-2.5 w-2.5 shrink-0 rounded-full border border-gray-200"
+                                                    style={{ backgroundColor: opt.color }}
+                                                />
+                                            ) : null}
+                                            <span className="truncate">{opt.label}</span>
+                                        </span>
                                         {value === opt.value && <Check size={14} className="text-emerald-500 flex-shrink-0" />}
                                     </div>
                                 ))

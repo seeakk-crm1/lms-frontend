@@ -6,6 +6,7 @@ import { ArrowRight, Check, ChevronDown, Loader2, Save, Search, X } from 'lucide
 import { z } from 'zod';
 import { useNavigate } from 'react-router-dom';
 import { CreateLeadStageInput, LeadStage, LeadStageRuleAssignment } from '../../../types/leadStage.types';
+import { DEFAULT_STAGE_COLOR, normalizeStageHexColor } from '../../../utils/leadStageColor';
 import { useQuery } from '@tanstack/react-query';
 import { getStageRules } from '../../../services/stageRule.api';
 import type { StageRule } from '../../../types/stageRule.types';
@@ -109,7 +110,7 @@ const LeadStageFormModal: React.FC<LeadStageFormModalProps> = ({
     resolver: zodResolver(leadStageSchema),
     defaultValues: {
       name: '',
-      color: '#10b981',
+      color: DEFAULT_STAGE_COLOR,
       isApprovalRequired: false,
       isLOB: false,
       isClosed: false,
@@ -123,7 +124,7 @@ const LeadStageFormModal: React.FC<LeadStageFormModalProps> = ({
     if (!isOpen) return;
     reset({
       name: leadStage?.name || '',
-      color: leadStage?.color || '#10b981',
+      color: leadStage?.color || DEFAULT_STAGE_COLOR,
       isApprovalRequired: leadStage?.isApprovalRequired || false,
       isLOB: leadStage?.isLOB || false,
       isClosed: leadStage?.isClosed || false,
@@ -289,15 +290,32 @@ const LeadStageFormModal: React.FC<LeadStageFormModalProps> = ({
 
                     <div className="space-y-1.5">
                       <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Stage Color Picker</label>
-                      <div className="flex items-center gap-3 flex-wrap px-3 py-2.5 bg-gray-50 border border-gray-50 rounded-2xl">
-                        <input type="color" {...register('color')} className="h-8 w-8 rounded-lg border border-gray-200 bg-transparent" />
-                        <input
-                          {...register('color')}
-                          className="flex-1 min-w-[120px] bg-transparent outline-none text-sm font-bold text-gray-700"
-                          aria-label="Stage color hex code"
-                        />
-                        <span className="h-4 w-4 rounded-full border border-gray-200" style={{ backgroundColor: (leadStage?.color || '#10b981') as string }} />
-                      </div>
+                      <Controller
+                        name="color"
+                        control={control}
+                        render={({ field }) => (
+                          <div className="flex items-center gap-3 flex-wrap px-3 py-2.5 bg-gray-50 border border-gray-50 rounded-2xl">
+                            <input
+                              type="color"
+                              value={field.value}
+                              onChange={(event) => field.onChange(event.target.value)}
+                              className="h-8 w-8 rounded-lg border border-gray-200 bg-transparent"
+                              aria-label="Stage color picker"
+                            />
+                            <input
+                              value={field.value}
+                              onChange={(event) => field.onChange(normalizeStageHexColor(event.target.value))}
+                              onBlur={() => field.onChange(normalizeStageHexColor(field.value))}
+                              className="flex-1 min-w-[120px] bg-transparent outline-none text-sm font-bold text-gray-700 uppercase"
+                              aria-label="Stage color hex code"
+                            />
+                            <span
+                              className="h-4 w-4 rounded-full border border-gray-200"
+                              style={{ backgroundColor: field.value || DEFAULT_STAGE_COLOR }}
+                            />
+                          </div>
+                        )}
+                      />
                       {errors.color && <p className="text-[10px] text-red-500 font-bold">{errors.color.message}</p>}
                     </div>
 
