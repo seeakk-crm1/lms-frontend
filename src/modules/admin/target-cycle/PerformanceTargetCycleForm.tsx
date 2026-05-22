@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
-import { Loader2, Save } from 'lucide-react';
+import { Loader2, Plus, Save, Trash2 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { addMonths, format, startOfMonth } from 'date-fns';
 import { useLeadStagesQuery } from '../../../hooks/useLeadStagesQuery';
 
@@ -36,6 +37,24 @@ const MONTH_LABELS = Array.from({ length: 12 }, (_, i) =>
   format(addMonths(startOfMonth(new Date()), i), 'MMMM yyyy'),
 );
 
+type ManualPeriodRow = NonNullable<PerformanceTargetCyclePayload['periods']>[number];
+
+const createEmptyManualPeriod = (index: number, startDate: string): ManualPeriodRow => ({
+  label: `Period ${index + 1}`,
+  periodIndex: index,
+  targetCount: 0,
+  startDate,
+  endDate: startDate,
+  lockingDate: startDate,
+});
+
+const reindexManualPeriods = (periods: ManualPeriodRow[]): ManualPeriodRow[] =>
+  periods.map((period, index) => ({
+    ...period,
+    periodIndex: index,
+    label: period.label?.trim() || `Period ${index + 1}`,
+  }));
+
 const PerformanceTargetCycleForm: React.FC<Props> = ({ initialData, isSubmitting, onCancel, onSubmit }) => {
   const { data: stagesData } = useLeadStagesQuery();
   const nonLobStages = useMemo(() => {
@@ -70,20 +89,42 @@ const PerformanceTargetCycleForm: React.FC<Props> = ({ initialData, isSubmitting
     initialData?.periodCounts || Array.from({ length: periodSlots }, () => 0),
   );
 
-  const [manualPeriods, setManualPeriods] = useState(
+  const [manualPeriods, setManualPeriods] = useState<ManualPeriodRow[]>(() =>
     initialData?.periods?.length
-      ? initialData.periods
-      : [
-          {
-            label: 'Period 1',
-            periodIndex: 0,
-            targetCount: 0,
-            startDate: startDate,
-            endDate: startDate,
-            lockingDate: startDate,
-          },
-        ],
+      ? reindexManualPeriods(
+          initialData.periods.map((period) => ({
+            ...period,
+            startDate: String(period.startDate).slice(0, 10),
+            endDate: String(period.endDate).slice(0, 10),
+            lockingDate: String(period.lockingDate).slice(0, 10),
+          })),
+        )
+      : [createEmptyManualPeriod(0, initialData?.startDate || format(new Date(), 'yyyy-MM-dd'))],
   );
+
+  const updateManualPeriod = (index: number, patch: Partial<ManualPeriodRow>) => {
+    setManualPeriods((prev) => {
+      const next = [...prev];
+      next[index] = { ...next[index], ...patch };
+      return next;
+    });
+  };
+
+  const addManualPeriod = () => {
+    setManualPeriods((prev) =>
+      reindexManualPeriods([...prev, createEmptyManualPeriod(prev.length, startDate)]),
+    );
+  };
+
+  const removeManualPeriod = (index: number) => {
+    setManualPeriods((prev) => {
+      if (prev.length <= 1) {
+        toast.error('At least one period is required for manual target cycles.');
+        return prev;
+      }
+      return reindexManualPeriods(prev.filter((_, rowIndex) => rowIndex !== index));
+    });
+  };
 
   const handlePeriodCountChange = (index: number, value: number) => {
     setPeriodCounts((prev) => {
@@ -96,6 +137,25 @@ const PerformanceTargetCycleForm: React.FC<Props> = ({ initialData, isSubmitting
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (targetType === 'MANUAL') {
+      if (manualPeriods.length === 0) {
+        toast.error('Add at least one manual period.');
+        return;
+      }
+      const invalidPeriod = manualPeriods.find(
+        (period) =>
+          !period.label?.trim() ||
+          !period.startDate ||
+          !period.lockingDate ||
+          new Date(period.lockingDate) < new Date(period.startDate),
+      );
+      if (invalidPeriod) {
+        toast.error('Each period needs a label, start date, and locking date on or after the start date.');
+        return;
+      }
+    }
+
     const payload: PerformanceTargetCyclePayload = {
       name: name.trim(),
       description: description.trim() || undefined,
@@ -105,7 +165,7 @@ const PerformanceTargetCycleForm: React.FC<Props> = ({ initialData, isSubmitting
       startDate,
       numberOfMonths: targetType === 'MANUAL' ? undefined : numberOfMonths,
       periodCounts: targetType === 'MANUAL' ? undefined : periodCounts.slice(0, periodSlots),
-      periods: targetType === 'MANUAL' ? manualPeriods : undefined,
+      periods: targetType === 'MANUAL' ? reindexManualPeriods(manualPeriods) : undefined,
       status,
       lockingEnabled,
     };
@@ -260,74 +320,99 @@ const PerformanceTargetCycleForm: React.FC<Props> = ({ initialData, isSubmitting
         </div>
       ) : (
         <div className="space-y-3">
-          <p className="text-xs font-black uppercase tracking-wider text-gray-500">Manual periods</p>
-          {manualPeriods.map((period, index) => (
-            <div key={index} className="grid gap-2 rounded-xl border border-gray-100 p-3 md:grid-cols-4">
-              <input
-                placeholder="Label"
-                value={period.label}
-                onChange={(e) => {
-                  const next = [...manualPeriods];
-                  next[index] = { ...next[index], label: e.target.value };
-                  setManualPeriods(next);
-                }}
-                className="rounded-lg border border-gray-200 px-2 py-1 text-xs"
-              />
-              <input
-                type="number"
-                min={0}
-                value={period.targetCount}
-                onChange={(e) => {
-                  const next = [...manualPeriods];
-                  next[index] = { ...next[index], targetCount: parseInt(e.target.value, 10) || 0 };
-                  setManualPeriods(next);
-                }}
-                className="rounded-lg border border-gray-200 px-2 py-1 text-xs"
-              />
-              <input
-                type="date"
-                value={period.startDate?.slice(0, 10)}
-                onChange={(e) => {
-                  const next = [...manualPeriods];
-                  next[index] = { ...next[index], startDate: e.target.value };
-                  setManualPeriods(next);
-                }}
-                className="rounded-lg border border-gray-200 px-2 py-1 text-xs"
-              />
-              <input
-                type="date"
-                value={period.lockingDate?.slice(0, 10)}
-                onChange={(e) => {
-                  const next = [...manualPeriods];
-                  next[index] = {
-                    ...next[index],
-                    endDate: e.target.value,
-                    lockingDate: e.target.value,
-                  };
-                  setManualPeriods(next);
-                }}
-                className="rounded-lg border border-gray-200 px-2 py-1 text-xs"
-              />
-            </div>
-          ))}
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-xs font-black uppercase tracking-wider text-gray-500">Manual periods</p>
+            <span className="text-[10px] font-semibold text-gray-400">
+              {manualPeriods.length} period{manualPeriods.length === 1 ? '' : 's'}
+            </span>
+          </div>
+
+          <div className="hidden md:grid md:grid-cols-[1.4fr_0.8fr_1fr_1fr_2.5rem] gap-2 px-3 text-[10px] font-bold uppercase tracking-wider text-gray-400">
+            <span>Label</span>
+            <span>Target</span>
+            <span>Start</span>
+            <span>Lock date</span>
+            <span />
+          </div>
+
+          <div className="space-y-2 max-h-72 overflow-y-auto custom-scrollbar pr-1">
+            {manualPeriods.map((period, index) => (
+              <div
+                key={`manual-period-${index}-${period.periodIndex}`}
+                className="grid gap-2 rounded-xl border border-gray-100 bg-white p-3 md:grid-cols-[1.4fr_0.8fr_1fr_1fr_2.5rem] md:items-center"
+              >
+                <input
+                  placeholder="Period label"
+                  required
+                  value={period.label}
+                  onChange={(e) => updateManualPeriod(index, { label: e.target.value })}
+                  className="rounded-lg border border-gray-200 px-2 py-1.5 text-xs focus:outline-emerald-500"
+                />
+                <input
+                  type="number"
+                  min={0}
+                  required
+                  value={period.targetCount}
+                  onChange={(e) =>
+                    updateManualPeriod(index, { targetCount: parseInt(e.target.value, 10) || 0 })
+                  }
+                  className="rounded-lg border border-gray-200 px-2 py-1.5 text-xs focus:outline-emerald-500"
+                  title="Target count"
+                />
+                <input
+                  type="date"
+                  required
+                  value={String(period.startDate).slice(0, 10)}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    updateManualPeriod(index, {
+                      startDate: value,
+                      endDate:
+                        !period.endDate || new Date(period.endDate) < new Date(value)
+                          ? value
+                          : period.endDate,
+                    });
+                  }}
+                  className="rounded-lg border border-gray-200 px-2 py-1.5 text-xs focus:outline-emerald-500"
+                  title="Period start date"
+                />
+                <input
+                  type="date"
+                  required
+                  min={String(period.startDate).slice(0, 10)}
+                  value={String(period.lockingDate).slice(0, 10)}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    updateManualPeriod(index, { endDate: value, lockingDate: value });
+                  }}
+                  className="rounded-lg border border-gray-200 px-2 py-1.5 text-xs focus:outline-emerald-500"
+                  title="Locking date (period end)"
+                />
+                <button
+                  type="button"
+                  onClick={() => removeManualPeriod(index)}
+                  disabled={manualPeriods.length <= 1}
+                  className="flex h-9 w-9 items-center justify-center rounded-lg border border-rose-100 bg-rose-50 text-rose-600 transition-colors hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-40"
+                  aria-label={`Delete ${period.label}`}
+                  title={
+                    manualPeriods.length <= 1
+                      ? 'At least one period is required'
+                      : 'Remove this period'
+                  }
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+            ))}
+          </div>
+
           <button
             type="button"
-            onClick={() =>
-              setManualPeriods([
-                ...manualPeriods,
-                {
-                  label: `Period ${manualPeriods.length + 1}`,
-                  periodIndex: manualPeriods.length,
-                  targetCount: 0,
-                  startDate,
-                  endDate: startDate,
-                  lockingDate: startDate,
-                },
-              ])
-            }
-            className="text-xs font-bold text-emerald-600"
+            onClick={addManualPeriod}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700 transition-colors hover:bg-emerald-100"
           >
-            + Add period
+            <Plus className="h-3.5 w-3.5" />
+            Add period
           </button>
         </div>
       )}
