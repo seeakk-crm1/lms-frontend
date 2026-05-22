@@ -16,8 +16,8 @@ import {
   useCreateUserMutation,
   useCreateInviteUserMutation,
   useUpdateUserMutation,
-  useAssignTargetMutation,
 } from '../../hooks/useUserMutations';
+import { assignUserTargetCycleAdmin } from '../../services/target.api';
 import { DEFAULT_PHONE_COUNTRY, PHONE_COUNTRIES, type PhoneCountry } from '../../constants/phoneCountries';
 import CreateUserDetailsTab from './CreateUserDetailsTab';
 import CreateUserAccessTab from './CreateUserAccessTab';
@@ -142,9 +142,8 @@ const CreateUserModal: React.FC = () => {
   const createUser = useCreateUserMutation();
   const createInviteUser = useCreateInviteUserMutation();
   const updateUser = useUpdateUserMutation();
-  const assignTarget = useAssignTargetMutation();
   const isMutationPending =
-    createUser.isPending || createInviteUser.isPending || updateUser.isPending || assignTarget.isPending;
+    createUser.isPending || createInviteUser.isPending || updateUser.isPending;
 
   const methods = useForm<UserFormData>({
     defaultValues: {
@@ -163,13 +162,7 @@ const CreateUserModal: React.FC = () => {
       districtId: '',
       isActive: true,
       assignedLocationIds: [],
-      // Target defaults
-      targetTypeId: '',
-      cycle: 'MONTHLY',
-      monthlyTargetLeads: 0,
-      dailyFollowupTarget: 0,
-      revenueTarget: 0,
-      startDate: new Date().toISOString().split('T')[0],
+      assignedTargetCycleId: '',
     }
   });
 
@@ -308,12 +301,15 @@ const CreateUserModal: React.FC = () => {
     try {
       if (selectedUserId) {
         await updateUser.mutateAsync({ id: selectedUserId, payload: toUpdatePayload(data) });
-        if (data.targetTypeId) {
+        if (data.assignedTargetCycleId !== undefined) {
           try {
-            await assignTarget.mutateAsync({ userId: selectedUserId, payload: data });
+            await assignUserTargetCycleAdmin(
+              selectedUserId,
+              data.assignedTargetCycleId?.trim() ? data.assignedTargetCycleId : null,
+            );
           } catch (targetError: any) {
             toast.error(
-              targetError?.response?.data?.message || 'User updated, but target assignment failed.',
+              targetError?.response?.data?.message || 'User updated, but target cycle assignment failed.',
               { id: toastId },
             );
             closeCreateModal();
@@ -333,12 +329,12 @@ const CreateUserModal: React.FC = () => {
           const { password: _password, ...invitePayload } = payload;
           const inviteResponse = await createInviteUser.mutateAsync(invitePayload);
           const newUserId = inviteResponse?.user?.id;
-          if (data.targetTypeId && newUserId) {
+          if (data.assignedTargetCycleId?.trim() && newUserId) {
             try {
-              await assignTarget.mutateAsync({ userId: newUserId, payload: data });
+              await assignUserTargetCycleAdmin(newUserId, data.assignedTargetCycleId);
             } catch (targetError: any) {
               toast.error(
-                targetError?.response?.data?.message || 'Invite sent, but target assignment failed.',
+                targetError?.response?.data?.message || 'Invite sent, but target cycle assignment failed.',
                 { id: toastId },
               );
               closeCreateModal();
@@ -349,12 +345,12 @@ const CreateUserModal: React.FC = () => {
         } else {
           const newUserResponse = await createUser.mutateAsync(payload);
           const newUserId = newUserResponse?.user?.id;
-          if (data.targetTypeId && newUserId) {
+          if (data.assignedTargetCycleId?.trim() && newUserId) {
             try {
-              await assignTarget.mutateAsync({ userId: newUserId, payload: data });
+              await assignUserTargetCycleAdmin(newUserId, data.assignedTargetCycleId);
             } catch (targetError: any) {
               toast.error(
-                targetError?.response?.data?.message || 'User created, but target assignment failed.',
+                targetError?.response?.data?.message || 'User created, but target cycle assignment failed.',
                 { id: toastId },
               );
               closeCreateModal();

@@ -11,7 +11,8 @@ import {
   useUpdateTargetCycleMutation,
 } from './useTargetCycleMutation';
 import { useTargetCyclesQuery } from './useTargetCycleQuery';
-import type { TargetCycle, TargetCycleFormValues, TargetCycleStatus } from './types';
+import type { PerformanceTargetCyclePayload } from './PerformanceTargetCycleForm';
+import type { TargetCycle, TargetCycleStatus } from './types';
 
 const TargetCyclePage: React.FC = () => {
   const [searchDraft, setSearchDraft] = useState('');
@@ -84,7 +85,7 @@ const TargetCyclePage: React.FC = () => {
   }, [resetForm]);
 
   const handleSubmit = useCallback(
-    async (payload: TargetCycleFormValues) => {
+    async (payload: PerformanceTargetCyclePayload) => {
       if (formState.mode === 'edit' && formState.selectedCycle) {
         await updateMutation.mutateAsync({
           id: formState.selectedCycle.id,

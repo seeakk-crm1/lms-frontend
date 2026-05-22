@@ -14,10 +14,5 @@ export interface UserFormData {
   districtId: string;
   isActive: boolean;
   assignedLocationIds: string[];
-  targetTypeId?: string;
-  cycle?: 'MONTHLY' | 'WEEKLY' | 'QUARTERLY';
-  monthlyTargetLeads?: number;
-  dailyFollowupTarget?: number;
-  revenueTarget?: number;
-  startDate?: string;
+  assignedTargetCycleId?: string;
 }

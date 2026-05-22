@@ -1,16 +1,16 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-hot-toast';
 import api from '../../../services/api';
+import type { PerformanceTargetCyclePayload } from './PerformanceTargetCycleForm';
 import type {
   ListTargetCyclesResponse,
   TargetCycle,
-  TargetCycleFormValues,
   TargetCycleMutationResponse,
 } from './types';
 
 const shouldFallback = (error: any): boolean => error?.response?.status === 404;
 
-const createTargetCycle = async (payload: TargetCycleFormValues): Promise<TargetCycleMutationResponse> => {
+const createTargetCycle = async (payload: PerformanceTargetCyclePayload): Promise<TargetCycleMutationResponse> => {
   try {
     const response = await api.post('/admin/target-cycles', payload);
     return response.data;
@@ -26,7 +26,7 @@ const updateTargetCycle = async ({
   payload,
 }: {
   id: string;
-  payload: TargetCycleFormValues;
+  payload: PerformanceTargetCyclePayload;
 }): Promise<TargetCycleMutationResponse> => {
   try {
     const response = await api.put(`/admin/target-cycles/${id}`, payload);
@@ -75,12 +75,14 @@ export const useCreateTargetCycleMutation = () => {
             id: `temp-${Date.now()}`,
             name: payload.name,
             workspaceId: '',
-            totalDays: payload.ranges.reduce((sum, item) => sum + (item.endDay - item.startDay + 1), 0),
+            totalDays: 30,
             status: payload.status,
             createdBy: 'You',
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
-            ranges: payload.ranges,
+            ranges: [],
+            targetType: payload.targetType,
+            targetMetric: payload.targetMetric,
           },
           ...list,
         ]),
@@ -115,7 +117,7 @@ export const useUpdateTargetCycleMutation = () => {
               ? {
                   ...item,
                   ...payload,
-                  totalDays: payload.ranges.reduce((sum, row) => sum + (row.endDay - row.startDay + 1), 0),
+                  totalDays: 30,
                   updatedAt: new Date().toISOString(),
                 }
               : item,

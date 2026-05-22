@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import TargetCycleForm from './TargetCycleForm';
-import type { TargetCycle, TargetCycleFormValues } from './types';
+import PerformanceTargetCycleForm, { type PerformanceTargetCyclePayload } from './PerformanceTargetCycleForm';
+import type { TargetCycle } from './types';
 
 interface Props {
   isOpen: boolean;
@@ -10,7 +10,7 @@ interface Props {
   existingNames: string[];
   isSubmitting: boolean;
   onClose: () => void;
-  onSubmit: (payload: TargetCycleFormValues) => Promise<void> | void;
+  onSubmit: (payload: PerformanceTargetCyclePayload) => Promise<void> | void;
 }
 
 const TargetCycleModal: React.FC<Props> = ({
@@ -57,7 +57,7 @@ const TargetCycleModal: React.FC<Props> = ({
                   {mode === 'create' ? 'Add Target Cycle' : 'Edit Target Cycle'}
                 </h2>
                 <p className="text-xs text-gray-500 font-semibold mt-1">
-                  Define monthly working day ranges between 28 and 31 days.
+                  Configure automated lead/revenue targets with weekly, monthly, or custom locking periods.
                 </p>
               </div>
 
@@ -78,9 +78,8 @@ const TargetCycleModal: React.FC<Props> = ({
                   <div className="h-11 rounded-xl shimmer-bg" />
                 </div>
               ) : (
-                <TargetCycleForm
-                  initialData={selectedCycle}
-                  existingNames={existingNames}
+                <PerformanceTargetCycleForm
+                  initialData={selectedCycle as any}
                   isSubmitting={isSubmitting}
                   onCancel={onClose}
                   onSubmit={onSubmit}

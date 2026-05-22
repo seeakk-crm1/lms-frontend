@@ -26,6 +26,7 @@ import InvitePage from './pages/InvitePage';
 import DashboardRouter from './components/dashboard/DashboardRouter';
 import WorkspaceSetup from './pages/WorkspaceSetup';
 import AdminUsersPage from './pages/AdminUsersPage';
+import UnlockStaffPage from './pages/admin/UnlockStaffPage';
 import AdminRolesPage from './pages/AdminRolesPage';
 import AdminDepartmentsPage from './pages/AdminDepartmentsPage';
 import LeadSourceListPage from './pages/LeadSourceListPage';
@@ -234,6 +235,12 @@ function App() {
         <Route path="/admin/users" element={
           <PermissionRoute permissions={['USERS_VIEW']}>
             <AdminUsersPage />
+          </PermissionRoute>
+        } />
+
+        <Route path="/unlock-staff" element={
+          <PermissionRoute permissions={['USERS_UNLOCK', 'unlock_target_locked_users', 'SYSTEM_CONFIG']}>
+            <UnlockStaffPage />
           </PermissionRoute>
         } />
 
