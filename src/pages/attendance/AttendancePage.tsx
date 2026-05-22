@@ -1101,7 +1101,7 @@ const AttendancePage: React.FC = () => {
                           <td className="p-4">
                             {hasPermission(permissions, 'edit_attendance_apply_type') ? (
                               <select
-                                value={record.attendanceApplyType || record.user?.attendanceApplyType || 'FROM_OFFICE'}
+                                value={record.attendanceApplyType || record.user?.attendanceApplyType || 'FROM_ANYWHERE'}
                                 onChange={e => handleInlineApplyTypeChange(record.user.id, e.target.value)}
                                 className="border border-gray-200 rounded-lg px-2 py-1 text-xs focus:outline-emerald-500 font-bold bg-white text-gray-700"
                               >
