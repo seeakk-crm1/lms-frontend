@@ -10,6 +10,7 @@ export const useToggleLOBReason = () => {
     mutationFn: ({ id, status }: { id: string; status?: LOBReasonStatus }) => toggleLOBReason(id, status),
     onSuccess: (_response, variables) => {
       queryClient.invalidateQueries({ queryKey: ['lob-reasons'] });
+      queryClient.invalidateQueries({ queryKey: ['lead-meta'] });
       toast.success(variables.status === 'ACTIVE' ? 'LOB reason activated' : 'LOB reason status updated');
     },
     onError: (error: any) => {
@@ -25,6 +26,7 @@ export const useDeleteLOBReason = () => {
     mutationFn: (id: string) => deleteLOBReason(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['lob-reasons'] });
+      queryClient.invalidateQueries({ queryKey: ['lead-meta'] });
       toast.success('LOB reason deleted successfully');
     },
     onError: (error: any) => {

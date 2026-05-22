@@ -15,6 +15,7 @@ import StageRulesTransitionModal, { StageRuleValueEntry } from './StageRulesTran
 import { getLeadTransitionStageRules, getStageRules } from '../../../services/stageRule.api';
 import type { ListStageRulesResponse, StageRule } from '../../../types/stageRule.types';
 import useAuthStore from '../../../store/useAuthStore';
+import { useActiveLOBReasonOptions } from '../../../hooks/useActiveLOBReasonOptions';
 
 interface LeadFormDrawerProps {
   isOpen: boolean;
@@ -165,7 +166,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
   const stageOptions = meta?.stages || [];
   const lifeCycleOptions = meta?.lifeCycles || [];
   const dynamicFields = (meta?.dynamicFields as LeadDynamicField[]) || [];
-  const lobReasonOptions = getSelectOptions(meta?.lobReasons || []);
+  const { options: lobReasonOptions } = useActiveLOBReasonOptions(isOpen, meta?.lobReasons || []);
   const canAssignOtherUsers = Boolean(meta?.canAssignOtherUsers);
 
   const isBusy =

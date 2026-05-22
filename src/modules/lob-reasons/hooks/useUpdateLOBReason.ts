@@ -10,6 +10,7 @@ export const useUpdateLOBReason = () => {
     mutationFn: ({ id, payload }: { id: string; payload: Partial<LOBReasonPayload> }) => updateLOBReason(id, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['lob-reasons'] });
+      queryClient.invalidateQueries({ queryKey: ['lead-meta'] });
       toast.success('LOB reason updated successfully');
     },
     onError: (error: any) => {

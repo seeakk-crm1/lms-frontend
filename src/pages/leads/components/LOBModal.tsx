@@ -1,14 +1,16 @@
 import React, { memo, useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AlertTriangle } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 import SearchableSelect from '../../../components/SearchableSelect';
+import { useActiveLOBReasonOptions } from '../../../hooks/useActiveLOBReasonOptions';
 
 interface LOBModalProps {
   isOpen: boolean;
   isSubmitting?: boolean;
   initialReasonId?: string;
   initialRemarks?: string;
-  lobReasonOptions: Array<{ value: string; label: string }>;
+  lobReasonOptions?: Array<{ value: string; label: string }>;
   onClose: () => void;
   onConfirm: (payload: { reasonId: string; remarks: string }) => void;
 }
@@ -21,13 +23,16 @@ const LOBModal: React.FC<LOBModalProps> = ({
   isSubmitting = false,
   initialReasonId = '',
   initialRemarks = '',
-  lobReasonOptions,
+  lobReasonOptions = [],
   onClose,
   onConfirm,
 }) => {
   const [reasonId, setReasonId] = useState(initialReasonId);
   const [remarks, setRemarks] = useState(initialRemarks);
   const [error, setError] = useState('');
+
+  const { options: resolvedOptions, isLoading: reasonsLoading, isError, error: fetchError } =
+    useActiveLOBReasonOptions(isOpen, lobReasonOptions.map((item) => ({ id: item.value, label: item.label })));
 
   useEffect(() => {
     if (!isOpen) return;
@@ -36,14 +41,32 @@ const LOBModal: React.FC<LOBModalProps> = ({
     setError('');
   }, [initialReasonId, initialRemarks, isOpen]);
 
+  useEffect(() => {
+    if (!isOpen || !isError) return;
+    const message =
+      (fetchError as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+      'Could not load LOB reasons. Check your permissions or add reasons under Master Configuration → LOB Reasons.';
+    toast.error(message);
+  }, [fetchError, isError, isOpen]);
+
   const handleConfirm = () => {
     if (!reasonId.trim()) {
-      setError('LOB reason is required.');
+      setError(
+        resolvedOptions.length
+          ? 'LOB reason is required.'
+          : 'No active LOB reasons are configured. Ask an admin to add them under Master Configuration → LOB Reasons.',
+      );
       return;
     }
 
     onConfirm({ reasonId: reasonId.trim(), remarks: remarks.trim() });
   };
+
+  const selectPlaceholder = reasonsLoading
+    ? 'Loading LOB reasons…'
+    : resolvedOptions.length
+      ? 'Select LOB reason'
+      : 'No active LOB reasons';
 
   return (
     <AnimatePresence>
@@ -79,12 +102,17 @@ const LOBModal: React.FC<LOBModalProps> = ({
               <div>
                 <label className="mb-2 block text-sm font-black text-gray-900">LOB Reason</label>
                 <SearchableSelect
-                  options={lobReasonOptions}
+                  options={resolvedOptions}
                   value={reasonId}
                   onChange={(event) => setReasonId(event.target.value)}
-                  placeholder={lobReasonOptions.length ? 'Select LOB reason' : 'No active LOB reasons'}
+                  placeholder={selectPlaceholder}
                   name="reasonId"
                 />
+                {!reasonsLoading && !resolvedOptions.length ? (
+                  <p className="mt-2 text-xs font-semibold text-amber-700">
+                    Add at least one active LOB reason in Master Configuration → LOB Reasons, then reopen this dialog.
+                  </p>
+                ) : null}
               </div>
 
               <div>

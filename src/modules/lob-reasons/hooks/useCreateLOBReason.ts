@@ -9,6 +9,7 @@ export const useCreateLOBReason = () => {
     mutationFn: createLOBReason,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['lob-reasons'] });
+      queryClient.invalidateQueries({ queryKey: ['lead-meta'] });
       toast.success('LOB reason created successfully');
     },
     onError: (error: any) => {

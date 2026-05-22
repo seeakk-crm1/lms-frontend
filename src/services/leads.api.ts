@@ -281,6 +281,15 @@ export const getLeadMeta = async () => {
   const dynamicFields = getSettledValue(dynamicFieldsResult, [] as any);
   const lobReasonsData = getSettledValue(lobReasonsResult, { data: [] } as any);
 
+  if (lobReasonsResult.status === 'rejected') {
+    const reason = lobReasonsResult.reason as { response?: { status?: number; data?: { message?: string } } };
+    console.warn(
+      '[lead-meta] Active LOB reasons could not be loaded.',
+      reason?.response?.status,
+      reason?.response?.data?.message || reason,
+    );
+  }
+
   return {
     users: mapUserOptions(usersData?.data || []),
     sources: mapSourceOptions(sourcesData?.data || []),
