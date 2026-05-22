@@ -220,19 +220,32 @@ const CreateUserModal: React.FC = () => {
     assignedLocationIds: (data.assignedLocationIds || []).filter(Boolean),
   });
 
-  const toUpdatePayload = (data: UserFormData): Record<string, unknown> => ({
-    name: data.name.trim(),
-    username: toOptional(data.username),
-    phone: toOptional(data.phone),
-    roleId: toOptional(data.roleId),
-    departmentId: toOptional(data.departmentId),
-    supervisorId: data.supervisorId.trim() ? data.supervisorId.trim() : null,
-    officeId: toOptional(data.officeId),
-    countryId: toOptional(data.countryId),
-    stateId: toOptional(data.stateId),
-    districtId: toOptional(data.districtId),
-    assignedLocationIds: (data.assignedLocationIds || []).filter(Boolean),
-    isActive: data.isActive,
+  const toUpdatePayload = (data: UserFormData): Record<string, unknown> => {
+    const nextTargetCycleId = normalizeTargetCycleId(data.assignedTargetCycleId);
+    const targetCycleChanged = nextTargetCycleId !== initialTargetCycleIdRef.current;
+
+    return {
+      name: data.name.trim(),
+      username: toOptional(data.username),
+      phone: toOptional(data.phone),
+      roleId: toOptional(data.roleId),
+      departmentId: toOptional(data.departmentId),
+      supervisorId: data.supervisorId.trim() ? data.supervisorId.trim() : null,
+      officeId: toOptional(data.officeId),
+      countryId: toOptional(data.countryId),
+      stateId: toOptional(data.stateId),
+      districtId: toOptional(data.districtId),
+      assignedLocationIds: (data.assignedLocationIds || []).filter(Boolean),
+      isActive: data.isActive,
+      ...(targetCycleChanged ? { assignedTargetCycleId: nextTargetCycleId } : {}),
+    };
+  };
+
+  const toCreatePayloadWithTargetCycle = (data: UserFormData): CreateUserPayload & {
+    assignedTargetCycleId?: string | null;
+  } => ({
+    ...toCreatePayload(data),
+    assignedTargetCycleId: normalizeTargetCycleId(data.assignedTargetCycleId),
   });
 
   useEffect(() => {
@@ -311,26 +324,10 @@ const CreateUserModal: React.FC = () => {
     try {
       if (selectedUserId) {
         await updateUser.mutateAsync({ id: selectedUserId, payload: toUpdatePayload(data) });
-
-        const nextTargetCycleId = normalizeTargetCycleId(data.assignedTargetCycleId);
-        const targetCycleChanged = nextTargetCycleId !== initialTargetCycleIdRef.current;
-
-        if (targetCycleChanged) {
-          try {
-            await assignUserTargetCycleAdmin(selectedUserId, nextTargetCycleId);
-            initialTargetCycleIdRef.current = nextTargetCycleId;
-          } catch (targetError: any) {
-            toast.error(
-              targetError?.response?.data?.message || 'User updated, but target cycle assignment failed.',
-              { id: toastId },
-            );
-            closeCreateModal();
-            return;
-          }
-        }
+        initialTargetCycleIdRef.current = normalizeTargetCycleId(data.assignedTargetCycleId);
         toast.success('User updated successfully!', { id: toastId });
       } else {
-        const payload = toCreatePayload(data);
+        const payload = toCreatePayloadWithTargetCycle(data);
         const useInviteFlow = !payload.password;
 
         if (useInviteFlow) {
@@ -356,21 +353,7 @@ const CreateUserModal: React.FC = () => {
           }
           toast.dismiss(toastId);
         } else {
-          const newUserResponse = await createUser.mutateAsync(payload);
-          const newUserId = newUserResponse?.user?.id;
-          const createTargetCycleId = normalizeTargetCycleId(data.assignedTargetCycleId);
-          if (createTargetCycleId && newUserId) {
-            try {
-              await assignUserTargetCycleAdmin(newUserId, createTargetCycleId);
-            } catch (targetError: any) {
-              toast.error(
-                targetError?.response?.data?.message || 'User created, but target cycle assignment failed.',
-                { id: toastId },
-              );
-              closeCreateModal();
-              return;
-            }
-          }
+          await createUser.mutateAsync(payload);
           toast.success('User onboarded successfully!', { id: toastId });
         }
       }
