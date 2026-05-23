@@ -65,18 +65,6 @@ export const useDeleteHolidayMutation = () => {
   });
 };
 
-export const useSyncHolidayMutation = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: holidaysApi.syncGoogleHolidays,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['holidays'] });
-      queryClient.invalidateQueries({ queryKey: ['holidays', 'calendar'] });
-    },
-  });
-};
-
 export const useSuggestHolidayMutation = () =>
   useMutation({
     mutationFn: holidaysApi.suggestHolidays,

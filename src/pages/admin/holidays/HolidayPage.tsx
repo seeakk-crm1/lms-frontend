@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   CalendarDays,
-  CalendarSync,
   CheckCircle2,
   Filter,
   Loader2,
@@ -21,7 +20,6 @@ import {
   useDeleteHolidayMutation,
   useHolidayCalendarQuery,
   useHolidaysQuery,
-  useSyncHolidayMutation,
   useUpdateHolidayMutation,
 } from '../../../hooks/useHolidays';
 import { useAllLocationsQuery } from '../../../hooks/useUsersQuery';
@@ -336,7 +334,6 @@ const HolidayPage: React.FC = () => {
   const createMutation = useCreateHolidayMutation();
   const updateMutation = useUpdateHolidayMutation();
   const deleteMutation = useDeleteHolidayMutation();
-  const syncMutation = useSyncHolidayMutation();
   const { data: allLocationsData } = useAllLocationsQuery();
 
   const canManage = ['admin', 'superadmin'].includes(roleKey(user?.role));
@@ -425,25 +422,8 @@ const HolidayPage: React.FC = () => {
                 </p>
               </div>
 
-              <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-                <button
-                  type="button"
-                  onClick={async () => {
-                    try {
-                      await syncMutation.mutateAsync();
-                      toast.success('Google holiday sync completed.');
-                    } catch (error: any) {
-                      toast.error(error?.response?.data?.message || 'Google sync failed.');
-                    }
-                  }}
-                  disabled={syncMutation.isPending}
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-black text-gray-700 shadow-sm hover:bg-gray-50 disabled:opacity-70 sm:w-auto"
-                >
-                  {syncMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <CalendarSync className="h-4 w-4" />}
-                  Google Sync
-                </button>
-
-                {canManage ? (
+              {canManage ? (
+                <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
                   <button
                     type="button"
                     onClick={() => {
@@ -455,8 +435,8 @@ const HolidayPage: React.FC = () => {
                     <Plus className="h-4 w-4" />
                     Add Holiday
                   </button>
-                ) : null}
-              </div>
+                </div>
+              ) : null}
             </div>
 
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">

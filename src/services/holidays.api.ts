@@ -64,11 +64,6 @@ export const deleteHoliday = async (id: string) => {
   return data;
 };
 
-export const syncGoogleHolidays = async () => {
-  const { data } = await api.post('/holidays/sync');
-  return data?.data;
-};
-
 export const suggestHolidays = async (country: string) => {
   const { data } = await api.post('/holidays/ai-suggest', { country });
   return data?.data?.suggestions || [];
