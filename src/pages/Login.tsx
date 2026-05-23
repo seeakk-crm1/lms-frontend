@@ -10,6 +10,11 @@ import api from '../services/api';
 import { User } from '../types/user.types';
 import GoogleSignInButton from '../components/auth/GoogleSignInButton';
 import { setGoogleSignInHandlers } from '../auth/googleSignInBridge';
+import {
+  getAuthErrorMessage,
+  getLoginRedirectNotice,
+  normalizeLoginCredentials,
+} from '../utils/authErrors';
 
 interface LoginResponse {
     user: User;
@@ -29,9 +34,11 @@ const Login = () => {
     const [email, setEmail] = useState(() => (searchParams.get('email') || '').trim());
     const [password, setPassword] = useState('');
 
-    const loginMutation = useMutation<LoginResponse, any, any>({
+    const sessionNotice = getLoginRedirectNotice(searchParams.get('reason'));
+
+    const loginMutation = useMutation<LoginResponse, unknown, { email: string; password: string }>({
         mutationFn: async (credentials) => {
-            const response = await api.post('/auth/login', credentials);
+            const response = await api.post('/auth/login', normalizeLoginCredentials(credentials.email, credentials.password));
             return response.data;
         },
         onSuccess: (data) => {
@@ -43,13 +50,14 @@ const Login = () => {
                 navigate('/dashboard', { replace: true });
             }
         },
-        onError: (error: any) => {
-            toast.error(error.response?.data?.message || 'Login failed. Please try again.');
-        }
+        onError: (error: unknown) => {
+            toast.error(getAuthErrorMessage(error));
+        },
     });
 
     const handleLogin = (e: React.FormEvent) => {
         e.preventDefault();
+        if (loginMutation.isPending) return;
         loginMutation.mutate({ email, password });
     };
 
@@ -67,9 +75,9 @@ const Login = () => {
                 navigate('/dashboard', { replace: true });
             }
         },
-        onError: (error: any) => {
-            toast.error(error.response?.data?.message || 'Google login failed. Please try again.');
-        }
+        onError: (error: unknown) => {
+            toast.error(getAuthErrorMessage(error, 'Google sign-in failed. Please try again.'));
+        },
     });
 
     const handleGoogleSuccess = useCallback((credentialResponse: CredentialResponse) => {
@@ -255,6 +263,11 @@ const Login = () => {
                     <div className="mb-10 text-center sm:text-left">
                         <h1 className="text-[32px] font-extrabold text-gray-900 mb-2 tracking-tight">Welcome Back</h1>
                         <p className="text-[15px] text-gray-500 font-medium">Please enter your details to sign in to your account.</p>
+                        {sessionNotice ? (
+                            <p className="mt-3 text-sm font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                                {sessionNotice}
+                            </p>
+                        ) : null}
                     </div>
 
                     <div className="w-full mb-8 flex justify-center">
