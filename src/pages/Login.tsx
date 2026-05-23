@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Mail, Lock, ArrowRight, TrendingUp, Users, Calendar, Search } from 'lucide-react';
+import { Mail, Lock, ArrowRight, TrendingUp, Users, Calendar, Search, Eye, EyeOff } from 'lucide-react';
 import { useMutation } from '@tanstack/react-query';
 import { CredentialResponse } from '@react-oauth/google';
 import { toast } from 'react-hot-toast';
@@ -33,6 +33,7 @@ const Login = () => {
 
     const [email, setEmail] = useState(() => (searchParams.get('email') || '').trim());
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
 
     const sessionNotice = getLoginRedirectNotice(searchParams.get('reason'));
 
@@ -307,13 +308,27 @@ const Login = () => {
                                     <Lock size={18} className="text-gray-400" />
                                 </div>
                                 <input
-                                    type="password"
+                                    id="login-password"
+                                    type={showPassword ? 'text' : 'password'}
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
+                                    autoComplete="current-password"
                                     required
-                                    className="block w-full pl-11 pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors shadow-sm text-gray-900 font-bold tracking-widest placeholder-gray-400"
-                                    placeholder="........"
+                                    className={`block w-full pl-11 pr-12 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors shadow-sm text-gray-900 font-medium placeholder-gray-400 ${
+                                        showPassword ? '' : 'tracking-widest'
+                                    }`}
+                                    placeholder="Enter your password"
                                 />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword((prev) => !prev)}
+                                    className="absolute inset-y-0 right-0 flex items-center pr-4 text-gray-400 hover:text-emerald-600 focus:outline-none focus-visible:text-emerald-600 rounded-r-xl"
+                                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                                    aria-controls="login-password"
+                                    aria-pressed={showPassword}
+                                >
+                                    {showPassword ? <EyeOff size={18} aria-hidden /> : <Eye size={18} aria-hidden />}
+                                </button>
                             </div>
                         </div>
 
