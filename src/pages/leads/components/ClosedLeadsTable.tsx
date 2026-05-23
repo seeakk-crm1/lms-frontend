@@ -2,6 +2,8 @@ import React, { memo, useMemo } from 'react';
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Eye, History, RotateCcw, Wallet } from 'lucide-react';
+import WhatsAppActionButton from '../../../components/common/WhatsAppActionButton';
+import { LEAD_WHATSAPP_PERMISSIONS } from '../../../constants/whatsappPermissions';
 import type { LeadListItem } from '../../../types/lead.types';
 import { stageBadgeStyle } from '../../../utils/leadStageColor';
 
@@ -149,6 +151,17 @@ const ClosedLeadsTable: React.FC<ClosedLeadsTableProps> = ({
                           <Wallet className="h-4 w-4" />
                         </button>
                       ) : null}
+                      <WhatsAppActionButton
+                        phone={lead.phone}
+                        variant="table"
+                        stopPropagation
+                        requiredPermissions={LEAD_WHATSAPP_PERMISSIONS}
+                        audit={{
+                          entityType: 'Lead',
+                          entityId: lead.id,
+                          entityName: lead.name,
+                        }}
+                      />
                     </div>
                   </td>
 
@@ -157,7 +170,20 @@ const ClosedLeadsTable: React.FC<ClosedLeadsTableProps> = ({
                       <div className="truncate text-sm font-black text-gray-900">{lead.name}</div>
                       <div className="mt-1 space-y-0.5">
                         <div className="truncate text-xs font-semibold text-gray-500">{lead.email || 'No email'}</div>
-                        <div className="truncate text-xs font-semibold text-gray-500">{lead.phone || 'No phone'}</div>
+                        <div className="flex items-center gap-1 min-w-0">
+                          <div className="truncate text-xs font-semibold text-gray-500">{lead.phone || 'No phone'}</div>
+                          <WhatsAppActionButton
+                            phone={lead.phone}
+                            variant="inline"
+                            stopPropagation
+                            requiredPermissions={LEAD_WHATSAPP_PERMISSIONS}
+                            audit={{
+                              entityType: 'Lead',
+                              entityId: lead.id,
+                              entityName: lead.name,
+                            }}
+                          />
+                        </div>
                       </div>
                     </div>
                   </td>

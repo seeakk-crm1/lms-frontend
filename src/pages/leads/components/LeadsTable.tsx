@@ -5,6 +5,8 @@ import { Archive, ChevronLeft, ChevronRight, Pencil } from 'lucide-react';
 import type { LeadListItem } from '../../../types/lead.types';
 import FollowUpBadge from './FollowUpBadge';
 import { stageBadgeStyle } from '../../../utils/leadStageColor';
+import WhatsAppActionButton from '../../../components/common/WhatsAppActionButton';
+import { LEAD_WHATSAPP_PERMISSIONS } from '../../../constants/whatsappPermissions';
 
 interface LeadsTableProps {
   items: LeadListItem[];
@@ -163,8 +165,21 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
                             No email
                           </div>
                         )}
-                        <div className={`truncate text-xs font-semibold ${lead.phone ? 'text-gray-500' : emptyCell}`}>
-                          {lead.phone || 'No phone'}
+                        <div className="flex items-center gap-1 min-w-0">
+                          <div className={`truncate text-xs font-semibold ${lead.phone ? 'text-gray-500' : emptyCell}`}>
+                            {lead.phone || 'No phone'}
+                          </div>
+                          <WhatsAppActionButton
+                            phone={lead.phone}
+                            variant="inline"
+                            stopPropagation
+                            requiredPermissions={LEAD_WHATSAPP_PERMISSIONS}
+                            audit={{
+                              entityType: 'Lead',
+                              entityId: lead.id,
+                              entityName: lead.name,
+                            }}
+                          />
                         </div>
                       </div>
                     </div>
@@ -204,6 +219,17 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
                         </span>
                       ) : (
                         <>
+                          <WhatsAppActionButton
+                            phone={lead.phone}
+                            variant="table"
+                            stopPropagation
+                            requiredPermissions={LEAD_WHATSAPP_PERMISSIONS}
+                            audit={{
+                              entityType: 'Lead',
+                              entityId: lead.id,
+                              entityName: lead.name,
+                            }}
+                          />
                           <button
                             type="button"
                             onClick={() => onEdit(lead)}

@@ -16,6 +16,8 @@ import { useLeadDetailQuery } from '../../../hooks/useLeads';
 import type { LeadListItem } from '../../../types/lead.types';
 import FollowUpBadge from './FollowUpBadge';
 import { stageBadgeStyle } from '../../../utils/leadStageColor';
+import WhatsAppActionButton from '../../../components/common/WhatsAppActionButton';
+import { LEAD_WHATSAPP_PERMISSIONS } from '../../../constants/whatsappPermissions';
 
 interface LeadViewDrawerProps {
   isOpen: boolean;
@@ -185,6 +187,17 @@ const LeadViewDrawer: React.FC<LeadViewDrawerProps> = ({
                       <div className="flex items-center gap-2.5">
                         <Phone className="h-4 w-4 shrink-0 text-gray-400" />
                         <span className="font-medium">{resolvedLead.phone || 'No phone'}</span>
+                        <WhatsAppActionButton
+                          phone={resolvedLead.phone}
+                          variant="compact"
+                          stopPropagation={false}
+                          requiredPermissions={LEAD_WHATSAPP_PERMISSIONS}
+                          audit={{
+                            entityType: 'Lead',
+                            entityId: resolvedLead.id,
+                            entityName: resolvedLead.name,
+                          }}
+                        />
                       </div>
                       <div className="flex items-center gap-2.5">
                         <Building2 className="h-4 w-4 shrink-0 text-gray-400" />
@@ -203,7 +216,21 @@ const LeadViewDrawer: React.FC<LeadViewDrawerProps> = ({
                     <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-gray-400">
                       Next follow-up
                     </p>
-                    <FollowUpBadge value={resolvedLead.nextFollowUpAt || null} />
+                    <div className="flex flex-wrap items-center gap-2">
+                      <FollowUpBadge value={resolvedLead.nextFollowUpAt || null} />
+                      <WhatsAppActionButton
+                        phone={resolvedLead.phone}
+                        variant="compact"
+                        stopPropagation={false}
+                        requiredPermissions={LEAD_WHATSAPP_PERMISSIONS}
+                        title="Open WhatsApp for follow-up"
+                        audit={{
+                          entityType: 'Lead',
+                          entityId: resolvedLead.id,
+                          entityName: resolvedLead.name,
+                        }}
+                      />
+                    </div>
                     {followUpTypeLabel ? (
                       <p className="mt-2 text-xs font-semibold text-gray-500">
                         Type: <span className="text-gray-800">{followUpTypeLabel}</span>

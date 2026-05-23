@@ -16,6 +16,8 @@ import { getLeadTransitionStageRules, getStageRules } from '../../../services/st
 import type { ListStageRulesResponse, StageRule } from '../../../types/stageRule.types';
 import useAuthStore from '../../../store/useAuthStore';
 import { useActiveLOBReasonOptions } from '../../../hooks/useActiveLOBReasonOptions';
+import WhatsAppActionButton from '../../../components/common/WhatsAppActionButton';
+import { LEAD_WHATSAPP_PERMISSIONS } from '../../../constants/whatsappPermissions';
 
 interface LeadFormDrawerProps {
   isOpen: boolean;
@@ -517,7 +519,27 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
                         </div>
 
                         <div>
-                          <label className="mb-2 block text-sm font-black text-gray-900">Mobile</label>
+                          <div className="mb-2 flex items-center justify-between">
+                            <label className="block text-sm font-black text-gray-900">Mobile</label>
+                            {formValues.phone ? (
+                              <WhatsAppActionButton
+                                phone={formValues.phone}
+                                variant="inline"
+                                stopPropagation={false}
+                                requiredPermissions={LEAD_WHATSAPP_PERMISSIONS}
+                                title="Open WhatsApp"
+                                audit={
+                                  lead?.id
+                                    ? {
+                                        entityType: 'Lead',
+                                        entityId: lead.id,
+                                        entityName: formValues.name || lead.name,
+                                      }
+                                    : undefined
+                                }
+                              />
+                            ) : null}
+                          </div>
                           <input
                             type="text"
                             value={formValues.phone}

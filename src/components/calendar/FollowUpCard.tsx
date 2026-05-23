@@ -4,6 +4,8 @@ import { MapPinned, PhoneCall, Video } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { formatFollowUpTypeLabel } from '../../modules/followups/followUpTypeUi';
 import type { FollowUp } from '../../types/followup.types';
+import WhatsAppActionButton from '../common/WhatsAppActionButton';
+import { LEAD_WHATSAPP_PERMISSIONS } from '../../constants/whatsappPermissions';
 
 interface Props {
   followUp: FollowUp;
@@ -60,15 +62,31 @@ const FollowUpCard: React.FC<Props> = ({ followUp, compact = false, onComplete, 
 
       <div className="mt-3 flex items-center justify-between gap-2">
         <p className="text-[11px] font-bold text-gray-500">{format(new Date(followUp.scheduledAt), 'dd MMM, hh:mm a')}</p>
-        {followUp.status === 'PENDING' && onComplete ? (
-          <button
-            type="button"
-            onClick={() => onComplete(followUp)}
-            className="rounded-xl bg-emerald-500 px-3 py-1.5 text-[11px] font-black text-white hover:bg-emerald-600"
-          >
-            Complete
-          </button>
-        ) : null}
+        <div className="flex items-center gap-1.5">
+          <WhatsAppActionButton
+            phone={followUp.lead?.phone}
+            variant="compact"
+            stopPropagation
+            requiredPermissions={LEAD_WHATSAPP_PERMISSIONS}
+            audit={{
+              entityType: 'FollowUp',
+              entityId: followUp.id,
+              entityName: followUp.lead?.name || followUp.leadId,
+            }}
+          />
+          {followUp.status === 'PENDING' && onComplete ? (
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                onComplete(followUp);
+              }}
+              className="rounded-xl bg-emerald-500 px-3 py-1.5 text-[11px] font-black text-white hover:bg-emerald-600"
+            >
+              Complete
+            </button>
+          ) : null}
+        </div>
       </div>
     </motion.button>
   );

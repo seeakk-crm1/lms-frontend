@@ -4,6 +4,8 @@ import { ExternalLink, CheckCircle2, Clock3, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { formatFollowUpTypeLabel } from '../../modules/followups/followUpTypeUi';
 import type { FollowUp } from '../../types/followup.types';
+import WhatsAppActionButton from '../common/WhatsAppActionButton';
+import { LEAD_WHATSAPP_PERMISSIONS } from '../../constants/whatsappPermissions';
 
 interface Props {
   isOpen: boolean;
@@ -52,7 +54,23 @@ const FollowUpActionModal: React.FC<Props> = ({ isOpen, followUp, onClose, onOpe
               <div className="rounded-2xl border border-red-100 bg-red-50/60 p-4">
                 <p className="text-xs font-black uppercase tracking-widest text-red-500">Lead</p>
                 <p className="mt-1 text-sm font-black text-gray-900">{followUp.lead?.name || followUp.leadId}</p>
-                <p className="mt-1 text-xs font-semibold text-gray-600">{followUp.lead?.email || followUp.lead?.phone || 'No contact info'}</p>
+                <div className="mt-1 flex flex-wrap items-center gap-2">
+                  <p className="text-xs font-semibold text-gray-600">
+                    {followUp.lead?.email || followUp.lead?.phone || 'No contact info'}
+                  </p>
+                  <WhatsAppActionButton
+                    phone={followUp.lead?.phone}
+                    variant="compact"
+                    stopPropagation={false}
+                    requiredPermissions={LEAD_WHATSAPP_PERMISSIONS}
+                    title="Open WhatsApp"
+                    audit={{
+                      entityType: 'FollowUp',
+                      entityId: followUp.id,
+                      entityName: followUp.lead?.name || followUp.leadId,
+                    }}
+                  />
+                </div>
                 <p className="mt-3 text-xs font-black uppercase tracking-widest text-red-500">Follow-up type</p>
                 <p className="mt-1 text-sm font-black text-gray-800">{typeLabel}</p>
                 <p className="mt-3 text-xs font-black uppercase tracking-widest text-red-500">Follow-up Note</p>
@@ -66,6 +84,18 @@ const FollowUpActionModal: React.FC<Props> = ({ isOpen, followUp, onClose, onOpe
               </div>
 
               <div className={isCompleted ? 'flex flex-col gap-3' : 'grid gap-3 sm:grid-cols-2'}>
+                <WhatsAppActionButton
+                  phone={followUp.lead?.phone}
+                  variant="cta"
+                  stopPropagation={false}
+                  requiredPermissions={LEAD_WHATSAPP_PERMISSIONS}
+                  title="Chat on WhatsApp"
+                  audit={{
+                    entityType: 'FollowUp',
+                    entityId: followUp.id,
+                    entityName: followUp.lead?.name || followUp.leadId,
+                  }}
+                />
                 <button
                   type="button"
                   onClick={() => onOpenLead(followUp)}

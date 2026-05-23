@@ -4,6 +4,8 @@ import { MapPinned, PhoneCall, Video } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { formatFollowUpTypeLabel } from '../../modules/followups/followUpTypeUi';
 import type { FollowUp } from '../../types/followup.types';
+import WhatsAppActionButton from '../common/WhatsAppActionButton';
+import { LEAD_WHATSAPP_PERMISSIONS } from '../../constants/whatsappPermissions';
 
 interface Props {
   items: FollowUp[];
@@ -107,21 +109,34 @@ const FollowUpList: React.FC<Props> = ({
                       {item.status}
                     </span>
                   </td>
-                  <td className="px-5 py-4">
-                    {item.status === 'PENDING' && onComplete ? (
-                      <button
-                        type="button"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          onComplete(item);
+                  <td className="px-5 py-4" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex items-center justify-end gap-1.5">
+                      <WhatsAppActionButton
+                        phone={item.lead?.phone}
+                        variant="compact"
+                        stopPropagation
+                        requiredPermissions={LEAD_WHATSAPP_PERMISSIONS}
+                        audit={{
+                          entityType: 'FollowUp',
+                          entityId: item.id,
+                          entityName: item.lead?.name || item.leadId,
                         }}
-                        className="rounded-xl bg-emerald-500 px-3 py-2 text-xs font-black text-white hover:bg-emerald-600"
-                      >
-                        Complete
-                      </button>
-                    ) : (
-                      <span className="text-xs font-bold text-gray-400">Closed</span>
-                    )}
+                      />
+                      {item.status === 'PENDING' && onComplete ? (
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            onComplete(item);
+                          }}
+                          className="rounded-xl bg-emerald-500 px-3 py-2 text-xs font-black text-white hover:bg-emerald-600"
+                        >
+                          Complete
+                        </button>
+                      ) : (
+                        <span className="text-xs font-bold text-gray-400">Closed</span>
+                      )}
+                    </div>
                   </td>
                 </motion.tr>
               );
@@ -148,9 +163,22 @@ const FollowUpList: React.FC<Props> = ({
                   {item.status}
                 </span>
               </div>
-              <div className="flex items-center gap-2 text-xs font-semibold text-gray-500">
-                <Icon className="h-4 w-4 text-emerald-600" />
-                {formatFollowUpTypeLabel(item.type)} • {format(new Date(item.scheduledAt), 'dd MMM, hh:mm a')}
+              <div className="flex items-center justify-between gap-2 text-xs font-semibold text-gray-500">
+                <div className="flex items-center gap-2">
+                  <Icon className="h-4 w-4 text-emerald-600" />
+                  {formatFollowUpTypeLabel(item.type)} • {format(new Date(item.scheduledAt), 'dd MMM, hh:mm a')}
+                </div>
+                <WhatsAppActionButton
+                  phone={item.lead?.phone}
+                  variant="compact"
+                  stopPropagation
+                  requiredPermissions={LEAD_WHATSAPP_PERMISSIONS}
+                  audit={{
+                    entityType: 'FollowUp',
+                    entityId: item.id,
+                    entityName: item.lead?.name || item.leadId,
+                  }}
+                />
               </div>
               {item.status === 'PENDING' && onComplete ? (
                 <button

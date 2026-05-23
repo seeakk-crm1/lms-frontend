@@ -4,6 +4,8 @@ import { X, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAdvancedCalendarDetailsQuery } from '../../hooks/useFollowUps';
 import FollowUpCard from './FollowUpCard';
+import WhatsAppActionButton from '../common/WhatsAppActionButton';
+import { LEAD_WHATSAPP_PERMISSIONS } from '../../constants/whatsappPermissions';
 import type { FollowUp } from '../../types/followup.types';
 import { stageBadgeStyle } from '../../utils/leadStageColor';
 
@@ -92,9 +94,20 @@ const CalendarDetailsModal: React.FC<CalendarDetailsModalProps> = ({
                             </span>
                           ) : null}
                         </div>
-                        <div className="mt-2 text-xs font-semibold text-gray-500 flex gap-2">
+                        <div className="mt-2 flex flex-wrap items-center gap-2 text-xs font-semibold text-gray-500">
                           {item.email && <span>{item.email}</span>}
                           {item.phone && <span>{item.phone}</span>}
+                          <WhatsAppActionButton
+                            phone={item.phone}
+                            variant="inline"
+                            stopPropagation
+                            requiredPermissions={LEAD_WHATSAPP_PERMISSIONS}
+                            audit={{
+                              entityType: 'Lead',
+                              entityId: item.id,
+                              entityName: item.name,
+                            }}
+                          />
                           {item.assignedTo && <span>• Assigned: {item.assignedTo.name}</span>}
                         </div>
                       </div>

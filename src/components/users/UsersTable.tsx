@@ -31,6 +31,8 @@ import {
 import { User } from '../../types/user.types';
 import { getInviteActionState, getUserActivationStatus } from '../../utils/inviteEligibility';
 import DeleteUserModal from './DeleteUserModal';
+import WhatsAppActionButton from '../common/WhatsAppActionButton';
+import { USER_WHATSAPP_PERMISSIONS } from '../../constants/whatsappPermissions';
 
 const UsersTable: React.FC = () => {
   const { search, setSearch, filters, setFilters, page, setPage, openCreateModal } = useUsersStore();
@@ -389,6 +391,18 @@ const UsersTable: React.FC = () => {
                           <Unlock className="w-4 h-4" />
                         </button>
                       )}
+                      <WhatsAppActionButton
+                        phone={user.phone}
+                        variant="table"
+                        className="shrink-0 !rounded-lg !p-1.5"
+                        stopPropagation
+                        requiredPermissions={USER_WHATSAPP_PERMISSIONS}
+                        audit={{
+                          entityType: 'User',
+                          entityId: user.id,
+                          entityName: user.name || user.email,
+                        }}
+                      />
                       <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); handleResetPassword(user.id, user.email); }}
@@ -509,6 +523,17 @@ const UsersTable: React.FC = () => {
                       </div>
                   </div>
                   <div className="flex items-center gap-2">
+                      <WhatsAppActionButton
+                        phone={user.phone}
+                        variant="compact"
+                        stopPropagation
+                        requiredPermissions={USER_WHATSAPP_PERMISSIONS}
+                        audit={{
+                          entityType: 'User',
+                          entityId: user.id,
+                          entityName: user.name || user.email,
+                        }}
+                      />
                       {renderAccessLinkButton(user, { size: 'sm', stopRowClick: true })}
                       <button
                         onClick={(e) => { e.stopPropagation(); handleResetPassword(user.id, user.email); }}
