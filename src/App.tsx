@@ -5,9 +5,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import Features from './components/Features';
+import AccountabilityHook from './components/AccountabilityHook';
+import WhySeeakk from './components/WhySeeakk';
+import AttendanceSection from './components/AttendanceSection';
+import TargetLockingSection from './components/TargetLockingSection';
 import Productivity from './components/Productivity';
 import Pricing from './components/Pricing';
-import Testimonials from './components/Testimonials';
 import CTA from './components/CTA';
 import Footer from './components/Footer';
 
@@ -200,10 +203,13 @@ function App() {
             <Navbar />
             <main>
               <Hero />
+              <AccountabilityHook />
               <Features />
+              <WhySeeakk />
+              <AttendanceSection />
+              <TargetLockingSection />
               <Productivity />
               <Pricing />
-              <Testimonials />
               <CTA />
             </main>
             <Footer />
