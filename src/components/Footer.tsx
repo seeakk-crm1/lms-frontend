@@ -1,5 +1,51 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { Facebook, Instagram, Linkedin, Youtube, type LucideIcon } from 'lucide-react';
+
+type SocialNetwork = 'linkedin' | 'facebook' | 'instagram' | 'youtube';
+
+type SocialLink = {
+  network: SocialNetwork;
+  label: string;
+  href: string;
+  icon: LucideIcon;
+};
+
+const envHref = (key: string): string | undefined => {
+  const value = import.meta.env[key];
+  return typeof value === 'string' && value.trim() ? value.trim() : undefined;
+};
+
+/** Update URLs here or via VITE_SOCIAL_* in .env */
+const socialLinks: SocialLink[] = [
+  {
+    network: 'linkedin',
+    label: 'SEEAKK on LinkedIn',
+    href: envHref('VITE_SOCIAL_LINKEDIN') ?? 'https://www.linkedin.com/company/seeakk',
+    icon: Linkedin,
+  },
+  {
+    network: 'facebook',
+    label: 'SEEAKK on Facebook',
+    href: envHref('VITE_SOCIAL_FACEBOOK') ?? 'https://www.facebook.com/seeakk',
+    icon: Facebook,
+  },
+  {
+    network: 'instagram',
+    label: 'SEEAKK on Instagram',
+    href: envHref('VITE_SOCIAL_INSTAGRAM') ?? 'https://www.instagram.com/seeakk',
+    icon: Instagram,
+  },
+  {
+    network: 'youtube',
+    label: 'SEEAKK on YouTube',
+    href: envHref('VITE_SOCIAL_YOUTUBE') ?? 'https://www.youtube.com/@seeakk',
+    icon: Youtube,
+  },
+];
+
+const socialIconClassName =
+  'inline-flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 transition-all hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2';
 
 const platformPoints = [
   'Web Based',
@@ -89,6 +135,27 @@ const Footer = () => {
                 </li>
               ))}
             </ul>
+
+            <div className="mt-6">
+              <p id="footer-social-label" className="text-xs font-bold uppercase tracking-widest text-gray-900 mb-3">
+                Follow us
+              </p>
+              <ul className="flex flex-wrap items-center gap-2" aria-labelledby="footer-social-label">
+                {socialLinks.map(({ network, label, href, icon: Icon }) => (
+                  <li key={network}>
+                    <a
+                      href={href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={label}
+                      className={socialIconClassName}
+                    >
+                      <Icon className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
 
           {/* Quick Links */}
