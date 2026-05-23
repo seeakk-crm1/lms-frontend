@@ -79,7 +79,7 @@ const RevenueAnalytics: React.FC = () => {
 
       setMetaOptions({
         users: leadMeta.users || [],
-        stages: (leadMeta.stages || []).filter((s) => s.isClosed),
+        stages: (leadMeta.stages || []).filter((s) => s.isClosed && !s.isLOB),
         supervisors,
       });
     } catch (err: any) {

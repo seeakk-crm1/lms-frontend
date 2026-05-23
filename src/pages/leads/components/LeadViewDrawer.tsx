@@ -55,7 +55,9 @@ const LeadViewDrawer: React.FC<LeadViewDrawerProps> = ({
   const [activeTab, setActiveTab] = useState<'overview' | 'history'>(initialTab);
   const { data, isLoading } = useLeadDetailQuery(lead?.id, isOpen);
   const resolvedLead = (data || lead) as LeadListItem | null;
-  const isClosedLead = Boolean(resolvedLead?.isClosed || resolvedLead?.closureType);
+  const isClosedLead = Boolean(
+    !resolvedLead?.isLOB && (resolvedLead?.isClosed || resolvedLead?.closureType) && resolvedLead?.stage?.isLOB !== true,
+  );
 
   useEffect(() => {
     if (!isOpen) return;
