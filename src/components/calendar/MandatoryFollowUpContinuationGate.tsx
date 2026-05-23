@@ -6,6 +6,7 @@ import {
 import { useMandatoryFollowUpBlocked } from '../../hooks/useMandatoryFollowUpBlocked';
 import { useMandatoryNavigationLock } from '../../hooks/useMandatoryNavigationLock';
 import MandatoryFollowUpContinuationModal from './MandatoryFollowUpContinuationModal';
+import { useWeeklyOffScheduleGuard } from '../../hooks/useWeeklyOffScheduleGuard';
 
 interface Props {
   children: React.ReactNode;
@@ -14,6 +15,7 @@ interface Props {
 const MandatoryFollowUpContinuationGate: React.FC<Props> = ({ children }) => {
   const { blocked, enabled, items, query, clearSessionBlock, setSessionBlock } = useMandatoryFollowUpBlocked();
   const saveMutation = useSaveMandatoryFollowUpContinuationMutation();
+  const { confirmIfWeeklyOff, WeeklyOffScheduleModal } = useWeeklyOffScheduleGuard();
   const [queueIndex, setQueueIndex] = useState(0);
 
   const activeItem = useMemo(() => items[queueIndex] ?? items[0] ?? null, [items, queueIndex]);
@@ -75,6 +77,8 @@ const MandatoryFollowUpContinuationGate: React.FC<Props> = ({ children }) => {
         queueTotal={items.length}
         isSubmitting={saveMutation.isPending}
         onSubmit={async (payload) => {
+          const proceed = await confirmIfWeeklyOff(payload.scheduledAt);
+          if (!proceed) return;
           await saveMutation.mutateAsync({
             leadId: activeItem.leadId,
             scheduledAt: payload.scheduledAt,
@@ -86,7 +90,12 @@ const MandatoryFollowUpContinuationGate: React.FC<Props> = ({ children }) => {
     ) : null;
 
   if (!enabled) {
-    return <>{children}</>;
+    return (
+      <>
+        {children}
+        {WeeklyOffScheduleModal}
+      </>
+    );
   }
 
   if (blocked) {
@@ -116,11 +125,17 @@ const MandatoryFollowUpContinuationGate: React.FC<Props> = ({ children }) => {
           ) : null}
         </div>
         {modal && typeof document !== 'undefined' ? createPortal(modal, document.body) : modal}
+        {WeeklyOffScheduleModal}
       </>
     );
   }
 
-  return <>{children}</>;
+  return (
+    <>
+      {children}
+      {WeeklyOffScheduleModal}
+    </>
+  );
 };
 
 export default MandatoryFollowUpContinuationGate;

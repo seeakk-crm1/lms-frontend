@@ -1,8 +1,26 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { toast } from 'react-hot-toast';
 import useClosedLeadsStore from '../store/closedLeadsStore';
 import { exportClosedLeads, getClosedLeads, reopenLead, updateClosedLead } from '../services/leads.api';
 import type { ClosedLeadListResponse, UpdateClosedLeadPayload } from '../types/lead.types';
+import { getApiErrorMessage } from '../utils/apiValidation';
+import useDashboardStore from '../store/useDashboardStore';
+
+const invalidateRevenueConsumers = (queryClient: QueryClient) => {
+  void queryClient.invalidateQueries({ queryKey: ['closed-leads'] });
+  void queryClient.invalidateQueries({ queryKey: ['leads'] });
+  void queryClient.invalidateQueries({ queryKey: ['lead-approvals'] });
+  void queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+  void queryClient.invalidateQueries({ queryKey: ['dashboard', 'revenue-analytics'] });
+  void queryClient.invalidateQueries({ queryKey: ['target-analytics'] });
+  void queryClient.invalidateQueries({ queryKey: ['saved-reports'] });
+  void queryClient.invalidateQueries({ queryKey: ['report-types'] });
+
+  const dashboardState = useDashboardStore.getState();
+  if (dashboardState.kpiData.length > 0 || dashboardState.pipelineData.length > 0) {
+    void dashboardState.fetchDashboardData();
+  }
+};
 
 export const useClosedLeadsQuery = () => {
   const { filters, search, pagination } = useClosedLeadsStore();
@@ -39,14 +57,13 @@ export const useUpdateRevenueMutation = () => {
 
   return useMutation({
     mutationFn: ({ id, payload }: { id: string; payload: UpdateClosedLeadPayload }) => updateClosedLead(id, payload),
-    onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['closed-leads'] });
+    onSuccess: (response, variables) => {
+      invalidateRevenueConsumers(queryClient);
       queryClient.invalidateQueries({ queryKey: ['lead', variables.id] });
-      queryClient.invalidateQueries({ queryKey: ['leads'] });
-      toast.success('Closed lead updated successfully');
+      toast.success(response?.message || 'Closed lead revenue saved successfully');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.message || 'Failed to update revenue');
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Revenue save failed. Please try again.'));
     },
   });
 };

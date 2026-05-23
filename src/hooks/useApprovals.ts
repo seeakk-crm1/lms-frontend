@@ -4,6 +4,8 @@ import { toast } from 'react-hot-toast';
 import { getLeadApprovals, updateLeadApproval } from '../services/leads.api';
 import useApprovalStore from '../store/approvalStore';
 import type { LeadApprovalActionPayload, LeadApprovalListResponse } from '../types/lead.types';
+import { getApiErrorMessage } from '../utils/apiValidation';
+import useDashboardStore from '../store/useDashboardStore';
 
 export const useApprovalsQuery = () => {
   const { filters, pagination, setApprovals, setPagination, setLoading } = useApprovalStore();
@@ -64,10 +66,20 @@ export const useApprovalActionMutation = () => {
       queryClient.invalidateQueries({ queryKey: ['leads'] });
       queryClient.invalidateQueries({ queryKey: ['lead'] });
       queryClient.invalidateQueries({ queryKey: ['closed-leads'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard', 'revenue-analytics'] });
+      queryClient.invalidateQueries({ queryKey: ['target-analytics'] });
+      queryClient.invalidateQueries({ queryKey: ['saved-reports'] });
+
+      const dashboardState = useDashboardStore.getState();
+      if (dashboardState.kpiData.length > 0 || dashboardState.pipelineData.length > 0) {
+        void dashboardState.fetchDashboardData();
+      }
+
       toast.success(response?.message || 'Approval processed successfully');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.message || 'Failed to process approval');
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Lead approval failed. Please try again.'));
     },
   });
 };

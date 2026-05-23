@@ -3,6 +3,7 @@ import { toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { useFollowUpReminderAlertsQuery } from '../../hooks/useFollowUps';
 import { useCompleteFollowUpMutation, useSnoozeFollowUpMutation } from '../../hooks/useFollowUps';
+import { useWeeklyOffScheduleGuard } from '../../hooks/useWeeklyOffScheduleGuard';
 import useAuthStore from '../../store/useAuthStore';
 import { formatFollowUpTypeLabel } from '../../modules/followups/followUpTypeUi';
 import type { FollowUp, FollowUpReminderItem } from '../../types/followup.types';
@@ -71,6 +72,7 @@ const FollowUpReminderListener: React.FC = () => {
   const query = useFollowUpReminderAlertsQuery();
   const completeMutation = useCompleteFollowUpMutation();
   const snoozeMutation = useSnoozeFollowUpMutation();
+  const { confirmIfWeeklyOff, WeeklyOffScheduleModal } = useWeeklyOffScheduleGuard();
   const initialLoaded = useRef(false);
   const [queue, setQueue] = useState<FollowUp[]>([]);
   const [active, setActive] = useState<FollowUp | null>(null);
@@ -188,11 +190,14 @@ const FollowUpReminderListener: React.FC = () => {
             toast.error('Please choose a future reminder time');
             return;
           }
+          const proceed = await confirmIfWeeklyOff(date);
+          if (!proceed) return;
           await snoozeMutation.mutateAsync({ id: snoozeTarget.id, payload: { scheduledAt: date.toISOString() } });
           setSnoozeTarget(null);
           setSnoozeDateTime('');
         }}
       />
+      {WeeklyOffScheduleModal}
     </>
   );
 };

@@ -9,7 +9,7 @@ interface RevenueEditModalProps {
   lead: LeadListItem | null;
   isSubmitting: boolean;
   onClose: () => void;
-  onConfirm: (payload: { generatedRevenue: number; closureType: LeadClosureType }) => void;
+  onConfirm: (payload: { generatedRevenue: number; closureType: LeadClosureType }) => void | Promise<void>;
 }
 
 const inputClassName =
@@ -21,6 +21,14 @@ const closureTypeOptions = [
   { value: 'CANCELLED', label: 'Cancelled' },
 ];
 
+const parseRevenueInput = (value: string): number | null => {
+  const trimmed = value.trim().replace(/,/g, '');
+  if (!trimmed) return null;
+  const parsed = Number(trimmed);
+  if (!Number.isFinite(parsed)) return null;
+  return Math.round(parsed * 100) / 100;
+};
+
 const RevenueEditModal: React.FC<RevenueEditModalProps> = ({ isOpen, lead, isSubmitting, onClose, onConfirm }) => {
   const [generatedRevenue, setGeneratedRevenue] = useState('');
   const [closureType, setClosureType] = useState<LeadClosureType | ''>('');
@@ -28,24 +36,40 @@ const RevenueEditModal: React.FC<RevenueEditModalProps> = ({ isOpen, lead, isSub
 
   useEffect(() => {
     if (!isOpen) return;
-    setGeneratedRevenue(lead?.generatedRevenue !== undefined && lead?.generatedRevenue !== null ? String(lead.generatedRevenue) : '');
+    setGeneratedRevenue(
+      lead?.generatedRevenue !== undefined && lead?.generatedRevenue !== null ? String(lead.generatedRevenue) : '',
+    );
     setClosureType((lead?.closureType as LeadClosureType | undefined) || 'WON');
     setError('');
   }, [isOpen, lead]);
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
+    if (isSubmitting) return;
+
     if (!closureType) {
       setError('Closure type is required.');
       return;
     }
 
-    if (generatedRevenue.trim() === '' || Number.isNaN(Number(generatedRevenue)) || Number(generatedRevenue) < 0) {
-      setError('Generated revenue must be a valid amount of 0 or more.');
+    const parsedRevenue = parseRevenueInput(generatedRevenue);
+    if (parsedRevenue === null) {
+      setError('Revenue amount is required.');
       return;
     }
 
-    onConfirm({
-      generatedRevenue: Number(generatedRevenue),
+    if (parsedRevenue < 0) {
+      setError('Revenue cannot be negative.');
+      return;
+    }
+
+    if (closureType === 'WON' && parsedRevenue <= 0) {
+      setError('Revenue must be greater than zero for won closures.');
+      return;
+    }
+
+    setError('');
+    await onConfirm({
+      generatedRevenue: parsedRevenue,
       closureType,
     });
   };
@@ -86,7 +110,8 @@ const RevenueEditModal: React.FC<RevenueEditModalProps> = ({ isOpen, lead, isSub
                   Update Closed Revenue
                 </h2>
                 <p className="text-sm font-semibold leading-relaxed text-gray-500">
-                  Finalize the outcome for <span className="font-black text-gray-900">{lead?.name || 'this lead'}</span> so revenue reporting stays accurate.
+                  Finalize the outcome for <span className="font-black text-gray-900">{lead?.name || 'this lead'}</span>{' '}
+                  so revenue reporting stays accurate.
                 </p>
               </div>
 
@@ -96,6 +121,7 @@ const RevenueEditModal: React.FC<RevenueEditModalProps> = ({ isOpen, lead, isSub
                   <input
                     type="number"
                     min="0"
+                    step="0.01"
                     value={generatedRevenue}
                     onChange={(event) => setGeneratedRevenue(event.target.value)}
                     placeholder="Enter revenue amount"
@@ -128,7 +154,7 @@ const RevenueEditModal: React.FC<RevenueEditModalProps> = ({ isOpen, lead, isSub
                 </button>
                 <button
                   type="button"
-                  onClick={handleConfirm}
+                  onClick={() => void handleConfirm()}
                   disabled={isSubmitting}
                   className="flex flex-[2] items-center justify-center gap-2 rounded-2xl bg-emerald-500 py-4 text-sm font-black text-white shadow-xl shadow-emerald-500/20 transition-all hover:bg-emerald-600 active:scale-95 disabled:cursor-not-allowed disabled:bg-emerald-300"
                 >

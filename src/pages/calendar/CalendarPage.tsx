@@ -21,6 +21,7 @@ import {
   useFollowUpUsersQuery,
   useAdvancedCalendarSummaryQuery,
 } from '../../hooks/useFollowUps';
+import { useWeeklyOffScheduleGuard } from '../../hooks/useWeeklyOffScheduleGuard';
 import { useMandatoryFollowUpContinuationQuery } from '../../hooks/useMandatoryFollowUpContinuation';
 import useFollowupStore from '../../store/followupStore';
 import type { CreateFollowUpInput } from '../../types/followup.types';
@@ -53,6 +54,7 @@ const CalendarPage: React.FC = () => {
   const createMutation = useCreateFollowUpMutation();
   const completeMutation = useCompleteFollowUpMutation();
   const snoozeMutation = useSnoozeFollowUpMutation();
+  const { confirmIfWeeklyOff, WeeklyOffScheduleModal } = useWeeklyOffScheduleGuard();
 
   const {
     register,
@@ -78,6 +80,9 @@ const CalendarPage: React.FC = () => {
 
   const onScheduleFollowUp = useCallback(
     async (values: ScheduleFormValues) => {
+      const proceed = await confirmIfWeeklyOff(values.scheduledAt);
+      if (!proceed) return;
+
       const payload: CreateFollowUpInput = {
         leadId: values.leadId.trim(),
         type: values.type,
@@ -88,7 +93,7 @@ const CalendarPage: React.FC = () => {
       reset();
       setIsCreateModalOpen(false);
     },
-    [createMutation, reset],
+    [confirmIfWeeklyOff, createMutation, reset],
   );
 
   return (
@@ -186,6 +191,8 @@ const CalendarPage: React.FC = () => {
             toast.error('Please choose a future reminder time');
             return;
           }
+          const proceed = await confirmIfWeeklyOff(nextTime);
+          if (!proceed) return;
           await snoozeMutation.mutateAsync({
             id: snoozeFollowUpItem.id,
             payload: { scheduledAt: nextTime.toISOString() },
@@ -301,6 +308,8 @@ const CalendarPage: React.FC = () => {
           </div>
         ) : null}
       </AnimatePresence>
+
+      {WeeklyOffScheduleModal}
     </DashboardLayout>
   );
 };

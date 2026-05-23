@@ -173,9 +173,13 @@ const ClosedLeadsPage: React.FC = () => {
 
   const handleSaveRevenue = useCallback(
     async (payload: { generatedRevenue: number; closureType: 'WON' | 'LOST' | 'CANCELLED' }) => {
-      if (!revenueModalLead) return;
-      await updateRevenueMutation.mutateAsync({ id: revenueModalLead.id, payload });
-      setRevenueModalLead(null);
+      if (!revenueModalLead || updateRevenueMutation.isPending) return;
+      try {
+        await updateRevenueMutation.mutateAsync({ id: revenueModalLead.id, payload });
+        setRevenueModalLead(null);
+      } catch {
+        // Toast handled in mutation hook; keep modal open for correction.
+      }
     },
     [revenueModalLead, updateRevenueMutation],
   );

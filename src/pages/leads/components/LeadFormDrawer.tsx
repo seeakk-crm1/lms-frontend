@@ -16,6 +16,7 @@ import { getLeadTransitionStageRules, getStageRules } from '../../../services/st
 import type { ListStageRulesResponse, StageRule } from '../../../types/stageRule.types';
 import useAuthStore from '../../../store/useAuthStore';
 import { useActiveLOBReasonOptions } from '../../../hooks/useActiveLOBReasonOptions';
+import { useWeeklyOffScheduleGuard } from '../../../hooks/useWeeklyOffScheduleGuard';
 import WhatsAppActionButton from '../../../components/common/WhatsAppActionButton';
 import { LEAD_WHATSAPP_PERMISSIONS } from '../../../constants/whatsappPermissions';
 
@@ -123,6 +124,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
   const updateMutation = useUpdateLeadMutation();
   const changeStageMutation = useChangeLeadStageMutation();
   const currentUser = useAuthStore((state) => state.user);
+  const { confirmIfWeeklyOff, WeeklyOffScheduleModal } = useWeeklyOffScheduleGuard();
 
   const [formValues, setFormValues] = useState<LeadFormValues>(createEmptyLeadFormValues());
   const [lobModalOpen, setLobModalOpen] = useState(false);
@@ -335,6 +337,9 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
         toast.error('Follow-up date must be in the future.');
         return;
       }
+
+      const proceed = await confirmIfWeeklyOff(formValues.nextFollowUpAt);
+      if (!proceed) return;
     }
 
     const selectedStage = stageOptions.find((item) => item.id === formValues.stageId);
@@ -810,6 +815,8 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
         onClose={handleStageRulesClose}
         onConfirm={handleStageRulesConfirm}
       />
+
+      {WeeklyOffScheduleModal}
     </>
   );
 };

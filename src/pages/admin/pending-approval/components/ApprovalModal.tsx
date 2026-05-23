@@ -40,8 +40,8 @@ const ApprovalModal: React.FC<ApprovalModalProps> = ({
   const showActionButtons = Boolean(isPending && canAct);
   const hasError = touched && comment.trim().length === 0;
 
-  const isClosed = Boolean(approval?.toStage?.isClosed);
-  const isRevenueRequired = isPending && isClosed;
+  const isClosedWonStage = Boolean(approval?.toStage?.isClosed && !approval?.toStage?.isLOB);
+  const isRevenueRequired = isPending && isClosedWonStage;
   const parsedRevenue = parseFloat(revenueInput);
   const revenueError = isRevenueRequired && revenueTouched && (!revenueInput.trim() || Number.isNaN(parsedRevenue) || parsedRevenue <= 0);
 
@@ -74,7 +74,8 @@ const ApprovalModal: React.FC<ApprovalModalProps> = ({
     await onSubmit({
       action,
       comment: comment.trim(),
-      earnedRevenue: isRevenueRequired && action === 'APPROVE' ? parsedRevenue : undefined,
+      earnedRevenue:
+        isRevenueRequired && action === 'APPROVE' ? Math.round(parsedRevenue * 100) / 100 : undefined,
     });
   };
 
@@ -197,7 +198,7 @@ const ApprovalModal: React.FC<ApprovalModalProps> = ({
                 </div>
               ) : null}
 
-              {isClosed && isPending ? (
+              {isClosedWonStage && isPending ? (
                 <div>
                   <label className="mb-2 block text-[11px] font-black uppercase tracking-[0.22em] text-gray-400">
                     Earned Revenue ($) <span className="text-rose-500">*</span>
