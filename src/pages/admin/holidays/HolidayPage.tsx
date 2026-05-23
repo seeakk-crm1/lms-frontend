@@ -25,6 +25,9 @@ import {
 import { useAllLocationsQuery } from '../../../hooks/useUsersQuery';
 import useAuthStore from '../../../store/useAuthStore';
 import type { HolidayPayload, HolidayRecord, HolidayStatus } from '../../../services/holidays.api';
+import WeeklyOffPanel from './WeeklyOffPanel';
+
+type HolidayListSection = 'holidays' | 'weekly-off';
 
 type LocationOption = {
   id: string;
@@ -320,6 +323,7 @@ const HolidayFormModal: React.FC<{
 };
 
 const HolidayPage: React.FC = () => {
+  const [section, setSection] = useState<HolidayListSection>('holidays');
   const [view, setView] = useState<'CALENDAR' | 'LIST'>('CALENDAR');
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<'' | HolidayStatus>('');
@@ -366,10 +370,12 @@ const HolidayPage: React.FC = () => {
   }, [currentMonth]);
 
   const calendarItemsByDate = useMemo(() => {
-    const map = new Map<string, Array<{ title: string; source: string; color: string }>>();
+    const map = new Map<string, Array<{ title: string; source: string; color: string; type: string }>>();
     (calendarQuery.data || []).forEach((item) => {
       const existing = map.get(item.date) || [];
-      existing.push({ title: item.title, source: item.source, color: normalizeHolidayColor(item.color) });
+      const color =
+        item.type === 'WEEKLY_OFF' ? item.color : normalizeHolidayColor(item.color);
+      existing.push({ title: item.title, source: item.source, color, type: item.type });
       map.set(item.date, existing);
     });
     return map;
@@ -416,13 +422,15 @@ const HolidayPage: React.FC = () => {
                   <CalendarDays className="h-3.5 w-3.5" />
                   <span>SaaS Configuration</span>
                 </div>
-                <h1 className="text-3xl font-black tracking-tight text-gray-900 md:text-4xl">Holiday Management</h1>
+                <h1 className="text-3xl font-black tracking-tight text-gray-900 md:text-4xl">Holiday List</h1>
                 <p className="mt-2 max-w-3xl text-sm font-semibold text-gray-500">
-                  Manage workspace holidays used in calendar planning and SLA working-day calculations.
+                  {section === 'holidays'
+                    ? 'Manage workspace holidays used in calendar planning and SLA working-day calculations.'
+                    : 'Configure global weekly-off days and calendar colour for non-working days across the platform.'}
                 </p>
               </div>
 
-              {canManage ? (
+              {section === 'holidays' && canManage ? (
                 <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
                   <button
                     type="button"
@@ -439,6 +447,33 @@ const HolidayPage: React.FC = () => {
               ) : null}
             </div>
 
+            <div className="inline-flex w-full flex-col gap-2 rounded-[1.75rem] border border-gray-100 bg-white p-2 shadow-sm sm:w-auto sm:flex-row">
+              <button
+                type="button"
+                onClick={() => setSection('holidays')}
+                className={`rounded-2xl px-5 py-3 text-sm font-black transition-colors ${
+                  section === 'holidays' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' : 'text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                Holidays
+              </button>
+              <button
+                type="button"
+                onClick={() => setSection('weekly-off')}
+                className={`rounded-2xl px-5 py-3 text-sm font-black transition-colors ${
+                  section === 'weekly-off'
+                    ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20'
+                    : 'text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                Weekly-Off
+              </button>
+            </div>
+
+            {section === 'weekly-off' ? (
+              <WeeklyOffPanel />
+            ) : (
+              <>
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {[
                 { label: 'Configured Holidays', value: holidayCounts.total, icon: CalendarDays },
@@ -568,7 +603,7 @@ const HolidayPage: React.FC = () => {
                                   </div>
                                 ))
                               ) : (
-                                <div className="text-xs font-semibold text-gray-300">No holiday</div>
+                                <div className="text-xs font-semibold text-gray-300">No events</div>
                               )}
                             </div>
                           </div>
@@ -801,6 +836,8 @@ const HolidayPage: React.FC = () => {
                 </div>
               )}
             </section>
+              </>
+            )}
           </div>
         </div>
 

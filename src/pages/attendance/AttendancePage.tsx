@@ -518,7 +518,7 @@ const AttendancePage: React.FC = () => {
               <p className="text-sm text-gray-500 mt-1">Configure WiFi network validation, apply types, approve requests, and export reports.</p>
             </div>
             
-            {todayStatus && todayStatus.requiresMandatoryPopup && !todayStatus.isHoliday && (
+            {todayStatus && todayStatus.requiresMandatoryPopup && !todayStatus.isHoliday && !todayStatus.isWeeklyOff && (
               <button
                 onClick={() => setActiveTab('mark')}
                 className="flex items-center gap-2 px-6 py-3 bg-emerald-500 text-white rounded-2xl text-sm font-bold shadow-lg shadow-emerald-500/20 active:scale-95 transition-all hover:bg-emerald-600 cursor-pointer"
@@ -572,7 +572,11 @@ const AttendancePage: React.FC = () => {
                     <h3 className="text-lg font-bold text-gray-800">Today's Check-In Status</h3>
                     <p className="text-xs text-gray-400 mt-1">{new Date().toDateString()}</p>
                     <div className="flex items-center gap-2 mt-3">
-                      {todayStatus?.isHoliday ? (
+                      {todayStatus?.isWeeklyOff ? (
+                        <span className="px-3 py-1 bg-slate-100 text-slate-700 text-xs font-bold rounded-full">
+                          Off Day: {todayStatus.weeklyOffLabel || 'Weekly Off'}
+                        </span>
+                      ) : todayStatus?.isHoliday ? (
                         <span className="px-3 py-1 bg-blue-50 text-blue-600 text-xs font-bold rounded-full">
                           Holiday: {todayStatus.holidayName || 'Public Holiday'}
                         </span>
@@ -682,7 +686,11 @@ const AttendancePage: React.FC = () => {
                   <p className="text-xs text-gray-400 mt-1">GPS location is validated for office staff within branch radius.</p>
                 </div>
 
-                {todayStatus?.isHoliday ? (
+                {todayStatus?.isWeeklyOff ? (
+                  <div className="p-4 bg-slate-100 border border-slate-200 rounded-2xl text-center text-slate-700 text-xs font-semibold">
+                    Today is a weekly off. Attendance registration is not required.
+                  </div>
+                ) : todayStatus?.isHoliday ? (
                   <div className="p-4 bg-blue-50 border border-blue-100 rounded-2xl text-center text-blue-700 text-xs font-semibold">
                     Today is a holiday ({todayStatus.holidayName}). Attendance registration is not required.
                   </div>

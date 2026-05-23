@@ -23,8 +23,18 @@ export interface HolidayCalendarItem {
   date: string;
   color: string;
   title: string;
-  type: 'HOLIDAY';
-  source: HolidaySource;
+  type: 'HOLIDAY' | 'WEEKLY_OFF';
+  source: HolidaySource | 'SYSTEM';
+}
+
+export interface WeeklyOffSettings {
+  weeklyOffDays: number[];
+  weeklyOffColor: string;
+}
+
+export interface WeeklyOffSettingsPayload {
+  weeklyOffDays: number[];
+  weeklyOffColor: string;
 }
 
 export interface HolidayPayload {
@@ -62,6 +72,16 @@ export const updateHoliday = async (id: string, payload: Partial<HolidayPayload>
 export const deleteHoliday = async (id: string) => {
   const { data } = await api.delete(`/holidays/${id}`);
   return data;
+};
+
+export const getWeeklyOffSettings = async (): Promise<WeeklyOffSettings> => {
+  const { data } = await api.get('/holidays/weekly-off');
+  return data?.data;
+};
+
+export const updateWeeklyOffSettings = async (payload: WeeklyOffSettingsPayload): Promise<WeeklyOffSettings> => {
+  const { data } = await api.put('/holidays/weekly-off', payload);
+  return data?.data;
 };
 
 export const suggestHolidays = async (country: string) => {

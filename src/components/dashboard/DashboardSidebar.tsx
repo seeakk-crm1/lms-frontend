@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    LayoutDashboard, Users, UserCog, Settings, FileText, Calendar as CalendarIcon,
+    LayoutDashboard, Users, Settings, FileText, Calendar as CalendarIcon,
     Briefcase, FileBarChart, Unplug, MapPin, ChevronDown, Activity, ChevronRight, LogOut, LucideIcon, X
 } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
@@ -85,7 +85,6 @@ const sidebarMenus: SidebarSection[] = [
     {
         title: 'SYSTEM',
         items: [
-            { icon: UserCog, label: 'Settings', path: '/settings', requiredPermissions: ['SYSTEM_CONFIG'] },
             { icon: Unplug, label: 'Unlock Staff', path: '/unlock-staff', requiredPermissions: ['USERS_UNLOCK', 'USERS_EDIT', 'SYSTEM_CONFIG'] },
             { icon: MapPin, label: 'Locations', path: '/locations', requiredPermissions: ['LOCATION_VIEW', 'LOCATION_MANAGE', 'SYSTEM_CONFIG'] }
         ]

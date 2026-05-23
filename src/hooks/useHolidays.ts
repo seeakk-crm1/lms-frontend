@@ -65,6 +65,28 @@ export const useDeleteHolidayMutation = () => {
   });
 };
 
+export const useWeeklyOffSettingsQuery = () =>
+  useQuery({
+    queryKey: ['holidays', 'weekly-off'],
+    queryFn: holidaysApi.getWeeklyOffSettings,
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
+    retry: shouldRetry,
+  });
+
+export const useUpdateWeeklyOffSettingsMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: holidaysApi.updateWeeklyOffSettings,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['holidays'] });
+      queryClient.invalidateQueries({ queryKey: ['holidays', 'calendar'] });
+      queryClient.invalidateQueries({ queryKey: ['holidays', 'weekly-off'] });
+    },
+  });
+};
+
 export const useSuggestHolidayMutation = () =>
   useMutation({
     mutationFn: holidaysApi.suggestHolidays,

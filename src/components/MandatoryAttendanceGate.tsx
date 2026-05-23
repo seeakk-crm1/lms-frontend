@@ -48,6 +48,7 @@ const MandatoryAttendanceGate: React.FC<Props> = ({ children }) => {
     enabled &&
     status &&
     !status.isHoliday &&
+    !status.isWeeklyOff &&
     (status.requiresMandatoryPopup || status.isLocked),
   );
 
