@@ -65,7 +65,13 @@ const WeeklyOffPanel: React.FC = () => {
       });
       toast.success('Weekly-off settings saved.');
     } catch (error: any) {
-      toast.error(error?.response?.data?.message || 'Failed to save weekly-off settings.');
+      const status = error?.response?.status;
+      const message = error?.response?.data?.message || 'Failed to save weekly-off settings.';
+      if (status === 404) {
+        toast.error('Weekly-off API is unavailable. Redeploy the backend with the latest release.');
+        return;
+      }
+      toast.error(message);
     }
   };
 
@@ -73,6 +79,29 @@ const WeeklyOffPanel: React.FC = () => {
     return (
       <div className="flex min-h-[320px] items-center justify-center rounded-[2rem] border border-white/70 bg-white p-10 shadow-[0_30px_90px_-40px_rgba(15,23,42,0.18)]">
         <Loader2 className="h-8 w-8 animate-spin text-emerald-500" />
+      </div>
+    );
+  }
+
+  if (settingsQuery.isError) {
+    const message =
+      (settingsQuery.error as any)?.response?.data?.message ||
+      (settingsQuery.error as Error)?.message ||
+      'Unable to load weekly-off settings.';
+    return (
+      <div className="rounded-[2rem] border border-rose-100 bg-rose-50 p-6 text-sm font-semibold text-rose-700">
+        <p className="font-black">Weekly-off settings could not be loaded.</p>
+        <p className="mt-2">{message}</p>
+        <p className="mt-2 text-xs text-rose-600">
+          If this persists, redeploy the backend and ensure database migrations have run.
+        </p>
+        <button
+          type="button"
+          onClick={() => settingsQuery.refetch()}
+          className="mt-4 rounded-2xl bg-white px-4 py-2 text-xs font-black text-rose-700 border border-rose-200 hover:bg-rose-100"
+        >
+          Retry
+        </button>
       </div>
     );
   }

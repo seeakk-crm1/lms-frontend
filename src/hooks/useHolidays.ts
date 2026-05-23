@@ -71,7 +71,11 @@ export const useWeeklyOffSettingsQuery = () =>
     queryFn: holidaysApi.getWeeklyOffSettings,
     staleTime: 30_000,
     refetchOnWindowFocus: false,
-    retry: shouldRetry,
+    retry: (failureCount, error: any) => {
+      const status = error?.response?.status;
+      if (status === 404 || status === 503) return false;
+      return shouldRetry(failureCount, error);
+    },
   });
 
 export const useUpdateWeeklyOffSettingsMutation = () => {
