@@ -1,13 +1,14 @@
-import React, { useEffect, useState } from 'react';
+import React, { useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import PerformanceTargetCycleForm, { type PerformanceTargetCyclePayload } from './PerformanceTargetCycleForm';
+import { mapTargetCycleToFormInitial } from './targetCycleFormMapper';
+import { useTargetCycleDetailQuery } from './useTargetCycleQuery';
 import type { TargetCycle } from './types';
 
 interface Props {
   isOpen: boolean;
   mode: 'create' | 'edit';
   selectedCycle: TargetCycle | null;
-  existingNames: string[];
   isSubmitting: boolean;
   onClose: () => void;
   onSubmit: (payload: PerformanceTargetCyclePayload) => Promise<void> | void;
@@ -17,19 +18,24 @@ const TargetCycleModal: React.FC<Props> = ({
   isOpen,
   mode,
   selectedCycle,
-  existingNames,
   isSubmitting,
   onClose,
   onSubmit,
 }) => {
-  const [isHydrating, setIsHydrating] = useState(false);
+  const cycleId = mode === 'edit' ? selectedCycle?.id : null;
+  const { data: detailResponse, isLoading: isDetailLoading } = useTargetCycleDetailQuery(
+    cycleId,
+    isOpen && mode === 'edit',
+  );
 
-  useEffect(() => {
-    if (!isOpen) return;
-    setIsHydrating(true);
-    const timer = window.setTimeout(() => setIsHydrating(false), 220);
-    return () => window.clearTimeout(timer);
-  }, [isOpen, mode, selectedCycle?.id]);
+  const initialData = useMemo(() => {
+    if (mode === 'edit' && detailResponse?.data) {
+      return mapTargetCycleToFormInitial(detailResponse.data);
+    }
+    return undefined;
+  }, [detailResponse?.data, mode]);
+
+  const formKey = mode === 'edit' ? detailResponse?.data?.id || 'loading' : 'create';
 
   return (
     <AnimatePresence>
@@ -70,7 +76,7 @@ const TargetCycleModal: React.FC<Props> = ({
             </div>
 
             <div className="p-4 sm:p-6 overflow-y-auto custom-scrollbar">
-              {isHydrating ? (
+              {mode === 'edit' && (isDetailLoading || !initialData) ? (
                 <div className="space-y-4 animate-pulse">
                   <div className="h-11 rounded-xl shimmer-bg" />
                   <div className="h-11 rounded-xl shimmer-bg" />
@@ -79,7 +85,8 @@ const TargetCycleModal: React.FC<Props> = ({
                 </div>
               ) : (
                 <PerformanceTargetCycleForm
-                  initialData={selectedCycle as any}
+                  key={formKey}
+                  initialData={initialData}
                   isSubmitting={isSubmitting}
                   onCancel={onClose}
                   onSubmit={onSubmit}

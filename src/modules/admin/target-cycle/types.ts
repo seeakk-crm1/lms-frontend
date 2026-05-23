@@ -6,6 +6,17 @@ export interface TargetCycleRange {
   endDay: number;
 }
 
+export interface TargetCyclePeriod {
+  id: string;
+  targetCycleId?: string;
+  label: string;
+  periodIndex: number;
+  targetCount: number;
+  startDate: string;
+  endDate: string;
+  lockingDate: string;
+}
+
 export interface TargetCycle {
   id: string;
   name: string;
@@ -17,6 +28,16 @@ export interface TargetCycle {
   updatedAt: string;
   deletedAt?: string | null;
   ranges: TargetCycleRange[];
+  description?: string | null;
+  targetType?: 'WEEKLY' | 'MONTHLY' | 'SEMI_ANNUAL' | 'MANUAL';
+  targetMetric?: 'LEADS' | 'REVENUE';
+  leadStageId?: string | null;
+  startDate?: string;
+  endDate?: string | null;
+  numberOfMonths?: number | null;
+  lockingEnabled?: boolean;
+  periods?: TargetCyclePeriod[];
+  leadStage?: { id: string; name: string; color?: string | null } | null;
 }
 
 export interface TargetCycleFilters {

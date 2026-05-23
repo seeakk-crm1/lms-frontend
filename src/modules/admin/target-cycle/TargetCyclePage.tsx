@@ -67,8 +67,6 @@ const TargetCyclePage: React.FC = () => {
     [activeCount, total],
   );
 
-  const existingNames = useMemo(() => targetCycles.map((item) => item.name), [targetCycles]);
-
   const openCreateModal = useCallback(() => {
     setFormState({ mode: 'create', selectedCycle: null, isModalOpen: true });
   }, [setFormState]);
@@ -185,7 +183,6 @@ const TargetCyclePage: React.FC = () => {
         isOpen={formState.isModalOpen}
         mode={formState.mode}
         selectedCycle={formState.selectedCycle}
-        existingNames={existingNames}
         isSubmitting={createMutation.isPending || updateMutation.isPending}
         onClose={closeModal}
         onSubmit={handleSubmit}

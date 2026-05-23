@@ -1,8 +1,9 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Loader2, Plus, Save, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { addMonths, format, startOfMonth } from 'date-fns';
+import { format } from 'date-fns';
 import { useLeadStagesQuery } from '../../../hooks/useLeadStagesQuery';
+import { countPeriodSlots, periodSlotLabel, previewTotalTargetDays } from './targetCycleDuration';
 
 export type PerformanceTargetCyclePayload = {
   name: string;
@@ -32,10 +33,6 @@ interface Props {
   onCancel: () => void;
   onSubmit: (payload: PerformanceTargetCyclePayload) => Promise<void> | void;
 }
-
-const MONTH_LABELS = Array.from({ length: 12 }, (_, i) =>
-  format(addMonths(startOfMonth(new Date()), i), 'MMMM yyyy'),
-);
 
 type ManualPeriodRow = NonNullable<PerformanceTargetCyclePayload['periods']>[number];
 
@@ -78,15 +75,15 @@ const PerformanceTargetCycleForm: React.FC<Props> = ({ initialData, isSubmitting
   const [status, setStatus] = useState<'ACTIVE' | 'INACTIVE'>(initialData?.status || 'ACTIVE');
   const [lockingEnabled, setLockingEnabled] = useState(initialData?.lockingEnabled !== false);
 
-  const periodSlots = useMemo(() => {
-    if (targetType === 'SEMI_ANNUAL') return 6;
-    if (targetType === 'WEEKLY') return numberOfMonths * 4;
-    if (targetType === 'MONTHLY') return numberOfMonths;
-    return 0;
-  }, [numberOfMonths, targetType]);
+  const periodSlots = useMemo(
+    () => countPeriodSlots({ targetType, startDate, numberOfMonths }),
+    [numberOfMonths, startDate, targetType],
+  );
 
   const [periodCounts, setPeriodCounts] = useState<number[]>(
-    initialData?.periodCounts || Array.from({ length: periodSlots }, () => 0),
+    initialData?.periodCounts?.length
+      ? initialData.periodCounts
+      : Array.from({ length: periodSlots }, () => 0),
   );
 
   const [manualPeriods, setManualPeriods] = useState<ManualPeriodRow[]>(() =>
@@ -100,6 +97,31 @@ const PerformanceTargetCycleForm: React.FC<Props> = ({ initialData, isSubmitting
           })),
         )
       : [createEmptyManualPeriod(0, initialData?.startDate || format(new Date(), 'yyyy-MM-dd'))],
+  );
+
+  useEffect(() => {
+    if (targetType === 'MANUAL') return;
+    setPeriodCounts((prev) => {
+      const next = Array.from({ length: periodSlots }, (_, index) => prev[index] ?? 0);
+      return next;
+    });
+  }, [periodSlots, targetType]);
+
+  const totalTargetDays = useMemo(
+    () =>
+      previewTotalTargetDays({
+        targetType,
+        startDate,
+        numberOfMonths,
+        manualPeriods:
+          targetType === 'MANUAL'
+            ? manualPeriods.map((period) => ({
+                startDate: String(period.startDate),
+                endDate: String(period.endDate),
+              }))
+            : undefined,
+      }),
+    [manualPeriods, numberOfMonths, startDate, targetType],
   );
 
   const updateManualPeriod = (index: number, patch: Partial<ManualPeriodRow>) => {
@@ -278,6 +300,11 @@ const PerformanceTargetCycleForm: React.FC<Props> = ({ initialData, isSubmitting
         ) : null}
       </div>
 
+      <div className="rounded-xl border border-emerald-100 bg-emerald-50/50 px-4 py-3 flex flex-wrap items-center justify-between gap-2">
+        <p className="text-xs font-black uppercase tracking-wider text-emerald-700">Total target days</p>
+        <p className="text-lg font-black text-emerald-800">{totalTargetDays}</p>
+      </div>
+
       {targetType !== 'MANUAL' ? (
         <div className="space-y-3">
           {targetType === 'MONTHLY' || targetType === 'WEEKLY' ? (
@@ -300,12 +327,8 @@ const PerformanceTargetCycleForm: React.FC<Props> = ({ initialData, isSubmitting
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 max-h-64 overflow-y-auto custom-scrollbar pr-1">
             {Array.from({ length: periodSlots }).map((_, index) => (
               <div key={index} className="flex items-center gap-2 rounded-xl border border-gray-100 bg-white px-3 py-2">
-                <span className="text-[10px] font-bold text-gray-500 shrink-0 w-24 truncate">
-                  {targetType === 'WEEKLY'
-                    ? `${MONTH_LABELS[Math.floor(index / 4) % 12]?.slice(0, 3) || 'M'} W${(index % 4) + 1}`
-                    : targetType === 'SEMI_ANNUAL'
-                      ? `Month ${index + 1}`
-                      : MONTH_LABELS[index % 12] || `Month ${index + 1}`}
+                <span className="text-[10px] font-bold text-gray-500 shrink-0 w-28 truncate" title={periodSlotLabel(targetType, startDate, index)}>
+                  {periodSlotLabel(targetType, startDate, index)}
                 </span>
                 <input
                   type="number"

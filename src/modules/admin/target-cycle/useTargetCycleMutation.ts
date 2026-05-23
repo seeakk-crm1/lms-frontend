@@ -75,7 +75,7 @@ export const useCreateTargetCycleMutation = () => {
             id: `temp-${Date.now()}`,
             name: payload.name,
             workspaceId: '',
-            totalDays: 30,
+            totalDays: 0,
             status: payload.status,
             createdBy: 'You',
             createdAt: new Date().toISOString(),
@@ -96,6 +96,8 @@ export const useCreateTargetCycleMutation = () => {
     },
     onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: ['target-cycles'] });
+      queryClient.invalidateQueries({ queryKey: ['target-cycle'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
       toast.success(response?.message || 'Target cycle created successfully');
     },
   });
@@ -109,30 +111,27 @@ export const useUpdateTargetCycleMutation = () => {
     onMutate: async ({ id, payload }) => {
       await queryClient.cancelQueries({ queryKey: ['target-cycles'] });
       const previous = queryClient.getQueriesData<ListTargetCyclesResponse>({ queryKey: ['target-cycles'] });
-
-      queryClient.setQueriesData<ListTargetCyclesResponse>({ queryKey: ['target-cycles'] }, (oldData) =>
-        patchTargetCycleList(oldData, (list) =>
-          list.map((item) =>
-            item.id === id
-              ? {
-                  ...item,
-                  ...payload,
-                  totalDays: 30,
-                  updatedAt: new Date().toISOString(),
-                }
-              : item,
-          ),
-        ),
-      );
-
       return { previous };
     },
     onError: (error: any, _payload, context) => {
       context?.previous?.forEach(([queryKey, data]) => queryClient.setQueryData(queryKey, data));
       toast.error(error?.response?.data?.message || 'Failed to update target cycle');
     },
-    onSuccess: (response) => {
+    onSuccess: (response, { id }) => {
       queryClient.invalidateQueries({ queryKey: ['target-cycles'] });
+      queryClient.invalidateQueries({ queryKey: ['target-cycle', id] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['target-analytics'] });
+      queryClient.invalidateQueries({ queryKey: ['unlock-staff'] });
+
+      if (response?.data) {
+        queryClient.setQueriesData<ListTargetCyclesResponse>({ queryKey: ['target-cycles'] }, (oldData) =>
+          patchTargetCycleList(oldData, (list) =>
+            list.map((item) => (item.id === id ? { ...item, ...response.data } : item)),
+          ),
+        );
+      }
+
       toast.success(response?.message || 'Target cycle updated successfully');
     },
   });
