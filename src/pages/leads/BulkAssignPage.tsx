@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Filter, Layers3, SendToBack, UsersRound } from 'lucide-react';
+import { Layers3, SendToBack, UsersRound } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import DashboardLayout from '../../components/dashboard/DashboardLayout';
 import { useBulkAssignMutation, useBulkPreviewQuery } from '../../hooks/useBulkAssign';
@@ -12,7 +12,6 @@ import BulkAssignFilters from './components/BulkAssignFilters';
 import BulkAssignPreview from './components/BulkAssignPreview';
 
 const BulkAssignPage: React.FC = () => {
-  const [showFilters, setShowFilters] = useState(true);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
   const {
@@ -167,22 +166,9 @@ const BulkAssignPage: React.FC = () => {
                 </div>
                 <h1 className="text-3xl font-black tracking-tight text-gray-900 md:text-4xl">Bulk Assign Leads</h1>
                 <p className="mt-2 max-w-2xl text-sm font-semibold text-gray-500">
-                  Filter active leads, preview the impact, and reassign them in one controlled workspace-safe action.
+                  Keep the assignment workspace stable while filters update matching leads, preview counts, and reassignment actions in place.
                 </p>
               </motion.div>
-
-              <button
-                type="button"
-                onClick={() => setShowFilters((value) => !value)}
-                className={`inline-flex items-center justify-center gap-2 self-start rounded-2xl px-5 py-3 text-sm font-black transition-all ${
-                  showFilters
-                    ? 'bg-gray-900 text-white shadow-lg shadow-gray-900/10'
-                    : 'border border-gray-200 bg-white text-gray-700 shadow-sm hover:border-gray-300'
-                }`}
-              >
-                <Filter className="h-4 w-4" />
-                <span>{showFilters ? 'Hide Filters' : 'Show Filters'}</span>
-              </button>
             </div>
 
             <div className="grid gap-4 md:grid-cols-3">
@@ -203,18 +189,18 @@ const BulkAssignPage: React.FC = () => {
               ))}
             </div>
 
-            {showFilters ? (
-              <BulkAssignFilters
-                filters={filters}
-                meta={meta}
-                isApplying={previewQuery.isLoading || previewQuery.isFetching}
-                onFilterChange={setFilters}
-                onApply={handleApply}
-                onReset={handleReset}
-              />
-            ) : null}
+            <div className="grid gap-6 xl:grid-cols-[340px_minmax(0,1fr)_360px]">
+              <div className="xl:sticky xl:top-6 xl:self-start">
+                <BulkAssignFilters
+                  filters={filters}
+                  meta={meta}
+                  isApplying={previewQuery.isLoading || previewQuery.isFetching}
+                  onFilterChange={setFilters}
+                  onApply={handleApply}
+                  onReset={handleReset}
+                />
+              </div>
 
-            <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
               <BulkAssignPreview
                 previewCount={previewCount}
                 previewLeads={previewLeads}
@@ -224,22 +210,24 @@ const BulkAssignPage: React.FC = () => {
                 meta={meta}
               />
 
-              <BulkAssignActions
-                assignmentType={assignmentType}
-                selectedAssignee={selectedAssignee}
-                selectedAssigneeIds={selectedAssigneeIds}
-                previewCount={previewCount}
-                hasApplied={hasApplied}
-                meta={meta}
-                isSubmitting={bulkAssignMutation.isPending}
-                progress={progress}
-                lastResult={lastResult}
-                onAssignmentTypeChange={setAssignmentType}
-                onAssigneeChange={setAssignee}
-                onRoundRobinAdd={addRoundRobinAssignee}
-                onRoundRobinRemove={removeRoundRobinAssignee}
-                onAssign={handleAssign}
-              />
+              <div className="xl:sticky xl:top-6 xl:self-start">
+                <BulkAssignActions
+                  assignmentType={assignmentType}
+                  selectedAssignee={selectedAssignee}
+                  selectedAssigneeIds={selectedAssigneeIds}
+                  previewCount={previewCount}
+                  hasApplied={hasApplied}
+                  meta={meta}
+                  isSubmitting={bulkAssignMutation.isPending}
+                  progress={progress}
+                  lastResult={lastResult}
+                  onAssignmentTypeChange={setAssignmentType}
+                  onAssigneeChange={setAssignee}
+                  onRoundRobinAdd={addRoundRobinAssignee}
+                  onRoundRobinRemove={removeRoundRobinAssignee}
+                  onAssign={handleAssign}
+                />
+              </div>
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">

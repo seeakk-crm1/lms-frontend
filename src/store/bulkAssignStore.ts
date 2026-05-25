@@ -77,7 +77,9 @@ const useBulkAssignStore = create<BulkAssignStoreState>((set) => ({
       appliedFilters: { ...state.filters },
       hasApplied: true,
       applyVersion: state.applyVersion + 1,
+      selectedLeadIds: [],
       lastResult: null,
+      progress: initialProgress,
     })),
   resetFilters: () =>
     set({
