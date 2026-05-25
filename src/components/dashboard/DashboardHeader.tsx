@@ -5,6 +5,7 @@ import useAuthStore from '../../store/useAuthStore';
 import { hasPermission } from '../../utils/permissions';
 import NotificationBell from './NotificationBell';
 import ProfileMenu from './ProfileMenu';
+import BrandLogo from '../BrandLogo';
 
 interface DashboardHeaderProps {
     isMobileMenuOpen: boolean;
@@ -15,6 +16,8 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ isMobileMenuOpen, onT
     const { user } = useAuthStore();
     const navigate = useNavigate();
     const canCreateLead = hasPermission(user, 'LEADS_CREATE');
+    const workspaceName = user?.workspace?.companyName?.trim() || 'Workspace';
+    const workspaceLogo = user?.workspace?.logoUrl || null;
 
     const handleAddLead = () => {
         navigate('/leads', { state: { openCreateLead: true } });
@@ -42,9 +45,23 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ isMobileMenuOpen, onT
 
                 {/* Mobile Logo */}
                 <div className="md:hidden flex items-center shrink-0 py-3">
-                    <div className="w-8 h-8 rounded-xl bg-emerald-500 flex items-center justify-center pointer-events-none select-none">
-                        <span className="text-white font-black text-lg">S</span>
-                    </div>
+                    {workspaceLogo ? (
+                        <div className="flex h-9 w-11 items-center justify-center overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm pointer-events-none select-none">
+                            <img
+                                src={workspaceLogo}
+                                alt={workspaceName}
+                                className="h-full w-full object-contain p-1.5"
+                            />
+                        </div>
+                    ) : (
+                        <BrandLogo
+                            alt={workspaceName}
+                            width={92}
+                            height={30}
+                            className="pointer-events-none select-none"
+                            imgClassName="object-left"
+                        />
+                    )}
                 </div>
 
                 {/* Global Search */}
