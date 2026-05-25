@@ -189,7 +189,7 @@ const BulkAssignPage: React.FC = () => {
               ))}
             </div>
 
-            <div className="grid gap-6 xl:grid-cols-[340px_minmax(0,1fr)_360px]">
+            <div className="grid gap-6 xl:grid-cols-[300px_minmax(0,1fr)_320px] 2xl:grid-cols-[320px_minmax(0,1fr)_340px]">
               <div className="xl:sticky xl:top-6 xl:self-start">
                 <BulkAssignFilters
                   filters={filters}

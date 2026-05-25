@@ -74,7 +74,7 @@ const BulkAssignPreview: React.FC<BulkAssignPreviewProps> = ({
             : 'Apply filters to load matching leads into this preview without changing the page layout.'}
         </p>
 
-        <div className="mt-5 grid gap-4 xl:grid-cols-[260px_minmax(0,1fr)]">
+        <div className="mt-5 grid gap-4 2xl:grid-cols-[220px_minmax(0,1fr)]">
           <div className="rounded-3xl border border-gray-100 bg-gray-50/70 p-4">
             <div className="mb-3 flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.24em] text-gray-400">
               <CalendarClock className="h-3.5 w-3.5" />
