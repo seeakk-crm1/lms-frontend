@@ -177,7 +177,7 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({ open, onClose, init
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 20 }}
             transition={{ type: 'spring', stiffness: 320, damping: 30, mass: 0.9 }}
-            className="relative flex h-[min(88vh,760px)] w-full max-w-5xl flex-col overflow-hidden rounded-[32px] border border-white/80 bg-white shadow-[0_40px_120px_-40px_rgba(15,23,42,0.45)]"
+            className="relative flex h-[min(88vh,760px)] w-full max-w-3xl flex-col overflow-hidden rounded-[28px] border border-white/80 bg-white shadow-[0_40px_120px_-40px_rgba(15,23,42,0.35)]"
             onClick={(event) => event.stopPropagation()}
           >
             <button
@@ -189,92 +189,34 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({ open, onClose, init
               <X className="h-4 w-4" />
             </button>
 
-            <form onSubmit={submitHandler} className="flex min-h-0 flex-1 flex-col lg:flex-row">
-              <aside className="relative flex w-full flex-col overflow-hidden bg-[radial-gradient(circle_at_top_left,_rgba(52,211,153,0.28),_transparent_32%),linear-gradient(160deg,#0f172a_0%,#111827_48%,#052e2b_100%)] px-6 py-6 text-white lg:w-[360px] lg:px-8 lg:py-8">
-                <div className="absolute inset-x-0 top-0 h-px bg-white/10" />
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="text-[11px] font-black uppercase tracking-[0.28em] text-emerald-200/90">
-                      Account center
-                    </p>
-                    <h2 className="mt-3 text-2xl font-black tracking-tight text-white">
-                      {user?.name || 'User Profile'}
-                    </h2>
-                    <p className="mt-2 max-w-xs text-sm font-medium leading-6 text-slate-300">
-                      Update your personal details and security settings in one place.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="mt-8 rounded-[28px] border border-white/10 bg-white/8 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-sm">
-                  <div className="flex items-center gap-4">
+            <form onSubmit={submitHandler} className="flex min-h-0 flex-1 flex-col">
+              <div className="shrink-0 border-b border-gray-100 bg-[radial-gradient(circle_at_top,_rgba(16,185,129,0.10),_transparent_40%)] px-5 py-5 sm:px-7 sm:py-6">
+                <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+                  <div className="flex items-center gap-4 pr-8">
                     <div className="relative shrink-0">
-                      <div className="flex h-16 w-16 items-center justify-center rounded-[22px] bg-white/10 text-xl font-black text-white ring-1 ring-white/10">
+                      <div className="flex h-14 w-14 items-center justify-center rounded-[20px] bg-gradient-to-br from-emerald-500 to-emerald-600 text-lg font-black text-white shadow-sm">
                         {initials}
                       </div>
-                      <div className="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-slate-950 bg-emerald-400" />
+                      <div className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white bg-emerald-400" />
                     </div>
                     <div className="min-w-0">
-                      <h3 className="truncate text-lg font-black text-white">{user?.name || 'Workspace user'}</h3>
-                      <p className="mt-1 truncate text-sm font-medium text-slate-300">{user?.email}</p>
-                      <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-1 text-[11px] font-black uppercase tracking-[0.22em] text-emerald-100">
+                      <p className="text-[11px] font-black uppercase tracking-[0.24em] text-emerald-500">
+                        Account settings
+                      </p>
+                      <h2 className="mt-1 truncate text-2xl font-black tracking-tight text-gray-900">
+                        {user?.name || 'User Profile'}
+                      </h2>
+                      <p className="mt-1 truncate text-sm font-medium text-gray-500">{user?.email}</p>
+                      <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1 text-[11px] font-black uppercase tracking-[0.2em] text-emerald-700">
                         <Shield size={12} />
                         {roleLabel}
                       </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="mt-6 grid gap-3">
-                  <div className="rounded-[24px] border border-white/10 bg-white/6 p-4 backdrop-blur-sm">
-                    <div className="flex items-start gap-3">
-                      <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white/10 text-emerald-200">
-                        <UserIcon className="h-4 w-4" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-black text-white">Profile workspace</p>
-                        <p className="mt-1 text-sm font-medium leading-6 text-slate-300">
-                          Keep your display details accurate so team members identify you quickly.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="rounded-[24px] border border-white/10 bg-white/6 p-4 backdrop-blur-sm">
-                    <div className="flex items-start gap-3">
-                      <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white/10 text-emerald-200">
-                        <KeyRound className="h-4 w-4" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-black text-white">Security overview</p>
-                        <p className="mt-1 text-sm font-medium leading-6 text-slate-300">
-                          Use the security tab to refresh your password with stronger protection when needed.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-auto pt-6">
-                  <div className="rounded-[24px] border border-emerald-400/20 bg-emerald-400/10 p-4 text-sm">
-                    <p className="font-black uppercase tracking-[0.2em] text-emerald-100">Professional tip</p>
-                    <p className="mt-2 font-medium leading-6 text-emerald-50/90">
-                      Keep your mobile number current so approvals and follow-up coordination stay aligned across the workspace.
-                    </p>
-                  </div>
-                </div>
-              </aside>
-
-              <div className="flex min-h-0 flex-1 flex-col bg-[radial-gradient(circle_at_top,_rgba(16,185,129,0.10),_transparent_35%)]">
-                <div className="shrink-0 border-b border-gray-100/80 px-5 py-5 sm:px-8 sm:py-6">
-                  <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+                  <div className="space-y-3 lg:min-w-[260px] lg:max-w-[320px]">
                     <div>
-                      <p className="text-[11px] font-black uppercase tracking-[0.24em] text-emerald-500">
-                        Account settings
-                      </p>
-                      <h3 className="mt-2 text-2xl font-black tracking-tight text-gray-900">
-                        {activeTabMeta.title}
-                      </h3>
+                      <h3 className="text-xl font-black tracking-tight text-gray-900">{activeTabMeta.title}</h3>
                       <p className="mt-2 text-sm font-medium leading-6 text-gray-500">
                         {activeTabMeta.description}
                       </p>
@@ -320,343 +262,329 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({ open, onClose, init
                     </div>
                   </div>
                 </div>
+              </div>
 
-                <div className="flex-1 overflow-y-auto px-5 py-5 custom-scrollbar sm:px-8 sm:py-6">
-                  <AnimatePresence mode="wait" initial={false}>
-                    <motion.div
-                      key={activeTab}
-                      initial={{ opacity: 0, y: 12 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -8 }}
-                      transition={{ duration: 0.18, ease: 'easeOut' }}
-                      className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_280px]"
-                    >
-                      {activeTab === 'profile' ? (
-                        <>
-                          <div className="space-y-5">
-                            <section className="rounded-[28px] border border-gray-200/80 bg-white/95 p-5 shadow-[0_20px_60px_-42px_rgba(15,23,42,0.22)] sm:p-6">
-                              <div className="flex items-start justify-between gap-4">
-                                <div>
-                                  <p className="text-[11px] font-black uppercase tracking-[0.24em] text-emerald-500">
-                                    Personal details
-                                  </p>
-                                  <h4 className="mt-2 text-lg font-black text-gray-900">Core profile information</h4>
-                                  <p className="mt-1 text-sm font-medium text-gray-500">
-                                    These details appear across workspace touchpoints and collaboration views.
-                                  </p>
-                                </div>
-                              </div>
-
-                              <div className="mt-6 grid gap-4 md:grid-cols-2">
-                                <div className="space-y-2 md:col-span-2">
-                                  <label className="text-[11px] font-black uppercase tracking-[0.22em] text-gray-400">
-                                    Full name
-                                  </label>
-                                  <div className="group flex items-center gap-3 rounded-2xl border border-gray-200 bg-gray-50/70 px-4 py-3 transition-all focus-within:border-emerald-300 focus-within:bg-white focus-within:shadow-[0_0_0_4px_rgba(16,185,129,0.08)]">
-                                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white text-gray-400 ring-1 ring-gray-200">
-                                      <UserIcon className="h-4 w-4" />
-                                    </div>
-                                    <input
-                                      {...register('name')}
-                                      type="text"
-                                      placeholder="John Doe"
-                                      className="w-full border-0 bg-transparent p-0 text-sm font-semibold text-gray-900 outline-none placeholder:text-gray-400"
-                                    />
-                                  </div>
-                                  {errors.name ? (
-                                    <p className="text-[11px] font-semibold text-rose-500">{errors.name.message}</p>
-                                  ) : null}
-                                </div>
-
-                                <div className="space-y-2">
-                                  <label className="text-[11px] font-black uppercase tracking-[0.22em] text-gray-400">
-                                    Username
-                                  </label>
-                                  <div className="group flex items-center gap-3 rounded-2xl border border-gray-200 bg-gray-50/70 px-4 py-3 transition-all focus-within:border-emerald-300 focus-within:bg-white focus-within:shadow-[0_0_0_4px_rgba(16,185,129,0.08)]">
-                                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white text-gray-400 ring-1 ring-gray-200">
-                                      <span className="text-sm font-black">@</span>
-                                    </div>
-                                    <input
-                                      {...register('username')}
-                                      type="text"
-                                      placeholder="johndoe"
-                                      className="w-full border-0 bg-transparent p-0 text-sm font-semibold text-gray-900 outline-none placeholder:text-gray-400"
-                                    />
-                                  </div>
-                                  {errors.username ? (
-                                    <p className="text-[11px] font-semibold text-rose-500">{errors.username.message}</p>
-                                  ) : null}
-                                </div>
-
-                                <div className="space-y-2">
-                                  <label className="text-[11px] font-black uppercase tracking-[0.22em] text-gray-400">
-                                    Phone number
-                                  </label>
-                                  <div className="group flex items-center gap-3 rounded-2xl border border-gray-200 bg-gray-50/70 px-4 py-3 transition-all focus-within:border-emerald-300 focus-within:bg-white focus-within:shadow-[0_0_0_4px_rgba(16,185,129,0.08)]">
-                                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white text-gray-400 ring-1 ring-gray-200">
-                                      <Phone className="h-4 w-4" />
-                                    </div>
-                                    <input
-                                      {...register('phone')}
-                                      type="tel"
-                                      placeholder="+1 (555) 000-0000"
-                                      className="w-full border-0 bg-transparent p-0 text-sm font-semibold text-gray-900 outline-none placeholder:text-gray-400"
-                                    />
-                                  </div>
-                                  {errors.phone ? (
-                                    <p className="text-[11px] font-semibold text-rose-500">{errors.phone.message}</p>
-                                  ) : null}
-                                </div>
-                              </div>
-                            </section>
-
-                            <section className="rounded-[28px] border border-gray-200/80 bg-white/95 p-5 shadow-[0_20px_60px_-42px_rgba(15,23,42,0.22)] sm:p-6">
-                              <p className="text-[11px] font-black uppercase tracking-[0.24em] text-gray-400">
-                                Locked workspace identity
-                              </p>
-                              <div className="mt-4 space-y-2">
+              <div className="flex-1 overflow-y-auto px-5 py-5 custom-scrollbar sm:px-7 sm:py-6">
+                <AnimatePresence mode="wait" initial={false}>
+                  <motion.div
+                    key={activeTab}
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.18, ease: 'easeOut' }}
+                    className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_260px]"
+                  >
+                    {activeTab === 'profile' ? (
+                      <>
+                        <div className="space-y-5">
+                          <section className="rounded-[24px] border border-gray-200 bg-white p-5 shadow-[0_20px_60px_-42px_rgba(15,23,42,0.16)]">
+                            <p className="text-[11px] font-black uppercase tracking-[0.24em] text-emerald-500">
+                              Personal details
+                            </p>
+                            <div className="mt-5 grid gap-4 md:grid-cols-2">
+                              <div className="space-y-2 md:col-span-2">
                                 <label className="text-[11px] font-black uppercase tracking-[0.22em] text-gray-400">
-                                  Email address
+                                  Full name
                                 </label>
-                                <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3">
+                                <div className="group flex items-center gap-3 rounded-2xl border border-gray-200 bg-gray-50/70 px-4 py-3 transition-all focus-within:border-emerald-300 focus-within:bg-white focus-within:shadow-[0_0_0_4px_rgba(16,185,129,0.08)]">
                                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white text-gray-400 ring-1 ring-gray-200">
-                                    <Mail className="h-4 w-4" />
+                                    <UserIcon className="h-4 w-4" />
                                   </div>
                                   <input
-                                    type="email"
-                                    value={user?.email || ''}
-                                    disabled
-                                    className="w-full cursor-not-allowed border-0 bg-transparent p-0 text-sm font-semibold text-gray-400 outline-none"
+                                    {...register('name')}
+                                    type="text"
+                                    placeholder="John Doe"
+                                    className="w-full border-0 bg-transparent p-0 text-sm font-semibold text-gray-900 outline-none placeholder:text-gray-400"
                                   />
-                                  <div className="inline-flex items-center gap-1 rounded-full bg-gray-200 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-gray-600">
-                                    <Lock className="h-3 w-3" />
-                                    Locked
+                                </div>
+                                {errors.name ? (
+                                  <p className="text-[11px] font-semibold text-rose-500">{errors.name.message}</p>
+                                ) : null}
+                              </div>
+
+                              <div className="space-y-2">
+                                <label className="text-[11px] font-black uppercase tracking-[0.22em] text-gray-400">
+                                  Username
+                                </label>
+                                <div className="group flex items-center gap-3 rounded-2xl border border-gray-200 bg-gray-50/70 px-4 py-3 transition-all focus-within:border-emerald-300 focus-within:bg-white focus-within:shadow-[0_0_0_4px_rgba(16,185,129,0.08)]">
+                                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white text-gray-400 ring-1 ring-gray-200">
+                                    <span className="text-sm font-black">@</span>
                                   </div>
+                                  <input
+                                    {...register('username')}
+                                    type="text"
+                                    placeholder="johndoe"
+                                    className="w-full border-0 bg-transparent p-0 text-sm font-semibold text-gray-900 outline-none placeholder:text-gray-400"
+                                  />
                                 </div>
+                                {errors.username ? (
+                                  <p className="text-[11px] font-semibold text-rose-500">{errors.username.message}</p>
+                                ) : null}
                               </div>
-                              <p className="mt-3 text-sm font-medium leading-6 text-gray-500">
-                                Your email is managed by the workspace administrator to keep login identity consistent.
-                              </p>
-                            </section>
-                          </div>
 
-                          <div className="space-y-5">
-                            <section className="rounded-[28px] border border-emerald-100 bg-emerald-50/80 p-5">
-                              <p className="text-[11px] font-black uppercase tracking-[0.24em] text-emerald-600">
-                                Account summary
-                              </p>
-                              <div className="mt-4 space-y-4">
-                                <div>
-                                  <p className="text-xs font-bold uppercase tracking-wide text-emerald-700/70">Display name</p>
-                                  <p className="mt-1 text-sm font-black text-emerald-950">{user?.name || 'Not set'}</p>
-                                </div>
-                                <div>
-                                  <p className="text-xs font-bold uppercase tracking-wide text-emerald-700/70">Role</p>
-                                  <p className="mt-1 text-sm font-black text-emerald-950">{roleLabel}</p>
-                                </div>
-                                <div>
-                                  <p className="text-xs font-bold uppercase tracking-wide text-emerald-700/70">Account email</p>
-                                  <p className="mt-1 break-all text-sm font-semibold text-emerald-950">{user?.email || 'Unavailable'}</p>
-                                </div>
-                              </div>
-                            </section>
-
-                            <section className="rounded-[28px] border border-gray-200 bg-white p-5">
-                              <p className="text-[11px] font-black uppercase tracking-[0.24em] text-gray-400">
-                                Best practice
-                              </p>
-                              <ul className="mt-4 space-y-3 text-sm font-medium leading-6 text-gray-600">
-                                <li className="flex gap-2">
-                                  <Check className="mt-1 h-4 w-4 shrink-0 text-emerald-500" />
-                                  Keep your name aligned with your official workspace record.
-                                </li>
-                                <li className="flex gap-2">
-                                  <Check className="mt-1 h-4 w-4 shrink-0 text-emerald-500" />
-                                  Add a valid phone number for faster internal coordination.
-                                </li>
-                                <li className="flex gap-2">
-                                  <Check className="mt-1 h-4 w-4 shrink-0 text-emerald-500" />
-                                  Use a clear username that teammates can recognize quickly.
-                                </li>
-                              </ul>
-                            </section>
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <div className="space-y-5">
-                            <section className="rounded-[28px] border border-gray-200/80 bg-white/95 p-5 shadow-[0_20px_60px_-42px_rgba(15,23,42,0.22)] sm:p-6">
-                              <p className="text-[11px] font-black uppercase tracking-[0.24em] text-violet-500">
-                                Password update
-                              </p>
-                              <h4 className="mt-2 text-lg font-black text-gray-900">Set a stronger password</h4>
-                              <p className="mt-1 text-sm font-medium text-gray-500">
-                                Choose a password that is unique to your workspace account.
-                              </p>
-
-                              <div className="mt-6 space-y-4">
-                                <div className="space-y-2">
-                                  <label className="text-[11px] font-black uppercase tracking-[0.22em] text-gray-400">
-                                    New password
-                                  </label>
-                                  <div className="group flex items-center gap-3 rounded-2xl border border-gray-200 bg-gray-50/70 px-4 py-3 transition-all focus-within:border-violet-300 focus-within:bg-white focus-within:shadow-[0_0_0_4px_rgba(139,92,246,0.08)]">
-                                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white text-gray-400 ring-1 ring-gray-200">
-                                      <KeyRound className="h-4 w-4" />
-                                    </div>
-                                    <input
-                                      {...register('password')}
-                                      type={showPassword ? 'text' : 'password'}
-                                      placeholder="••••••••"
-                                      className="w-full border-0 bg-transparent p-0 text-sm font-semibold text-gray-900 outline-none placeholder:text-gray-400"
-                                    />
-                                    <button
-                                      type="button"
-                                      onClick={() => setShowPassword(!showPassword)}
-                                      className="rounded-full p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
-                                    >
-                                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                                    </button>
+                              <div className="space-y-2">
+                                <label className="text-[11px] font-black uppercase tracking-[0.22em] text-gray-400">
+                                  Phone number
+                                </label>
+                                <div className="group flex items-center gap-3 rounded-2xl border border-gray-200 bg-gray-50/70 px-4 py-3 transition-all focus-within:border-emerald-300 focus-within:bg-white focus-within:shadow-[0_0_0_4px_rgba(16,185,129,0.08)]">
+                                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white text-gray-400 ring-1 ring-gray-200">
+                                    <Phone className="h-4 w-4" />
                                   </div>
-                                  {errors.password ? (
-                                    <p className="text-[11px] font-semibold text-rose-500">{errors.password.message}</p>
-                                  ) : null}
+                                  <input
+                                    {...register('phone')}
+                                    type="tel"
+                                    placeholder="+1 (555) 000-0000"
+                                    className="w-full border-0 bg-transparent p-0 text-sm font-semibold text-gray-900 outline-none placeholder:text-gray-400"
+                                  />
                                 </div>
+                                {errors.phone ? (
+                                  <p className="text-[11px] font-semibold text-rose-500">{errors.phone.message}</p>
+                                ) : null}
+                              </div>
+                            </div>
+                          </section>
 
-                                <div className="space-y-2">
-                                  <label className="text-[11px] font-black uppercase tracking-[0.22em] text-gray-400">
-                                    Confirm password
-                                  </label>
-                                  <div className="group flex items-center gap-3 rounded-2xl border border-gray-200 bg-gray-50/70 px-4 py-3 transition-all focus-within:border-violet-300 focus-within:bg-white focus-within:shadow-[0_0_0_4px_rgba(139,92,246,0.08)]">
-                                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white text-gray-400 ring-1 ring-gray-200">
-                                      <Lock className="h-4 w-4" />
-                                    </div>
-                                    <input
-                                      {...register('confirmPassword')}
-                                      type={showConfirmPassword ? 'text' : 'password'}
-                                      placeholder="••••••••"
-                                      className="w-full border-0 bg-transparent p-0 text-sm font-semibold text-gray-900 outline-none placeholder:text-gray-400"
-                                    />
-                                    <button
-                                      type="button"
-                                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                      className="rounded-full p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
-                                    >
-                                      {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                                    </button>
-                                  </div>
-                                  {errors.confirmPassword ? (
-                                    <p className="text-[11px] font-semibold text-rose-500">{errors.confirmPassword.message}</p>
-                                  ) : null}
+                          <section className="rounded-[24px] border border-gray-200 bg-white p-5 shadow-[0_20px_60px_-42px_rgba(15,23,42,0.16)]">
+                            <p className="text-[11px] font-black uppercase tracking-[0.24em] text-gray-400">
+                              Locked workspace identity
+                            </p>
+                            <div className="mt-4 space-y-2">
+                              <label className="text-[11px] font-black uppercase tracking-[0.22em] text-gray-400">
+                                Email address
+                              </label>
+                              <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3">
+                                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white text-gray-400 ring-1 ring-gray-200">
+                                  <Mail className="h-4 w-4" />
                                 </div>
-                              </div>
-                            </section>
-
-                            <section className="rounded-[28px] border border-violet-100 bg-violet-50/70 p-5">
-                              <div className="flex items-center justify-between gap-4">
-                                <p className="text-[11px] font-black uppercase tracking-[0.24em] text-violet-600">
-                                  Password strength
-                                </p>
-                                <span
-                                  className={`text-xs font-black uppercase tracking-wide ${
-                                    passwordStrength.score > 2
-                                      ? 'text-emerald-600'
-                                      : passwordStrength.score > 1
-                                        ? 'text-amber-500'
-                                        : 'text-rose-500'
-                                  }`}
-                                >
-                                  {passwordVal ? passwordStrength.label : 'Add a password'}
-                                </span>
-                              </div>
-
-                              <div className="mt-4 flex h-2 overflow-hidden rounded-full bg-white/80">
-                                <div
-                                  className={`transition-all duration-300 ${
-                                    passwordVal ? passwordStrength.color : 'bg-gray-200'
-                                  }`}
-                                  style={{ width: `${passwordVal ? Math.max(passwordStrength.score * 25, 8) : 18}%` }}
+                                <input
+                                  type="email"
+                                  value={user?.email || ''}
+                                  disabled
+                                  className="w-full cursor-not-allowed border-0 bg-transparent p-0 text-sm font-semibold text-gray-400 outline-none"
                                 />
+                                <div className="inline-flex items-center gap-1 rounded-full bg-gray-200 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-gray-600">
+                                  <Lock className="h-3 w-3" />
+                                  Locked
+                                </div>
+                              </div>
+                            </div>
+                            <p className="mt-3 text-sm font-medium leading-6 text-gray-500">
+                              Your email is managed by the workspace administrator to keep login identity consistent.
+                            </p>
+                          </section>
+                        </div>
+
+                        <div className="space-y-5">
+                          <section className="rounded-[24px] border border-emerald-100 bg-emerald-50/70 p-5">
+                            <p className="text-[11px] font-black uppercase tracking-[0.24em] text-emerald-600">
+                              Account summary
+                            </p>
+                            <div className="mt-4 space-y-4">
+                              <div>
+                                <p className="text-xs font-bold uppercase tracking-wide text-emerald-700/70">Display name</p>
+                                <p className="mt-1 text-sm font-black text-emerald-950">{user?.name || 'Not set'}</p>
+                              </div>
+                              <div>
+                                <p className="text-xs font-bold uppercase tracking-wide text-emerald-700/70">Role</p>
+                                <p className="mt-1 text-sm font-black text-emerald-950">{roleLabel}</p>
+                              </div>
+                              <div>
+                                <p className="text-xs font-bold uppercase tracking-wide text-emerald-700/70">Account email</p>
+                                <p className="mt-1 break-all text-sm font-semibold text-emerald-950">{user?.email || 'Unavailable'}</p>
+                              </div>
+                            </div>
+                          </section>
+
+                          <section className="rounded-[24px] border border-gray-200 bg-gray-50/80 p-5">
+                            <p className="text-[11px] font-black uppercase tracking-[0.24em] text-gray-400">
+                              Best practice
+                            </p>
+                            <ul className="mt-4 space-y-3 text-sm font-medium leading-6 text-gray-600">
+                              <li className="flex gap-2">
+                                <Check className="mt-1 h-4 w-4 shrink-0 text-emerald-500" />
+                                Keep your name aligned with your official workspace record.
+                              </li>
+                              <li className="flex gap-2">
+                                <Check className="mt-1 h-4 w-4 shrink-0 text-emerald-500" />
+                                Add a valid phone number for faster internal coordination.
+                              </li>
+                              <li className="flex gap-2">
+                                <Check className="mt-1 h-4 w-4 shrink-0 text-emerald-500" />
+                                Use a clear username that teammates can recognize quickly.
+                              </li>
+                            </ul>
+                          </section>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="space-y-5">
+                          <section className="rounded-[24px] border border-gray-200 bg-white p-5 shadow-[0_20px_60px_-42px_rgba(15,23,42,0.16)]">
+                            <p className="text-[11px] font-black uppercase tracking-[0.24em] text-violet-500">
+                              Password update
+                            </p>
+                            <div className="mt-5 space-y-4">
+                              <div className="space-y-2">
+                                <label className="text-[11px] font-black uppercase tracking-[0.22em] text-gray-400">
+                                  New password
+                                </label>
+                                <div className="group flex items-center gap-3 rounded-2xl border border-gray-200 bg-gray-50/70 px-4 py-3 transition-all focus-within:border-violet-300 focus-within:bg-white focus-within:shadow-[0_0_0_4px_rgba(139,92,246,0.08)]">
+                                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white text-gray-400 ring-1 ring-gray-200">
+                                    <KeyRound className="h-4 w-4" />
+                                  </div>
+                                  <input
+                                    {...register('password')}
+                                    type={showPassword ? 'text' : 'password'}
+                                    placeholder="••••••••"
+                                    className="w-full border-0 bg-transparent p-0 text-sm font-semibold text-gray-900 outline-none placeholder:text-gray-400"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="rounded-full p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+                                  >
+                                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                  </button>
+                                </div>
+                                {errors.password ? (
+                                  <p className="text-[11px] font-semibold text-rose-500">{errors.password.message}</p>
+                                ) : null}
                               </div>
 
-                              <ul className="mt-5 grid gap-2 text-sm font-medium text-violet-950/80 sm:grid-cols-2">
-                                <li className="flex items-center gap-2">
-                                  <Check className={`h-4 w-4 ${passwordVal.length >= 8 ? 'text-emerald-500' : 'text-gray-300'}`} />
-                                  Minimum 8 characters
-                                </li>
-                                <li className="flex items-center gap-2">
-                                  <Check className={`h-4 w-4 ${/[0-9]/.test(passwordVal) ? 'text-emerald-500' : 'text-gray-300'}`} />
-                                  Includes a number
-                                </li>
-                                <li className="flex items-center gap-2">
-                                  <Check className={`h-4 w-4 ${/[A-Z]/.test(passwordVal) && /[a-z]/.test(passwordVal) ? 'text-emerald-500' : 'text-gray-300'}`} />
-                                  Upper and lowercase
-                                </li>
-                                <li className="flex items-center gap-2">
-                                  <Check className={`h-4 w-4 ${/[^A-Za-z0-9]/.test(passwordVal) ? 'text-emerald-500' : 'text-gray-300'}`} />
-                                  Special character
-                                </li>
-                              </ul>
-                            </section>
-                          </div>
+                              <div className="space-y-2">
+                                <label className="text-[11px] font-black uppercase tracking-[0.22em] text-gray-400">
+                                  Confirm password
+                                </label>
+                                <div className="group flex items-center gap-3 rounded-2xl border border-gray-200 bg-gray-50/70 px-4 py-3 transition-all focus-within:border-violet-300 focus-within:bg-white focus-within:shadow-[0_0_0_4px_rgba(139,92,246,0.08)]">
+                                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white text-gray-400 ring-1 ring-gray-200">
+                                    <Lock className="h-4 w-4" />
+                                  </div>
+                                  <input
+                                    {...register('confirmPassword')}
+                                    type={showConfirmPassword ? 'text' : 'password'}
+                                    placeholder="••••••••"
+                                    className="w-full border-0 bg-transparent p-0 text-sm font-semibold text-gray-900 outline-none placeholder:text-gray-400"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                    className="rounded-full p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+                                  >
+                                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                  </button>
+                                </div>
+                                {errors.confirmPassword ? (
+                                  <p className="text-[11px] font-semibold text-rose-500">{errors.confirmPassword.message}</p>
+                                ) : null}
+                              </div>
+                            </div>
+                          </section>
 
-                          <div className="space-y-5">
-                            <section className="rounded-[28px] border border-gray-200 bg-white p-5">
-                              <p className="text-[11px] font-black uppercase tracking-[0.24em] text-gray-400">
-                                Security checklist
+                          <section className="rounded-[24px] border border-violet-100 bg-violet-50/60 p-5">
+                            <div className="flex items-center justify-between gap-4">
+                              <p className="text-[11px] font-black uppercase tracking-[0.24em] text-violet-600">
+                                Password strength
                               </p>
-                              <ul className="mt-4 space-y-3 text-sm font-medium leading-6 text-gray-600">
-                                <li className="flex gap-2">
-                                  <Shield className="mt-1 h-4 w-4 shrink-0 text-violet-500" />
-                                  Avoid reusing passwords from personal apps or other work accounts.
-                                </li>
-                                <li className="flex gap-2">
-                                  <Shield className="mt-1 h-4 w-4 shrink-0 text-violet-500" />
-                                  Update your password immediately if you suspect account sharing or exposure.
-                                </li>
-                                <li className="flex gap-2">
-                                  <Shield className="mt-1 h-4 w-4 shrink-0 text-violet-500" />
-                                  Strong passwords reduce the risk of unauthorized workspace access.
-                                </li>
-                              </ul>
-                            </section>
+                              <span
+                                className={`text-xs font-black uppercase tracking-wide ${
+                                  passwordStrength.score > 2
+                                    ? 'text-emerald-600'
+                                    : passwordStrength.score > 1
+                                      ? 'text-amber-500'
+                                      : 'text-rose-500'
+                                }`}
+                              >
+                                {passwordVal ? passwordStrength.label : 'Add a password'}
+                              </span>
+                            </div>
 
-                            <section className="rounded-[28px] border border-violet-100 bg-gradient-to-br from-violet-50 to-white p-5">
-                              <div className="flex items-start gap-3">
-                                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-violet-100 text-violet-600">
-                                  <KeyRound className="h-5 w-5" />
-                                </div>
-                                <div>
-                                  <p className="text-sm font-black text-gray-900">Secure your access</p>
-                                  <p className="mt-2 text-sm font-medium leading-6 text-gray-600">
-                                    A strong password is the simplest way to protect revenue, approvals, and lead activity tied to your account.
-                                  </p>
-                                </div>
+                            <div className="mt-4 flex h-2 overflow-hidden rounded-full bg-white">
+                              <div
+                                className={`transition-all duration-300 ${
+                                  passwordVal ? passwordStrength.color : 'bg-gray-200'
+                                }`}
+                                style={{ width: `${passwordVal ? Math.max(passwordStrength.score * 25, 8) : 18}%` }}
+                              />
+                            </div>
+
+                            <ul className="mt-5 grid gap-2 text-sm font-medium text-violet-950/80 sm:grid-cols-2">
+                              <li className="flex items-center gap-2">
+                                <Check className={`h-4 w-4 ${passwordVal.length >= 8 ? 'text-emerald-500' : 'text-gray-300'}`} />
+                                Minimum 8 characters
+                              </li>
+                              <li className="flex items-center gap-2">
+                                <Check className={`h-4 w-4 ${/[0-9]/.test(passwordVal) ? 'text-emerald-500' : 'text-gray-300'}`} />
+                                Includes a number
+                              </li>
+                              <li className="flex items-center gap-2">
+                                <Check className={`h-4 w-4 ${/[A-Z]/.test(passwordVal) && /[a-z]/.test(passwordVal) ? 'text-emerald-500' : 'text-gray-300'}`} />
+                                Upper and lowercase
+                              </li>
+                              <li className="flex items-center gap-2">
+                                <Check className={`h-4 w-4 ${/[^A-Za-z0-9]/.test(passwordVal) ? 'text-emerald-500' : 'text-gray-300'}`} />
+                                Special character
+                              </li>
+                            </ul>
+                          </section>
+                        </div>
+
+                        <div className="space-y-5">
+                          <section className="rounded-[24px] border border-gray-200 bg-gray-50/80 p-5">
+                            <p className="text-[11px] font-black uppercase tracking-[0.24em] text-gray-400">
+                              Security checklist
+                            </p>
+                            <ul className="mt-4 space-y-3 text-sm font-medium leading-6 text-gray-600">
+                              <li className="flex gap-2">
+                                <Shield className="mt-1 h-4 w-4 shrink-0 text-violet-500" />
+                                Avoid reusing passwords from personal apps or other work accounts.
+                              </li>
+                              <li className="flex gap-2">
+                                <Shield className="mt-1 h-4 w-4 shrink-0 text-violet-500" />
+                                Update your password immediately if you suspect account sharing or exposure.
+                              </li>
+                              <li className="flex gap-2">
+                                <Shield className="mt-1 h-4 w-4 shrink-0 text-violet-500" />
+                                Strong passwords reduce the risk of unauthorized workspace access.
+                              </li>
+                            </ul>
+                          </section>
+
+                          <section className="rounded-[24px] border border-violet-100 bg-violet-50/60 p-5">
+                            <div className="flex items-start gap-3">
+                              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white text-violet-600 ring-1 ring-violet-100">
+                                <KeyRound className="h-5 w-5" />
                               </div>
-                            </section>
-                          </div>
-                        </>
-                      )}
-                    </motion.div>
-                  </AnimatePresence>
-                </div>
+                              <div>
+                                <p className="text-sm font-black text-gray-900">Secure your access</p>
+                                <p className="mt-2 text-sm font-medium leading-6 text-gray-600">
+                                  A strong password is the simplest way to protect revenue, approvals, and lead activity tied to your account.
+                                </p>
+                              </div>
+                            </div>
+                          </section>
+                        </div>
+                      </>
+                    )}
+                  </motion.div>
+                </AnimatePresence>
+              </div>
 
-                <div className="shrink-0 border-t border-gray-100 bg-white/90 px-5 py-4 backdrop-blur-sm sm:px-8">
-                  <div className="flex flex-col-reverse gap-2.5 sm:flex-row sm:items-center sm:justify-end">
-                    <button
-                      type="button"
-                      onClick={handleClose}
-                      className="rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-bold text-gray-600 transition-all hover:bg-gray-50"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={isSubmitting}
-                      className="rounded-2xl bg-gradient-to-r from-emerald-500 to-emerald-600 px-5 py-3 text-sm font-black text-white shadow-[0_12px_30px_-12px_rgba(16,185,129,0.65)] transition-all hover:from-emerald-600 hover:to-emerald-600 disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      {isSubmitting ? 'Saving changes...' : activeTab === 'security' ? 'Update security' : 'Save profile'}
-                    </button>
-                  </div>
+              <div className="shrink-0 border-t border-gray-100 bg-white px-5 py-4 sm:px-7">
+                <div className="flex flex-col-reverse gap-2.5 sm:flex-row sm:items-center sm:justify-end">
+                  <button
+                    type="button"
+                    onClick={handleClose}
+                    className="rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-bold text-gray-600 transition-all hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="rounded-2xl bg-emerald-500 px-5 py-3 text-sm font-black text-white shadow-[0_12px_30px_-12px_rgba(16,185,129,0.65)] transition-all hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {isSubmitting ? 'Saving changes...' : activeTab === 'security' ? 'Update security' : 'Save profile'}
+                  </button>
                 </div>
               </div>
             </form>
