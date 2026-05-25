@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { CheckCircle2, LayoutGrid } from 'lucide-react';
 import { User } from '../types/user.types';
+import BrandLogo from './BrandLogo';
 
 interface WorkspaceSidebarProps {
     user: User | null;
@@ -15,9 +16,7 @@ const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({ user }) => {
     return (
         <div className="md:w-[42%] bg-gradient-to-br from-[#e0fcf3] to-[#f4fefb] p-10 relative overflow-hidden flex flex-col justify-between hidden md:flex">
             <div className="relative z-10">
-                <div className="h-14 w-48 mb-10 overflow-hidden">
-                    <img src="/logo.png" alt="Seeakk" className="h-full w-full object-contain object-left" />
-                </div>
+                <BrandLogo alt="Seeakk" className="mb-10" />
 
                 <div className="inline-block px-3 py-1 bg-emerald-100 text-emerald-700 text-xs font-bold rounded-full mb-6 italic">
                     ✦ QUICK SETUP

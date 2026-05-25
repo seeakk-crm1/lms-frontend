@@ -5,6 +5,7 @@ import {
     Briefcase, FileBarChart, Unplug, MapPin, ChevronDown, Activity, ChevronRight, LogOut, LucideIcon, X
 } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import BrandLogo from '../BrandLogo';
 import useAuthStore from '../../store/useAuthStore';
 import { hasAnyPermission, hasPermission, canAccessPendingApproval } from '../../utils/permission.util';
 
@@ -256,9 +257,13 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ isCollapsed, toggle
                 ) : (
                     <>
                         <div className="flex items-center justify-start w-full h-full gap-3 pointer-events-none select-none">
-                            <div className="h-10 w-14 overflow-hidden rounded-xl border border-gray-100 bg-white">
-                                <img src={workspaceLogo || '/logo.png'} alt={workspaceName} className="h-full w-full object-contain" />
-                            </div>
+                            {workspaceLogo ? (
+                                <div className="h-10 w-14 overflow-hidden rounded-xl border border-gray-100 bg-white">
+                                    <img src={workspaceLogo} alt={workspaceName} className="h-full w-full object-contain" />
+                                </div>
+                            ) : (
+                                <BrandLogo alt={workspaceName} />
+                            )}
                             <div className="min-w-0">
                                 <p className="truncate text-sm font-black text-gray-900">{workspaceName}</p>
                                 <p className="truncate text-[10px] font-bold uppercase tracking-wider text-gray-400">Workspace</p>

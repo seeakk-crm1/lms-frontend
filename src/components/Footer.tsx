@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Facebook, Instagram, Linkedin, Youtube, type LucideIcon } from 'lucide-react';
+import BrandLogo from './BrandLogo';
 
 type SocialNetwork = 'linkedin' | 'facebook' | 'instagram' | 'youtube';
 
@@ -108,11 +109,10 @@ const Footer = () => {
           <div className="sm:col-span-2 lg:col-span-4">
             <a
               href="/"
-              className="inline-flex items-center gap-3 rounded-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
+              className="inline-flex items-center rounded-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
               aria-label="SEEAKK home"
             >
-              <img src="/logo.png" alt="" className="h-12 w-auto object-contain" aria-hidden="true" />
-              <span className="text-base font-black text-gray-900">SEEAKK</span>
+              <BrandLogo alt="" />
             </a>
 
             <p className="mt-3 text-sm font-bold text-emerald-600">Lead Performance Dynamics</p>

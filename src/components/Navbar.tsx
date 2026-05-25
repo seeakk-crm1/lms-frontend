@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import BrandLogo from './BrandLogo';
 
 const navLinks = [
   { href: '#features', label: 'Features' },
@@ -24,12 +25,8 @@ const Navbar = () => {
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-20">
-          <a href="/" className="flex items-center h-14 w-44 sm:h-16 sm:w-52 lg:h-20 lg:w-64">
-            <img
-              src="/logo.png"
-              alt="SEEAKK Logo"
-              className="h-full w-full object-contain object-left"
-            />
+          <a href="/" className="flex items-center">
+            <BrandLogo alt="SEEAKK Logo" />
           </a>
 
           <div className="hidden md:flex items-center space-x-8">
