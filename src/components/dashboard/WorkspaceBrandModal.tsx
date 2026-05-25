@@ -1,4 +1,5 @@
 import React, { ChangeEvent, useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Building2, ImagePlus, Loader2, PencilLine, ShieldCheck, Upload, X } from 'lucide-react';
 import { toast } from 'react-hot-toast';
@@ -26,6 +27,17 @@ const WorkspaceBrandModal: React.FC<WorkspaceBrandModalProps> = ({ open, onClose
     setCompanyName(user?.workspace?.companyName || '');
     setLogoUrl(user?.workspace?.logoUrl || null);
   }, [open, user?.workspace?.companyName, user?.workspace?.logoUrl]);
+
+  useEffect(() => {
+    if (!open || typeof document === 'undefined') return undefined;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [open]);
 
   const workspaceInitials = useMemo(() => {
     const source = companyName.trim() || user?.workspace?.companyName || 'Workspace';
@@ -96,7 +108,7 @@ const WorkspaceBrandModal: React.FC<WorkspaceBrandModalProps> = ({ open, onClose
 
   const currentWorkspaceName = companyName.trim() || user?.workspace?.companyName || 'Workspace';
 
-  return (
+  const modal = (
     <AnimatePresence>
       {open ? (
         <motion.div
@@ -112,7 +124,7 @@ const WorkspaceBrandModal: React.FC<WorkspaceBrandModalProps> = ({ open, onClose
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.97 }}
             transition={{ type: 'spring', stiffness: 320, damping: 30, mass: 0.9 }}
-          className="relative flex w-full max-w-2xl max-h-[calc(100vh-2rem)] flex-col overflow-hidden rounded-[28px] border border-white/80 bg-white shadow-[0_40px_120px_-40px_rgba(15,23,42,0.45)]"
+            className="relative flex w-full max-w-2xl max-h-[calc(100vh-2rem)] flex-col overflow-hidden rounded-[28px] border border-white/80 bg-white shadow-[0_40px_120px_-40px_rgba(15,23,42,0.45)]"
             onClick={(event) => event.stopPropagation()}
           >
             <button
@@ -283,6 +295,8 @@ const WorkspaceBrandModal: React.FC<WorkspaceBrandModalProps> = ({ open, onClose
       ) : null}
     </AnimatePresence>
   );
+
+  return typeof document !== 'undefined' ? createPortal(modal, document.body) : modal;
 };
 
 export default WorkspaceBrandModal;
