@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Search, Bell, Menu, Plus, X } from 'lucide-react';
+import { Search, Menu, Plus, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import useAuthStore from '../../store/useAuthStore';
 import { getPrimaryRoleName, hasPermission } from '../../utils/permissions';
 import UserProfileModal from './UserProfileModal';
+import NotificationBell from './NotificationBell';
 
 interface DashboardHeaderProps {
     isMobileMenuOpen: boolean;
@@ -101,12 +102,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ isMobileMenuOpen, onT
 
                 <div className="w-px h-8 bg-gray-200 mx-1 hidden sm:block"></div>
 
-                {/* Notifications */}
-                <button className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors relative group">
-                    <Bell size={18} className="sm:hidden group-hover:animate-swing" />
-                    <Bell size={20} className="hidden sm:block group-hover:animate-swing" />
-                    <span className="absolute top-1.5 sm:top-2.5 right-1.5 sm:right-2.5 w-2 h-2 bg-red-500 border-2 border-white rounded-full"></span>
-                </button>
+                <NotificationBell />
 
                 {/* User Dropdown Trigger */}
                 {/* User Dropdown Trigger */}

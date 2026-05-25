@@ -142,7 +142,7 @@ export const useTodayFollowUpsQuery = () => {
   });
 };
 
-export const useFollowUpReminderAlertsQuery = () => {
+export const useFollowUpReminderAlertsQuery = (enabled = true) => {
   const { selectedUser } = useFollowupStore();
 
   return useQuery({
@@ -155,6 +155,7 @@ export const useFollowUpReminderAlertsQuery = () => {
       }),
     staleTime: 20_000,
     gcTime: 120_000,
+    enabled,
     refetchInterval: 30_000,
     refetchOnWindowFocus: true,
     retry: (failureCount, error: any) => {
