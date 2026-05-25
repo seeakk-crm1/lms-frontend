@@ -65,10 +65,11 @@ export const useDeleteHolidayMutation = () => {
   });
 };
 
-export const useWeeklyOffSettingsQuery = () =>
+export const useWeeklyOffSettingsQuery = (enabled = true) =>
   useQuery({
     queryKey: ['holidays', 'weekly-off'],
     queryFn: holidaysApi.getWeeklyOffSettings,
+    enabled,
     staleTime: 30_000,
     refetchOnWindowFocus: false,
     retry: (failureCount, error: any) => {

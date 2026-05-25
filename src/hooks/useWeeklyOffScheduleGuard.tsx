@@ -1,10 +1,14 @@
 import { useCallback, useRef, useState } from 'react';
 import WeeklyOffScheduleConfirmModal from '../components/calendar/WeeklyOffScheduleConfirmModal';
+import useAuthStore from '../store/useAuthStore';
 import { DEFAULT_WEEKLY_OFF_DAYS, isDateOnConfiguredWeeklyOff } from '../utils/weeklyOffSchedule';
 import { useWeeklyOffSettingsQuery } from './useHolidays';
 
 export const useWeeklyOffScheduleGuard = () => {
-  const { data: settings } = useWeeklyOffSettingsQuery();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const accessToken = useAuthStore((state) => state.accessToken);
+  const canLoadWeeklyOffSettings = isAuthenticated && Boolean(accessToken);
+  const { data: settings } = useWeeklyOffSettingsQuery(canLoadWeeklyOffSettings);
   const weeklyOffDays = settings?.weeklyOffDays?.length ? settings.weeklyOffDays : DEFAULT_WEEKLY_OFF_DAYS;
   const [isOpen, setIsOpen] = useState(false);
   const resolverRef = useRef<((proceed: boolean) => void) | null>(null);
