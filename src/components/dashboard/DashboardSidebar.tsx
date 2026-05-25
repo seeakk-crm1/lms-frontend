@@ -5,7 +5,6 @@ import {
     Briefcase, FileBarChart, Unplug, MapPin, ChevronDown, Activity, ChevronRight, LogOut, LucideIcon, X
 } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import BrandLogo from '../BrandLogo';
 import useAuthStore from '../../store/useAuthStore';
 import { hasAnyPermission, hasPermission, canAccessPendingApproval } from '../../utils/permission.util';
 
@@ -192,8 +191,15 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ isCollapsed, toggle
     const navigate = useNavigate();
     const logout = useAuthStore((state) => state.logout);
     const user = useAuthStore((state) => state.user);
-    const workspaceName = user?.workspace?.companyName || 'Seeakk';
+    const workspaceName = user?.workspace?.companyName?.trim() || 'Workspace';
     const workspaceLogo = user?.workspace?.logoUrl || null;
+    const workspaceInitials = workspaceName
+        .split(/\s+/)
+        .filter(Boolean)
+        .map((part) => part[0])
+        .join('')
+        .slice(0, 2)
+        .toUpperCase() || 'WS';
 
     const handleLogout = () => {
         logout();
@@ -244,29 +250,37 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ isCollapsed, toggle
                 isMobile ? 'flex w-[85vw] max-w-[320px] shadow-2xl' : 'hidden md:flex'
             }`}
         >
-            {/* Logo Area */}
+            {/* Workspace Branding */}
             <div className={`h-20 flex items-center ${isCollapsed ? 'justify-center' : 'px-6'} border-b border-gray-100 shrink-0`}>
                 {isCollapsed ? (
-                    <div className="h-10 w-10 rounded-xl border border-gray-100 bg-white flex items-center justify-center overflow-hidden">
-                        <img
-                            src={workspaceLogo || '/logo.png'}
-                            alt={workspaceName}
-                            className="h-full w-full object-contain p-1"
-                        />
-                    </div>
+                    workspaceLogo ? (
+                        <div className="h-10 w-10 rounded-xl border border-gray-100 bg-white flex items-center justify-center overflow-hidden">
+                            <img
+                                src={workspaceLogo}
+                                alt={workspaceName}
+                                className="h-full w-full object-contain p-1"
+                            />
+                        </div>
+                    ) : (
+                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 text-xs font-black text-white shadow-sm">
+                            {workspaceInitials}
+                        </div>
+                    )
                 ) : (
                     <>
                         <div className="flex items-center justify-start w-full h-full gap-3 pointer-events-none select-none">
                             {workspaceLogo ? (
-                                <div className="h-10 w-14 overflow-hidden rounded-xl border border-gray-100 bg-white">
+                                <div className="h-11 w-14 overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
                                     <img src={workspaceLogo} alt={workspaceName} className="h-full w-full object-contain" />
                                 </div>
                             ) : (
-                                <BrandLogo alt={workspaceName} />
+                                <div className="flex h-11 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600 text-sm font-black text-white shadow-sm">
+                                    {workspaceInitials}
+                                </div>
                             )}
                             <div className="min-w-0">
                                 <p className="truncate text-sm font-black text-gray-900">{workspaceName}</p>
-                                <p className="truncate text-[10px] font-bold uppercase tracking-wider text-gray-400">Workspace</p>
+                                <p className="truncate text-[10px] font-bold uppercase tracking-wider text-gray-400">Company Workspace</p>
                             </div>
                         </div>
                         {isMobile && (
