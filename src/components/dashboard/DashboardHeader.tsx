@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Search, Menu, Plus, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import useAuthStore from '../../store/useAuthStore';
-import { getPrimaryRoleName, hasPermission } from '../../utils/permissions';
-import UserProfileModal from './UserProfileModal';
+import { hasPermission } from '../../utils/permissions';
 import NotificationBell from './NotificationBell';
+import ProfileMenu from './ProfileMenu';
 
 interface DashboardHeaderProps {
     isMobileMenuOpen: boolean;
@@ -14,14 +14,6 @@ interface DashboardHeaderProps {
 const DashboardHeader: React.FC<DashboardHeaderProps> = ({ isMobileMenuOpen, onToggleMobileMenu }) => {
     const { user } = useAuthStore();
     const navigate = useNavigate();
-    const [profileOpen, setProfileOpen] = useState(false);
-    const displayName =
-        typeof user?.name === 'string' && user.name.trim()
-            ? user.name.trim()
-            : typeof user?.email === 'string' && user.email.trim()
-              ? user.email.trim()
-              : 'User';
-    const displayRole = getPrimaryRoleName(user);
     const canCreateLead = hasPermission(user, 'LEADS_CREATE');
 
     const handleAddLead = () => {
@@ -104,30 +96,8 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ isMobileMenuOpen, onT
 
                 <NotificationBell />
 
-                {/* User Dropdown Trigger */}
-                {/* User Dropdown Trigger */}
-                <button
-                    onClick={() => setProfileOpen(true)}
-                    className="flex items-center gap-3 pl-2 sm:pl-4 focus:outline-none group"
-                >
-                    <div className="hidden sm:flex flex-col items-end">
-                        <span className="text-sm font-bold text-gray-900 group-hover:text-emerald-600 transition-colors leading-tight">
-                            {displayName}
-                        </span>
-                        <span className="text-[10px] uppercase font-bold tracking-wider text-gray-400">
-                            {displayRole}
-                        </span>
-                    </div>
-                    <div className="relative">
-                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white font-bold text-xs sm:text-base shadow-md shadow-emerald-500/20 ring-2 ring-white group-hover:ring-emerald-100 transition-all">
-                            {displayName.charAt(0).toUpperCase()}
-                        </div>
-                        <div className="absolute bottom-0 right-[-2px] sm:right-0 w-2.5 sm:w-3 h-2.5 sm:h-3 bg-green-500 border-2 border-white rounded-full"></div>
-                    </div>
-                </button>
+                <ProfileMenu />
             </div>
-
-            <UserProfileModal open={profileOpen} onClose={() => setProfileOpen(false)} />
         </header>
     );
 };

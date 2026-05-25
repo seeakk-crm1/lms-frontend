@@ -35,9 +35,10 @@ type FormValues = z.infer<typeof schema>;
 interface UserProfileModalProps {
   open: boolean;
   onClose: () => void;
+  initialTab?: 'profile' | 'security';
 }
 
-const UserProfileModal: React.FC<UserProfileModalProps> = ({ open, onClose }) => {
+const UserProfileModal: React.FC<UserProfileModalProps> = ({ open, onClose, initialTab = 'profile' }) => {
   const { user, updateUser } = useAuthStore();
   const [activeTab, setActiveTab] = useState<'profile' | 'security'>('profile');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -105,9 +106,11 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({ open, onClose }) =>
         password: '',
         confirmPassword: '',
       });
-      setActiveTab('profile');
+      setActiveTab(initialTab);
+      setShowPassword(false);
+      setShowConfirmPassword(false);
     }
-  }, [open, user, reset]);
+  }, [open, user, reset, initialTab]);
 
   const submitHandler = handleSubmit(async (values) => {
     setIsSubmitting(true);
@@ -154,14 +157,15 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({ open, onClose }) =>
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/20 p-4 backdrop-blur-sm"
+          transition={{ duration: 0.18, ease: 'easeOut' }}
+          className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/35 p-4 backdrop-blur-md"
           onClick={handleClose}
         >
           <motion.div
-            initial={{ opacity: 0, scale: 0.98, y: 12 }}
+            initial={{ opacity: 0, scale: 0.96, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.98, y: 12 }}
-            transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+            exit={{ opacity: 0, scale: 0.96, y: 20 }}
+            transition={{ type: 'spring', stiffness: 320, damping: 30, mass: 0.9 }}
             className="flex w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-[0_24px_48px_-12px_rgba(0,0,0,0.08)] h-[80vh] max-h-[620px]"
             onClick={(event) => event.stopPropagation()}
           >
