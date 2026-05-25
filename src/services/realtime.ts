@@ -47,14 +47,14 @@ const safeMaxAttempts = Number.isFinite(maxAttempts) && maxAttempts > 0 ? maxAtt
  * - `VITE_SOCKET_TRANSPORTS=websocket` — allow upgrade (default for non-Render hosts below).
  * - Hostname `*.onrender.com` — default to polling-only unless explicitly set to websocket.
  */
-const resolveSocketPollingOnly = (baseUrl: string): boolean => {
+const resolveSocketTransports = (): ('polling' | 'websocket')[] => {
   const v = String(import.meta.env.VITE_SOCKET_TRANSPORTS || '')
     .trim()
     .toLowerCase();
-  if (v === 'polling' || v === 'poll' || v === 'long-polling') return true;
-  if (v === 'websocket' || v === 'ws') return false;
+  if (v === 'polling' || v === 'poll' || v === 'long-polling') return ['polling'];
+  if (v === 'websocket' || v === 'ws') return ['websocket'];
 
-  return false;
+  return ['websocket', 'polling'];
 };
 
 /**
@@ -190,10 +190,11 @@ export const connectRealtime = (): Socket | null => {
 
   lastSocketUserId = userId;
 
-  const pollingOnly = resolveSocketPollingOnly(baseUrl);
+  const transports = resolveSocketTransports();
+  const pollingOnly = transports.length === 1 && transports[0] === 'polling';
   socket = io(baseUrl, {
     path: SOCKET_IO_CLIENT_PATH,
-    transports: pollingOnly ? ['polling'] : ['polling', 'websocket'],
+    transports,
     upgrade: !pollingOnly,
     withCredentials: true,
     rememberUpgrade: socketRememberUpgrade(),
