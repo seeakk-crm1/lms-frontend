@@ -121,8 +121,8 @@ const Login = () => {
                 <div className="absolute bottom-[-10%] left-[-10%] w-[600px] h-[600px] bg-emerald-600/20 rounded-full blur-3xl" />
 
                 <div className="relative z-10">
-                    <Link to="/" className="flex items-center rounded-2xl bg-white/95 px-3 py-2 shadow-sm">
-                        <BrandLogo alt="Seeakk" />
+                    <Link to="/" className="inline-flex items-center justify-center rounded-2xl bg-white/95 px-4 py-2 shadow-sm">
+                        <BrandLogo alt="Seeakk" imgClassName="object-center" />
                     </Link>
                 </div>
 
@@ -235,8 +235,8 @@ const Login = () => {
 
                 <div className="relative z-10 pt-16">
                     <div className="flex justify-end pr-10">
-                        <div className="flex items-center rounded-2xl bg-white/20 px-3 py-2 backdrop-blur-sm">
-                            <BrandLogo alt="Seeakk" imgClassName="opacity-80" />
+                        <div className="inline-flex items-center justify-center rounded-2xl bg-white/20 px-4 py-2 backdrop-blur-sm">
+                            <BrandLogo alt="Seeakk" imgClassName="object-center opacity-80" />
                         </div>
                     </div>
                 </div>
@@ -257,7 +257,7 @@ const Login = () => {
                             <ArrowRight className="rotate-180" size={16} />
                             <span>Back home</span>
                         </Link>
-                        <BrandLogo alt="Seeakk" className="flex-shrink-0" imgClassName="object-right" />
+                        <BrandLogo alt="Seeakk" className="flex-shrink-0" imgClassName="object-center" />
                     </div>
 
                     <div className="mb-10 text-center sm:text-left">
