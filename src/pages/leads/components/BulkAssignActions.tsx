@@ -75,7 +75,7 @@ const BulkAssignActions: React.FC<BulkAssignActionsProps> = ({
       <button
         type="button"
         onClick={() => onAssignmentTypeChange('SINGLE')}
-        className={`rounded-2xl border px-4 py-3 text-left transition-all ${
+        className={`flex min-h-[112px] flex-col justify-between rounded-2xl border px-4 py-3 text-left transition-all ${
           assignmentType === 'SINGLE'
             ? 'border-emerald-200 bg-emerald-50 text-emerald-700 shadow-sm'
             : 'border-gray-200 bg-gray-50 text-gray-600 hover:border-gray-300'
@@ -88,7 +88,7 @@ const BulkAssignActions: React.FC<BulkAssignActionsProps> = ({
       <button
         type="button"
         onClick={() => onAssignmentTypeChange('ROUND_ROBIN')}
-        className={`rounded-2xl border px-4 py-3 text-left transition-all ${
+        className={`flex min-h-[112px] flex-col justify-between rounded-2xl border px-4 py-3 text-left transition-all ${
           assignmentType === 'ROUND_ROBIN'
             ? 'border-blue-200 bg-blue-50 text-blue-700 shadow-sm'
             : 'border-gray-200 bg-gray-50 text-gray-600 hover:border-gray-300'
@@ -168,7 +168,7 @@ const BulkAssignActions: React.FC<BulkAssignActionsProps> = ({
         )}
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px]">
+      <div className="space-y-4">
         <div className="rounded-2xl border border-gray-100 bg-gray-50/70 p-4">
           <div className="text-xs font-black uppercase tracking-[0.2em] text-gray-400">Progress</div>
           <div className="mt-3 h-2 overflow-hidden rounded-full bg-gray-200">
@@ -201,7 +201,7 @@ const BulkAssignActions: React.FC<BulkAssignActionsProps> = ({
           type="button"
           onClick={onAssign}
           disabled={!canAssign}
-          className="inline-flex items-center justify-center gap-2 self-end rounded-2xl bg-emerald-500 px-5 py-3.5 text-sm font-black text-white shadow-xl shadow-emerald-500/20 transition-all hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-500 px-5 py-3.5 text-sm font-black text-white shadow-xl shadow-emerald-500/20 transition-all hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <SendToBack className="h-4 w-4" />}
           {isSubmitting ? 'Assigning…' : 'Review Assignment'}
