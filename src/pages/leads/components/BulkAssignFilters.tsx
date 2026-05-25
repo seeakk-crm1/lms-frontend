@@ -15,18 +15,6 @@ interface BulkAssignFiltersProps {
 const inputClassName =
   'w-full rounded-2xl border border-gray-200 bg-gray-50 py-3 pl-11 pr-4 text-sm font-semibold text-gray-900 outline-none transition-all placeholder:text-gray-400 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/10';
 
-interface CompactFieldProps {
-  label: string;
-  children: React.ReactNode;
-}
-
-const CompactField: React.FC<CompactFieldProps> = ({ label, children }) => (
-  <div className="space-y-2">
-    <label className="block text-[11px] font-black uppercase tracking-[0.22em] text-gray-400">{label}</label>
-    {children}
-  </div>
-);
-
 const BulkAssignFilters: React.FC<BulkAssignFiltersProps> = ({
   filters,
   meta,
@@ -42,106 +30,90 @@ const BulkAssignFilters: React.FC<BulkAssignFiltersProps> = ({
         <h3 className="text-sm font-black uppercase tracking-[0.24em] text-gray-900">Filter Leads</h3>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <CompactField label="Stage">
-          <SearchableSelect
-            name="stageId"
-            value={filters.stageId || ''}
-            options={(meta?.stages || []).map((item) => ({ value: item.id, label: item.label }))}
-            placeholder="Stage"
-            allowClear
-            clearLabel="All stages"
-            onChange={(event) => onFilterChange({ stageId: event.target.value || undefined })}
+      <div className="grid gap-4 xl:grid-cols-4">
+        <SearchableSelect
+          name="stageId"
+          value={filters.stageId || ''}
+          options={(meta?.stages || []).map((item) => ({ value: item.id, label: item.label }))}
+          placeholder="Stage"
+          allowClear
+          clearLabel="All stages"
+          onChange={(event) => onFilterChange({ stageId: event.target.value || undefined })}
+        />
+
+        <SearchableSelect
+          name="assignedTo"
+          value={filters.assignedTo || ''}
+          options={(meta?.users || []).map((item) => ({ value: item.id, label: item.label }))}
+          placeholder="Assigned User"
+          allowClear
+          clearLabel="All owners / Unassigned"
+          onChange={(event) => onFilterChange({ assignedTo: event.target.value || undefined })}
+        />
+
+        <SearchableSelect
+          name="sourceId"
+          value={filters.sourceId || ''}
+          options={(meta?.sources || []).map((item) => ({ value: item.id, label: item.label }))}
+          placeholder="Source"
+          allowClear
+          clearLabel="All sources"
+          onChange={(event) => onFilterChange({ sourceId: event.target.value || undefined })}
+        />
+
+        <SearchableSelect
+          name="lifecycleId"
+          value={filters.lifecycleId || ''}
+          options={(meta?.lifeCycles || []).map((item) => ({ value: item.id, label: item.label }))}
+          placeholder="Lifecycle"
+          allowClear
+          clearLabel="All life cycles"
+          onChange={(event) => onFilterChange({ lifecycleId: event.target.value || undefined })}
+        />
+
+        <div className="relative">
+          <CalendarRange className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <input
+            type="date"
+            value={filters.followupDateFrom || ''}
+            onChange={(event) => onFilterChange({ followupDateFrom: event.target.value || undefined })}
+            className={inputClassName}
+            aria-label="Follow-up from date"
           />
-        </CompactField>
+        </div>
 
-        <CompactField label="Assigned User">
-          <SearchableSelect
-            name="assignedTo"
-            value={filters.assignedTo || ''}
-            options={(meta?.users || []).map((item) => ({ value: item.id, label: item.label }))}
-            placeholder="Assigned user"
-            allowClear
-            clearLabel="All owners / Unassigned"
-            onChange={(event) => onFilterChange({ assignedTo: event.target.value || undefined })}
+        <div className="relative">
+          <CalendarRange className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <input
+            type="date"
+            value={filters.followupDateTo || ''}
+            onChange={(event) => onFilterChange({ followupDateTo: event.target.value || undefined })}
+            className={inputClassName}
+            aria-label="Follow-up to date"
           />
-        </CompactField>
+        </div>
 
-        <CompactField label="Source">
-          <SearchableSelect
-            name="sourceId"
-            value={filters.sourceId || ''}
-            options={(meta?.sources || []).map((item) => ({ value: item.id, label: item.label }))}
-            placeholder="Source"
-            allowClear
-            clearLabel="All sources"
-            onChange={(event) => onFilterChange({ sourceId: event.target.value || undefined })}
+        <div className="relative">
+          <CalendarRange className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <input
+            type="date"
+            value={filters.createdDateFrom || ''}
+            onChange={(event) => onFilterChange({ createdDateFrom: event.target.value || undefined })}
+            className={inputClassName}
+            aria-label="Created from date"
           />
-        </CompactField>
+        </div>
 
-        <CompactField label="Lifecycle">
-          <SearchableSelect
-            name="lifecycleId"
-            value={filters.lifecycleId || ''}
-            options={(meta?.lifeCycles || []).map((item) => ({ value: item.id, label: item.label }))}
-            placeholder="Lifecycle"
-            allowClear
-            clearLabel="All life cycles"
-            onChange={(event) => onFilterChange({ lifecycleId: event.target.value || undefined })}
+        <div className="relative">
+          <CalendarRange className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <input
+            type="date"
+            value={filters.createdDateTo || ''}
+            onChange={(event) => onFilterChange({ createdDateTo: event.target.value || undefined })}
+            className={inputClassName}
+            aria-label="Created to date"
           />
-        </CompactField>
-
-        <CompactField label="Follow-up From">
-          <div className="relative">
-            <CalendarRange className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-            <input
-              type="date"
-              value={filters.followupDateFrom || ''}
-              onChange={(event) => onFilterChange({ followupDateFrom: event.target.value || undefined })}
-              className={inputClassName}
-              aria-label="Follow-up from date"
-            />
-          </div>
-        </CompactField>
-
-        <CompactField label="Follow-up To">
-          <div className="relative">
-            <CalendarRange className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-            <input
-              type="date"
-              value={filters.followupDateTo || ''}
-              onChange={(event) => onFilterChange({ followupDateTo: event.target.value || undefined })}
-              className={inputClassName}
-              aria-label="Follow-up to date"
-            />
-          </div>
-        </CompactField>
-
-        <CompactField label="Created From">
-          <div className="relative">
-            <CalendarRange className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-            <input
-              type="date"
-              value={filters.createdDateFrom || ''}
-              onChange={(event) => onFilterChange({ createdDateFrom: event.target.value || undefined })}
-              className={inputClassName}
-              aria-label="Created from date"
-            />
-          </div>
-        </CompactField>
-
-        <CompactField label="Created To">
-          <div className="relative">
-            <CalendarRange className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-            <input
-              type="date"
-              value={filters.createdDateTo || ''}
-              onChange={(event) => onFilterChange({ createdDateTo: event.target.value || undefined })}
-              className={inputClassName}
-              aria-label="Created to date"
-            />
-          </div>
-        </CompactField>
+        </div>
       </div>
 
       <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 pt-4">
