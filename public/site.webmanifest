@@ -1,0 +1,19 @@
+{
+  "name": "Seeakk - Lead Management Module",
+  "short_name": "Seeakk",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "theme_color": "#2a7a3b",
+  "background_color": "#ffffff",
+  "display": "standalone"
+}

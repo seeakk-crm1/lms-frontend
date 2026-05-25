@@ -246,17 +246,17 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ isCollapsed, toggle
             {/* Logo Area */}
             <div className={`h-20 flex items-center ${isCollapsed ? 'justify-center' : 'px-6'} border-b border-gray-100 shrink-0`}>
                 {isCollapsed ? (
-                    <div className="w-8 h-8 rounded-xl bg-emerald-500 flex items-center justify-center overflow-hidden">
-                        {workspaceLogo ? (
-                            <img src={workspaceLogo} alt={workspaceName} className="h-full w-full object-cover" />
-                        ) : (
-                            <span className="text-white font-black text-lg">{workspaceName.charAt(0).toUpperCase()}</span>
-                        )}
+                    <div className="h-10 w-10 rounded-xl border border-gray-100 bg-white flex items-center justify-center overflow-hidden">
+                        <img
+                            src={workspaceLogo || '/logo.png'}
+                            alt={workspaceName}
+                            className="h-full w-full object-contain p-1"
+                        />
                     </div>
                 ) : (
                     <>
                         <div className="flex items-center justify-start w-full h-full gap-3 pointer-events-none select-none">
-                            <div className="h-10 w-10 overflow-hidden rounded-xl border border-gray-100 bg-white">
+                            <div className="h-10 w-14 overflow-hidden rounded-xl border border-gray-100 bg-white">
                                 <img src={workspaceLogo || '/logo.png'} alt={workspaceName} className="h-full w-full object-contain" />
                             </div>
                             <div className="min-w-0">

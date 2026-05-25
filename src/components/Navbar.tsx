@@ -24,11 +24,11 @@ const Navbar = () => {
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-20">
-          <a href="/" className="flex items-center relative h-20 w-48 lg:w-56 overflow-hidden">
+          <a href="/" className="flex items-center h-14 w-44 sm:h-16 sm:w-52 lg:h-20 lg:w-64">
             <img
               src="/logo.png"
               alt="SEEAKK Logo"
-              className="absolute top-1/2 left-0 -translate-y-1/2 h-48 md:h-64 lg:h-96 w-auto object-contain"
+              className="h-full w-full object-contain object-left"
             />
           </a>
 

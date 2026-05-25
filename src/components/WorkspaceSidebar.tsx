@@ -15,8 +15,8 @@ const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({ user }) => {
     return (
         <div className="md:w-[42%] bg-gradient-to-br from-[#e0fcf3] to-[#f4fefb] p-10 relative overflow-hidden flex flex-col justify-between hidden md:flex">
             <div className="relative z-10">
-                <div className="relative h-12 w-40 mb-10 overflow-hidden">
-                    <img src="/logo.png" alt="Seeakk" className="absolute top-1/2 left-0 -translate-y-1/2 h-28 w-auto object-contain object-left" />
+                <div className="h-14 w-48 mb-10 overflow-hidden">
+                    <img src="/logo.png" alt="Seeakk" className="h-full w-full object-contain object-left" />
                 </div>
 
                 <div className="inline-block px-3 py-1 bg-emerald-100 text-emerald-700 text-xs font-bold rounded-full mb-6 italic">

@@ -120,8 +120,8 @@ const Login = () => {
                 <div className="absolute bottom-[-10%] left-[-10%] w-[600px] h-[600px] bg-emerald-600/20 rounded-full blur-3xl" />
 
                 <div className="relative z-10">
-                    <Link to="/" className="flex items-center relative h-12 w-36 overflow-hidden">
-                        <img src="/logo.png" alt="Seeakk" className="absolute top-1/2 left-0 -translate-y-1/2 h-24 w-auto object-contain brightness-0 invert" />
+                    <Link to="/" className="flex items-center h-14 w-56 rounded-2xl bg-white/95 px-3 shadow-sm">
+                        <img src="/logo.png" alt="Seeakk" className="h-full w-full object-contain object-left" />
                     </Link>
                 </div>
 
@@ -234,8 +234,8 @@ const Login = () => {
 
                 <div className="relative z-10 pt-16">
                     <div className="flex justify-end pr-10">
-                        <div className="relative h-10 w-24 overflow-hidden">
-                            <img src="/logo.png" alt="Seeakk" className="absolute top-1/2 left-0 -translate-y-1/2 h-20 w-auto object-contain brightness-0 invert opacity-50" />
+                        <div className="flex h-14 w-40 items-center rounded-2xl bg-white/20 px-3 backdrop-blur-sm">
+                            <img src="/logo.png" alt="Seeakk" className="h-full w-full object-contain object-left opacity-80" />
                         </div>
                     </div>
                 </div>
@@ -256,8 +256,8 @@ const Login = () => {
                             <ArrowRight className="rotate-180" size={16} />
                             <span>Back home</span>
                         </Link>
-                        <div className="relative h-10 w-24 sm:h-12 sm:w-32 overflow-hidden flex-shrink-0">
-                            <img src="/logo.png" alt="Seeakk" className="absolute top-1/2 right-0 -translate-y-1/2 h-20 sm:h-24 w-auto object-contain object-right" />
+                        <div className="h-10 w-28 sm:h-12 sm:w-36 overflow-hidden flex-shrink-0">
+                            <img src="/logo.png" alt="Seeakk" className="h-full w-full object-contain object-right" />
                         </div>
                     </div>
 

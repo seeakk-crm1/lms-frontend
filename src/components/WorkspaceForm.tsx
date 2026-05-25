@@ -65,8 +65,8 @@ const WorkspaceForm: React.FC<WorkspaceFormProps> = ({ formData, handleChange, s
         <div className="md:w-[58%] p-8 sm:p-12 pl-8 sm:pl-14 flex flex-col justify-center bg-white relative">
 
             {/* Mobile Logo (Visible only on small screens) */}
-            <div className="md:hidden relative h-10 w-32 mb-6 overflow-hidden">
-                <img src="/logo.png" alt="Seeakk" className="absolute top-1/2 left-0 -translate-y-1/2 h-24 w-auto object-contain object-left" />
+            <div className="md:hidden h-10 w-36 mb-6 overflow-hidden">
+                <img src="/logo.png" alt="Seeakk" className="h-full w-full object-contain object-left" />
             </div>
 
             <h1 className="text-2xl font-black text-gray-900 mb-2">Configure Your Workspace</h1>

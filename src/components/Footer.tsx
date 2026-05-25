@@ -111,7 +111,7 @@ const Footer = () => {
               className="inline-flex items-center gap-3 rounded-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
               aria-label="SEEAKK home"
             >
-              <img src="/logo.png" alt="" className="h-10 w-auto object-contain" aria-hidden="true" />
+              <img src="/logo.png" alt="" className="h-12 w-auto object-contain" aria-hidden="true" />
               <span className="text-base font-black text-gray-900">SEEAKK</span>
             </a>
 
