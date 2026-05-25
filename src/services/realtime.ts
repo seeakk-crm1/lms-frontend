@@ -54,12 +54,6 @@ const resolveSocketPollingOnly = (baseUrl: string): boolean => {
   if (v === 'polling' || v === 'poll' || v === 'long-polling') return true;
   if (v === 'websocket' || v === 'ws') return false;
 
-  try {
-    const host = new URL(baseUrl).hostname.toLowerCase();
-    if (host === 'onrender.com' || host.endsWith('.onrender.com')) return true;
-  } catch {
-    /* ignore invalid SOCKET_URL */
-  }
   return false;
 };
 
