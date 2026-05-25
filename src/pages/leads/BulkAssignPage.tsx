@@ -189,18 +189,16 @@ const BulkAssignPage: React.FC = () => {
               ))}
             </div>
 
-            <div className="grid gap-6 xl:grid-cols-[300px_minmax(0,1fr)_320px] 2xl:grid-cols-[320px_minmax(0,1fr)_340px]">
-              <div className="xl:sticky xl:top-6 xl:self-start">
-                <BulkAssignFilters
-                  filters={filters}
-                  meta={meta}
-                  isApplying={previewQuery.isLoading || previewQuery.isFetching}
-                  onFilterChange={setFilters}
-                  onApply={handleApply}
-                  onReset={handleReset}
-                />
-              </div>
+            <BulkAssignFilters
+              filters={filters}
+              meta={meta}
+              isApplying={previewQuery.isLoading || previewQuery.isFetching}
+              onFilterChange={setFilters}
+              onApply={handleApply}
+              onReset={handleReset}
+            />
 
+            <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px] 2xl:grid-cols-[minmax(0,1fr)_360px]">
               <BulkAssignPreview
                 previewCount={previewCount}
                 previewLeads={previewLeads}

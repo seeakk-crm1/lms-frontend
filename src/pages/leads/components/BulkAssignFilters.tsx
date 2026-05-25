@@ -42,7 +42,7 @@ const BulkAssignFilters: React.FC<BulkAssignFiltersProps> = ({
         <h3 className="text-sm font-black uppercase tracking-[0.24em] text-gray-900">Filter Leads</h3>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <CompactField label="Stage">
           <SearchableSelect
             name="stageId"
@@ -145,7 +145,7 @@ const BulkAssignFilters: React.FC<BulkAssignFiltersProps> = ({
       </div>
 
       <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 pt-4">
-        <p className="text-xs font-semibold leading-5 text-gray-500">
+        <p className="max-w-2xl text-xs font-semibold leading-5 text-gray-500">
           Use these filters to preview the exact active leads that will be reassigned without changing the assignment layout.
         </p>
 
