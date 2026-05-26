@@ -9,6 +9,7 @@ import DeleteLeadModal from './components/DeleteLeadModal';
 import LeadFilters from './components/LeadFilters';
 import LeadSlaDecisionModal from './components/LeadSlaDecisionModal';
 import LeadsTable from './components/LeadsTable';
+import { getLeadById } from '../../services/leads.api';
 import {
   useLeadsQuery,
   useLeadMetaQuery,
@@ -124,17 +125,42 @@ const LeadsPage: React.FC = () => {
 
   useEffect(() => {
     const openLeadId = (location.state as { openLeadId?: string } | null)?.openLeadId;
-    if (!openLeadId || leads.length === 0) return;
-    const target = leads.find((lead) => lead.id === openLeadId);
-    if (target) {
-      openEditDrawer(target);
-    } else {
-      const fromQuickAdd = (location.state as { fromQuickAdd?: boolean } | null)?.fromQuickAdd;
-      if (!fromQuickAdd) {
-        toast.error('Requested lead is not available on this page');
+    if (!openLeadId) return;
+
+    let cancelled = false;
+
+    const openRequestedLead = async () => {
+      const target = leads.find((lead) => lead.id === openLeadId);
+      if (target) {
+        openEditDrawer(target);
+        navigate(location.pathname, { replace: true, state: {} });
+        return;
       }
-    }
-    navigate(location.pathname, { replace: true, state: {} });
+
+      try {
+        const response = await getLeadById(openLeadId);
+        if (cancelled) return;
+        if (response?.data) {
+          openEditDrawer(response.data);
+        }
+      } catch (error: any) {
+        if (cancelled) return;
+        const fromQuickAdd = (location.state as { fromQuickAdd?: boolean } | null)?.fromQuickAdd;
+        if (!fromQuickAdd) {
+          toast.error(error?.response?.data?.message || 'Requested lead is not available with your current access.');
+        }
+      } finally {
+        if (!cancelled) {
+          navigate(location.pathname, { replace: true, state: {} });
+        }
+      }
+    };
+
+    void openRequestedLead();
+
+    return () => {
+      cancelled = true;
+    };
   }, [leads, location.pathname, location.state, navigate, openEditDrawer]);
 
   const totalLeads = data?.pagination?.total || 0;
