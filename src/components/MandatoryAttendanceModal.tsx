@@ -155,9 +155,26 @@ export const MandatoryAttendanceModal: React.FC<MandatoryAttendanceModalProps> =
       onMouseDown={(event) => event.stopPropagation()}
       onClick={(event) => event.stopPropagation()}
     >
-      <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-md" aria-hidden onMouseDown={(e) => e.preventDefault()} />
+      <div
+        className="absolute inset-0 bg-slate-950/45 backdrop-blur-2xl backdrop-saturate-150"
+        aria-hidden
+        onMouseDown={(e) => e.preventDefault()}
+      />
+      <div
+        className="absolute inset-0 bg-gradient-to-br from-emerald-400/12 via-white/8 to-sky-400/10"
+        aria-hidden
+        onMouseDown={(e) => e.preventDefault()}
+      />
+      <div
+        className="pointer-events-none absolute left-[10%] top-[12%] h-48 w-48 rounded-full bg-white/12 blur-3xl"
+        aria-hidden
+      />
+      <div
+        className="pointer-events-none absolute bottom-[10%] right-[12%] h-56 w-56 rounded-full bg-emerald-300/12 blur-3xl"
+        aria-hidden
+      />
 
-      <div className="relative w-full max-w-xl overflow-hidden rounded-3xl border border-white/80 bg-white shadow-2xl">
+      <div className="relative w-full max-w-xl overflow-hidden rounded-[28px] border border-white/45 bg-white/78 shadow-[0_24px_80px_rgba(15,23,42,0.28)] backdrop-blur-2xl">
         <div className="relative bg-emerald-600 px-8 py-6 text-white">
           <div className="flex items-center gap-3">
             <div className="rounded-2xl bg-white/10 p-3">
