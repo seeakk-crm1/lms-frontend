@@ -28,7 +28,7 @@ export const mapTargetCycleToFormInitial = (
     lockingEnabled: cycle.lockingEnabled !== false,
   };
 
-  if (targetType === 'MANUAL' && periods.length) {
+  if (periods.length) {
     return {
       ...base,
       periods: periods.map((period) => ({
@@ -38,13 +38,15 @@ export const mapTargetCycleToFormInitial = (
         startDate: toDateInput(period.startDate),
         endDate: toDateInput(period.endDate),
         lockingDate: toDateInput(period.lockingDate),
+        metrics: period.metrics ? period.metrics.map((metric) => ({
+          metricType: metric.metricType,
+          targetValue: metric.targetValue,
+          stageTargets: metric.stageTargets ? metric.stageTargets.map((st) => ({
+            leadStageId: st.leadStageId,
+            targetValue: st.targetValue,
+          })) : null,
+        })) : null,
       })),
-    };
-  }
-
-  if (periods.length) {
-    return {
-      ...base,
       periodCounts: periods
         .slice()
         .sort((a, b) => a.periodIndex - b.periodIndex)

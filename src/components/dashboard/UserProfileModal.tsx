@@ -67,7 +67,7 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({ open, onClose, init
     },
   });
 
-  const passwordVal = watch('password');
+  const passwordVal = watch('password') || '';
 
   // Password strength checker
   useEffect(() => {

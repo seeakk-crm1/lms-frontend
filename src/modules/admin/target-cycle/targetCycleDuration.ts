@@ -118,3 +118,60 @@ export const periodSlotLabel = (
   }
   return format(startOfMonth(addMonths(start, index)), 'MMMM yyyy');
 };
+
+export interface GeneratedPeriod {
+  label: string;
+  periodIndex: number;
+  startDate: string;
+  endDate: string;
+  lockingDate: string;
+}
+
+export const generatePeriods = (input: {
+  targetType: 'WEEKLY' | 'MONTHLY' | 'SEMI_ANNUAL';
+  startDate: string;
+  numberOfMonths?: number;
+}): GeneratedPeriod[] => {
+  const start = startOfDay(new Date(input.startDate));
+  const months = input.targetType === 'SEMI_ANNUAL' ? 6 : Math.max(1, input.numberOfMonths || 12);
+  const periods: GeneratedPeriod[] = [];
+
+  if (input.targetType === 'MONTHLY' || input.targetType === 'SEMI_ANNUAL') {
+    for (let i = 0; i < months; i += 1) {
+      const monthStart = startOfMonth(addMonths(start, i));
+      const monthEnd = endOfMonth(monthStart);
+      periods.push({
+        label: format(monthStart, 'MMMM yyyy'),
+        periodIndex: i,
+        startDate: format(monthStart, 'yyyy-MM-dd'),
+        endDate: format(monthEnd, 'yyyy-MM-dd'),
+        lockingDate: format(monthEnd, 'yyyy-MM-dd'),
+      });
+    }
+  } else if (input.targetType === 'WEEKLY') {
+    let globalIndex = 0;
+    for (let i = 0; i < months; i += 1) {
+      const monthStart = startOfMonth(addMonths(start, i));
+      const monthEnd = endOfMonth(monthStart);
+      let cursor = startOfDay(monthStart);
+      let weekNum = 0;
+      while (cursor <= monthEnd && weekNum < 6) {
+        const weekEnd = endOfDay(addDays(cursor, 6));
+        const cappedEnd = weekEnd > monthEnd ? endOfDay(monthEnd) : weekEnd;
+        periods.push({
+          label: `${format(monthStart, 'MMM yyyy')} · Week ${weekNum + 1}`,
+          periodIndex: globalIndex,
+          startDate: format(cursor, 'yyyy-MM-dd'),
+          endDate: format(cappedEnd, 'yyyy-MM-dd'),
+          lockingDate: format(cappedEnd, 'yyyy-MM-dd'),
+        });
+        cursor = startOfDay(addDays(cappedEnd, 1));
+        weekNum += 1;
+        globalIndex += 1;
+        if (cursor > monthEnd) break;
+      }
+    }
+  }
+
+  return periods;
+};
