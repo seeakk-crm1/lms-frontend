@@ -46,8 +46,8 @@ const FollowUpCard: React.FC<Props> = ({ followUp, compact = false, onComplete, 
           <p className="mt-2 text-xs font-semibold text-gray-500">
             Lead ID: <span className="font-black text-gray-700">{followUp.leadId}</span>
           </p>
-          {!compact && followUp.description ? (
-            <p className="mt-2 line-clamp-2 text-xs text-gray-500">{followUp.description}</p>
+          {!compact && (followUp.recentDescription || followUp.description) ? (
+            <p className="mt-2 line-clamp-2 text-xs text-gray-500">{followUp.recentDescription || followUp.description}</p>
           ) : null}
         </div>
 

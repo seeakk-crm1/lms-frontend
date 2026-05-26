@@ -50,6 +50,7 @@ export interface LeadListItem {
     changedById: string;
     changedAt: string;
   }>;
+  followUps?: any[];
 }
 
 export interface LeadPagination {

@@ -33,6 +33,13 @@ export interface FollowUp {
   status: FollowUpStatus;
   scheduledAt: string;
   completedAt: string | null;
+  recentDescription?: string | null;
+  previousFollowupDate?: string | null;
+  newFollowupDate?: string | null;
+  snoozedBy?: string | null;
+  snoozedAt?: string | null;
+  reminderActionType?: string | null;
+  activityLogs?: any[];
   createdAt: string;
   updatedAt: string;
   user: FollowUpUser;
@@ -145,6 +152,8 @@ export interface CompleteFollowUpInput {
 
 export interface SnoozeFollowUpInput {
   scheduledAt: string;
+  recentDescription: string;
+  reminderActionType: 'SNOOZE' | 'REMIND_LATER';
 }
 
 export interface CalendarQueryParams {

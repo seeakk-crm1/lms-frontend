@@ -90,6 +90,39 @@ const LeadViewDrawer: React.FC<LeadViewDrawerProps> = ({
         detail: log.remarks || log.reasonId,
         at: log.changedAt,
       })),
+      ...(resolvedLead.followUps || []).flatMap((fu: any) => {
+        const events: any[] = [];
+        const typeLabel = fu.type.replace(/_/g, ' ');
+        if (fu.status === 'COMPLETED') {
+          events.push({
+            id: `fu-completed-${fu.id}`,
+            label: `Follow-up completed (${typeLabel})`,
+            detail: fu.description || 'No description',
+            at: fu.scheduledAt,
+          });
+        } else {
+          events.push({
+            id: `fu-scheduled-${fu.id}`,
+            label: `Follow-up scheduled (${typeLabel})`,
+            detail: fu.description || 'No description',
+            at: fu.scheduledAt,
+          });
+        }
+
+        if (fu.activityLogs && fu.activityLogs.length > 0) {
+          fu.activityLogs.forEach((log: any) => {
+            const actionLabel = log.reminderActionType === 'REMIND_LATER' ? 'Reminded later' : 'Snoozed';
+            events.push({
+              id: `fu-log-${log.id}`,
+              label: `Follow-up ${actionLabel.toLowerCase()}`,
+              detail: `Outcome: "${log.recentDescription}" | Moved to: ${format(new Date(log.newFollowupDate), 'dd MMM yyyy, hh:mm a')}`,
+              at: log.snoozedAt,
+            });
+          });
+        }
+
+        return events;
+      }),
     ];
 
     return items.sort((left, right) => new Date(right.at).getTime() - new Date(left.at).getTime());

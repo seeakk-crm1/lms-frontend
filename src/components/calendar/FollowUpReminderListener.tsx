@@ -79,6 +79,8 @@ const FollowUpReminderListener: React.FC = () => {
   const [completionTarget, setCompletionTarget] = useState<FollowUp | null>(null);
   const [snoozeTarget, setSnoozeTarget] = useState<FollowUp | null>(null);
   const [snoozeDateTime, setSnoozeDateTime] = useState('');
+  const [recentDescription, setRecentDescription] = useState('');
+  const [reminderActionType, setReminderActionType] = useState<'SNOOZE' | 'REMIND_LATER'>('SNOOZE');
 
   const items = useMemo(() => query.data?.data?.items || [], [query.data]);
   const toFollowUp = (item: FollowUpReminderItem): FollowUp => ({
@@ -160,6 +162,8 @@ const FollowUpReminderListener: React.FC = () => {
         onSnooze={(followUp) => {
           setSnoozeTarget(followUp);
           setSnoozeDateTime('');
+          setRecentDescription('');
+          setReminderActionType('SNOOZE');
           setActive(null);
         }}
       />
@@ -176,25 +180,45 @@ const FollowUpReminderListener: React.FC = () => {
       />
       <SnoozeFollowUpModal
         isOpen={Boolean(snoozeTarget)}
+        followUp={snoozeTarget}
         value={snoozeDateTime}
         onChange={setSnoozeDateTime}
+        recentDescription={recentDescription}
+        onRecentDescriptionChange={setRecentDescription}
+        reminderActionType={reminderActionType}
+        onReminderActionTypeChange={setReminderActionType}
         isSubmitting={snoozeMutation.isPending}
         onClose={() => {
           setSnoozeTarget(null);
           setSnoozeDateTime('');
+          setRecentDescription('');
+          setReminderActionType('SNOOZE');
         }}
         onSubmit={async () => {
-          if (!snoozeTarget || !snoozeDateTime) return;
+          if (!snoozeTarget || !snoozeDateTime || !recentDescription.trim()) return;
           const date = new Date(snoozeDateTime);
           if (Number.isNaN(date.getTime()) || date.getTime() <= Date.now()) {
             toast.error('Please choose a future reminder time');
             return;
           }
+          if (date.getTime() === new Date(snoozeTarget.scheduledAt).getTime()) {
+            toast.error('The new follow-up date must be different from the current scheduled date.');
+            return;
+          }
           const proceed = await confirmIfWeeklyOff(date);
           if (!proceed) return;
-          await snoozeMutation.mutateAsync({ id: snoozeTarget.id, payload: { scheduledAt: date.toISOString() } });
+          await snoozeMutation.mutateAsync({
+            id: snoozeTarget.id,
+            payload: {
+              scheduledAt: date.toISOString(),
+              recentDescription: recentDescription.trim(),
+              reminderActionType,
+            },
+          });
           setSnoozeTarget(null);
           setSnoozeDateTime('');
+          setRecentDescription('');
+          setReminderActionType('SNOOZE');
         }}
       />
       {WeeklyOffScheduleModal}

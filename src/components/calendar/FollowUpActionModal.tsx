@@ -75,10 +75,40 @@ const FollowUpActionModal: React.FC<Props> = ({ isOpen, followUp, onClose, onOpe
                 <p className="mt-1 text-sm font-black text-gray-800">{typeLabel}</p>
                 <p className="mt-3 text-xs font-black uppercase tracking-widest text-red-500">Follow-up Note</p>
                 <p className="mt-1 text-sm font-semibold text-gray-700">{followUp.description || 'No description provided'}</p>
+                {followUp.recentDescription ? (
+                  <>
+                    <p className="mt-3 text-xs font-black uppercase tracking-widest text-red-500">Latest Outcome</p>
+                    <p className="mt-1 text-sm font-semibold text-gray-800 whitespace-pre-wrap">{followUp.recentDescription}</p>
+                  </>
+                ) : null}
                 {isCompleted && followUp.completionDescription ? (
                   <>
                     <p className="mt-3 text-xs font-black uppercase tracking-widest text-red-500">Completion notes</p>
                     <p className="mt-1 text-sm font-semibold text-gray-800 whitespace-pre-wrap">{followUp.completionDescription}</p>
+                  </>
+                ) : null}
+                {followUp.activityLogs && followUp.activityLogs.length > 0 ? (
+                  <>
+                    <p className="mt-3 text-xs font-black uppercase tracking-widest text-red-500">Snooze History</p>
+                    <div className="mt-1.5 space-y-2 max-h-40 overflow-y-auto pr-1">
+                      {followUp.activityLogs.map((log: any) => {
+                        const actionLabel = log.reminderActionType === 'REMIND_LATER' ? 'Reminded Later' : 'Snoozed';
+                        return (
+                          <div key={log.id} className="rounded-lg bg-gray-100/70 p-2 text-xs text-gray-600 border border-gray-200/50">
+                            <div className="flex justify-between font-bold text-gray-800 mb-0.5">
+                              <span>{actionLabel}</span>
+                              <span className="font-semibold text-gray-400">
+                                {format(new Date(log.snoozedAt), 'dd MMM yyyy, hh:mm a')}
+                              </span>
+                            </div>
+                            <p className="mt-0.5"><span className="font-semibold text-gray-700">Outcome:</span> {log.recentDescription}</p>
+                            <p className="text-[10px] text-gray-500 mt-0.5">
+                              Moved from: {format(new Date(log.previousFollowupDate), 'dd MMM, hh:mm a')} to: {format(new Date(log.newFollowupDate), 'dd MMM, hh:mm a')}
+                            </p>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </>
                 ) : null}
               </div>
