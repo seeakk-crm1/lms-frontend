@@ -1,5 +1,4 @@
 import React from 'react';
-import { Eye, EyeOff } from 'lucide-react';
 import { Controller, useFormContext } from 'react-hook-form';
 import { DEFAULT_PHONE_COUNTRY, getPhoneFlag, PHONE_COUNTRIES, type PhoneCountry } from '../../constants/phoneCountries';
 import type { UserFormData } from './CreateUserModal.types';
@@ -26,8 +25,6 @@ interface CreateUserDetailsTabProps {
   selectedUserId: string | null | undefined;
   selectedPhoneCountry: PhoneCountry;
   setSelectedPhoneCountry: React.Dispatch<React.SetStateAction<PhoneCountry>>;
-  showPassword: boolean;
-  setShowPassword: React.Dispatch<React.SetStateAction<boolean>>;
   detailsTabErrorCount: number;
   getFieldClassName: (hasError?: boolean) => string;
   getSelectClassName: (hasError?: boolean) => string;
@@ -47,8 +44,6 @@ const CreateUserDetailsTab: React.FC<CreateUserDetailsTabProps> = ({
   selectedUserId,
   selectedPhoneCountry,
   setSelectedPhoneCountry,
-  showPassword,
-  setShowPassword,
   detailsTabErrorCount,
   getFieldClassName,
   getSelectClassName,
@@ -61,11 +56,8 @@ const CreateUserDetailsTab: React.FC<CreateUserDetailsTabProps> = ({
   const {
     register,
     control,
-    watch,
     formState: { errors },
   } = useFormContext<UserFormData>();
-
-  const password = watch('password');
 
   return (
     <div className="space-y-6">
@@ -136,6 +128,11 @@ const CreateUserDetailsTab: React.FC<CreateUserDetailsTabProps> = ({
             placeholder="john@company.com"
           />
           {renderFieldError(errors.email?.message)}
+          {!selectedUserId && !errors.email ? (
+            <p className="text-[11px] text-gray-400 font-semibold">
+              An invitation email will be sent so the user can set their own password.
+            </p>
+          ) : null}
         </div>
         <div className="space-y-1.5">
           <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Phone</label>
@@ -208,53 +205,6 @@ const CreateUserDetailsTab: React.FC<CreateUserDetailsTabProps> = ({
           />
         </div>
       </div>
-
-      {!selectedUserId && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-1.5 relative">
-            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Password</label>
-            <input
-              type={showPassword ? 'text' : 'password'}
-              {...register('password', {
-                validate: (value) => {
-                  const trimmed = (value || '').trim();
-                  if (!trimmed) return true;
-                  if (trimmed.length < 8) return 'Password should be at least 8 characters.';
-                  if (!/[A-Z]/.test(trimmed)) return 'Include at least one uppercase letter.';
-                  if (!/[a-z]/.test(trimmed)) return 'Include at least one lowercase letter.';
-                  if (!/[0-9]/.test(trimmed)) return 'Include at least one number.';
-                  return true;
-                },
-              })}
-              className={getFieldClassName(Boolean(errors.password))}
-            />
-            <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-9 text-gray-400">
-              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-            </button>
-            {!errors.password ? (
-              <p className="text-[11px] text-gray-400 font-semibold">
-                Leave blank to email an invitation link instead. If set, use 8+ characters with uppercase, lowercase, and a number.
-              </p>
-            ) : null}
-            {renderFieldError(errors.password?.message)}
-          </div>
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Confirm Password</label>
-            <input
-              type={showPassword ? 'text' : 'password'}
-              {...register('confirmPassword', {
-                validate: (val) => {
-                  if (!password && !val) return true;
-                  if (!val) return 'Confirm the password so we know it was typed correctly.';
-                  return val === password || 'Passwords do not match yet.';
-                },
-              })}
-              className={getFieldClassName(Boolean(errors.confirmPassword))}
-            />
-            {renderFieldError(errors.confirmPassword?.message)}
-          </div>
-        </div>
-      )}
 
       <div className="h-px bg-gray-100 my-2" />
       <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Permanent Address</p>

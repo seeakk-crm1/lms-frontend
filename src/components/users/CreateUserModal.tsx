@@ -12,11 +12,7 @@ import {
   useAllLocationsQuery,
   useDepartmentsQuery,
 } from '../../hooks/useUsersQuery';
-import {
-  useCreateUserMutation,
-  useCreateInviteUserMutation,
-  useUpdateUserMutation,
-} from '../../hooks/useUserMutations';
+import { useCreateInviteUserMutation, useUpdateUserMutation } from '../../hooks/useUserMutations';
 import { assignUserTargetCycleAdmin } from '../../services/target.api';
 import { DEFAULT_PHONE_COUNTRY, PHONE_COUNTRIES, type PhoneCountry } from '../../constants/phoneCountries';
 import CreateUserDetailsTab from './CreateUserDetailsTab';
@@ -114,7 +110,6 @@ type CreateUserPayload = {
   username?: string;
   email: string;
   phone?: string;
-  password?: string;
   roleId?: string;
   departmentId?: string;
   supervisorId?: string;
@@ -132,7 +127,6 @@ const CreateUserModal: React.FC = () => {
   const { isCreateModalOpen, selectedUserId, closeCreateModal } = useUsersStore();
   const [activeTab, setActiveTab] = useState<'details' | 'access' | 'targets'>('details');
   const initialTargetCycleIdRef = useRef<string | null>(null);
-  const [showPassword, setShowPassword] = useState(false);
   const [selectedPhoneCountry, setSelectedPhoneCountry] = useState<PhoneCountry>(DEFAULT_PHONE_COUNTRY);
   
   const { data: userDetail } = useUserDetailQuery(selectedUserId);
@@ -143,11 +137,9 @@ const CreateUserModal: React.FC = () => {
   const { data: locationTreeData } = useLocationTreeQuery();
   const { data: allLocationsData } = useAllLocationsQuery();
 
-  const createUser = useCreateUserMutation();
   const createInviteUser = useCreateInviteUserMutation();
   const updateUser = useUpdateUserMutation();
-  const isMutationPending =
-    createUser.isPending || createInviteUser.isPending || updateUser.isPending;
+  const isMutationPending = createInviteUser.isPending || updateUser.isPending;
 
   const methods = useForm<UserFormData>({
     defaultValues: {
@@ -155,8 +147,6 @@ const CreateUserModal: React.FC = () => {
       username: '',
       email: '',
       phone: '',
-      password: '',
-      confirmPassword: '',
       roleId: '',
       departmentId: '',
       supervisorId: '',
@@ -192,7 +182,7 @@ const CreateUserModal: React.FC = () => {
   const renderFieldError = (message?: string) =>
     message ? <p className="text-[11px] text-rose-500 font-bold leading-relaxed">{message}</p> : null;
 
-  const detailsTabErrorCount = ['name', 'username', 'email', 'phone', 'password', 'confirmPassword', 'countryId', 'stateId', 'districtId'].filter(
+  const detailsTabErrorCount = ['name', 'username', 'email', 'phone', 'countryId', 'stateId', 'districtId'].filter(
     (key) => Boolean(errors[key as keyof typeof errors]),
   ).length;
   const accessTabErrorCount = ['roleId', 'departmentId', 'supervisorId', 'officeId', 'assignedLocationIds'].filter(
@@ -209,7 +199,6 @@ const CreateUserModal: React.FC = () => {
     email: data.email.trim(),
     username: toOptional(data.username),
     phone: toOptional(data.phone),
-    password: toOptional(data.password),
     roleId: toOptional(data.roleId),
     departmentId: toOptional(data.departmentId),
     supervisorId: toOptional(data.supervisorId),
@@ -282,8 +271,6 @@ const CreateUserModal: React.FC = () => {
             username: '',
             email: '',
             phone: '',
-            password: '',
-            confirmPassword: '',
             roleId: '',
             departmentId: '',
             supervisorId: '',
@@ -328,34 +315,28 @@ const CreateUserModal: React.FC = () => {
         toast.success('User updated successfully!', { id: toastId });
       } else {
         const payload = toCreatePayloadWithTargetCycle(data);
-        const useInviteFlow = !payload.password;
 
-        if (useInviteFlow) {
-          if (!payload.roleId) {
-            toast.error('Assign a role before sending an email invitation.', { id: toastId });
+        if (!payload.roleId) {
+          toast.error('Assign a role before sending an email invitation.', { id: toastId });
+          return;
+        }
+
+        const inviteResponse = await createInviteUser.mutateAsync(payload);
+        const newUserId = inviteResponse?.user?.id;
+        const inviteTargetCycleId = normalizeTargetCycleId(data.assignedTargetCycleId);
+        if (inviteTargetCycleId && newUserId) {
+          try {
+            await assignUserTargetCycleAdmin(newUserId, inviteTargetCycleId);
+          } catch (targetError: any) {
+            toast.error(
+              targetError?.response?.data?.message || 'Invite sent, but target cycle assignment failed.',
+              { id: toastId },
+            );
+            closeCreateModal();
             return;
           }
-          const { password: _password, ...invitePayload } = payload;
-          const inviteResponse = await createInviteUser.mutateAsync(invitePayload);
-          const newUserId = inviteResponse?.user?.id;
-          const inviteTargetCycleId = normalizeTargetCycleId(data.assignedTargetCycleId);
-          if (inviteTargetCycleId && newUserId) {
-            try {
-              await assignUserTargetCycleAdmin(newUserId, inviteTargetCycleId);
-            } catch (targetError: any) {
-              toast.error(
-                targetError?.response?.data?.message || 'Invite sent, but target cycle assignment failed.',
-                { id: toastId },
-              );
-              closeCreateModal();
-              return;
-            }
-          }
-          toast.dismiss(toastId);
-        } else {
-          await createUser.mutateAsync(payload);
-          toast.success('User onboarded successfully!', { id: toastId });
         }
+        toast.dismiss(toastId);
       }
       closeCreateModal();
     } catch (error: any) {
@@ -386,8 +367,6 @@ const CreateUserModal: React.FC = () => {
       'username',
       'email',
       'phone',
-      'password',
-      'confirmPassword',
       'countryId',
       'stateId',
       'districtId',
@@ -555,7 +534,7 @@ const CreateUserModal: React.FC = () => {
             <h2 className="text-xl font-bold text-gray-900">
               {selectedUserId ? 'Modify User Profile' : 'Onboard New User'}
             </h2>
-            <p className="text-sm text-gray-500">Configure credentials, location boundaries and targets</p>
+            <p className="text-sm text-gray-500">Configure profile, access, location boundaries, and targets</p>
           </div>
           <button onClick={closeCreateModal} className="p-2 hover:bg-gray-100 rounded-xl transition-colors text-gray-400">
             <X className="w-5 h-5" />
@@ -606,8 +585,6 @@ const CreateUserModal: React.FC = () => {
                   selectedUserId={selectedUserId}
                   selectedPhoneCountry={selectedPhoneCountry}
                   setSelectedPhoneCountry={setSelectedPhoneCountry}
-                  showPassword={showPassword}
-                  setShowPassword={setShowPassword}
                   detailsTabErrorCount={detailsTabErrorCount}
                   getFieldClassName={getFieldClassName}
                   getSelectClassName={getSelectClassName}

@@ -3,8 +3,6 @@ export interface UserFormData {
   username: string;
   email: string;
   phone: string;
-  password?: string;
-  confirmPassword?: string;
   roleId: string;
   departmentId: string;
   supervisorId: string;
