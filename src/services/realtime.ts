@@ -98,8 +98,17 @@ const attachCoreSocketHandlers = (s: Socket, baseUrl: string): void => {
 
     const refreshToken = localStorage.getItem('refreshToken');
     if (!refreshToken) {
-      console.warn('[Socket.io] Auth handshake failed and no refresh token — clearing session');
-      useAuthStore.getState().clearAuth();
+      const accessToken = localStorage.getItem('accessToken') || '';
+      if (!accessToken || isAccessTokenExpired(accessToken)) {
+        console.warn('[Socket.io] Auth handshake failed, token is expired, and no refresh token — clearing session');
+        useAuthStore.getState().clearAuth();
+        return;
+      }
+
+      console.warn(
+        '[Socket.io] Auth handshake failed but access token is still valid and no refresh token exists — keeping session and pausing realtime reconnects',
+      );
+      s.disconnect();
       return;
     }
 
@@ -168,9 +177,18 @@ const attachCoreSocketHandlers = (s: Socket, baseUrl: string): void => {
 export const connectRealtime = (): Socket | null => {
   const baseUrl = getRealtimeBaseUrl();
   const userId = readStoredUserId();
-  const hasAccess = Boolean(localStorage.getItem('accessToken'));
+  const accessToken = localStorage.getItem('accessToken') || '';
+  const hasAccess = Boolean(accessToken);
+  const refreshToken = localStorage.getItem('refreshToken');
 
   if (!userId || !hasAccess) {
+    disconnectRealtime();
+    return null;
+  }
+
+  if (isAccessTokenExpired(accessToken) && !refreshToken) {
+    console.warn('[Socket.io] Access token expired and refresh token is missing — clearing session');
+    useAuthStore.getState().clearAuth();
     disconnectRealtime();
     return null;
   }
