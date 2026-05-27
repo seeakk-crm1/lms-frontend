@@ -209,6 +209,9 @@ export const getLeadAssignees = async () => {
     } catch (error: any) {
       const status = error?.response?.status;
       if (status === 401) throw error;
+      // Assignees blocked by mandatory follow-up / target lock or missing admin permission
+      // should not trigger a noisy fallback to /admin/users.
+      if (status === 423 || status === 403) throw error;
       if (endpoint === endpoints[endpoints.length - 1]) throw error;
     }
   }
