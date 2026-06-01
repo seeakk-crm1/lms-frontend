@@ -48,6 +48,7 @@ import LeadsPage from './pages/leads/LeadsPage';
 import ClosedLeadsPage from './pages/leads/ClosedLeadsPage';
 import LeadImportPage from './pages/leads/import/LeadImportPage';
 import BulkAssignPage from './pages/leads/BulkAssignPage';
+import FollowUpSettingsPage from './pages/leads/FollowUpSettingsPage';
 import PendingApprovalPage from './pages/admin/PendingApprovalPage';
 import LocationsPage from './modules/locations/LocationsPage';
 import ReportTypePage from './modules/report-types/pages/ReportTypePage';
@@ -386,6 +387,12 @@ function App() {
         <Route path="/leads/bulk-assign" element={
           <PermissionRoute permissions={['LEADS_BULK_ASSIGN', 'LEADS_ASSIGN']}>
             <BulkAssignPage />
+          </PermissionRoute>
+        } />
+
+        <Route path="/leads/settings" element={
+          <PermissionRoute permissions={['manage_followup_settings', 'view_followup_capacity']}>
+            <FollowUpSettingsPage />
           </PermissionRoute>
         } />
 

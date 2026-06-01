@@ -11,6 +11,7 @@ import CalendarWidget from '../components/dashboard/CalendarWidget';
 import useDashboardStore from '../store/useDashboardStore';
 import useAuthStore from '../store/useAuthStore';
 import RevenueAnalytics from '../components/dashboard/RevenueAnalytics';
+import FollowUpCapacityWidget from '../components/dashboard/FollowUpCapacityWidget';
 import { hasAnyPermission, hasPermission } from '../utils/permission.util';
 
 interface DashboardProps {
@@ -99,6 +100,12 @@ const Dashboard: React.FC<DashboardProps> = ({ mode = 'operations' }) => {
                                 </p>
                             </div>
                         ) : null}
+
+                        {canSeeMetrics && (
+                            <div className="mb-6">
+                                <FollowUpCapacityWidget />
+                            </div>
+                        )}
 
                         {canSeeMetrics && <KPICards />}
 

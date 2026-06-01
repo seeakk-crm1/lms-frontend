@@ -78,6 +78,7 @@ const sidebarMenus: SidebarSection[] = [
                     { label: 'Closed Leads', path: '/leads/closed', requiredPermissions: ['LEADS_CLOSE', 'LEADS_REOPEN', 'LEADS_VIEW_ALL', 'LEADS_VIEW_OWN', 'LEADS_VIEW_TEAM'] },
                     { label: 'Bulk Assign', path: '/leads/bulk-assign', requiredPermissions: ['LEADS_BULK_ASSIGN', 'LEADS_ASSIGN'] },
                     { label: 'Pending Approval', path: '/leads/pending-approval', requiredPermissions: ['LEAD_APPROVAL_VIEW'] },
+                    { label: 'Follow-Up Settings', path: '/leads/settings', requiredPermissions: ['manage_followup_settings', 'view_followup_capacity'] },
                 ]
             },
             { icon: FileText, label: 'Reports', path: '/reports', requiredPermissions: ['REPORTS_VIEW', 'REPORTS_GENERATE'] },
