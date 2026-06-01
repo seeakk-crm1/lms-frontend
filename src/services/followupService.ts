@@ -28,6 +28,13 @@ export const getAdvancedCalendarSummary = async (params: { startDate: string; en
   return response.data;
 };
 
+export const getOverdueMandatoryFollowUps = async () => {
+  const response = await api.get<import('../types/followup.types').OverdueMandatoryFollowUpResponse>(
+    '/followups/overdue-mandatory',
+  );
+  return response.data;
+};
+
 export const getAdvancedCalendarDetails = async (params: {
   date: string;
   type: string;
@@ -35,6 +42,7 @@ export const getAdvancedCalendarDetails = async (params: {
   userId?: string;
   page?: number;
   limit?: number;
+  overdueExtendedOnly?: boolean;
 }) => {
   const response = await api.get<import('../types/followup.types').AdvancedCalendarDetailsResponse>(
     '/followups/calendar/advanced/details',

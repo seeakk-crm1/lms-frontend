@@ -22,6 +22,7 @@ import api from './services/api';
 import { queryClient } from './lib/queryClient';
 import FollowUpReminderListener from './components/calendar/FollowUpReminderListener';
 import MandatoryFollowUpContinuationGate from './components/calendar/MandatoryFollowUpContinuationGate';
+import MandatoryOverdueFollowUpGate from './components/calendar/MandatoryOverdueFollowUpGate';
 import MandatoryAttendanceGate from './components/MandatoryAttendanceGate';
 import RealtimeSyncListener from './components/realtime/RealtimeSyncListener';
 import Login from './pages/Login';
@@ -195,6 +196,7 @@ function App() {
         )}
       </AnimatePresence>
 
+      <MandatoryOverdueFollowUpGate>
       <MandatoryFollowUpContinuationGate>
       <MandatoryAttendanceGate>
       {isAuthenticated ? <FollowUpReminderListener /> : null}
@@ -418,6 +420,7 @@ function App() {
       </Routes>
       </MandatoryAttendanceGate>
       </MandatoryFollowUpContinuationGate>
+      </MandatoryOverdueFollowUpGate>
     </>
   );
 }

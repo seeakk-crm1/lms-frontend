@@ -1,19 +1,29 @@
 import React, { useMemo, useState } from 'react';
 import { eachDayOfInterval, endOfMonth, endOfWeek, format, isSameMonth, parseISO, startOfMonth, startOfWeek } from 'date-fns';
 import { AnimatePresence, motion } from 'framer-motion';
-import type { FollowUp, FollowUpView } from '../../types/followup.types';
+import type { CalendarContentFilter, FollowUp, FollowUpView } from '../../types/followup.types';
 import CalendarDetailsModal from './CalendarDetailsModal';
+
+type SummaryDay = {
+  date: string;
+  leadsCreated: number;
+  leadsCreatedByStage: Array<{ stageId: string; count: number; name: string; color: string }>;
+  totalFollowUps: number;
+  stageTransitions: Array<{ stageId: string; count: number; name: string; color: string }>;
+  stageFollowUps: Array<{
+    stageId: string;
+    count: number;
+    name: string;
+    color: string;
+    overdueExtendedCount?: number;
+  }>;
+};
 
 interface Props {
   view: FollowUpView;
+  contentFilter: CalendarContentFilter;
   selectedDate: string;
-  summary: Array<{
-    date: string;
-    leadsCreated: number;
-    totalFollowUps: number;
-    stageTransitions: Array<{ stageId: string; count: number; name: string; color: string }>;
-    stageFollowUps: Array<{ stageId: string; count: number; name: string; color: string }>;
-  }>;
+  summary: SummaryDay[];
   onSelectDate: (date: string) => void;
   onComplete: (followUp: FollowUp) => void;
   onOpenFollowUp: (followUp: FollowUp) => void;
@@ -22,7 +32,16 @@ interface Props {
 
 const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-const CalendarView: React.FC<Props> = ({ view, selectedDate, summary = [], onSelectDate, onComplete, onOpenFollowUp, onOpenLead }) => {
+const CalendarView: React.FC<Props> = ({
+  view,
+  contentFilter,
+  selectedDate,
+  summary = [],
+  onSelectDate,
+  onComplete,
+  onOpenFollowUp,
+  onOpenLead,
+}) => {
   const selected = parseISO(selectedDate);
   const [detailsModal, setDetailsModal] = useState<{
     isOpen: boolean;
@@ -30,11 +49,12 @@ const CalendarView: React.FC<Props> = ({ view, selectedDate, summary = [], onSel
     type: string;
     stageId?: string;
     title: string;
+    overdueExtendedOnly?: boolean;
   }>({ isOpen: false, date: '', type: '', title: '' });
 
   const summaryMap = useMemo(
     () =>
-      summary.reduce<Record<string, any>>((acc, item) => {
+      summary.reduce<Record<string, SummaryDay>>((acc, item) => {
         acc[item.date] = item;
         return acc;
       }, {}),
@@ -50,8 +70,14 @@ const CalendarView: React.FC<Props> = ({ view, selectedDate, summary = [], onSel
     [selected],
   );
 
-  const openDetails = (date: string, type: string, title: string, stageId?: string) => {
-    setDetailsModal({ isOpen: true, date, type, stageId, title });
+  const openDetails = (
+    date: string,
+    type: string,
+    title: string,
+    stageId?: string,
+    overdueExtendedOnly?: boolean,
+  ) => {
+    setDetailsModal({ isOpen: true, date, type, stageId, title, overdueExtendedOnly });
   };
 
   if (view !== 'month') {
@@ -107,49 +133,88 @@ const CalendarView: React.FC<Props> = ({ view, selectedDate, summary = [], onSel
                   </div>
 
                   <div className="flex flex-1 flex-col gap-1.5 overflow-y-auto">
-                    {data?.leadsCreated > 0 ? (
-                      <button
-                        onClick={() => openDetails(key, 'LEADS_CREATED', 'Leads Created')}
-                        className="flex w-full items-center justify-between rounded-lg border border-blue-200 bg-blue-50 px-2 py-1 text-left hover:bg-blue-100"
-                      >
-                        <span className="truncate text-[10px] font-bold text-blue-800">Leads Created</span>
-                        <span className="rounded-full bg-blue-200 px-1.5 py-0.5 text-[9px] font-black text-blue-900">{data.leadsCreated}</span>
-                      </button>
-                    ) : null}
+                    {contentFilter === 'FOLLOW_UPS' ? (
+                      <>
+                        {data?.stageFollowUps?.map((sf) => {
+                          const isOverdueChip = (sf.overdueExtendedCount || 0) > 0;
+                          const chipColor = isOverdueChip ? '#dc2626' : sf.color;
 
-                    {data?.stageTransitions?.map((st: any) => (
-                      <button
-                        key={`trans-${st.stageId}`}
-                        onClick={() => openDetails(key, 'STAGE_CREATED', `Stage: ${st.name}`, st.stageId)}
-                        className="flex w-full items-center justify-between rounded-lg border px-2 py-1 text-left transition-colors"
-                        style={{ borderColor: `${st.color}40`, backgroundColor: `${st.color}15` }}
-                      >
-                        <span className="truncate text-[10px] font-bold" style={{ color: st.color }}>{st.name}</span>
-                        <span className="rounded-full px-1.5 py-0.5 text-[9px] font-black" style={{ backgroundColor: `${st.color}30`, color: st.color }}>{st.count}</span>
-                      </button>
-                    ))}
+                          return (
+                            <button
+                              key={`fup-${sf.stageId}-${isOverdueChip ? 'overdue' : 'normal'}`}
+                              onClick={() =>
+                                openDetails(
+                                  key,
+                                  'STAGE_FOLLOWUPS',
+                                  `${sf.name} Follow-Up - ${sf.count}`,
+                                  sf.stageId,
+                                  isOverdueChip,
+                                )
+                              }
+                              className="flex w-full items-center justify-between rounded-lg border px-2 py-1 text-left transition-colors"
+                              style={{
+                                borderColor: `${chipColor}40`,
+                                backgroundColor: isOverdueChip ? '#fef2f2' : `${sf.color}15`,
+                              }}
+                            >
+                              <span className="truncate text-[10px] font-bold" style={{ color: chipColor }}>
+                                {sf.name} Follow-Up - {sf.count}
+                              </span>
+                              <span
+                                className="rounded-full px-1.5 py-0.5 text-[9px] font-black"
+                                style={{ backgroundColor: `${chipColor}30`, color: chipColor }}
+                              >
+                                {sf.count}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </>
+                    ) : (
+                      <>
+                        {data?.leadsCreatedByStage?.map((st) => (
+                          <button
+                            key={`lead-create-${st.stageId}`}
+                            onClick={() =>
+                              openDetails(key, 'LEAD_STAGE_CREATED', `${st.name} Created - ${st.count}`, st.stageId)
+                            }
+                            className="flex w-full items-center justify-between rounded-lg border px-2 py-1 text-left transition-colors"
+                            style={{ borderColor: `${st.color}40`, backgroundColor: `${st.color}15` }}
+                          >
+                            <span className="truncate text-[10px] font-bold" style={{ color: st.color }}>
+                              {st.name} Created - {st.count}
+                            </span>
+                            <span
+                              className="rounded-full px-1.5 py-0.5 text-[9px] font-black"
+                              style={{ backgroundColor: `${st.color}30`, color: st.color }}
+                            >
+                              {st.count}
+                            </span>
+                          </button>
+                        ))}
 
-                    {data?.totalFollowUps > 0 ? (
-                      <button
-                        onClick={() => openDetails(key, 'TOTAL_FOLLOWUPS', 'Total Follow-ups')}
-                        className="flex w-full items-center justify-between rounded-lg border border-red-200 bg-red-50 px-2 py-1 text-left hover:bg-red-100 mt-1"
-                      >
-                        <span className="truncate text-[10px] font-bold text-red-800">Total Follow-ups</span>
-                        <span className="rounded-full bg-red-200 px-1.5 py-0.5 text-[9px] font-black text-red-900">{data.totalFollowUps}</span>
-                      </button>
-                    ) : null}
-
-                    {data?.stageFollowUps?.map((sf: any) => (
-                      <button
-                        key={`fup-${sf.stageId}`}
-                        onClick={() => openDetails(key, 'STAGE_FOLLOWUPS', `Follow-ups: ${sf.name}`, sf.stageId)}
-                        className="flex w-full items-center justify-between rounded-lg border px-2 py-1 text-left transition-colors"
-                        style={{ borderColor: `${sf.color}40`, backgroundColor: `${sf.color}15` }}
-                      >
-                        <span className="truncate text-[10px] font-bold" style={{ color: sf.color }}>F/U: {sf.name}</span>
-                        <span className="rounded-full px-1.5 py-0.5 text-[9px] font-black" style={{ backgroundColor: `${sf.color}30`, color: sf.color }}>{sf.count}</span>
-                      </button>
-                    ))}
+                        {data?.stageTransitions?.map((st) => (
+                          <button
+                            key={`trans-${st.stageId}`}
+                            onClick={() =>
+                              openDetails(key, 'STAGE_CREATED', `${st.name} Created - ${st.count}`, st.stageId)
+                            }
+                            className="flex w-full items-center justify-between rounded-lg border px-2 py-1 text-left transition-colors"
+                            style={{ borderColor: `${st.color}40`, backgroundColor: `${st.color}15` }}
+                          >
+                            <span className="truncate text-[10px] font-bold" style={{ color: st.color }}>
+                              {st.name} Created - {st.count}
+                            </span>
+                            <span
+                              className="rounded-full px-1.5 py-0.5 text-[9px] font-black"
+                              style={{ backgroundColor: `${st.color}30`, color: st.color }}
+                            >
+                              {st.count}
+                            </span>
+                          </button>
+                        ))}
+                      </>
+                    )}
                   </div>
                 </motion.div>
               );
@@ -164,6 +229,8 @@ const CalendarView: React.FC<Props> = ({ view, selectedDate, summary = [], onSel
         type={detailsModal.type}
         stageId={detailsModal.stageId}
         title={detailsModal.title}
+        overdueExtendedOnly={detailsModal.overdueExtendedOnly}
+        contentFilter={contentFilter}
         onClose={() => setDetailsModal({ ...detailsModal, isOpen: false })}
         onOpenFollowUp={onOpenFollowUp}
         onCompleteFollowUp={onComplete}

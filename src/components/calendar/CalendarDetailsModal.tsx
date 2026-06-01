@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { format } from 'date-fns';
 import { X, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -6,7 +6,7 @@ import { useAdvancedCalendarDetailsQuery } from '../../hooks/useFollowUps';
 import FollowUpCard from './FollowUpCard';
 import WhatsAppActionButton from '../common/WhatsAppActionButton';
 import { LEAD_WHATSAPP_PERMISSIONS } from '../../constants/whatsappPermissions';
-import type { FollowUp } from '../../types/followup.types';
+import type { CalendarContentFilter, FollowUp } from '../../types/followup.types';
 import { stageBadgeStyle } from '../../utils/leadStageColor';
 
 interface CalendarDetailsModalProps {
@@ -15,6 +15,8 @@ interface CalendarDetailsModalProps {
   type: string;
   stageId?: string;
   title: string;
+  overdueExtendedOnly?: boolean;
+  contentFilter: CalendarContentFilter;
   onClose: () => void;
   onOpenFollowUp?: (followUp: FollowUp) => void;
   onCompleteFollowUp?: (followUp: FollowUp) => void;
@@ -27,6 +29,8 @@ const CalendarDetailsModal: React.FC<CalendarDetailsModalProps> = ({
   type,
   stageId,
   title,
+  overdueExtendedOnly,
+  contentFilter,
   onClose,
   onOpenFollowUp,
   onCompleteFollowUp,
@@ -37,7 +41,11 @@ const CalendarDetailsModal: React.FC<CalendarDetailsModalProps> = ({
     type,
     stageId,
     limit: 100,
+    overdueExtendedOnly,
   });
+
+  const isFollowUpDetail =
+    contentFilter === 'FOLLOW_UPS' && (type === 'TOTAL_FOLLOWUPS' || type === 'STAGE_FOLLOWUPS');
 
   return (
     <AnimatePresence>
@@ -65,7 +73,7 @@ const CalendarDetailsModal: React.FC<CalendarDetailsModalProps> = ({
                 <X className="h-4 w-4" />
               </button>
             </div>
-            
+
             <div className="custom-scrollbar flex-1 overflow-y-auto p-5">
               {isLoading ? (
                 <div className="flex items-center justify-center py-10">
@@ -74,26 +82,112 @@ const CalendarDetailsModal: React.FC<CalendarDetailsModalProps> = ({
               ) : data?.items?.length ? (
                 <div className="space-y-3">
                   {data.items.map((item: any) => {
-                    if (type === 'TOTAL_FOLLOWUPS' || type === 'STAGE_FOLLOWUPS') {
+                    if (isFollowUpDetail) {
                       return (
-                        <FollowUpCard 
-                          key={item.id} 
-                          followUp={item} 
-                          onComplete={onCompleteFollowUp!} 
-                          onOpen={onOpenFollowUp!} 
-                        />
+                        <div key={item.id} className="rounded-2xl border border-gray-100 bg-gray-50/50 p-4">
+                          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                            <h4 className="text-sm font-black text-gray-900">{item.lead?.name || item.leadName}</h4>
+                            {item.leadStage || item.lead?.stage ? (
+                              <span
+                                className="rounded-full px-2 py-0.5 text-[10px] font-black"
+                                style={stageBadgeStyle((item.leadStage || item.lead?.stage)?.color)}
+                              >
+                                {(item.leadStage || item.lead?.stage)?.name}
+                              </span>
+                            ) : null}
+                          </div>
+                          <dl className="grid gap-2 text-xs text-gray-600 sm:grid-cols-2">
+                            <div>
+                              <dt className="font-bold uppercase tracking-wide text-gray-400">Customer</dt>
+                              <dd className="font-semibold text-gray-800">{item.customerName || '—'}</dd>
+                            </div>
+                            <div>
+                              <dt className="font-bold uppercase tracking-wide text-gray-400">Follow-Up Time</dt>
+                              <dd className="font-semibold text-gray-800">
+                                {item.scheduledAt ? format(new Date(item.scheduledAt), 'PPp') : '—'}
+                              </dd>
+                            </div>
+                            <div>
+                              <dt className="font-bold uppercase tracking-wide text-gray-400">Assigned User</dt>
+                              <dd className="font-semibold text-gray-800">{item.assignedUserName || item.user?.displayName || '—'}</dd>
+                            </div>
+                            <div>
+                              <dt className="font-bold uppercase tracking-wide text-gray-400">Status</dt>
+                              <dd className="font-semibold text-gray-800">{item.status}</dd>
+                            </div>
+                            <div>
+                              <dt className="font-bold uppercase tracking-wide text-gray-400">Overdue Status</dt>
+                              <dd
+                                className={`font-bold ${
+                                  item.overdueStatus === 'OVERDUE' || item.overdueStatus === 'OVERDUE_EXTENDED'
+                                    ? 'text-red-600'
+                                    : 'text-emerald-600'
+                                }`}
+                              >
+                                {item.overdueStatus === 'OVERDUE_EXTENDED'
+                                  ? 'Extended after overdue'
+                                  : item.overdueStatus === 'OVERDUE'
+                                    ? 'Overdue'
+                                    : 'On time'}
+                              </dd>
+                            </div>
+                            <div className="sm:col-span-2">
+                              <dt className="font-bold uppercase tracking-wide text-gray-400">Follow-Up Notes</dt>
+                              <dd className="font-semibold text-gray-800">{item.followUpNotes || item.description || '—'}</dd>
+                            </div>
+                          </dl>
+                          <div className="mt-3 flex gap-2">
+                            <button
+                              type="button"
+                              onClick={() => onOpenFollowUp?.(item)}
+                              className="rounded-xl bg-emerald-500 px-3 py-1.5 text-xs font-black text-white"
+                            >
+                              Actions
+                            </button>
+                          </div>
+                        </div>
                       );
                     }
+
                     return (
-                      <div key={item.id} onClick={() => onOpenLead?.(item)} className="cursor-pointer rounded-2xl border border-gray-100 bg-white p-4 shadow-sm transition-all hover:border-emerald-200 hover:shadow-md">
+                      <div
+                        key={item.id}
+                        onClick={() => onOpenLead?.(item)}
+                        className="cursor-pointer rounded-2xl border border-gray-100 bg-white p-4 shadow-sm transition-all hover:border-emerald-200 hover:shadow-md"
+                      >
                         <div className="flex items-center justify-between">
                           <h4 className="text-sm font-black text-gray-900">{item.name}</h4>
-                          {item.stage ? (
-                            <span className="rounded-full px-2 py-0.5 text-[10px] font-black" style={stageBadgeStyle(item.stage.color)}>
-                              {item.stage.name}
+                          {(item.currentStage || item.stage) ? (
+                            <span
+                              className="rounded-full px-2 py-0.5 text-[10px] font-black"
+                              style={stageBadgeStyle((item.currentStage || item.stage)?.color)}
+                            >
+                              {(item.currentStage || item.stage)?.name}
                             </span>
                           ) : null}
                         </div>
+                        <dl className="mt-3 grid gap-2 text-xs text-gray-600 sm:grid-cols-2">
+                          <div>
+                            <dt className="font-bold uppercase tracking-wide text-gray-400">Customer</dt>
+                            <dd className="font-semibold text-gray-800">{item.customerName || item.email || item.phone || '—'}</dd>
+                          </div>
+                          <div>
+                            <dt className="font-bold uppercase tracking-wide text-gray-400">Previous Stage</dt>
+                            <dd className="font-semibold text-gray-800">{item.previousStage?.name || '—'}</dd>
+                          </div>
+                          <div>
+                            <dt className="font-bold uppercase tracking-wide text-gray-400">Current Stage</dt>
+                            <dd className="font-semibold text-gray-800">{(item.currentStage || item.stage)?.name || '—'}</dd>
+                          </div>
+                          <div>
+                            <dt className="font-bold uppercase tracking-wide text-gray-400">Date/Time</dt>
+                            <dd className="font-semibold text-gray-800">
+                              {item.changedAt || item.createdAt
+                                ? format(new Date(item.changedAt || item.createdAt), 'PPp')
+                                : '—'}
+                            </dd>
+                          </div>
+                        </dl>
                         <div className="mt-2 flex flex-wrap items-center gap-2 text-xs font-semibold text-gray-500">
                           {item.email && <span>{item.email}</span>}
                           {item.phone && <span>{item.phone}</span>}
@@ -108,7 +202,6 @@ const CalendarDetailsModal: React.FC<CalendarDetailsModalProps> = ({
                               entityName: item.name,
                             }}
                           />
-                          {item.assignedTo && <span>• Assigned: {item.assignedTo.name}</span>}
                         </div>
                       </div>
                     );

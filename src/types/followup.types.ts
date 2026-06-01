@@ -1,4 +1,5 @@
 export type FollowUpView = 'month' | 'week' | 'day' | 'list';
+export type CalendarContentFilter = 'FOLLOW_UPS' | 'LEADS';
 export type FollowUpType = 'CALL' | 'VISIT' | 'MEETING';
 export type FollowUpStatus = 'PENDING' | 'COMPLETED' | 'MISSED';
 
@@ -72,10 +73,48 @@ export interface AdvancedCalendarSummaryResponse {
     summary: Array<{
       date: string;
       leadsCreated: number;
+      leadsCreatedByStage: Array<{ stageId: string; count: number; name: string; color: string }>;
       totalFollowUps: number;
       stageTransitions: Array<{ stageId: string; count: number; name: string; color: string }>;
-      stageFollowUps: Array<{ stageId: string; count: number; name: string; color: string }>;
+      stageFollowUps: Array<{
+        stageId: string;
+        count: number;
+        name: string;
+        color: string;
+        overdueExtendedCount?: number;
+      }>;
     }>;
+    analytics?: {
+      stageFollowUpCounts: Array<{ stageId: string; count: number; name: string; color: string }>;
+      stageLeadCreationCounts: Array<{ stageId: string; count: number; name: string; color: string }>;
+      overdueFollowUpCounts: number;
+      followUpDelayAnalytics?: { overdueExtendedTotal: number };
+    };
+  };
+}
+
+export interface OverdueMandatoryFollowUpItem {
+  id: string;
+  leadId: string;
+  leadName: string;
+  customerName: string;
+  leadStage: { id: string; name: string; color: string } | null;
+  scheduledAt: string;
+  status: string;
+  type: FollowUpType;
+  description: string | null;
+  overdueStatus: 'OVERDUE';
+  assignedUserName: string;
+  followUpNotes: string | null;
+}
+
+export interface OverdueMandatoryFollowUpResponse {
+  success: boolean;
+  message: string;
+  data: {
+    overdueFollowupRequired: boolean;
+    overdueFollowupCount: number;
+    items: OverdueMandatoryFollowUpItem[];
   };
 }
 

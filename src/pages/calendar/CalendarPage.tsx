@@ -46,8 +46,20 @@ const CalendarPage: React.FC = () => {
   const [reminderActionType, setReminderActionType] = useState<'SNOOZE' | 'REMIND_LATER'>('SNOOZE');
   const navigate = useNavigate();
 
-  const { view, selectedDate, selectedUser, modalOpen, selectedFollowUp, setView, setDate, setUser, openModal, closeModal } =
-    useFollowupStore();
+  const {
+    view,
+    calendarContentFilter,
+    selectedDate,
+    selectedUser,
+    modalOpen,
+    selectedFollowUp,
+    setView,
+    setCalendarContentFilter,
+    setDate,
+    setUser,
+    openModal,
+    closeModal,
+  } = useFollowupStore();
 
   const advancedSummaryQuery = useAdvancedCalendarSummaryQuery();
   const mandatoryContinuationQuery = useMandatoryFollowUpContinuationQuery();
@@ -115,12 +127,14 @@ const CalendarPage: React.FC = () => {
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <CalendarHeader
                 view={view}
+                contentFilter={calendarContentFilter}
                 selectedDate={selectedDate}
                 selectedUser={selectedUser}
                 users={usersQuery.data || []}
                 onToday={() => setDate(new Date().toISOString())}
                 onNavigate={setDate}
                 onViewChange={setView}
+                onContentFilterChange={setCalendarContentFilter}
                 onUserChange={setUser}
               />
               <button
@@ -133,8 +147,38 @@ const CalendarPage: React.FC = () => {
               </button>
             </div>
 
+            {advancedSummaryQuery.data?.data.analytics ? (
+              <div className="grid gap-3 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm sm:grid-cols-2 lg:grid-cols-4">
+                <div className="rounded-xl bg-emerald-50 px-4 py-3">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-emerald-700">Stage Follow-Ups</p>
+                  <p className="mt-1 text-lg font-black text-emerald-900">
+                    {advancedSummaryQuery.data.data.analytics.stageFollowUpCounts.reduce((s, r) => s + r.count, 0)}
+                  </p>
+                </div>
+                <div className="rounded-xl bg-blue-50 px-4 py-3">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-blue-700">Stage Lead Entries</p>
+                  <p className="mt-1 text-lg font-black text-blue-900">
+                    {advancedSummaryQuery.data.data.analytics.stageLeadCreationCounts.reduce((s, r) => s + r.count, 0)}
+                  </p>
+                </div>
+                <div className="rounded-xl bg-red-50 px-4 py-3">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-red-700">Overdue Extended</p>
+                  <p className="mt-1 text-lg font-black text-red-900">
+                    {advancedSummaryQuery.data.data.analytics.overdueFollowUpCounts}
+                  </p>
+                </div>
+                <div className="rounded-xl bg-amber-50 px-4 py-3">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-amber-700">Delay Analytics</p>
+                  <p className="mt-1 text-lg font-black text-amber-900">
+                    {advancedSummaryQuery.data.data.analytics.followUpDelayAnalytics?.overdueExtendedTotal ?? 0}
+                  </p>
+                </div>
+              </div>
+            ) : null}
+
             <CalendarView
               view={view}
+              contentFilter={calendarContentFilter}
               selectedDate={selectedDate}
               summary={calendarSummary}
               onSelectDate={setDate}

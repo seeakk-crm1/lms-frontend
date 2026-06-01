@@ -1,16 +1,18 @@
 import React from 'react';
 import { addDays, addMonths, addWeeks, format, parseISO } from 'date-fns';
 import { ChevronLeft, ChevronRight, CalendarDays } from 'lucide-react';
-import type { FollowUpUserOption, FollowUpView } from '../../types/followup.types';
+import type { CalendarContentFilter, FollowUpUserOption, FollowUpView } from '../../types/followup.types';
 
 interface Props {
   view: FollowUpView;
+  contentFilter: CalendarContentFilter;
   selectedDate: string;
   selectedUser: string;
   users: FollowUpUserOption[];
   onToday: () => void;
   onNavigate: (nextDate: string) => void;
   onViewChange: (view: FollowUpView) => void;
+  onContentFilterChange: (filter: CalendarContentFilter) => void;
   onUserChange: (userId: string) => void;
 }
 
@@ -18,12 +20,14 @@ const views: FollowUpView[] = ['month', 'week', 'day', 'list'];
 
 const CalendarHeader: React.FC<Props> = ({
   view,
+  contentFilter,
   selectedDate,
   selectedUser,
   users,
   onToday,
   onNavigate,
   onViewChange,
+  onContentFilterChange,
   onUserChange,
 }) => {
   const currentDate = parseISO(selectedDate);
@@ -93,6 +97,16 @@ const CalendarHeader: React.FC<Props> = ({
               </button>
             ))}
           </div>
+
+          <select
+            value={contentFilter}
+            onChange={(event) => onContentFilterChange(event.target.value as CalendarContentFilter)}
+            className="min-w-[180px] rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+            aria-label="Filter calendar content"
+          >
+            <option value="FOLLOW_UPS">Follow-Ups</option>
+            <option value="LEADS">Leads</option>
+          </select>
 
           <select
             value={selectedUser}
