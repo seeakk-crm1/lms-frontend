@@ -67,6 +67,16 @@ export const useCreateLeadStageMutation = () => {
       toast.error(error?.response?.data?.message || 'Failed to create lead stage');
     },
     onSuccess: (createdStage) => {
+      queryClient.setQueriesData<ListLeadStagesResponse>({ queryKey: ['lead-stages'] }, (oldData) =>
+        updateLeadStageListCache(oldData, (list) => {
+          const withoutTemp = list.filter((item) => !item.id.startsWith('temp-'));
+          const exists = withoutTemp.some((item) => item.id === createdStage.id);
+          return exists
+            ? withoutTemp.map((item) => (item.id === createdStage.id ? createdStage : item))
+            : [createdStage, ...withoutTemp];
+        }),
+      );
+      void queryClient.invalidateQueries({ queryKey: ['lead-stages'] });
       refreshLeadStageConsumers(queryClient, createdStage);
       toast.success('Stage created successfully');
     },
@@ -88,7 +98,14 @@ export const useUpdateLeadStageMutation = () => {
         ),
       );
 
-      if (data.color || data.name || data.isLOB !== undefined || data.isClosed !== undefined) {
+      if (
+        data.color ||
+        data.name ||
+        data.stageShortForm !== undefined ||
+        data.showInCalendar !== undefined ||
+        data.isLOB !== undefined ||
+        data.isClosed !== undefined
+      ) {
         syncLeadStageAcrossCaches(queryClient, { id, ...data });
       }
 
@@ -101,6 +118,12 @@ export const useUpdateLeadStageMutation = () => {
       toast.error(error?.response?.data?.message || 'Failed to update lead stage');
     },
     onSuccess: (updatedStage) => {
+      queryClient.setQueriesData<ListLeadStagesResponse>({ queryKey: ['lead-stages'] }, (oldData) =>
+        updateLeadStageListCache(oldData, (list) =>
+          list.map((item) => (item.id === updatedStage.id ? updatedStage : item)),
+        ),
+      );
+      void queryClient.invalidateQueries({ queryKey: ['lead-stages'] });
       refreshLeadStageConsumers(queryClient, updatedStage);
       toast.success('Stage updated');
     },

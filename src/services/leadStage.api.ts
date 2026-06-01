@@ -29,9 +29,11 @@ type ApiLeadStage = {
 };
 
 const toApiPayload = (data: CreateLeadStageInput | UpdateLeadStageInput) => {
-  const { stageOrder, ruleAssignments, ...rest } = data;
+  const { stageOrder, ruleAssignments, stageShortForm, showInCalendar, ...rest } = data;
   return {
     ...rest,
+    ...(stageShortForm !== undefined ? { stageShortForm: stageShortForm || null } : {}),
+    ...(showInCalendar !== undefined ? { showInCalendar } : {}),
     ...(stageOrder !== undefined ? { order: stageOrder } : {}),
     ...(ruleAssignments !== undefined ? { ruleAssignments } : {}),
   };

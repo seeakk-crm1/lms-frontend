@@ -8,6 +8,8 @@ export const LEAD_STAGE_UPDATED_EVENT = 'crm:lead-stage-updated';
 export type LeadStageColorPatch = {
   id: string;
   name?: string;
+  stageShortForm?: string | null;
+  showInCalendar?: boolean;
   color?: string;
   isApprovalRequired?: boolean;
   isLOB?: boolean;
@@ -19,6 +21,8 @@ export type LeadStageColorPatch = {
 export const toStageColorPatch = (stage: LeadStage): LeadStageColorPatch => ({
   id: stage.id,
   name: stage.name,
+  stageShortForm: stage.stageShortForm ?? null,
+  showInCalendar: stage.showInCalendar ?? true,
   color: stage.color,
   isApprovalRequired: stage.isApprovalRequired,
   isLOB: stage.isLOB,
@@ -74,19 +78,45 @@ const patchStageInClosedResponse = (previous: { data?: LeadListItem[] } | undefi
   return changed ? { ...previous, data } : previous;
 };
 
+const resolveCalendarShortLabel = (patch: LeadStageColorPatch, fallbackName: string): string => {
+  if (patch.showInCalendar === false) {
+    return fallbackName;
+  }
+  const shortForm = patch.stageShortForm?.trim().toUpperCase();
+  if (shortForm) return shortForm;
+  return fallbackName;
+};
+
 const patchCalendarStageBuckets = (
-  buckets: Array<{ stageId: string; count: number; name: string; color: string }> | undefined,
+  buckets:
+    | Array<{ stageId: string; count: number; name: string; shortForm?: string; color: string }>
+    | undefined,
   patch: LeadStageColorPatch,
 ) =>
-  buckets?.map((item) =>
-    item.stageId === patch.id
-      ? {
-          ...item,
-          ...(patch.name !== undefined ? { name: patch.name } : {}),
-          ...(patch.color !== undefined ? { color: patch.color } : {}),
-        }
-      : item,
-  );
+  buckets?.map((item) => {
+    if (item.stageId !== patch.id) return item;
+
+    const nextName = patch.name !== undefined ? patch.name : item.name;
+    const nextShortForm =
+      patch.stageShortForm !== undefined || patch.showInCalendar !== undefined || patch.name !== undefined
+        ? resolveCalendarShortLabel(
+            {
+              ...patch,
+              name: nextName,
+              stageShortForm: patch.stageShortForm ?? item.shortForm ?? null,
+              showInCalendar: patch.showInCalendar ?? true,
+            },
+            nextName,
+          )
+        : item.shortForm;
+
+    return {
+      ...item,
+      name: nextName,
+      ...(patch.color !== undefined ? { color: patch.color } : {}),
+      ...(nextShortForm !== undefined ? { shortForm: nextShortForm } : {}),
+    };
+  });
 
 const patchFollowupCalendarPayload = (payload: any, patch: LeadStageColorPatch) => {
   if (!payload || typeof payload !== 'object') return payload;
@@ -239,6 +269,8 @@ export const syncLeadStageAcrossCaches = (queryClient: QueryClient, patch: LeadS
               ...(patch.isClosed !== undefined ? { isClosed: patch.isClosed } : {}),
               ...(patch.stageOrder !== undefined ? { stageOrder: patch.stageOrder } : {}),
               ...(patch.status !== undefined ? { status: patch.status } : {}),
+              ...(patch.stageShortForm !== undefined ? { stageShortForm: patch.stageShortForm } : {}),
+              ...(patch.showInCalendar !== undefined ? { showInCalendar: patch.showInCalendar } : {}),
             }
           : stage,
       ),
@@ -250,6 +282,7 @@ export const syncLeadStageAcrossCaches = (queryClient: QueryClient, patch: LeadS
 
 export const invalidateLeadStageConsumers = (queryClient: QueryClient) => {
   const keys: Array<readonly unknown[]> = [
+    ['lead-stages'],
     ['leads'],
     ['lead'],
     ['lead-meta'],
