@@ -144,8 +144,8 @@ const LeadStageFormModal: React.FC<LeadStageFormModalProps> = ({
     if (!isOpen) return;
     reset({
       name: leadStage?.name || '',
-      stageShortForm: leadStage?.stageShortForm || '',
-      showInCalendar: leadStage?.showInCalendar ?? true,
+      stageShortForm: leadStage?.stageShortForm ?? '',
+      showInCalendar: leadStage?.showInCalendar !== false,
       color: leadStage?.color || DEFAULT_STAGE_COLOR,
       isApprovalRequired: leadStage?.isApprovalRequired || false,
       isLOB: leadStage?.isLOB || false,

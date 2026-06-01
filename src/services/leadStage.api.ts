@@ -30,13 +30,20 @@ type ApiLeadStage = {
 
 const toApiPayload = (data: CreateLeadStageInput | UpdateLeadStageInput) => {
   const { stageOrder, ruleAssignments, stageShortForm, showInCalendar, ...rest } = data;
-  return {
+  const payload: Record<string, unknown> = {
     ...rest,
-    ...(stageShortForm !== undefined ? { stageShortForm: stageShortForm || null } : {}),
-    ...(showInCalendar !== undefined ? { showInCalendar } : {}),
     ...(stageOrder !== undefined ? { order: stageOrder } : {}),
     ...(ruleAssignments !== undefined ? { ruleAssignments } : {}),
   };
+
+  if (stageShortForm !== undefined) {
+    payload.stageShortForm = stageShortForm || null;
+  }
+  if (showInCalendar !== undefined) {
+    payload.showInCalendar = showInCalendar;
+  }
+
+  return payload;
 };
 
 const mapFromApi = (item: ApiLeadStage) => ({
