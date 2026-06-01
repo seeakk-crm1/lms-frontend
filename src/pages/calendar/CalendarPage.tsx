@@ -42,6 +42,7 @@ const CalendarPage: React.FC = () => {
   const [snoozeFollowUpItem, setSnoozeFollowUpItem] = useState<FollowUp | null>(null);
   const [snoozeDateTime, setSnoozeDateTime] = useState('');
   const [recentDescription, setRecentDescription] = useState('');
+  const [snoozeReasonId, setSnoozeReasonId] = useState('');
   const [reminderActionType, setReminderActionType] = useState<'SNOOZE' | 'REMIND_LATER'>('SNOOZE');
   const navigate = useNavigate();
 
@@ -175,6 +176,7 @@ const CalendarPage: React.FC = () => {
           setSnoozeFollowUpItem(followUp);
           setSnoozeDateTime('');
           setRecentDescription('');
+          setSnoozeReasonId('');
           setReminderActionType('SNOOZE');
           setActionFollowUp(null);
         }}
@@ -186,6 +188,8 @@ const CalendarPage: React.FC = () => {
         onChange={setSnoozeDateTime}
         recentDescription={recentDescription}
         onRecentDescriptionChange={setRecentDescription}
+        selectedReasonId={snoozeReasonId}
+        onSelectedReasonIdChange={setSnoozeReasonId}
         reminderActionType={reminderActionType}
         onReminderActionTypeChange={setReminderActionType}
         isSubmitting={snoozeMutation.isPending}
@@ -193,10 +197,12 @@ const CalendarPage: React.FC = () => {
           setSnoozeFollowUpItem(null);
           setSnoozeDateTime('');
           setRecentDescription('');
+          setSnoozeReasonId('');
           setReminderActionType('SNOOZE');
         }}
         onSubmit={async () => {
-          if (!snoozeFollowUpItem || !snoozeDateTime || !recentDescription.trim()) return;
+          const hasInput = snoozeReasonId || recentDescription.trim();
+          if (!snoozeFollowUpItem || !snoozeDateTime || !hasInput) return;
           const nextTime = new Date(snoozeDateTime);
           if (Number.isNaN(nextTime.getTime()) || nextTime.getTime() <= Date.now()) {
             toast.error('Please choose a future reminder time');
@@ -212,13 +218,15 @@ const CalendarPage: React.FC = () => {
             id: snoozeFollowUpItem.id,
             payload: {
               scheduledAt: nextTime.toISOString(),
-              recentDescription: recentDescription.trim(),
+              recentDescription: recentDescription.trim() || undefined,
+              extensionReasonId: snoozeReasonId || undefined,
               reminderActionType,
             },
           });
           setSnoozeFollowUpItem(null);
           setSnoozeDateTime('');
           setRecentDescription('');
+          setSnoozeReasonId('');
           setReminderActionType('SNOOZE');
         }}
       />

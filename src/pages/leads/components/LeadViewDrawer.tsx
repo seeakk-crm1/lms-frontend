@@ -111,11 +111,20 @@ const LeadViewDrawer: React.FC<LeadViewDrawerProps> = ({
 
         if (fu.activityLogs && fu.activityLogs.length > 0) {
           fu.activityLogs.forEach((log: any) => {
-            const actionLabel = log.reminderActionType === 'REMIND_LATER' ? 'Reminded later' : 'Snoozed';
+            let detail = '';
+            if (log.extensionReasonName) {
+              detail += `Reason:\n${log.extensionReasonName}\n\n`;
+            }
+            if (log.recentDescription) {
+              detail += `Description:\n${log.recentDescription}\n\n`;
+            }
+            detail += `Old Date:\n${format(new Date(log.previousFollowupDate), 'dd-MMM-yyyy')}\n\n`;
+            detail += `New Date:\n${format(new Date(log.newFollowupDate), 'dd-MMM-yyyy')}`;
+
             events.push({
               id: `fu-log-${log.id}`,
-              label: `Follow-up ${actionLabel.toLowerCase()}`,
-              detail: `Outcome: "${log.recentDescription}" | Moved to: ${format(new Date(log.newFollowupDate), 'dd MMM yyyy, hh:mm a')}`,
+              label: 'Follow-Up Extended',
+              detail: detail,
               at: log.snoozedAt,
             });
           });
@@ -373,7 +382,7 @@ const LeadViewDrawer: React.FC<LeadViewDrawerProps> = ({
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className="text-sm font-bold text-gray-900">{item.label}</p>
-                          <p className="mt-0.5 text-xs text-gray-500">{item.detail}</p>
+                          <p className="mt-0.5 text-xs text-gray-500 whitespace-pre-wrap">{item.detail}</p>
                           <p className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-gray-400">
                             {format(new Date(item.at), 'dd MMM yyyy, hh:mm a')}
                           </p>

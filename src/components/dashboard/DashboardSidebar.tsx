@@ -62,7 +62,8 @@ const sidebarMenus: SidebarSection[] = [
                     { label: 'Calendar', path: '/calendar', requiredPermissions: ['LEADS_VIEW_ALL', 'LEADS_VIEW_OWN', 'LEADS_VIEW_TEAM', 'SYSTEM_CONFIG'] },
                     { label: 'Holiday List', path: '/admin/holidays', requiredPermissions: ['SYSTEM_CONFIG'] },
                     { label: 'Report Types', path: '/admin/report-types', requiredPermissions: ['REPORT_TYPE_MANAGE', 'SYSTEM_CONFIG'] },
-                    { label: 'LOB Reasons', path: '/admin/lob-reasons', requiredPermissions: ['LOB_REASONS_VIEW', 'SYSTEM_CONFIG'] }
+                    { label: 'LOB Reasons', path: '/admin/lob-reasons', requiredPermissions: ['LOB_REASONS_VIEW', 'SYSTEM_CONFIG'] },
+                    { label: 'Follow-Up Extension Reasons', path: '/admin/followup-extension-reasons', requiredPermissions: ['view_followup_extension_reasons', 'SYSTEM_CONFIG'] }
                 ]
             }
         ]

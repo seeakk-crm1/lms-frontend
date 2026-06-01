@@ -80,6 +80,7 @@ const FollowUpReminderListener: React.FC = () => {
   const [snoozeTarget, setSnoozeTarget] = useState<FollowUp | null>(null);
   const [snoozeDateTime, setSnoozeDateTime] = useState('');
   const [recentDescription, setRecentDescription] = useState('');
+  const [snoozeReasonId, setSnoozeReasonId] = useState('');
   const [reminderActionType, setReminderActionType] = useState<'SNOOZE' | 'REMIND_LATER'>('SNOOZE');
 
   const items = useMemo(() => query.data?.data?.items || [], [query.data]);
@@ -163,6 +164,7 @@ const FollowUpReminderListener: React.FC = () => {
           setSnoozeTarget(followUp);
           setSnoozeDateTime('');
           setRecentDescription('');
+          setSnoozeReasonId('');
           setReminderActionType('SNOOZE');
           setActive(null);
         }}
@@ -185,6 +187,8 @@ const FollowUpReminderListener: React.FC = () => {
         onChange={setSnoozeDateTime}
         recentDescription={recentDescription}
         onRecentDescriptionChange={setRecentDescription}
+        selectedReasonId={snoozeReasonId}
+        onSelectedReasonIdChange={setSnoozeReasonId}
         reminderActionType={reminderActionType}
         onReminderActionTypeChange={setReminderActionType}
         isSubmitting={snoozeMutation.isPending}
@@ -192,10 +196,12 @@ const FollowUpReminderListener: React.FC = () => {
           setSnoozeTarget(null);
           setSnoozeDateTime('');
           setRecentDescription('');
+          setSnoozeReasonId('');
           setReminderActionType('SNOOZE');
         }}
         onSubmit={async () => {
-          if (!snoozeTarget || !snoozeDateTime || !recentDescription.trim()) return;
+          const hasInput = snoozeReasonId || recentDescription.trim();
+          if (!snoozeTarget || !snoozeDateTime || !hasInput) return;
           const date = new Date(snoozeDateTime);
           if (Number.isNaN(date.getTime()) || date.getTime() <= Date.now()) {
             toast.error('Please choose a future reminder time');
@@ -211,13 +217,15 @@ const FollowUpReminderListener: React.FC = () => {
             id: snoozeTarget.id,
             payload: {
               scheduledAt: date.toISOString(),
-              recentDescription: recentDescription.trim(),
+              recentDescription: recentDescription.trim() || undefined,
+              extensionReasonId: snoozeReasonId || undefined,
               reminderActionType,
             },
           });
           setSnoozeTarget(null);
           setSnoozeDateTime('');
           setRecentDescription('');
+          setSnoozeReasonId('');
           setReminderActionType('SNOOZE');
         }}
       />

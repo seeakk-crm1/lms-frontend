@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Loader2, X } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import type { FollowUp } from '../../types/followup.types';
+import { useActiveExtensionReasonsQuery } from '../../modules/followup-extension-reasons/hooks/useFollowUpExtensionReasons';
 
 interface Props {
   isOpen: boolean;
@@ -11,6 +12,8 @@ interface Props {
   onChange: (value: string) => void;
   recentDescription: string;
   onRecentDescriptionChange: (value: string) => void;
+  selectedReasonId: string;
+  onSelectedReasonIdChange: (value: string) => void;
   reminderActionType: 'SNOOZE' | 'REMIND_LATER';
   onReminderActionTypeChange: (value: 'SNOOZE' | 'REMIND_LATER') => void;
   onClose: () => void;
@@ -25,12 +28,16 @@ const SnoozeFollowUpModal: React.FC<Props> = ({
   onChange,
   recentDescription,
   onRecentDescriptionChange,
+  selectedReasonId,
+  onSelectedReasonIdChange,
   reminderActionType,
   onReminderActionTypeChange,
   onClose,
   onSubmit,
   isSubmitting = false,
 }) => {
+  const { data: activeReasons = [] } = useActiveExtensionReasonsQuery(isOpen);
+
   const formatDateTime = (dateStr?: string | null) => {
     if (!dateStr) return 'N/A';
     try {
@@ -39,6 +46,8 @@ const SnoozeFollowUpModal: React.FC<Props> = ({
       return new Date(dateStr).toLocaleString();
     }
   };
+
+  const hasAnyInput = selectedReasonId || recentDescription.trim();
 
   return (
     <AnimatePresence>
@@ -118,7 +127,25 @@ const SnoozeFollowUpModal: React.FC<Props> = ({
 
               <div>
                 <label className="block text-[11px] font-black uppercase tracking-widest text-gray-400">
-                  Recent Follow-Up Description <span className="text-red-500">*</span>
+                  Follow-Up Extension Reason
+                </label>
+                <select
+                  value={selectedReasonId}
+                  onChange={(event) => onSelectedReasonIdChange(event.target.value)}
+                  className="mt-1.5 w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-800 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
+                >
+                  <option value="">-- Select Predefined Reason --</option>
+                  {activeReasons.map((reason) => (
+                    <option key={reason.id} value={reason.id}>
+                      {reason.reasonName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-black uppercase tracking-widest text-gray-400">
+                  Recent Follow-Up Description
                 </label>
                 <textarea
                   value={recentDescription}
@@ -140,7 +167,7 @@ const SnoozeFollowUpModal: React.FC<Props> = ({
                 <button
                   type="button"
                   onClick={onSubmit}
-                  disabled={isSubmitting || !value || !recentDescription.trim()}
+                  disabled={isSubmitting || !value || !hasAnyInput}
                   className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl bg-amber-500 py-3 text-sm font-black text-white hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}

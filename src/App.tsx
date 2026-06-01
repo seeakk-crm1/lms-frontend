@@ -54,6 +54,7 @@ import ReportTypePage from './modules/report-types/pages/ReportTypePage';
 import ReportsPage from './modules/reports/ReportsPage';
 import LOBAnalysisPage from './modules/lob-analysis/LOBAnalysisPage';
 import LOBReasonsPage from './modules/lob-reasons/pages/LOBReasonsPage';
+import FollowUpExtensionReasonsPage from './modules/followup-extension-reasons/pages/FollowUpExtensionReasonsPage';
 import AttendancePage from './pages/attendance/AttendancePage';
 
 interface RouteProps {
@@ -343,6 +344,12 @@ function App() {
         <Route path="/admin/lob-reasons" element={
           <PermissionRoute permissions={['LOB_REASONS_VIEW', 'SYSTEM_CONFIG']}>
             <LOBReasonsPage />
+          </PermissionRoute>
+        } />
+
+        <Route path="/admin/followup-extension-reasons" element={
+          <PermissionRoute permissions={['view_followup_extension_reasons', 'SYSTEM_CONFIG']}>
+            <FollowUpExtensionReasonsPage />
           </PermissionRoute>
         } />
 

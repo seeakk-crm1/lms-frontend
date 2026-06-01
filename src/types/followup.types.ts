@@ -39,6 +39,8 @@ export interface FollowUp {
   snoozedBy?: string | null;
   snoozedAt?: string | null;
   reminderActionType?: string | null;
+  extensionReasonId?: string | null;
+  extensionReasonName?: string | null;
   activityLogs?: any[];
   createdAt: string;
   updatedAt: string;
@@ -152,7 +154,8 @@ export interface CompleteFollowUpInput {
 
 export interface SnoozeFollowUpInput {
   scheduledAt: string;
-  recentDescription: string;
+  recentDescription?: string;
+  extensionReasonId?: string;
   reminderActionType: 'SNOOZE' | 'REMIND_LATER';
 }
 

@@ -75,6 +75,12 @@ const FollowUpActionModal: React.FC<Props> = ({ isOpen, followUp, onClose, onOpe
                 <p className="mt-1 text-sm font-black text-gray-800">{typeLabel}</p>
                 <p className="mt-3 text-xs font-black uppercase tracking-widest text-red-500">Follow-up Note</p>
                 <p className="mt-1 text-sm font-semibold text-gray-700">{followUp.description || 'No description provided'}</p>
+                {followUp.extensionReasonName ? (
+                  <>
+                    <p className="mt-3 text-xs font-black uppercase tracking-widest text-red-500">Latest Reason</p>
+                    <p className="mt-1 text-sm font-semibold text-gray-800 whitespace-pre-wrap">{followUp.extensionReasonName}</p>
+                  </>
+                ) : null}
                 {followUp.recentDescription ? (
                   <>
                     <p className="mt-3 text-xs font-black uppercase tracking-widest text-red-500">Latest Outcome</p>
@@ -101,7 +107,12 @@ const FollowUpActionModal: React.FC<Props> = ({ isOpen, followUp, onClose, onOpe
                                 {format(new Date(log.snoozedAt), 'dd MMM yyyy, hh:mm a')}
                               </span>
                             </div>
-                            <p className="mt-0.5"><span className="font-semibold text-gray-700">Outcome:</span> {log.recentDescription}</p>
+                            {log.extensionReasonName ? (
+                              <p className="mt-0.5"><span className="font-semibold text-gray-700">Reason:</span> {log.extensionReasonName}</p>
+                            ) : null}
+                            {log.recentDescription ? (
+                              <p className="mt-0.5"><span className="font-semibold text-gray-700">Outcome:</span> {log.recentDescription}</p>
+                            ) : null}
                             <p className="text-[10px] text-gray-500 mt-0.5">
                               Moved from: {format(new Date(log.previousFollowupDate), 'dd MMM, hh:mm a')} to: {format(new Date(log.newFollowupDate), 'dd MMM, hh:mm a')}
                             </p>
