@@ -1,7 +1,13 @@
 import React, { useMemo, useState } from 'react';
 import { eachDayOfInterval, endOfMonth, endOfWeek, format, isSameMonth, parseISO, startOfMonth, startOfWeek } from 'date-fns';
 import { AnimatePresence, motion } from 'framer-motion';
-import type { CalendarContentFilter, FollowUp, FollowUpView } from '../../types/followup.types';
+import {
+  calendarShowsFollowUps,
+  calendarShowsLeads,
+  type CalendarContentFilter,
+  type FollowUp,
+  type FollowUpView,
+} from '../../types/followup.types';
 import CalendarDetailsModal from './CalendarDetailsModal';
 
 type SummaryDay = {
@@ -51,6 +57,9 @@ const CalendarView: React.FC<Props> = ({
     title: string;
     overdueExtendedOnly?: boolean;
   }>({ isOpen: false, date: '', type: '', title: '' });
+
+  const showFollowUps = calendarShowsFollowUps(contentFilter);
+  const showLeads = calendarShowsLeads(contentFilter);
 
   const summaryMap = useMemo(
     () =>
@@ -133,9 +142,8 @@ const CalendarView: React.FC<Props> = ({
                   </div>
 
                   <div className="flex flex-1 flex-col gap-1.5 overflow-y-auto">
-                    {contentFilter === 'FOLLOW_UPS' ? (
-                      <>
-                        {data?.stageFollowUps?.map((sf) => {
+                    {showFollowUps
+                      ? data?.stageFollowUps?.map((sf) => {
                           const isOverdueChip = (sf.overdueExtendedCount || 0) > 0;
                           const chipColor = isOverdueChip ? '#dc2626' : sf.color;
 
@@ -168,9 +176,10 @@ const CalendarView: React.FC<Props> = ({
                               </span>
                             </button>
                           );
-                        })}
-                      </>
-                    ) : (
+                        })
+                      : null}
+
+                    {showLeads ? (
                       <>
                         {data?.leadsCreatedByStage?.map((st) => (
                           <button
@@ -214,7 +223,7 @@ const CalendarView: React.FC<Props> = ({
                           </button>
                         ))}
                       </>
-                    )}
+                    ) : null}
                   </div>
                 </motion.div>
               );
@@ -230,7 +239,6 @@ const CalendarView: React.FC<Props> = ({
         stageId={detailsModal.stageId}
         title={detailsModal.title}
         overdueExtendedOnly={detailsModal.overdueExtendedOnly}
-        contentFilter={contentFilter}
         onClose={() => setDetailsModal({ ...detailsModal, isOpen: false })}
         onOpenFollowUp={onOpenFollowUp}
         onCompleteFollowUp={onComplete}

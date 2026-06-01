@@ -1,5 +1,14 @@
 export type FollowUpView = 'month' | 'week' | 'day' | 'list';
-export type CalendarContentFilter = 'FOLLOW_UPS' | 'LEADS';
+export type CalendarContentFilter = 'FOLLOW_UPS' | 'LEADS' | 'ALL';
+
+export const calendarShowsFollowUps = (filter: CalendarContentFilter): boolean =>
+  filter === 'FOLLOW_UPS' || filter === 'ALL';
+
+export const calendarShowsLeads = (filter: CalendarContentFilter): boolean =>
+  filter === 'LEADS' || filter === 'ALL';
+
+export const isFollowUpCalendarDetailType = (type: string): boolean =>
+  type === 'TOTAL_FOLLOWUPS' || type === 'STAGE_FOLLOWUPS';
 export type FollowUpType = 'CALL' | 'VISIT' | 'MEETING';
 export type FollowUpStatus = 'PENDING' | 'COMPLETED' | 'MISSED';
 

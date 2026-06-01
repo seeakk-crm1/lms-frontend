@@ -104,6 +104,7 @@ const CalendarHeader: React.FC<Props> = ({
             className="min-w-[180px] rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
             aria-label="Filter calendar content"
           >
+            <option value="ALL">All</option>
             <option value="FOLLOW_UPS">Follow-Ups</option>
             <option value="LEADS">Leads</option>
           </select>

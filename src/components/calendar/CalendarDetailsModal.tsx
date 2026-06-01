@@ -6,7 +6,7 @@ import { useAdvancedCalendarDetailsQuery } from '../../hooks/useFollowUps';
 import FollowUpCard from './FollowUpCard';
 import WhatsAppActionButton from '../common/WhatsAppActionButton';
 import { LEAD_WHATSAPP_PERMISSIONS } from '../../constants/whatsappPermissions';
-import type { CalendarContentFilter, FollowUp } from '../../types/followup.types';
+import { isFollowUpCalendarDetailType, type FollowUp } from '../../types/followup.types';
 import { stageBadgeStyle } from '../../utils/leadStageColor';
 
 interface CalendarDetailsModalProps {
@@ -16,7 +16,6 @@ interface CalendarDetailsModalProps {
   stageId?: string;
   title: string;
   overdueExtendedOnly?: boolean;
-  contentFilter: CalendarContentFilter;
   onClose: () => void;
   onOpenFollowUp?: (followUp: FollowUp) => void;
   onCompleteFollowUp?: (followUp: FollowUp) => void;
@@ -30,7 +29,6 @@ const CalendarDetailsModal: React.FC<CalendarDetailsModalProps> = ({
   stageId,
   title,
   overdueExtendedOnly,
-  contentFilter,
   onClose,
   onOpenFollowUp,
   onCompleteFollowUp,
@@ -44,8 +42,7 @@ const CalendarDetailsModal: React.FC<CalendarDetailsModalProps> = ({
     overdueExtendedOnly,
   });
 
-  const isFollowUpDetail =
-    contentFilter === 'FOLLOW_UPS' && (type === 'TOTAL_FOLLOWUPS' || type === 'STAGE_FOLLOWUPS');
+  const isFollowUpDetail = isFollowUpCalendarDetailType(type);
 
   return (
     <AnimatePresence>
