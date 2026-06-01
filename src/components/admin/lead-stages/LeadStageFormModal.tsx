@@ -11,8 +11,14 @@ import { useQuery } from '@tanstack/react-query';
 import { getStageRules } from '../../../services/stageRule.api';
 import type { StageRule } from '../../../types/stageRule.types';
 
-const leadStageSchema = z.object({
+const normalizeShortForm = (value: string) =>
+  value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 10);
+
+const leadStageSchema = z
+  .object({
   name: z.string().trim().min(2, 'Lead stage name must be at least 2 characters'),
+  stageShortForm: z.string().optional().default(''),
+  showInCalendar: z.boolean().default(true),
   color: z.string().regex(/^#([0-9A-Fa-f]{6})$/, 'Pick a valid color'),
   isApprovalRequired: z.boolean(),
   isLOB: z.boolean(),
@@ -25,7 +31,19 @@ const leadStageSchema = z.object({
       required: z.boolean(),
     }),
   ),
-});
+})
+  .transform((value) => ({
+    ...value,
+    stageShortForm: normalizeShortForm(value.stageShortForm || ''),
+  }))
+  .refine((value) => !value.showInCalendar || value.stageShortForm.length > 0, {
+    message: 'Stage short form is required when Show In Calendar is enabled.',
+    path: ['stageShortForm'],
+  })
+  .refine((value) => !value.stageShortForm || /^[A-Z0-9]{1,10}$/.test(value.stageShortForm), {
+    message: 'Use letters and numbers only (max 10 characters).',
+    path: ['stageShortForm'],
+  });
 
 type LeadStageFormValues = z.infer<typeof leadStageSchema>;
 
@@ -110,6 +128,8 @@ const LeadStageFormModal: React.FC<LeadStageFormModalProps> = ({
     resolver: zodResolver(leadStageSchema),
     defaultValues: {
       name: '',
+      stageShortForm: '',
+      showInCalendar: true,
       color: DEFAULT_STAGE_COLOR,
       isApprovalRequired: false,
       isLOB: false,
@@ -124,6 +144,8 @@ const LeadStageFormModal: React.FC<LeadStageFormModalProps> = ({
     if (!isOpen) return;
     reset({
       name: leadStage?.name || '',
+      stageShortForm: leadStage?.stageShortForm || '',
+      showInCalendar: leadStage?.showInCalendar ?? true,
       color: leadStage?.color || DEFAULT_STAGE_COLOR,
       isApprovalRequired: leadStage?.isApprovalRequired || false,
       isLOB: leadStage?.isLOB || false,
@@ -141,6 +163,7 @@ const LeadStageFormModal: React.FC<LeadStageFormModalProps> = ({
   const selectedRuleAssignments = watch('ruleAssignments');
   const isClosedStage = watch('isClosed');
   const isLOBStage = watch('isLOB');
+  const showInCalendar = watch('showInCalendar');
   const activeStageRules = activeStageRulesQuery.data || [];
 
   useEffect(() => {
@@ -215,6 +238,8 @@ const LeadStageFormModal: React.FC<LeadStageFormModalProps> = ({
     await onSubmit({
       ...data,
       name: data.name.trim(),
+      stageShortForm: data.stageShortForm || null,
+      showInCalendar: data.showInCalendar,
       ruleAssignments: Array.from(new Map(data.ruleAssignments.map((rule) => [rule.ruleId, rule])).values()),
     });
   };
@@ -286,6 +311,49 @@ const LeadStageFormModal: React.FC<LeadStageFormModalProps> = ({
                         }`}
                       />
                       {errors.name && <p className="text-[10px] text-red-500 font-bold">{errors.name.message}</p>}
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Stage Short Form</label>
+                      <input
+                        {...register('stageShortForm', {
+                          onChange: (event) => {
+                            event.target.value = normalizeShortForm(event.target.value);
+                          },
+                        })}
+                        maxLength={10}
+                        placeholder="e.g., QLF"
+                        className={`w-full px-4 py-3 bg-gray-50 border rounded-2xl focus:bg-white outline-none transition-all font-bold text-gray-900 uppercase ${
+                          errors.stageShortForm ? 'border-red-300 focus:border-red-500' : 'border-gray-50 focus:border-emerald-500'
+                        }`}
+                      />
+                      <p className="text-[10px] font-semibold text-gray-400">
+                        Up to 10 characters, letters and numbers only. Used in calendar chips (e.g. QLF Follow-Up 4).
+                      </p>
+                      {errors.stageShortForm && (
+                        <p className="text-[10px] text-red-500 font-bold">{errors.stageShortForm.message}</p>
+                      )}
+                    </div>
+
+                    <div className="space-y-1.5 md:col-span-2">
+                      <Controller
+                        name="showInCalendar"
+                        control={control}
+                        render={({ field }) => (
+                          <ToggleField
+                            label="Show In Calendar"
+                            description="Display this stage short form on follow-up and lead calendar views"
+                            value={field.value}
+                            onChange={field.onChange}
+                            ariaLabel="Toggle show in calendar"
+                          />
+                        )}
+                      />
+                      {showInCalendar ? null : (
+                        <p className="text-[10px] font-semibold text-amber-600">
+                          Hidden stages remain active in the pipeline but are excluded from calendar summaries.
+                        </p>
+                      )}
                     </div>
 
                     <div className="space-y-1.5">

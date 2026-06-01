@@ -120,11 +120,27 @@ const CalendarDetailsModal: React.FC<CalendarDetailsModalProps> = ({
                                 className="rounded-full px-2 py-0.5 text-[10px] font-black"
                                 style={stageBadgeStyle((item.leadStage || item.lead?.stage)?.color)}
                               >
-                                {(item.leadStage || item.lead?.stage)?.name}
+                                {(item.leadStage || item.lead?.stage)?.calendarLabel ||
+                                  (item.leadStage || item.lead?.stage)?.stageShortForm ||
+                                  (item.leadStage || item.lead?.stage)?.name}
                               </span>
                             ) : null}
                           </div>
                           <dl className="grid gap-2 text-xs text-gray-600 sm:grid-cols-2">
+                            {(item.leadStage || item.lead?.stage)?.name ? (
+                              <>
+                                <div>
+                                  <dt className="font-bold uppercase tracking-wide text-gray-400">Stage Name</dt>
+                                  <dd className="font-semibold text-gray-800">{(item.leadStage || item.lead?.stage)?.name}</dd>
+                                </div>
+                                <div>
+                                  <dt className="font-bold uppercase tracking-wide text-gray-400">Stage Short Form</dt>
+                                  <dd className="font-semibold text-gray-800">
+                                    {(item.leadStage || item.lead?.stage)?.stageShortForm || '—'}
+                                  </dd>
+                                </div>
+                              </>
+                            ) : null}
                             <div>
                               <dt className="font-bold uppercase tracking-wide text-gray-400">Customer</dt>
                               <dd className="font-semibold text-gray-800">{item.customerName || '—'}</dd>
@@ -203,7 +219,9 @@ const CalendarDetailsModal: React.FC<CalendarDetailsModalProps> = ({
                               className="rounded-full px-2 py-0.5 text-[10px] font-black"
                               style={stageBadgeStyle((item.currentStage || item.stage)?.color)}
                             >
-                              {(item.currentStage || item.stage)?.name}
+                              {(item.currentStage || item.stage)?.calendarLabel ||
+                                (item.currentStage || item.stage)?.stageShortForm ||
+                                (item.currentStage || item.stage)?.name}
                             </span>
                           ) : null}
                         </div>
@@ -213,8 +231,22 @@ const CalendarDetailsModal: React.FC<CalendarDetailsModalProps> = ({
                             <dd className="font-semibold text-gray-800">{item.customerName || item.email || item.phone || '—'}</dd>
                           </div>
                           <div>
+                            <dt className="font-bold uppercase tracking-wide text-gray-400">Stage Name</dt>
+                            <dd className="font-semibold text-gray-800">{(item.currentStage || item.stage)?.name || '—'}</dd>
+                          </div>
+                          <div>
+                            <dt className="font-bold uppercase tracking-wide text-gray-400">Stage Short Form</dt>
+                            <dd className="font-semibold text-gray-800">
+                              {(item.currentStage || item.stage)?.stageShortForm || '—'}
+                            </dd>
+                          </div>
+                          <div>
                             <dt className="font-bold uppercase tracking-wide text-gray-400">Previous Stage</dt>
-                            <dd className="font-semibold text-gray-800">{item.previousStage?.name || '—'}</dd>
+                            <dd className="font-semibold text-gray-800">
+                              {item.previousStage?.name
+                                ? `${item.previousStage.stageShortForm ? `${item.previousStage.stageShortForm} · ` : ''}${item.previousStage.name}`
+                                : '—'}
+                            </dd>
                           </div>
                           <div>
                             <dt className="font-bold uppercase tracking-wide text-gray-400">Current Stage</dt>

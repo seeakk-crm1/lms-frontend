@@ -23,8 +23,25 @@ type SummaryDay = {
     color: string;
     overdueExtendedCount?: number;
     overdueHistoryCount?: number;
+    shortForm?: string;
+  }>;
+  leadsCreatedByStage?: Array<{
+    stageId: string;
+    count: number;
+    name: string;
+    shortForm?: string;
+    color: string;
+  }>;
+  stageTransitions?: Array<{
+    stageId: string;
+    count: number;
+    name: string;
+    shortForm?: string;
+    color: string;
   }>;
 };
+
+const calendarStageLabel = (stage: { shortForm?: string; name: string }) => stage.shortForm || stage.name;
 
 interface Props {
   view: FollowUpView;
@@ -155,7 +172,7 @@ const CalendarView: React.FC<Props> = ({
                                 openDetails(
                                   key,
                                   'STAGE_FOLLOWUPS',
-                                  `${sf.name} Follow-Up - ${sf.count}`,
+                                  `${calendarStageLabel(sf)} Follow-Up - ${sf.count}`,
                                   sf.stageId,
                                   isOverdueChip,
                                 )
@@ -167,7 +184,7 @@ const CalendarView: React.FC<Props> = ({
                               }}
                             >
                               <span className="truncate text-[10px] font-bold" style={{ color: chipColor }}>
-                                {sf.name} Follow-Up - {sf.count}
+                                {calendarStageLabel(sf)} Follow-Up - {sf.count}
                               </span>
                               <span
                                 className="rounded-full px-1.5 py-0.5 text-[9px] font-black"
@@ -186,13 +203,13 @@ const CalendarView: React.FC<Props> = ({
                           <button
                             key={`lead-create-${st.stageId}`}
                             onClick={() =>
-                              openDetails(key, 'LEAD_STAGE_CREATED', `${st.name} Created - ${st.count}`, st.stageId)
+                              openDetails(key, 'LEAD_STAGE_CREATED', `${calendarStageLabel(st)} Created - ${st.count}`, st.stageId)
                             }
                             className="flex w-full items-center justify-between rounded-lg border px-2 py-1 text-left transition-colors"
                             style={{ borderColor: `${st.color}40`, backgroundColor: `${st.color}15` }}
                           >
                             <span className="truncate text-[10px] font-bold" style={{ color: st.color }}>
-                              {st.name} Created - {st.count}
+                              {calendarStageLabel(st)} Created - {st.count}
                             </span>
                             <span
                               className="rounded-full px-1.5 py-0.5 text-[9px] font-black"
@@ -207,13 +224,13 @@ const CalendarView: React.FC<Props> = ({
                           <button
                             key={`trans-${st.stageId}`}
                             onClick={() =>
-                              openDetails(key, 'STAGE_CREATED', `${st.name} Created - ${st.count}`, st.stageId)
+                              openDetails(key, 'STAGE_CREATED', `${calendarStageLabel(st)} Created - ${st.count}`, st.stageId)
                             }
                             className="flex w-full items-center justify-between rounded-lg border px-2 py-1 text-left transition-colors"
                             style={{ borderColor: `${st.color}40`, backgroundColor: `${st.color}15` }}
                           >
                             <span className="truncate text-[10px] font-bold" style={{ color: st.color }}>
-                              {st.name} Created - {st.count}
+                              {calendarStageLabel(st)} Created - {st.count}
                             </span>
                             <span
                               className="rounded-full px-1.5 py-0.5 text-[9px] font-black"

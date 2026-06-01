@@ -41,6 +41,8 @@ export const useCreateLeadStageMutation = () => {
           {
             id: `temp-${Date.now()}`,
             name: payload.name,
+            stageShortForm: payload.stageShortForm ?? null,
+            showInCalendar: payload.showInCalendar ?? true,
             color: payload.color,
             isApprovalRequired: payload.isApprovalRequired,
             isLOB: payload.isLOB,

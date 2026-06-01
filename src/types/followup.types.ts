@@ -94,13 +94,14 @@ export interface AdvancedCalendarSummaryResponse {
     summary: Array<{
       date: string;
       leadsCreated: number;
-      leadsCreatedByStage: Array<{ stageId: string; count: number; name: string; color: string }>;
+      leadsCreatedByStage: Array<{ stageId: string; count: number; name: string; shortForm?: string; color: string }>;
       totalFollowUps: number;
-      stageTransitions: Array<{ stageId: string; count: number; name: string; color: string }>;
+      stageTransitions: Array<{ stageId: string; count: number; name: string; shortForm?: string; color: string }>;
       stageFollowUps: Array<{
         stageId: string;
         count: number;
         name: string;
+        shortForm?: string;
         color: string;
         overdueExtendedCount?: number;
         overdueHistoryCount?: number;

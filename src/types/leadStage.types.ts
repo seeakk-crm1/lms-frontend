@@ -19,6 +19,8 @@ export interface LeadStageRuleAssignment {
 export interface LeadStage {
   id: string;
   name: string;
+  stageShortForm: string | null;
+  showInCalendar: boolean;
   color: string;
   isApprovalRequired: boolean;
   isLOB: boolean;
@@ -52,6 +54,8 @@ export interface ListLeadStagesResponse {
 
 export interface CreateLeadStageInput {
   name: string;
+  stageShortForm?: string | null;
+  showInCalendar: boolean;
   color: string;
   isApprovalRequired: boolean;
   isLOB: boolean;

@@ -14,6 +14,8 @@ type ApiStageRule = {
 type ApiLeadStage = {
   id: string;
   name: string;
+  stageShortForm?: string | null;
+  showInCalendar?: boolean;
   color: string;
   isApprovalRequired: boolean;
   isLOB: boolean;
@@ -38,6 +40,8 @@ const toApiPayload = (data: CreateLeadStageInput | UpdateLeadStageInput) => {
 const mapFromApi = (item: ApiLeadStage) => ({
   ...item,
   stageOrder: item.order,
+  stageShortForm: item.stageShortForm ?? null,
+  showInCalendar: item.showInCalendar ?? true,
   rules: item.rules || [],
 });
 
