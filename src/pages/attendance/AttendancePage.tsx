@@ -497,7 +497,10 @@ const AttendancePage: React.FC = () => {
   if (todayStatus?.isLocked) {
     return (
       <DashboardLayout>
-        <LockedScreen />
+        <LockedScreen
+          isTargetLocked={Boolean(todayStatus?.isTargetLocked)}
+          targetLock={todayStatus?.targetLock}
+        />
       </DashboardLayout>
     );
   }

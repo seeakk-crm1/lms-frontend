@@ -9,6 +9,7 @@ import {
   type CapturedAttendanceLocation,
 } from '../utils/attendanceGeolocation';
 import toast from 'react-hot-toast';
+import TargetLockDetails, { type TargetLockDetailsData } from './TargetLockDetails';
 
 interface OfficeLocationProfile {
   id: string;
@@ -30,6 +31,8 @@ interface MandatoryAttendanceModalProps {
     locationSetupMessage?: string | null;
     officeLocationConfigured?: boolean;
     officeBranchAssigned?: boolean;
+    isTargetLocked?: boolean;
+    targetLock?: TargetLockDetailsData | null;
   };
   onSuccess?: () => void;
 }
@@ -190,15 +193,19 @@ export const MandatoryAttendanceModal: React.FC<MandatoryAttendanceModalProps> =
         </div>
 
         {status.isLocked ? (
-          <div className="flex flex-col items-center p-8 text-center">
-            <div className="mb-4 rounded-full bg-rose-50 p-5 text-rose-500">
-              <ShieldAlert size={48} />
+          status.isTargetLocked && status.targetLock ? (
+            <TargetLockDetails lock={status.targetLock} />
+          ) : (
+            <div className="flex flex-col items-center p-8 text-center">
+              <div className="mb-4 rounded-full bg-rose-50 p-5 text-rose-500">
+                <ShieldAlert size={48} />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900">Your Account is Locked</h3>
+              <p className="mt-2 max-w-md text-sm text-gray-500">
+                Contact your supervisor to unlock your account before marking attendance.
+              </p>
             </div>
-            <h3 className="text-lg font-bold text-gray-900">Your Account is Locked</h3>
-            <p className="mt-2 max-w-md text-sm text-gray-500">
-              Contact your supervisor to unlock your account before marking attendance.
-            </p>
-          </div>
+          )
         ) : (
           <form onSubmit={handleSubmit} className="space-y-6 p-8">
             <div
