@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Settings,
@@ -33,8 +33,32 @@ import {
 } from '../../services/followupSettings.api';
 import { getFollowUpHistory } from '../../services/followupService';
 import api from '../../services/api';
+import useAuthStore from '../../store/useAuthStore';
+import {
+  canGrantBulkExtensionAccess,
+  canManageFollowUpSettings,
+  canUseBulkFollowUpExtension,
+} from '../../utils/permission.util';
 
 const FollowUpSettingsPage: React.FC = () => {
+  const user = useAuthStore((state) => state.user);
+  const updateUser = useAuthStore((state) => state.updateUser);
+  const permissions = user?.permissions || [];
+
+  const access = useMemo(
+    () => ({
+      canManageSettings: canManageFollowUpSettings(permissions),
+      canGrantTemp: canGrantBulkExtensionAccess(permissions),
+      canBulkExtend: canUseBulkFollowUpExtension(permissions),
+      canViewReports:
+        permissions.includes('SUPERADMIN') ||
+        permissions.includes('view_followup_capacity') ||
+        permissions.includes('manage_followup_settings'),
+      canViewAudit: canManageFollowUpSettings(permissions),
+    }),
+    [permissions],
+  );
+
   const [activeTab, setActiveTab] = useState<'settings' | 'temp-access' | 'bulk-extend' | 'reports' | 'audit'>('settings');
 
   // Common UI State
@@ -69,6 +93,34 @@ const FollowUpSettingsPage: React.FC = () => {
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
   const [auditPage, setAuditPage] = useState(1);
   const [auditTotalPages, setAuditTotalPages] = useState(1);
+
+  const refreshSessionPermissions = useCallback(async () => {
+    try {
+      const response = await api.get('/auth/me');
+      if (response.data?.user) {
+        updateUser(response.data.user);
+      }
+    } catch {
+      // Ignore background refresh failures.
+    }
+  }, [updateUser]);
+
+  useEffect(() => {
+    void refreshSessionPermissions();
+    const intervalId = window.setInterval(() => {
+      void refreshSessionPermissions();
+    }, 45_000);
+    return () => window.clearInterval(intervalId);
+  }, [refreshSessionPermissions]);
+
+  useEffect(() => {
+    if (access.canBulkExtend && !access.canManageSettings && activeTab === 'settings') {
+      setActiveTab('bulk-extend');
+    }
+    if (!access.canBulkExtend && activeTab === 'bulk-extend') {
+      setActiveTab(access.canManageSettings ? 'settings' : access.canGrantTemp ? 'temp-access' : 'settings');
+    }
+  }, [access.canBulkExtend, access.canManageSettings, access.canGrantTemp, activeTab]);
 
   // Queries
   const leadMeta = useLeadMetaQuery();
@@ -205,6 +257,9 @@ const FollowUpSettingsPage: React.FC = () => {
     } else if (activeTab === 'temp-access') {
       loadTempAccesses();
     } else if (activeTab === 'bulk-extend') {
+      if (!settings) {
+        void loadSettings();
+      }
       loadPendingFollowUps();
     } else if (activeTab === 'reports') {
       loadReport();
@@ -401,57 +456,67 @@ const FollowUpSettingsPage: React.FC = () => {
 
           {/* Navigation Tabs */}
           <div className="flex border-b border-gray-200 bg-white/70 rounded-2xl p-1.5 shadow-sm print:hidden">
-            <button
-              onClick={() => setActiveTab('settings')}
-              className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all ${
-                activeTab === 'settings' ? 'bg-emerald-500 text-white shadow-md' : 'text-gray-500 hover:text-gray-950 hover:bg-gray-50'
-              }`}
-            >
-              <Settings size={16} />
-              Settings
-            </button>
-            <button
-              onClick={() => setActiveTab('temp-access')}
-              className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all ${
-                activeTab === 'temp-access' ? 'bg-emerald-500 text-white shadow-md' : 'text-gray-500 hover:text-gray-950 hover:bg-gray-50'
-              }`}
-            >
-              <UserCheck size={16} />
-              Temporary Access
-            </button>
-            <button
-              onClick={() => setActiveTab('bulk-extend')}
-              className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all ${
-                activeTab === 'bulk-extend' ? 'bg-emerald-500 text-white shadow-md' : 'text-gray-500 hover:text-gray-950 hover:bg-gray-50'
-              }`}
-            >
-              <Calendar size={16} />
-              Bulk Reschedule
-            </button>
-            <button
-              onClick={() => setActiveTab('reports')}
-              className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all ${
-                activeTab === 'reports' ? 'bg-emerald-500 text-white shadow-md' : 'text-gray-500 hover:text-gray-950 hover:bg-gray-50'
-              }`}
-            >
-              <FileText size={16} />
-              Capacity Reports
-            </button>
-            <button
-              onClick={() => setActiveTab('audit')}
-              className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all ${
-                activeTab === 'audit' ? 'bg-emerald-500 text-white shadow-md' : 'text-gray-500 hover:text-gray-950 hover:bg-gray-50'
-              }`}
-            >
-              <History size={16} />
-              Audit Logs
-            </button>
+            {access.canManageSettings ? (
+              <button
+                onClick={() => setActiveTab('settings')}
+                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all ${
+                  activeTab === 'settings' ? 'bg-emerald-500 text-white shadow-md' : 'text-gray-500 hover:text-gray-950 hover:bg-gray-50'
+                }`}
+              >
+                <Settings size={16} />
+                Settings
+              </button>
+            ) : null}
+            {access.canGrantTemp ? (
+              <button
+                onClick={() => setActiveTab('temp-access')}
+                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all ${
+                  activeTab === 'temp-access' ? 'bg-emerald-500 text-white shadow-md' : 'text-gray-500 hover:text-gray-950 hover:bg-gray-50'
+                }`}
+              >
+                <UserCheck size={16} />
+                Temporary Access
+              </button>
+            ) : null}
+            {access.canBulkExtend ? (
+              <button
+                onClick={() => setActiveTab('bulk-extend')}
+                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all ${
+                  activeTab === 'bulk-extend' ? 'bg-emerald-500 text-white shadow-md' : 'text-gray-500 hover:text-gray-950 hover:bg-gray-50'
+                }`}
+              >
+                <Calendar size={16} />
+                Bulk Reschedule
+              </button>
+            ) : null}
+            {access.canViewReports ? (
+              <button
+                onClick={() => setActiveTab('reports')}
+                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all ${
+                  activeTab === 'reports' ? 'bg-emerald-500 text-white shadow-md' : 'text-gray-500 hover:text-gray-950 hover:bg-gray-50'
+                }`}
+              >
+                <FileText size={16} />
+                Capacity Reports
+              </button>
+            ) : null}
+            {access.canViewAudit ? (
+              <button
+                onClick={() => setActiveTab('audit')}
+                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all ${
+                  activeTab === 'audit' ? 'bg-emerald-500 text-white shadow-md' : 'text-gray-500 hover:text-gray-950 hover:bg-gray-50'
+                }`}
+              >
+                <History size={16} />
+                Audit Logs
+              </button>
+            ) : null}
           </div>
 
           {/* TAB CONTENTS */}
           <div className="min-h-[500px]">
             <AnimatePresence mode="wait">
-              {activeTab === 'settings' && settings && (
+              {activeTab === 'settings' && settings && access.canManageSettings && (
                 <motion.div
                   initial={{ opacity: 0, y: 15 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -572,7 +637,7 @@ const FollowUpSettingsPage: React.FC = () => {
                 </motion.div>
               )}
 
-              {activeTab === 'temp-access' && (
+              {activeTab === 'temp-access' && access.canGrantTemp && (
                 <motion.div
                   initial={{ opacity: 0, y: 15 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -645,6 +710,8 @@ const FollowUpSettingsPage: React.FC = () => {
                           <tr className="border-b border-gray-100 text-xs font-black uppercase text-gray-400 tracking-wider">
                             <th className="py-3 px-4">User</th>
                             <th className="py-3 px-4">Granted By</th>
+                            <th className="py-3 px-4">Permission Type</th>
+                            <th className="py-3 px-4">Granted Date</th>
                             <th className="py-3 px-4">Expires At</th>
                             <th className="py-3 px-4">Status</th>
                             <th className="py-3 px-4 text-right">Action</th>
@@ -653,7 +720,7 @@ const FollowUpSettingsPage: React.FC = () => {
                         <tbody>
                           {tempAccesses.length === 0 ? (
                             <tr>
-                              <td colSpan={5} className="py-6 text-center text-sm font-semibold text-gray-400">
+                              <td colSpan={7} className="py-6 text-center text-sm font-semibold text-gray-400">
                                 No active or past temporary access grants found.
                               </td>
                             </tr>
@@ -669,6 +736,12 @@ const FollowUpSettingsPage: React.FC = () => {
                                   </td>
                                   <td className="py-3 px-4">
                                     <span className="block">{entry.grantedBy.name || entry.grantedBy.email}</span>
+                                  </td>
+                                  <td className="py-3 px-4 text-xs font-semibold text-gray-700">
+                                    Bulk Follow-Up Extension
+                                  </td>
+                                  <td className="py-3 px-4 text-xs font-mono">
+                                    {new Date(entry.createdAt).toLocaleString()}
                                   </td>
                                   <td className="py-3 px-4 text-xs font-mono">
                                     {new Date(entry.expiresAt).toLocaleString()}
@@ -706,13 +779,18 @@ const FollowUpSettingsPage: React.FC = () => {
                 </motion.div>
               )}
 
-              {activeTab === 'bulk-extend' && (
+              {activeTab === 'bulk-extend' && access.canBulkExtend && (
                 <motion.div
                   initial={{ opacity: 0, y: 15 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -15 }}
                   className="grid grid-cols-1 lg:grid-cols-3 gap-6 print:hidden"
                 >
+                  {settings && !settings.bulkExtensionEnabled ? (
+                    <div className="lg:col-span-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900">
+                      Bulk extension is disabled in workspace settings. Contact an administrator to enable it.
+                    </div>
+                  ) : null}
                   {/* Select Follow-ups Panel */}
                   <div className="bg-white/95 border border-white/70 p-6 rounded-[28px] shadow-[0_20px_50px_-30px_rgba(15,23,42,0.25)] backdrop-blur lg:col-span-2 space-y-4">
                     <div className="flex items-center justify-between">
@@ -846,7 +924,7 @@ const FollowUpSettingsPage: React.FC = () => {
                 </motion.div>
               )}
 
-              {activeTab === 'reports' && (
+              {activeTab === 'reports' && access.canViewReports && (
                 <motion.div
                   initial={{ opacity: 0, y: 15 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -1054,7 +1132,7 @@ const FollowUpSettingsPage: React.FC = () => {
                 </motion.div>
               )}
 
-              {activeTab === 'audit' && (
+              {activeTab === 'audit' && access.canViewAudit && (
                 <motion.div
                   initial={{ opacity: 0, y: 15 }}
                   animate={{ opacity: 1, y: 0 }}

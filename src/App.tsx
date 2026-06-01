@@ -393,7 +393,9 @@ function App() {
         } />
 
         <Route path="/leads/settings" element={
-          <PermissionRoute permissions={['manage_followup_settings', 'view_followup_capacity']}>
+          <PermissionRoute
+            permissions={['manage_followup_settings', 'view_followup_capacity', 'bulk_extend_followups']}
+          >
             <FollowUpSettingsPage />
           </PermissionRoute>
         } />
