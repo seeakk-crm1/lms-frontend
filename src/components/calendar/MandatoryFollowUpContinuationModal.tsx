@@ -50,11 +50,13 @@ const MandatoryFollowUpContinuationModal: React.FC<Props> = ({
     return toDateInputValue(next.toISOString());
   }, [item.leadId]);
 
+  const lifecycleExhausted = item.lifecycleRemainingDays === 0;
+
   const maxDateTime = useMemo(() => {
-    if (!item.maxFollowUpDate) return undefined;
+    if (!item.maxFollowUpDate || lifecycleExhausted) return undefined;
     const end = new Date(`${item.maxFollowUpDate}T23:59:59`);
     return toDateInputValue(end.toISOString());
-  }, [item.maxFollowUpDate]);
+  }, [item.maxFollowUpDate, lifecycleExhausted]);
 
   const [scheduledAt, setScheduledAt] = useState(minDateTime);
   const [type, setType] = useState<FollowUpType>(item.previousFollowUpType || 'CALL');
@@ -213,13 +215,19 @@ const MandatoryFollowUpContinuationModal: React.FC<Props> = ({
                   max={maxDateTime}
                   value={scheduledAt}
                   onChange={(event) => setScheduledAt(event.target.value)}
-                  className="w-full rounded-xl border border-gray-200 bg-gray-50/30 px-3 py-2.5 text-xs font-semibold text-gray-800 outline-none transition focus:border-emerald-500 focus:bg-white"
+                  disabled={lifecycleExhausted}
+                  className="w-full rounded-xl border border-gray-200 bg-gray-50/30 px-3 py-2.5 text-xs font-semibold text-gray-800 outline-none transition focus:border-emerald-500 focus:bg-white disabled:cursor-not-allowed disabled:opacity-60"
                 />
-                {item.maxFollowUpDate && (
+                {lifecycleExhausted ? (
+                  <span className="text-[10px] text-rose-600 block mt-1 font-semibold leading-relaxed">
+                    This lead has reached its maximum lifecycle period in the current stage. Please move the lead to
+                    the next stage.
+                  </span>
+                ) : item.maxFollowUpDate ? (
                   <span className="text-[10px] text-gray-400 block mt-1 font-medium">
                     Latest Allowed: {item.maxFollowUpDate}
                   </span>
-                )}
+                ) : null}
               </div>
 
               <div className="space-y-1">
@@ -251,7 +259,7 @@ const MandatoryFollowUpContinuationModal: React.FC<Props> = ({
 
             <button
               type="submit"
-              disabled={isSubmitting || !scheduledAt}
+              disabled={isSubmitting || !scheduledAt || lifecycleExhausted}
               className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 hover:bg-emerald-700 px-5 py-3.5 text-xs font-extrabold text-white shadow-md active:scale-98 transition disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
             >
               {isSubmitting ? (

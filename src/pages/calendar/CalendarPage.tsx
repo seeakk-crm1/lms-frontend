@@ -23,6 +23,11 @@ import {
 } from '../../hooks/useFollowUps';
 import { useWeeklyOffScheduleGuard } from '../../hooks/useWeeklyOffScheduleGuard';
 import { useMandatoryFollowUpContinuationQuery } from '../../hooks/useMandatoryFollowUpContinuation';
+import { useLifecycleExtensionLimit } from '../../hooks/useLifecycleExtensionLimit';
+import {
+  lifecycleExtensionHint,
+  maxDateTimeLocalFromLifecycleLimit,
+} from '../../modules/followups/followupLifecycleUi';
 import useFollowupStore from '../../store/followupStore';
 import type { CreateFollowUpInput } from '../../types/followup.types';
 import type { FollowUp } from '../../types/followup.types';
@@ -87,6 +92,35 @@ const CalendarPage: React.FC = () => {
       description: '',
     },
   });
+
+  const selectedLeadId = watch('leadId');
+  const lifecycleLimitQuery = useLifecycleExtensionLimit(
+    selectedLeadId,
+    isCreateModalOpen && Boolean(selectedLeadId),
+  );
+  const createLifecycle = lifecycleLimitQuery.data?.data;
+  const createLifecycleBlocked = Boolean(
+    createLifecycle?.applies && !createLifecycle?.canOverride && createLifecycle.remainingDays === 0,
+  );
+  const createLifecycleMax = useMemo(
+    () =>
+      createLifecycle?.applies && !createLifecycle.canOverride
+        ? maxDateTimeLocalFromLifecycleLimit(createLifecycle.maxExtensionDate)
+        : undefined,
+    [createLifecycle],
+  );
+  const createLifecycleHint = useMemo(
+    () =>
+      createLifecycle?.applies
+        ? lifecycleExtensionHint({
+            applies: true,
+            remainingDays: createLifecycle.remainingDays,
+            maxFollowUpDate: createLifecycle.maxExtensionDate?.slice(0, 10) ?? null,
+            canOverride: createLifecycle.canOverride,
+          })
+        : null,
+    [createLifecycle],
+  );
 
   const calendarSummary = useMemo(
     () => advancedSummaryQuery.data?.data.summary || [],
@@ -341,8 +375,19 @@ const CalendarPage: React.FC = () => {
                     <input
                       type="datetime-local"
                       {...register('scheduledAt')}
-                      className="mt-1.5 w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-800 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+                      max={createLifecycleMax}
+                      disabled={createLifecycleBlocked}
+                      className="mt-1.5 w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-800 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-60"
                     />
+                    {createLifecycleHint ? (
+                      <p
+                        className={`mt-1 text-[11px] font-semibold leading-relaxed ${
+                          createLifecycleBlocked ? 'text-rose-600' : 'text-emerald-700'
+                        }`}
+                      >
+                        {createLifecycleHint}
+                      </p>
+                    ) : null}
                     {errors.scheduledAt ? (
                       <p className="mt-1 text-[11px] font-bold text-red-600">{errors.scheduledAt.message}</p>
                     ) : null}
@@ -369,7 +414,7 @@ const CalendarPage: React.FC = () => {
                   </button>
                   <button
                     type="submit"
-                    disabled={createMutation.isPending}
+                    disabled={createMutation.isPending || createLifecycleBlocked}
                     className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-500 py-3 text-sm font-black text-white hover:bg-emerald-600 disabled:opacity-70 sm:flex-1"
                   >
                     {createMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <CalendarPlus className="h-4 w-4" />}

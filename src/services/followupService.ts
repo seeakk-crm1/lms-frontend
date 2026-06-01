@@ -58,6 +58,14 @@ export const getTodayFollowUps = async (userId?: string) => {
   return response.data;
 };
 
+export const getLifecycleExtensionLimit = async (leadId: string) => {
+  const response = await api.get<import('../types/followup.types').LifecycleExtensionLimitResponse>(
+    '/followups/lifecycle-extension-limit',
+    { params: { leadId } },
+  );
+  return response.data;
+};
+
 export const getMandatoryFollowUpContinuation = async () => {
   const response = await api.get<import('../types/mandatoryFollowup.types').MandatoryFollowUpContinuationResponse>(
     '/followups/mandatory-continuation',

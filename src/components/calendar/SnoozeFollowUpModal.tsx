@@ -1,9 +1,14 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Loader2, X } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import type { FollowUp } from '../../types/followup.types';
 import { useActiveExtensionReasonsQuery } from '../../modules/followup-extension-reasons/hooks/useFollowUpExtensionReasons';
+import { useLifecycleExtensionLimit } from '../../hooks/useLifecycleExtensionLimit';
+import {
+  lifecycleExtensionHint,
+  maxDateTimeLocalFromLifecycleLimit,
+} from '../../modules/followups/followupLifecycleUi';
 
 interface Props {
   isOpen: boolean;
@@ -37,6 +42,39 @@ const SnoozeFollowUpModal: React.FC<Props> = ({
   isSubmitting = false,
 }) => {
   const { data: activeReasons = [] } = useActiveExtensionReasonsQuery(isOpen);
+  const lifecycleQuery = useLifecycleExtensionLimit(followUp?.leadId, isOpen && Boolean(followUp?.leadId));
+  const lifecycle = lifecycleQuery.data?.data;
+
+  const minDateTime = useMemo(() => {
+    const next = new Date();
+    next.setMinutes(next.getMinutes() + 1);
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${next.getFullYear()}-${pad(next.getMonth() + 1)}-${pad(next.getDate())}T${pad(next.getHours())}:${pad(next.getMinutes())}`;
+  }, [followUp?.id, isOpen]);
+
+  const maxDateTime = useMemo(
+    () =>
+      lifecycle?.applies && !lifecycle.canOverride
+        ? maxDateTimeLocalFromLifecycleLimit(lifecycle.maxExtensionDate)
+        : undefined,
+    [lifecycle],
+  );
+
+  const lifecycleHint = useMemo(
+    () =>
+      lifecycle?.applies
+        ? lifecycleExtensionHint({
+            applies: true,
+            remainingDays: lifecycle.remainingDays,
+            maxFollowUpDate: lifecycle.maxExtensionDate?.slice(0, 10) ?? null,
+            canOverride: lifecycle.canOverride,
+          })
+        : null,
+    [lifecycle],
+  );
+
+  const lifecycleBlocked =
+    Boolean(lifecycle?.applies && !lifecycle?.canOverride && lifecycle.remainingDays === 0);
 
   const formatDateTime = (dateStr?: string | null) => {
     if (!dateStr) return 'N/A';
@@ -120,9 +158,21 @@ const SnoozeFollowUpModal: React.FC<Props> = ({
                 <input
                   type="datetime-local"
                   value={value}
+                  min={minDateTime}
+                  max={maxDateTime}
                   onChange={(event) => onChange(event.target.value)}
-                  className="mt-1.5 w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-800 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
+                  disabled={lifecycleBlocked}
+                  className="mt-1.5 w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-800 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 disabled:cursor-not-allowed disabled:opacity-60"
                 />
+                {lifecycleHint ? (
+                  <p
+                    className={`mt-1.5 text-[11px] font-semibold leading-relaxed ${
+                      lifecycleBlocked ? 'text-rose-600' : 'text-amber-700'
+                    }`}
+                  >
+                    {lifecycleHint}
+                  </p>
+                ) : null}
               </div>
 
               <div>
@@ -167,7 +217,7 @@ const SnoozeFollowUpModal: React.FC<Props> = ({
                 <button
                   type="button"
                   onClick={onSubmit}
-                  disabled={isSubmitting || !value || !hasAnyInput}
+                  disabled={isSubmitting || !value || !hasAnyInput || lifecycleBlocked}
                   className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl bg-amber-500 py-3 text-sm font-black text-white hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}

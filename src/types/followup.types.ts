@@ -198,6 +198,27 @@ export interface SnoozeFollowUpInput {
   reminderActionType: 'SNOOZE' | 'REMIND_LATER';
 }
 
+export interface LifecycleExtensionLimit {
+  applies: boolean;
+  leadId?: string;
+  stageId?: string | null;
+  stageName?: string | null;
+  lifecycleName?: string | null;
+  configuredTransitionDays?: number;
+  daysConsumed?: number;
+  remainingDays?: number;
+  maxExtensionDate?: string;
+  stageEnteredAt?: string | null;
+  stageExpiresAt?: string | null;
+  canOverride?: boolean;
+}
+
+export interface LifecycleExtensionLimitResponse {
+  success: boolean;
+  message: string;
+  data: LifecycleExtensionLimit;
+}
+
 export interface CalendarQueryParams {
   view: FollowUpView;
   startDate: string;
