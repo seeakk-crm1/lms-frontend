@@ -18,11 +18,8 @@ interface Props {
 }
 
 const MandatoryOverdueFollowUpGate: React.FC<Props> = ({ children }) => {
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const { blocked, enabled, items, query } = useOverdueMandatoryBlocked();
   const user = useAuthStore((state) => state.user);
-  const enabled = Boolean(isAuthenticated && user?.isOnboarded);
-
-  const { blocked, items, query } = useOverdueMandatoryBlocked();
   const invalidateOverdue = useInvalidateOverdueMandatory();
   const completeMutation = useCompleteFollowUpMutation();
   const snoozeMutation = useSnoozeFollowUpMutation();
