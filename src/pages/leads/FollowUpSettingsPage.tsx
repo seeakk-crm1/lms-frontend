@@ -41,6 +41,7 @@ import {
 } from '../../utils/permission.util';
 import {
   type BulkExtendFollowUpRow,
+  hasActiveBulkFollowUpFilters,
   mapFollowUpToBulkExtendRow,
   matchesBulkFollowUpFilter,
 } from '../../utils/bulkFollowUpDisplay.util';
@@ -85,6 +86,8 @@ const FollowUpSettingsPage: React.FC = () => {
   const [selectedFollowUps, setSelectedFollowUps] = useState<string[]>([]);
   const [bulkFollowUpSearch, setBulkFollowUpSearch] = useState('');
   const [bulkAssigneeFilter, setBulkAssigneeFilter] = useState('');
+  const [bulkScheduledFrom, setBulkScheduledFrom] = useState('');
+  const [bulkScheduledTo, setBulkScheduledTo] = useState('');
   const [bulkTargetDate, setBulkTargetDate] = useState('');
   const [bulkReasonId, setBulkReasonId] = useState('');
   const [bulkDescription, setBulkDescription] = useState('');
@@ -177,7 +180,7 @@ const FollowUpSettingsPage: React.FC = () => {
     }
   };
 
-  // Load pending followups for bulk extend
+  // Load pending followups for bulk extend (optional scheduled date range via history API)
   const loadPendingFollowUps = async () => {
     try {
       setLoading(true);
@@ -185,6 +188,8 @@ const FollowUpSettingsPage: React.FC = () => {
         status: 'PENDING',
         page: 1,
         limit: 100,
+        ...(bulkScheduledFrom ? { startDate: bulkScheduledFrom } : {}),
+        ...(bulkScheduledTo ? { endDate: bulkScheduledTo } : {}),
       });
       const rows = (res.data || []).map((item: FollowUp) => mapFollowUpToBulkExtendRow(item));
       setPendingFollowUps(rows);
@@ -269,13 +274,22 @@ const FollowUpSettingsPage: React.FC = () => {
       if (!settings) {
         void loadSettings();
       }
-      loadPendingFollowUps();
     } else if (activeTab === 'reports') {
       loadReport();
     } else if (activeTab === 'audit') {
       loadAuditLogs(1);
     }
   }, [activeTab]);
+
+  useEffect(() => {
+    if (activeTab !== 'bulk-extend') {
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      void loadPendingFollowUps();
+    }, 300);
+    return () => window.clearTimeout(timer);
+  }, [activeTab, bulkScheduledFrom, bulkScheduledTo]);
 
   // Handle settings update submit
   const handleUpdateSettings = async (e: React.FormEvent) => {
@@ -359,13 +373,27 @@ const FollowUpSettingsPage: React.FC = () => {
     );
   };
 
-  const filteredPendingFollowUps = useMemo(
-    () =>
-      pendingFollowUps.filter((item) =>
-        matchesBulkFollowUpFilter(item, bulkFollowUpSearch, bulkAssigneeFilter),
-      ),
-    [pendingFollowUps, bulkFollowUpSearch, bulkAssigneeFilter],
+  const bulkFollowUpFilterCriteria = useMemo(
+    () => ({
+      search: bulkFollowUpSearch,
+      assigneeUserId: bulkAssigneeFilter,
+      scheduledFrom: bulkScheduledFrom,
+      scheduledTo: bulkScheduledTo,
+    }),
+    [bulkFollowUpSearch, bulkAssigneeFilter, bulkScheduledFrom, bulkScheduledTo],
   );
+
+  const filteredPendingFollowUps = useMemo(
+    () => pendingFollowUps.filter((item) => matchesBulkFollowUpFilter(item, bulkFollowUpFilterCriteria)),
+    [pendingFollowUps, bulkFollowUpFilterCriteria],
+  );
+
+  const clearBulkFollowUpFilters = () => {
+    setBulkFollowUpSearch('');
+    setBulkAssigneeFilter('');
+    setBulkScheduledFrom('');
+    setBulkScheduledTo('');
+  };
 
   const bulkAssigneeOptions = useMemo(() => {
     const options = new Map<string, string>();
@@ -837,51 +865,76 @@ const FollowUpSettingsPage: React.FC = () => {
                       </button>
                     </div>
 
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-                      <div className="flex-1 space-y-1.5">
-                        <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400">
-                          Search
-                        </label>
-                        <div className="relative">
-                          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                          <input
-                            type="search"
-                            value={bulkFollowUpSearch}
-                            onChange={(e) => setBulkFollowUpSearch(e.target.value)}
-                            placeholder="Lead name, contact, assignee, reason..."
-                            className="w-full rounded-xl border border-gray-200 bg-white py-2.5 pl-9 pr-3 text-sm font-semibold text-gray-800 outline-none focus:border-emerald-500"
-                          />
+                    <div className="space-y-3 rounded-2xl border border-gray-100 bg-gray-50/40 p-4">
+                      <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
+                        <div className="flex-1 space-y-1.5">
+                          <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400">
+                            Search
+                          </label>
+                          <div className="relative">
+                            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                            <input
+                              type="search"
+                              value={bulkFollowUpSearch}
+                              onChange={(e) => setBulkFollowUpSearch(e.target.value)}
+                              placeholder="Lead name, contact, assignee, reason..."
+                              className="w-full rounded-xl border border-gray-200 bg-white py-2.5 pl-9 pr-3 text-sm font-semibold text-gray-800 outline-none focus:border-emerald-500"
+                            />
+                          </div>
+                        </div>
+                        <div className="w-full space-y-1.5 lg:w-52">
+                          <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400">
+                            Assigned To
+                          </label>
+                          <select
+                            value={bulkAssigneeFilter}
+                            onChange={(e) => setBulkAssigneeFilter(e.target.value)}
+                            className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm font-semibold text-gray-800 outline-none focus:border-emerald-500"
+                          >
+                            <option value="">All assignees</option>
+                            {bulkAssigneeOptions.map((option) => (
+                              <option key={option.id} value={option.id}>
+                                {option.name}
+                              </option>
+                            ))}
+                          </select>
                         </div>
                       </div>
-                      <div className="w-full space-y-1.5 sm:w-52">
-                        <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400">
-                          Assigned To
-                        </label>
-                        <select
-                          value={bulkAssigneeFilter}
-                          onChange={(e) => setBulkAssigneeFilter(e.target.value)}
-                          className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm font-semibold text-gray-800 outline-none focus:border-emerald-500"
-                        >
-                          <option value="">All assignees</option>
-                          {bulkAssigneeOptions.map((option) => (
-                            <option key={option.id} value={option.id}>
-                              {option.name}
-                            </option>
-                          ))}
-                        </select>
+
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+                        <div className="w-full space-y-1.5 sm:flex-1">
+                          <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400">
+                            Scheduled From
+                          </label>
+                          <input
+                            type="date"
+                            value={bulkScheduledFrom}
+                            onChange={(e) => setBulkScheduledFrom(e.target.value)}
+                            className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm font-semibold text-gray-800 outline-none focus:border-emerald-500"
+                          />
+                        </div>
+                        <div className="w-full space-y-1.5 sm:flex-1">
+                          <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400">
+                            Scheduled To
+                          </label>
+                          <input
+                            type="date"
+                            value={bulkScheduledTo}
+                            onChange={(e) => setBulkScheduledTo(e.target.value)}
+                            min={bulkScheduledFrom || undefined}
+                            className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm font-semibold text-gray-800 outline-none focus:border-emerald-500"
+                          />
+                        </div>
+                        {hasActiveBulkFollowUpFilters(bulkFollowUpFilterCriteria) ? (
+                          <button
+                            type="button"
+                            onClick={clearBulkFollowUpFilters}
+                            className="text-xs font-bold text-gray-500 hover:text-gray-800 sm:pb-2.5"
+                          >
+                            Clear filters
+                          </button>
+                        ) : null}
                       </div>
-                      {bulkFollowUpSearch || bulkAssigneeFilter ? (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setBulkFollowUpSearch('');
-                            setBulkAssigneeFilter('');
-                          }}
-                          className="text-xs font-bold text-gray-500 hover:text-gray-800"
-                        >
-                          Clear filters
-                        </button>
-                      ) : null}
                     </div>
 
                     <p className="text-xs font-semibold text-gray-500">
@@ -896,7 +949,7 @@ const FollowUpSettingsPage: React.FC = () => {
                         </div>
                       ) : filteredPendingFollowUps.length === 0 ? (
                         <div className="p-12 text-center text-sm font-semibold text-gray-400">
-                          No follow-ups match your filters. Try adjusting search or assignee.
+                          No follow-ups match your filters. Try adjusting search, assignee, or scheduled dates.
                         </div>
                       ) : (
                         <table className="w-full text-left border-collapse">

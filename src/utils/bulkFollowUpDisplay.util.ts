@@ -27,6 +27,37 @@ export const resolveLeadDisplayName = (lead?: {
   return 'Unnamed Lead';
 };
 
+export type BulkFollowUpFilterCriteria = {
+  search: string;
+  assigneeUserId: string;
+  scheduledFrom: string;
+  scheduledTo: string;
+};
+
+/** Local calendar day key (YYYY-MM-DD) for scheduled-at comparison. */
+export const toScheduledLocalDayKey = (isoDate: string): string => {
+  const parsed = new Date(isoDate);
+  if (Number.isNaN(parsed.getTime())) {
+    return '';
+  }
+  const year = parsed.getFullYear();
+  const month = String(parsed.getMonth() + 1).padStart(2, '0');
+  const day = String(parsed.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+export const normalizeScheduledDateRange = (
+  scheduledFrom: string,
+  scheduledTo: string,
+): { from: string; to: string } => {
+  const from = scheduledFrom.trim();
+  const to = scheduledTo.trim();
+  if (from && to && from > to) {
+    return { from: to, to: from };
+  }
+  return { from, to };
+};
+
 export const mapFollowUpToBulkExtendRow = (item: FollowUp): BulkExtendFollowUpRow => ({
   id: item.id,
   leadId: item.leadId,
@@ -42,14 +73,27 @@ export const mapFollowUpToBulkExtendRow = (item: FollowUp): BulkExtendFollowUpRo
 
 export const matchesBulkFollowUpFilter = (
   row: BulkExtendFollowUpRow,
-  search: string,
-  assigneeUserId: string,
+  criteria: BulkFollowUpFilterCriteria,
 ): boolean => {
-  if (assigneeUserId && row.userId !== assigneeUserId) {
+  if (criteria.assigneeUserId && row.userId !== criteria.assigneeUserId) {
     return false;
   }
 
-  const query = search.trim().toLowerCase();
+  const { from, to } = normalizeScheduledDateRange(criteria.scheduledFrom, criteria.scheduledTo);
+  if (from || to) {
+    const scheduledDay = toScheduledLocalDayKey(row.scheduledAt);
+    if (!scheduledDay) {
+      return false;
+    }
+    if (from && scheduledDay < from) {
+      return false;
+    }
+    if (to && scheduledDay > to) {
+      return false;
+    }
+  }
+
+  const query = criteria.search.trim().toLowerCase();
   if (!query) {
     return true;
   }
@@ -68,3 +112,11 @@ export const matchesBulkFollowUpFilter = (
 
   return haystack.includes(query);
 };
+
+export const hasActiveBulkFollowUpFilters = (criteria: BulkFollowUpFilterCriteria): boolean =>
+  Boolean(
+    criteria.search.trim() ||
+      criteria.assigneeUserId ||
+      criteria.scheduledFrom.trim() ||
+      criteria.scheduledTo.trim(),
+  );
