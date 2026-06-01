@@ -6,8 +6,32 @@ import { useAdvancedCalendarDetailsQuery } from '../../hooks/useFollowUps';
 import FollowUpCard from './FollowUpCard';
 import WhatsAppActionButton from '../common/WhatsAppActionButton';
 import { LEAD_WHATSAPP_PERMISSIONS } from '../../constants/whatsappPermissions';
-import { isFollowUpCalendarDetailType, type FollowUp } from '../../types/followup.types';
+import {
+  isFollowUpCalendarDetailType,
+  type CalendarOverdueStatus,
+  type FollowUp,
+} from '../../types/followup.types';
 import { stageBadgeStyle } from '../../utils/leadStageColor';
+
+const isLateOverdueStatus = (status?: CalendarOverdueStatus | string): boolean =>
+  status === 'OVERDUE' ||
+  status === 'OVERDUE_EXTENDED' ||
+  status === 'LATE_COMPLETED' ||
+  status === 'LATE_EXTENDED';
+
+const overdueStatusLabel = (status?: CalendarOverdueStatus | string): string => {
+  switch (status) {
+    case 'LATE_COMPLETED':
+      return 'Late Completed';
+    case 'LATE_EXTENDED':
+    case 'OVERDUE_EXTENDED':
+      return 'Late Extended';
+    case 'OVERDUE':
+      return 'Overdue';
+    default:
+      return 'On Time';
+  }
+};
 
 interface CalendarDetailsModalProps {
   isOpen: boolean;
@@ -81,7 +105,14 @@ const CalendarDetailsModal: React.FC<CalendarDetailsModalProps> = ({
                   {data.items.map((item: any) => {
                     if (isFollowUpDetail) {
                       return (
-                        <div key={item.id} className="rounded-2xl border border-gray-100 bg-gray-50/50 p-4">
+                        <div
+                          key={item.id}
+                          className={`rounded-2xl border p-4 ${
+                            isLateOverdueStatus(item.overdueStatus)
+                              ? 'border-red-200 bg-red-50/60'
+                              : 'border-gray-100 bg-gray-50/50'
+                          }`}
+                        >
                           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                             <h4 className="text-sm font-black text-gray-900">{item.lead?.name || item.leadName}</h4>
                             {item.leadStage || item.lead?.stage ? (
@@ -99,33 +130,46 @@ const CalendarDetailsModal: React.FC<CalendarDetailsModalProps> = ({
                               <dd className="font-semibold text-gray-800">{item.customerName || '—'}</dd>
                             </div>
                             <div>
-                              <dt className="font-bold uppercase tracking-wide text-gray-400">Follow-Up Time</dt>
+                              <dt className="font-bold uppercase tracking-wide text-gray-400">Scheduled Date</dt>
                               <dd className="font-semibold text-gray-800">
                                 {item.scheduledAt ? format(new Date(item.scheduledAt), 'PPp') : '—'}
                               </dd>
                             </div>
+                            {item.completedAt ? (
+                              <div>
+                                <dt className="font-bold uppercase tracking-wide text-gray-400">Completed Date</dt>
+                                <dd className="font-semibold text-gray-800">
+                                  {format(new Date(item.completedAt), 'PPp')}
+                                </dd>
+                              </div>
+                            ) : null}
+                            {item.snoozedAt || item.newFollowupDate ? (
+                              <div>
+                                <dt className="font-bold uppercase tracking-wide text-gray-400">Extended Date</dt>
+                                <dd className="font-semibold text-gray-800">
+                                  {format(
+                                    new Date(item.snoozedAt || item.newFollowupDate),
+                                    'PPp',
+                                  )}
+                                </dd>
+                              </div>
+                            ) : null}
                             <div>
                               <dt className="font-bold uppercase tracking-wide text-gray-400">Assigned User</dt>
                               <dd className="font-semibold text-gray-800">{item.assignedUserName || item.user?.displayName || '—'}</dd>
                             </div>
                             <div>
-                              <dt className="font-bold uppercase tracking-wide text-gray-400">Status</dt>
+                              <dt className="font-bold uppercase tracking-wide text-gray-400">Follow-Up Status</dt>
                               <dd className="font-semibold text-gray-800">{item.status}</dd>
                             </div>
                             <div>
-                              <dt className="font-bold uppercase tracking-wide text-gray-400">Overdue Status</dt>
+                              <dt className="font-bold uppercase tracking-wide text-gray-400">Status</dt>
                               <dd
                                 className={`font-bold ${
-                                  item.overdueStatus === 'OVERDUE' || item.overdueStatus === 'OVERDUE_EXTENDED'
-                                    ? 'text-red-600'
-                                    : 'text-emerald-600'
+                                  isLateOverdueStatus(item.overdueStatus) ? 'text-red-600' : 'text-emerald-600'
                                 }`}
                               >
-                                {item.overdueStatus === 'OVERDUE_EXTENDED'
-                                  ? 'Extended after overdue'
-                                  : item.overdueStatus === 'OVERDUE'
-                                    ? 'Overdue'
-                                    : 'On time'}
+                                {overdueStatusLabel(item.overdueStatus)}
                               </dd>
                             </div>
                             <div className="sm:col-span-2">

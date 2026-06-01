@@ -22,6 +22,7 @@ type SummaryDay = {
     name: string;
     color: string;
     overdueExtendedCount?: number;
+    overdueHistoryCount?: number;
   }>;
 };
 
@@ -144,7 +145,7 @@ const CalendarView: React.FC<Props> = ({
                   <div className="flex flex-1 flex-col gap-1.5 overflow-y-auto">
                     {showFollowUps
                       ? data?.stageFollowUps?.map((sf) => {
-                          const isOverdueChip = (sf.overdueExtendedCount || 0) > 0;
+                          const isOverdueChip = (sf.overdueHistoryCount ?? sf.overdueExtendedCount ?? 0) > 0;
                           const chipColor = isOverdueChip ? '#dc2626' : sf.color;
 
                           return (

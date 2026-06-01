@@ -196,7 +196,7 @@ const CalendarPage: React.FC = () => {
                   </p>
                 </div>
                 <div className="rounded-xl bg-red-50 px-4 py-3">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-red-700">Overdue Extended</p>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-red-700">Overdue History</p>
                   <p className="mt-1 text-lg font-black text-red-900">
                     {advancedSummaryQuery.data.data.analytics.overdueFollowUpCounts}
                   </p>

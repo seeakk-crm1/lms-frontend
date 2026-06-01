@@ -12,6 +12,13 @@ export const isFollowUpCalendarDetailType = (type: string): boolean =>
 export type FollowUpType = 'CALL' | 'VISIT' | 'MEETING';
 export type FollowUpStatus = 'PENDING' | 'COMPLETED' | 'MISSED';
 
+export type CalendarOverdueStatus =
+  | 'ON_TIME'
+  | 'OVERDUE'
+  | 'LATE_COMPLETED'
+  | 'LATE_EXTENDED'
+  | 'OVERDUE_EXTENDED';
+
 export interface FollowUpUser {
   id: string;
   name?: string | null;
@@ -52,6 +59,11 @@ export interface FollowUp {
   extensionReasonId?: string | null;
   extensionReasonName?: string | null;
   activityLogs?: any[];
+  isOverdue?: boolean;
+  overdueAt?: string | null;
+  completedAfterOverdue?: boolean;
+  extendedAfterOverdue?: boolean;
+  overdueStatus?: CalendarOverdueStatus;
   createdAt: string;
   updatedAt: string;
   user: FollowUpUser;
@@ -91,6 +103,7 @@ export interface AdvancedCalendarSummaryResponse {
         name: string;
         color: string;
         overdueExtendedCount?: number;
+        overdueHistoryCount?: number;
       }>;
     }>;
     analytics?: {
