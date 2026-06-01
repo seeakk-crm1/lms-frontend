@@ -34,12 +34,25 @@ const MandatoryOverdueFollowUpGate: React.FC<Props> = ({ children }) => {
   const [reminderActionType, setReminderActionType] = useState<'SNOOZE' | 'REMIND_LATER'>('SNOOZE');
 
   const activeItem = useMemo(() => items[queueIndex] ?? items[0] ?? null, [items, queueIndex]);
+  const actionModalOpen = Boolean(completeTarget || snoozeTarget);
 
-  useMandatoryNavigationLock(blocked && enabled);
+  useMandatoryNavigationLock(blocked && enabled && !actionModalOpen);
 
   useEffect(() => {
     setQueueIndex(0);
   }, [items.length, items[0]?.id]);
+
+  useEffect(() => {
+    if (queueIndex >= items.length && items.length > 0) {
+      setQueueIndex(0);
+    }
+  }, [items.length, queueIndex]);
+
+  const advanceQueueAfterAction = async () => {
+    setQueueIndex(0);
+    invalidateOverdue();
+    await query.refetch();
+  };
 
   useEffect(() => {
     if (!blocked) return undefined;
@@ -98,7 +111,7 @@ const MandatoryOverdueFollowUpGate: React.FC<Props> = ({ children }) => {
     <>
       {children}
 
-      {blocked ? (
+      {blocked && !actionModalOpen ? (
         <>
           <div className="fixed inset-0 z-[9997] bg-slate-950/70 backdrop-blur-md" />
           {typeof document !== 'undefined'
@@ -177,19 +190,20 @@ const MandatoryOverdueFollowUpGate: React.FC<Props> = ({ children }) => {
         isOpen={Boolean(completeTarget)}
         followUp={completeTarget}
         isSubmitting={completeMutation.isPending}
+        stackAboveMandatoryGate
         onClose={() => setCompleteTarget(null)}
         onSubmit={async (payload) => {
           if (!completeTarget) return;
           await completeMutation.mutateAsync({ id: completeTarget.id, payload });
           setCompleteTarget(null);
-          invalidateOverdue();
-          void query.refetch();
+          await advanceQueueAfterAction();
         }}
       />
 
       <SnoozeFollowUpModal
         isOpen={Boolean(snoozeTarget)}
         followUp={snoozeTarget}
+        stackAboveMandatoryGate
         value={snoozeDateTime}
         onChange={setSnoozeDateTime}
         recentDescription={recentDescription}
@@ -224,8 +238,10 @@ const MandatoryOverdueFollowUpGate: React.FC<Props> = ({ children }) => {
             },
           });
           setSnoozeTarget(null);
-          invalidateOverdue();
-          void query.refetch();
+          setSnoozeDateTime('');
+          setRecentDescription('');
+          setSnoozeReasonId('');
+          await advanceQueueAfterAction();
         }}
       />
 

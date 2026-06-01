@@ -19,9 +19,19 @@ interface Props {
   isSubmitting: boolean;
   onClose: () => void;
   onSubmit: (payload: { description: string }) => Promise<void> | void;
+  /** Renders above mandatory overdue gate (z-index 9998). */
+  stackAboveMandatoryGate?: boolean;
 }
 
-const CompleteFollowUpModal: React.FC<Props> = ({ isOpen, followUp, isSubmitting, onClose, onSubmit }) => {
+const CompleteFollowUpModal: React.FC<Props> = ({
+  isOpen,
+  followUp,
+  isSubmitting,
+  onClose,
+  onSubmit,
+  stackAboveMandatoryGate = false,
+}) => {
+  const layerZ = stackAboveMandatoryGate ? 'z-[10050]' : 'z-[140]';
   const {
     register,
     handleSubmit,
@@ -40,7 +50,7 @@ const CompleteFollowUpModal: React.FC<Props> = ({ isOpen, followUp, isSubmitting
   return (
     <AnimatePresence>
       {isOpen && followUp ? (
-        <div className="fixed inset-0 z-[140] flex items-end justify-center p-0 sm:items-center sm:p-4">
+        <div className={`fixed inset-0 ${layerZ} flex items-end justify-center p-0 sm:items-center sm:p-4`}>
           <motion.button
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}

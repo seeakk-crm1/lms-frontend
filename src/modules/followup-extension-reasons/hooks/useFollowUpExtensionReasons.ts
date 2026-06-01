@@ -45,7 +45,9 @@ export const useActiveExtensionReasonsQuery = (enabled = true) =>
     refetchOnWindowFocus: false,
     retry: (failureCount, error: any) => {
       const responseStatus = error?.response?.status;
-      if (responseStatus === 401 || responseStatus === 403 || responseStatus === 422) return false;
+      if (responseStatus === 401 || responseStatus === 403 || responseStatus === 422 || responseStatus === 423) {
+        return false;
+      }
       return failureCount < 1;
     },
   });

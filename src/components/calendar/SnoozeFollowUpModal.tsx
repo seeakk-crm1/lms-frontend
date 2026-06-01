@@ -24,6 +24,8 @@ interface Props {
   onClose: () => void;
   onSubmit: () => void;
   isSubmitting?: boolean;
+  /** Renders above mandatory overdue gate (z-index 9998). */
+  stackAboveMandatoryGate?: boolean;
 }
 
 const SnoozeFollowUpModal: React.FC<Props> = ({
@@ -40,7 +42,9 @@ const SnoozeFollowUpModal: React.FC<Props> = ({
   onClose,
   onSubmit,
   isSubmitting = false,
+  stackAboveMandatoryGate = false,
 }) => {
+  const layerZ = stackAboveMandatoryGate ? 'z-[10050]' : 'z-[170]';
   const { data: activeReasons = [] } = useActiveExtensionReasonsQuery(isOpen);
   const lifecycleQuery = useLifecycleExtensionLimit(followUp?.leadId, isOpen && Boolean(followUp?.leadId));
   const lifecycle = lifecycleQuery.data?.data;
@@ -90,7 +94,7 @@ const SnoozeFollowUpModal: React.FC<Props> = ({
   return (
     <AnimatePresence>
       {isOpen ? (
-        <div className="fixed inset-0 z-[170] flex items-end justify-center p-0 sm:items-center sm:p-4">
+        <div className={`fixed inset-0 ${layerZ} flex items-end justify-center p-0 sm:items-center sm:p-4`}>
           <motion.button
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
