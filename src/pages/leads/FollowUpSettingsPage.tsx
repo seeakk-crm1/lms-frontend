@@ -39,6 +39,12 @@ import {
   canManageFollowUpSettings,
   canUseBulkFollowUpExtension,
 } from '../../utils/permission.util';
+import {
+  type BulkExtendFollowUpRow,
+  mapFollowUpToBulkExtendRow,
+  matchesBulkFollowUpFilter,
+} from '../../utils/bulkFollowUpDisplay.util';
+import type { FollowUp } from '../../types/followup.types';
 
 const FollowUpSettingsPage: React.FC = () => {
   const user = useAuthStore((state) => state.user);
@@ -75,8 +81,10 @@ const FollowUpSettingsPage: React.FC = () => {
   const [customExpiry, setCustomExpiry] = useState('');
 
   // 3. Bulk Extend Tab State
-  const [pendingFollowUps, setPendingFollowUps] = useState<any[]>([]);
+  const [pendingFollowUps, setPendingFollowUps] = useState<BulkExtendFollowUpRow[]>([]);
   const [selectedFollowUps, setSelectedFollowUps] = useState<string[]>([]);
+  const [bulkFollowUpSearch, setBulkFollowUpSearch] = useState('');
+  const [bulkAssigneeFilter, setBulkAssigneeFilter] = useState('');
   const [bulkTargetDate, setBulkTargetDate] = useState('');
   const [bulkReasonId, setBulkReasonId] = useState('');
   const [bulkDescription, setBulkDescription] = useState('');
@@ -178,7 +186,8 @@ const FollowUpSettingsPage: React.FC = () => {
         page: 1,
         limit: 100,
       });
-      setPendingFollowUps(res.data || []);
+      const rows = (res.data || []).map((item: FollowUp) => mapFollowUpToBulkExtendRow(item));
+      setPendingFollowUps(rows);
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Failed to load pending follow-ups.');
     } finally {
@@ -350,12 +359,35 @@ const FollowUpSettingsPage: React.FC = () => {
     );
   };
 
+  const filteredPendingFollowUps = useMemo(
+    () =>
+      pendingFollowUps.filter((item) =>
+        matchesBulkFollowUpFilter(item, bulkFollowUpSearch, bulkAssigneeFilter),
+      ),
+    [pendingFollowUps, bulkFollowUpSearch, bulkAssigneeFilter],
+  );
+
+  const bulkAssigneeOptions = useMemo(() => {
+    const options = new Map<string, string>();
+    pendingFollowUps.forEach((row) => {
+      if (row.userId) {
+        options.set(row.userId, row.userName);
+      }
+    });
+    return Array.from(options.entries()).map(([id, name]) => ({ id, name }));
+  }, [pendingFollowUps]);
+
+  const allFilteredSelected =
+    filteredPendingFollowUps.length > 0 &&
+    filteredPendingFollowUps.every((row) => selectedFollowUps.includes(row.id));
+
   const selectAllFollowUps = () => {
-    if (selectedFollowUps.length === pendingFollowUps.length) {
-      setSelectedFollowUps([]);
-    } else {
-      setSelectedFollowUps(pendingFollowUps.map((f) => f.id));
+    const visibleIds = filteredPendingFollowUps.map((row) => row.id);
+    if (allFilteredSelected) {
+      setSelectedFollowUps((prev) => prev.filter((id) => !visibleIds.includes(id)));
+      return;
     }
+    setSelectedFollowUps((prev) => Array.from(new Set([...prev, ...visibleIds])));
   };
 
   // Handle Bulk Reschedule execution
@@ -793,20 +825,78 @@ const FollowUpSettingsPage: React.FC = () => {
                   ) : null}
                   {/* Select Follow-ups Panel */}
                   <div className="bg-white/95 border border-white/70 p-6 rounded-[28px] shadow-[0_20px_50px_-30px_rgba(15,23,42,0.25)] backdrop-blur lg:col-span-2 space-y-4">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between gap-3">
                       <h3 className="text-xl font-black text-gray-900">Select Pending Follow-Ups</h3>
                       <button
+                        type="button"
                         onClick={selectAllFollowUps}
-                        className="text-xs font-bold text-emerald-600 hover:text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-lg"
+                        disabled={filteredPendingFollowUps.length === 0}
+                        className="text-xs font-bold text-emerald-600 hover:text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-lg disabled:opacity-50"
                       >
-                        {selectedFollowUps.length === pendingFollowUps.length ? 'Deselect All' : 'Select All'}
+                        {allFilteredSelected ? 'Deselect All' : 'Select All'}
                       </button>
                     </div>
+
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+                      <div className="flex-1 space-y-1.5">
+                        <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400">
+                          Search
+                        </label>
+                        <div className="relative">
+                          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                          <input
+                            type="search"
+                            value={bulkFollowUpSearch}
+                            onChange={(e) => setBulkFollowUpSearch(e.target.value)}
+                            placeholder="Lead name, contact, assignee, reason..."
+                            className="w-full rounded-xl border border-gray-200 bg-white py-2.5 pl-9 pr-3 text-sm font-semibold text-gray-800 outline-none focus:border-emerald-500"
+                          />
+                        </div>
+                      </div>
+                      <div className="w-full space-y-1.5 sm:w-52">
+                        <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400">
+                          Assigned To
+                        </label>
+                        <select
+                          value={bulkAssigneeFilter}
+                          onChange={(e) => setBulkAssigneeFilter(e.target.value)}
+                          className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm font-semibold text-gray-800 outline-none focus:border-emerald-500"
+                        >
+                          <option value="">All assignees</option>
+                          {bulkAssigneeOptions.map((option) => (
+                            <option key={option.id} value={option.id}>
+                              {option.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      {bulkFollowUpSearch || bulkAssigneeFilter ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setBulkFollowUpSearch('');
+                            setBulkAssigneeFilter('');
+                          }}
+                          className="text-xs font-bold text-gray-500 hover:text-gray-800"
+                        >
+                          Clear filters
+                        </button>
+                      ) : null}
+                    </div>
+
+                    <p className="text-xs font-semibold text-gray-500">
+                      Showing {filteredPendingFollowUps.length} of {pendingFollowUps.length} pending follow-up
+                      {pendingFollowUps.length === 1 ? '' : 's'}
+                    </p>
 
                     <div className="overflow-y-auto max-h-[500px] border border-gray-100 rounded-2xl">
                       {pendingFollowUps.length === 0 ? (
                         <div className="p-12 text-center text-sm font-semibold text-gray-400">
                           No pending or missed follow-ups found for bulk rescheduling.
+                        </div>
+                      ) : filteredPendingFollowUps.length === 0 ? (
+                        <div className="p-12 text-center text-sm font-semibold text-gray-400">
+                          No follow-ups match your filters. Try adjusting search or assignee.
                         </div>
                       ) : (
                         <table className="w-full text-left border-collapse">
@@ -820,7 +910,7 @@ const FollowUpSettingsPage: React.FC = () => {
                             </tr>
                           </thead>
                           <tbody>
-                            {pendingFollowUps.map((item) => (
+                            {filteredPendingFollowUps.map((item) => (
                               <tr
                                 key={item.id}
                                 className={`border-b border-gray-50 text-sm font-semibold text-gray-600 transition-colors ${
@@ -836,8 +926,12 @@ const FollowUpSettingsPage: React.FC = () => {
                                   />
                                 </td>
                                 <td className="py-2.5 px-4">
-                                  <span className="font-bold text-gray-900 block">{item.leadName || 'Unnamed Lead'}</span>
-                                  <span className="text-xs text-gray-400">{item.leadPhone || item.leadEmail || 'No contact'}</span>
+                                  <span className="font-bold text-gray-900 block">{item.leadName}</span>
+                                  <span className="text-xs text-gray-400">
+                                    {item.leadPhone && item.leadEmail
+                                      ? `${item.leadPhone} · ${item.leadEmail}`
+                                      : item.leadPhone || item.leadEmail || 'No contact'}
+                                  </span>
                                 </td>
                                 <td className="py-2.5 px-4">
                                   <span className="text-xs">{item.userName || 'Unassigned'}</span>
