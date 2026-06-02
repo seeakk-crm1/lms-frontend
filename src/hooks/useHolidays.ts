@@ -3,7 +3,7 @@ import * as holidaysApi from '../services/holidays.api';
 
 const shouldRetry = (failureCount: number, error: any) => {
   const status = error?.response?.status;
-  if (status === 401 || status === 403 || status === 404 || status === 422 || status === 503) {
+  if (status === 401 || status === 403 || status === 404 || status === 422 || status === 423 || status === 503) {
     return false;
   }
   return failureCount < 2;
@@ -74,7 +74,7 @@ export const useWeeklyOffSettingsQuery = (enabled = true) =>
     refetchOnWindowFocus: false,
     retry: (failureCount, error: any) => {
       const status = error?.response?.status;
-      if (status === 404 || status === 503) return false;
+      if (status === 404 || status === 423 || status === 503) return false;
       return shouldRetry(failureCount, error);
     },
   });

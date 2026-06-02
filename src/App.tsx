@@ -225,6 +225,7 @@ function App() {
             <Login />
           </PublicRoute>
         } />
+        <Route path="/login/dashboard" element={<Navigate to="/login" replace />} />
 
         <Route path="/activate-account" element={<InvitePage />} />
         <Route path="/invite" element={<InvitePage />} />

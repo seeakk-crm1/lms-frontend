@@ -71,7 +71,7 @@ export const useCalendarQuery = () => {
     placeholderData: (previousData) => previousData,
     retry: (failureCount, error: any) => {
       const status = error?.response?.status;
-      if (status === 401 || status === 403 || status === 422 || status === 503) return false;
+      if (status === 401 || status === 403 || status === 422 || status === 423 || status === 503) return false;
       return failureCount < 2;
     },
   });
@@ -98,7 +98,7 @@ export const useAdvancedCalendarSummaryQuery = () => {
     placeholderData: (previousData) => previousData,
     retry: (failureCount, error: any) => {
       const status = error?.response?.status;
-      if (status === 401 || status === 403 || status === 422 || status === 503) return false;
+      if (status === 401 || status === 403 || status === 422 || status === 423 || status === 503) return false;
       return failureCount < 2;
     },
   });
@@ -142,7 +142,7 @@ export const useTodayFollowUpsQuery = () => {
     placeholderData: (previousData) => previousData,
     retry: (failureCount, error: any) => {
       const status = error?.response?.status;
-      if (status === 401 || status === 403 || status === 422 || status === 503) return false;
+      if (status === 401 || status === 403 || status === 422 || status === 423 || status === 503) return false;
       return failureCount < 2;
     },
   });
@@ -166,7 +166,7 @@ export const useFollowUpReminderAlertsQuery = (enabled = true) => {
     refetchOnWindowFocus: true,
     retry: (failureCount, error: any) => {
       const status = error?.response?.status;
-      if (status === 401 || status === 403 || status === 422 || status === 503) return false;
+      if (status === 401 || status === 403 || status === 422 || status === 423 || status === 503) return false;
       return failureCount < 2;
     },
   });
