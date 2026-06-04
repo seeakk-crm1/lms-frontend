@@ -14,7 +14,7 @@ export const useOverdueMandatoryFollowUpsQuery = (enabled: boolean) =>
     refetchOnWindowFocus: true,
     retry: (failureCount, error: unknown) => {
       const status = (error as { response?: { status?: number } })?.response?.status;
-      if (status === 401 || status === 403 || status === 503) return false;
+      if (status === 401 || status === 403 || status === 423 || status === 503) return false;
       return failureCount < 2;
     },
   });
@@ -25,6 +25,8 @@ export const useInvalidateOverdueMandatory = () => {
     void queryClient.invalidateQueries({ queryKey: OVERDUE_MANDATORY_QUERY_KEY });
     void queryClient.invalidateQueries({ queryKey: MANDATORY_FOLLOWUP_QUERY_KEY });
     void queryClient.invalidateQueries({ queryKey: ['followups', 'advanced-calendar'] });
+    void queryClient.invalidateQueries({ queryKey: ['followups', 'alerts'] });
+    void queryClient.invalidateQueries({ queryKey: ['dashboard'] });
   };
 };
 

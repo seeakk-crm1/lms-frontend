@@ -2,7 +2,12 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { format } from 'date-fns';
 import { AlertTriangle, Loader2 } from 'lucide-react';
-import { useOverdueMandatoryBlocked, useInvalidateOverdueMandatory } from '../../hooks/useOverdueMandatoryFollowUps';
+import {
+  useOverdueMandatoryBlocked,
+  useInvalidateOverdueMandatory,
+  OVERDUE_MANDATORY_QUERY_KEY,
+} from '../../hooks/useOverdueMandatoryFollowUps';
+import { useQueryClient } from '@tanstack/react-query';
 import { useMandatoryNavigationLock } from '../../hooks/useMandatoryNavigationLock';
 import useAuthStore from '../../store/useAuthStore';
 import CompleteFollowUpModal from './CompleteFollowUpModal';
@@ -20,6 +25,7 @@ interface Props {
 const MandatoryOverdueFollowUpGate: React.FC<Props> = ({ children }) => {
   const { blocked, enabled, items, query } = useOverdueMandatoryBlocked();
   const user = useAuthStore((state) => state.user);
+  const queryClient = useQueryClient();
   const invalidateOverdue = useInvalidateOverdueMandatory();
   const completeMutation = useCompleteFollowUpMutation();
   const snoozeMutation = useSnoozeFollowUpMutation();
@@ -48,7 +54,27 @@ const MandatoryOverdueFollowUpGate: React.FC<Props> = ({ children }) => {
     }
   }, [items.length, queueIndex]);
 
-  const advanceQueueAfterAction = async () => {
+  const removeResolvedFromOverdueCache = (resolvedId: string) => {
+    queryClient.setQueryData(
+      OVERDUE_MANDATORY_QUERY_KEY,
+      (oldData: { data?: { items?: Array<{ id: string }>; overdueFollowupRequired?: boolean; overdueFollowupCount?: number } } | undefined) => {
+        if (!oldData?.data?.items) return oldData;
+        const nextItems = oldData.data.items.filter((item) => item.id !== resolvedId);
+        return {
+          ...oldData,
+          data: {
+            ...oldData.data,
+            items: nextItems,
+            overdueFollowupCount: nextItems.length,
+            overdueFollowupRequired: nextItems.length > 0,
+          },
+        };
+      },
+    );
+  };
+
+  const advanceQueueAfterAction = async (resolvedId: string) => {
+    removeResolvedFromOverdueCache(resolvedId);
     setQueueIndex(0);
     invalidateOverdue();
     await query.refetch();
@@ -194,9 +220,10 @@ const MandatoryOverdueFollowUpGate: React.FC<Props> = ({ children }) => {
         onClose={() => setCompleteTarget(null)}
         onSubmit={async (payload) => {
           if (!completeTarget) return;
-          await completeMutation.mutateAsync({ id: completeTarget.id, payload });
+          const resolvedId = completeTarget.id;
+          await completeMutation.mutateAsync({ id: resolvedId, payload });
           setCompleteTarget(null);
-          await advanceQueueAfterAction();
+          await advanceQueueAfterAction(resolvedId);
         }}
       />
 
@@ -228,8 +255,9 @@ const MandatoryOverdueFollowUpGate: React.FC<Props> = ({ children }) => {
           }
           const proceed = await confirmIfWeeklyOff(nextTime);
           if (!proceed) return;
+          const resolvedId = snoozeTarget.id;
           await snoozeMutation.mutateAsync({
-            id: snoozeTarget.id,
+            id: resolvedId,
             payload: {
               scheduledAt: nextTime.toISOString(),
               recentDescription: recentDescription.trim() || undefined,
@@ -241,7 +269,7 @@ const MandatoryOverdueFollowUpGate: React.FC<Props> = ({ children }) => {
           setSnoozeDateTime('');
           setRecentDescription('');
           setSnoozeReasonId('');
-          await advanceQueueAfterAction();
+          await advanceQueueAfterAction(resolvedId);
         }}
       />
 

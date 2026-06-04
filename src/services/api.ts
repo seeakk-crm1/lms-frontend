@@ -7,6 +7,7 @@ import {
   refreshAccessToken,
 } from './authToken';
 import { MANDATORY_FOLLOWUP_QUERY_KEY } from '../constants/mandatoryFollowup.constants';
+import { OVERDUE_MANDATORY_QUERY_KEY } from '../hooks/useOverdueMandatoryFollowUps';
 import { queryClient } from '../lib/queryClient';
 
 const API_URL = ENV.API_URL;
@@ -110,14 +111,20 @@ api.interceptors.response.use(
 
     if (error.response?.status === 423) {
       const payload = error.response.data as {
+        errorCode?: string;
         mandatoryFollowupRequired?: boolean;
         mandatoryFollowupCount?: number;
+        overdueFollowupCount?: number;
       };
-      useAuthStore.getState().setMandatoryFollowupBlock(
-        true,
-        payload?.mandatoryFollowupCount ?? 0,
-      );
-      void queryClient.invalidateQueries({ queryKey: MANDATORY_FOLLOWUP_QUERY_KEY });
+      const lockCount =
+        payload?.overdueFollowupCount ??
+        payload?.mandatoryFollowupCount ??
+        0;
+      if (payload?.errorCode === 'MANDATORY_FOLLOWUP_REQUIRED') {
+        useAuthStore.getState().setMandatoryFollowupBlock(true, lockCount);
+        void queryClient.invalidateQueries({ queryKey: MANDATORY_FOLLOWUP_QUERY_KEY });
+      }
+      void queryClient.invalidateQueries({ queryKey: OVERDUE_MANDATORY_QUERY_KEY });
       return Promise.reject(error);
     }
 
