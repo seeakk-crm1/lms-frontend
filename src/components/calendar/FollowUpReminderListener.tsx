@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useFollowUpReminderAlertsQuery } from '../../hooks/useFollowUps';
 import { useCompleteFollowUpMutation, useSnoozeFollowUpMutation } from '../../hooks/useFollowUps';
 import { useWeeklyOffScheduleGuard } from '../../hooks/useWeeklyOffScheduleGuard';
-import useAuthStore from '../../store/useAuthStore';
+import { useAuthenticatedWorkflowEnabled } from '../../hooks/useAuthenticatedWorkflowEnabled';
 import { formatFollowUpTypeLabel } from '../../modules/followups/followUpTypeUi';
 import type { FollowUp, FollowUpReminderItem } from '../../types/followup.types';
 import FollowUpActionModal from './FollowUpActionModal';
@@ -67,9 +67,9 @@ const buildAlertMessage = (item: FollowUpReminderItem): string => {
 };
 
 const FollowUpReminderListener: React.FC = () => {
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const workflowEnabled = useAuthenticatedWorkflowEnabled();
   const navigate = useNavigate();
-  const query = useFollowUpReminderAlertsQuery();
+  const query = useFollowUpReminderAlertsQuery(workflowEnabled);
   const completeMutation = useCompleteFollowUpMutation();
   const snoozeMutation = useSnoozeFollowUpMutation();
   const { confirmIfWeeklyOff, WeeklyOffScheduleModal } = useWeeklyOffScheduleGuard();
@@ -108,7 +108,7 @@ const FollowUpReminderListener: React.FC = () => {
   });
 
   useEffect(() => {
-    if (!isAuthenticated || query.isLoading) return;
+    if (!workflowEnabled || query.isLoading) return;
 
     // Skip first response after mount to prevent a flood of historical reminders.
     if (!initialLoaded.current) {
@@ -137,7 +137,7 @@ const FollowUpReminderListener: React.FC = () => {
     });
 
     if (changed) writeSeenMap(seen);
-  }, [isAuthenticated, items, query.isLoading]);
+  }, [workflowEnabled, items, query.isLoading]);
 
   useEffect(() => {
     if (!active && queue.length > 0) {
@@ -145,6 +145,10 @@ const FollowUpReminderListener: React.FC = () => {
       setQueue((current) => current.slice(1));
     }
   }, [active, queue]);
+
+  if (!workflowEnabled) {
+    return null;
+  }
 
   return (
     <>

@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import useAuthStore from '../store/useAuthStore';
 import { getTodayStatus } from '../services/attendance.api';
+import { useAuthenticatedWorkflowEnabled } from '../hooks/useAuthenticatedWorkflowEnabled';
 import { subscribeAttendanceRefresh } from '../utils/attendanceRefresh';
 import { useMandatoryNavigationLock } from '../hooks/useMandatoryNavigationLock';
 import { MandatoryAttendanceModal } from './MandatoryAttendanceModal';
@@ -11,9 +11,7 @@ interface Props {
 }
 
 const MandatoryAttendanceGate: React.FC<Props> = ({ children }) => {
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const user = useAuthStore((state) => state.user);
-  const enabled = Boolean(isAuthenticated && user?.isOnboarded);
+  const enabled = useAuthenticatedWorkflowEnabled();
 
   const [status, setStatus] = useState<any>(null);
   const [loading, setLoading] = useState(true);

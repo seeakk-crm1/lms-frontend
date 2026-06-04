@@ -14,17 +14,16 @@ import Pricing from './components/Pricing';
 import CTA from './components/CTA';
 import Footer from './components/Footer';
 
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import useAuthStore from './store/useAuthStore';
 import { hasAnyPermission, canAccessPendingApproval } from './utils/permission.util';
 import api from './services/api';
 import { queryClient } from './lib/queryClient';
 import FollowUpReminderListener from './components/calendar/FollowUpReminderListener';
-import MandatoryFollowUpContinuationGate from './components/calendar/MandatoryFollowUpContinuationGate';
-import MandatoryOverdueFollowUpGate from './components/calendar/MandatoryOverdueFollowUpGate';
-import MandatoryAttendanceGate from './components/MandatoryAttendanceGate';
+import AuthenticatedWorkflowGates from './components/AuthenticatedWorkflowGates';
 import RealtimeSyncListener from './components/realtime/RealtimeSyncListener';
+import { shouldRunAuthenticatedWorkflow } from './utils/publicRoutes';
 import Login from './pages/Login';
 import InvitePage from './pages/InvitePage';
 import DashboardRouter from './components/dashboard/DashboardRouter';
@@ -107,9 +106,16 @@ const PublicRoute: React.FC<RouteProps> = ({ children }) => {
 
 function App() {
   const [loading, setLoading] = useState(true);
+  const location = useLocation();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const isOnboarded = useAuthStore((state) => state.user?.isOnboarded);
   const updateUser = useAuthStore((state) => state.updateUser);
   const clearAuth = useAuthStore((state) => state.clearAuth);
+  const workflowEnabled = shouldRunAuthenticatedWorkflow(
+    isAuthenticated,
+    isOnboarded,
+    location.pathname,
+  );
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -119,7 +125,7 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (!isAuthenticated) return;
+    if (!workflowEnabled) return;
 
     let cancelled = false;
 
@@ -147,7 +153,7 @@ function App() {
     return () => {
       cancelled = true;
     };
-  }, [clearAuth, isAuthenticated, updateUser]);
+  }, [clearAuth, updateUser, workflowEnabled]);
 
   return (
     <>
@@ -196,11 +202,9 @@ function App() {
         )}
       </AnimatePresence>
 
-      <MandatoryOverdueFollowUpGate>
-      <MandatoryFollowUpContinuationGate>
-      <MandatoryAttendanceGate>
-      {isAuthenticated ? <FollowUpReminderListener /> : null}
-      {isAuthenticated ? <RealtimeSyncListener /> : null}
+      <AuthenticatedWorkflowGates>
+      {workflowEnabled ? <FollowUpReminderListener /> : null}
+      {workflowEnabled ? <RealtimeSyncListener /> : null}
       <Routes>
         <Route path="/" element={
           <div className="min-h-screen bg-white font-sans selection:bg-emerald-200 selection:text-emerald-900 overflow-x-hidden">
@@ -421,9 +425,7 @@ function App() {
 
         <Route path="/master/stage-rules" element={<Navigate to="/admin/stage-rules" replace />} />
       </Routes>
-      </MandatoryAttendanceGate>
-      </MandatoryFollowUpContinuationGate>
-      </MandatoryOverdueFollowUpGate>
+      </AuthenticatedWorkflowGates>
     </>
   );
 }

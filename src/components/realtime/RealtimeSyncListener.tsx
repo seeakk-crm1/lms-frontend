@@ -3,6 +3,7 @@ import api from '../../services/api';
 import { queryClient } from '../../lib/queryClient';
 import { connectRealtime, disconnectRealtime } from '../../services/realtime';
 import useAuthStore from '../../store/useAuthStore';
+import { useAuthenticatedWorkflowEnabled } from '../../hooks/useAuthenticatedWorkflowEnabled';
 import useDashboardStore from '../../store/useDashboardStore';
 import { dispatchAttendanceRefresh } from '../../utils/attendanceRefresh';
 
@@ -43,11 +44,11 @@ const refetchDashboardIfLoaded = (): void => {
 };
 
 const RealtimeSyncListener = () => {
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const workflowEnabled = useAuthenticatedWorkflowEnabled();
   const userId = useAuthStore((state) => state.user?.id);
 
   useEffect(() => {
-    if (!isAuthenticated || !userId) {
+    if (!workflowEnabled || !userId) {
       disconnectRealtime();
       return;
     }
@@ -115,7 +116,7 @@ const RealtimeSyncListener = () => {
       socket.off('report_updated', onReportUpdated);
       socket.off('attendance_updated', onAttendanceUpdated);
     };
-  }, [isAuthenticated, userId]);
+  }, [workflowEnabled, userId]);
 
   return null;
 };

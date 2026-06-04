@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getOverdueMandatoryFollowUps } from '../services/followupService';
 import { MANDATORY_FOLLOWUP_QUERY_KEY } from '../constants/mandatoryFollowup.constants';
-import useAuthStore from '../store/useAuthStore';
+import { useAuthenticatedWorkflowEnabled } from './useAuthenticatedWorkflowEnabled';
 
 export const OVERDUE_MANDATORY_QUERY_KEY = ['followups', 'overdue-mandatory'] as const;
 
@@ -31,9 +31,7 @@ export const useInvalidateOverdueMandatory = () => {
 };
 
 export const useOverdueMandatoryBlocked = () => {
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const user = useAuthStore((state) => state.user);
-  const enabled = Boolean(isAuthenticated && user?.isOnboarded);
+  const enabled = useAuthenticatedWorkflowEnabled();
 
   const query = useOverdueMandatoryFollowUpsQuery(enabled);
   const items = query.data?.data?.items ?? [];

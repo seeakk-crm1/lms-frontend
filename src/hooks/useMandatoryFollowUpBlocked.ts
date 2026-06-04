@@ -1,11 +1,10 @@
 import { useMandatoryFollowUpContinuationQuery } from './useMandatoryFollowUpContinuation';
 import useAuthStore from '../store/useAuthStore';
+import { useAuthenticatedWorkflowEnabled } from './useAuthenticatedWorkflowEnabled';
 
 export const useMandatoryFollowUpBlocked = () => {
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const user = useAuthStore((state) => state.user);
   const sessionRequired = useAuthStore((state) => state.mandatoryFollowupRequired);
-  const enabled = Boolean(isAuthenticated && user?.isOnboarded);
+  const enabled = useAuthenticatedWorkflowEnabled();
 
   const query = useMandatoryFollowUpContinuationQuery(enabled);
   const items = query.data?.items ?? [];
