@@ -130,7 +130,7 @@ export const getFollowUpUsers = async (): Promise<FollowUpUserOption[]> => {
   const users = response.data?.data || [];
   return users.map((user: any) => ({
     id: user.id,
-    label: user.name || user.username || user.email,
+    label: user.displayName || user.name || user.username || user.email,
   }));
 };
 

@@ -188,7 +188,7 @@ const FollowUpSettingsPage: React.FC = () => {
         userId: bulkAssigneeFilter || 'ALL',
         status: 'PENDING',
         page: 1,
-        limit: 100,
+        limit: 500,
         ...(bulkScheduledFrom ? { startDate: bulkScheduledFrom } : {}),
         ...(bulkScheduledTo ? { endDate: bulkScheduledTo } : {}),
       });
@@ -409,6 +409,12 @@ const FollowUpSettingsPage: React.FC = () => {
   useEffect(() => {
     import('../../services/followupService').then((module) => {
       module.getFollowUpUsers().then((users) => {
+        if (import.meta.env.DEV) {
+          console.info('[BulkReschedule] assignee options loaded', {
+            count: users.length,
+            userIds: users.map((u) => u.id),
+          });
+        }
         setBulkUsers(users.map((u) => ({ id: u.id, name: u.label })));
       }).catch((err) => {
         console.error('Failed to load bulk assignees', err);
