@@ -398,13 +398,13 @@ const MandatoryOverdueFollowUpGate: React.FC<Props> = ({ children }) => {
             setIsBulkExtending(true);
             const res = await bulkExtendFollowUps({
               followUpIds: selectedBulkItems,
-              scheduledAt: new Date(bulkTargetDate).toISOString(),
+              newFollowupDate: new Date(bulkTargetDate).toISOString(),
               extensionReasonId: bulkReasonId || undefined,
               recentDescription: bulkDescription.trim() || undefined,
               autoDistribute: bulkAutoDistribute,
             });
             if (res.success) {
-              toast.success(`Successfully extended ${res.data?.extendedCount || selectedBulkItems.length} follow-ups`);
+              toast.success(`Successfully extended ${res.successCount || selectedBulkItems.length} follow-ups`);
               setBulkModalOpen(false);
               setSelectedBulkItems([]);
               
