@@ -17,6 +17,8 @@ import { useWeeklyOffScheduleGuard } from '../../hooks/useWeeklyOffScheduleGuard
 import { toast } from 'react-hot-toast';
 import type { FollowUp } from '../../types/followup.types';
 import { stageBadgeStyle } from '../../utils/leadStageColor';
+import BulkExtendOverdueModal from './BulkExtendOverdueModal';
+import { bulkExtendFollowUps } from '../../services/followupSettings.api';
 
 interface Props {
   children: React.ReactNode;
@@ -39,8 +41,19 @@ const MandatoryOverdueFollowUpGate: React.FC<Props> = ({ children }) => {
   const [snoozeReasonId, setSnoozeReasonId] = useState('');
   const [reminderActionType, setReminderActionType] = useState<'SNOOZE' | 'REMIND_LATER'>('SNOOZE');
 
+  // Bulk Extend State
+  const [bulkModalOpen, setBulkModalOpen] = useState(false);
+  const [selectedBulkItems, setSelectedBulkItems] = useState<string[]>([]);
+  const [bulkTargetDate, setBulkTargetDate] = useState('');
+  const [bulkReasonId, setBulkReasonId] = useState('');
+  const [bulkDescription, setBulkDescription] = useState('');
+  const [bulkAutoDistribute, setBulkAutoDistribute] = useState(false);
+  const [isBulkExtending, setIsBulkExtending] = useState(false);
+
+  const hasBulkAccess = user?.permissions?.includes('bulk_extend_followups');
+
   const activeItem = useMemo(() => items[queueIndex] ?? items[0] ?? null, [items, queueIndex]);
-  const actionModalOpen = Boolean(completeTarget || snoozeTarget);
+  const actionModalOpen = Boolean(completeTarget || snoozeTarget || bulkModalOpen);
 
   useMandatoryNavigationLock(blocked && enabled && !actionModalOpen);
 
@@ -149,7 +162,7 @@ const MandatoryOverdueFollowUpGate: React.FC<Props> = ({ children }) => {
                       <p className="text-sm font-bold">Checking overdue follow-ups…</p>
                     </div>
                   ) : activeItem ? (
-                    <div className="w-full max-w-lg rounded-3xl border border-red-100 bg-white p-6 shadow-2xl">
+                    <div className="w-full max-w-2xl rounded-3xl border border-red-100 bg-white p-6 shadow-2xl">
                       <div className="mb-4 flex items-start gap-3">
                         <div className="rounded-2xl bg-red-50 p-3 text-red-500">
                           <AlertTriangle size={22} />
@@ -157,51 +170,128 @@ const MandatoryOverdueFollowUpGate: React.FC<Props> = ({ children }) => {
                         <div>
                           <h2 className="text-lg font-black text-gray-900">Overdue Follow-Up Required</h2>
                           <p className="mt-1 text-sm text-gray-500">
-                            Complete or extend this follow-up before using the application (
-                            {queueIndex + 1} of {items.length}).
+                            {hasBulkAccess && items.length > 1
+                              ? `You have ${items.length} overdue follow-ups. You can bulk extend them or process them individually.`
+                              : `Complete or extend this follow-up before using the application (${queueIndex + 1} of ${items.length}).`}
                           </p>
                         </div>
                       </div>
 
-                      <div className="rounded-2xl border border-gray-100 bg-gray-50 p-4 text-sm">
-                        <div className="flex items-center justify-between gap-2">
-                          <p className="font-black text-gray-900">{activeItem.leadName}</p>
-                          {activeItem.leadStage ? (
-                            <span
-                              className="rounded-full px-2 py-0.5 text-[10px] font-black"
-                              style={stageBadgeStyle(activeItem.leadStage.color)}
-                            >
-                              {activeItem.leadStage.name}
-                            </span>
-                          ) : null}
+                      {hasBulkAccess && items.length > 1 ? (
+                        <div className="mb-5 overflow-y-auto max-h-[300px] border border-gray-100 rounded-2xl">
+                          <table className="w-full text-left border-collapse text-sm">
+                            <thead className="bg-gray-50/50 text-xs font-black uppercase text-gray-400">
+                              <tr>
+                                <th className="py-2.5 px-4 w-12 text-center">
+                                  <input
+                                    type="checkbox"
+                                    checked={selectedBulkItems.length === items.length && items.length > 0}
+                                    onChange={(e) => {
+                                      if (e.target.checked) setSelectedBulkItems(items.map(i => i.id));
+                                      else setSelectedBulkItems([]);
+                                    }}
+                                    className="w-4 h-4 accent-amber-500 rounded"
+                                  />
+                                </th>
+                                <th className="py-2.5 px-4">Lead</th>
+                                <th className="py-2.5 px-4">Scheduled</th>
+                                <th className="py-2.5 px-4">Action</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {items.map(item => (
+                                <tr key={item.id} className="border-b border-gray-50 hover:bg-gray-50/30">
+                                  <td className="py-2 px-4 text-center">
+                                    <input
+                                      type="checkbox"
+                                      checked={selectedBulkItems.includes(item.id)}
+                                      onChange={() => {
+                                        setSelectedBulkItems(prev => prev.includes(item.id) ? prev.filter(i => i !== item.id) : [...prev, item.id])
+                                      }}
+                                      className="w-4 h-4 accent-amber-500 rounded"
+                                    />
+                                  </td>
+                                  <td className="py-2 px-4 font-semibold text-gray-800">
+                                    {item.leadName}
+                                    <div className="text-[11px] text-gray-400 font-normal">{item.customerName}</div>
+                                  </td>
+                                  <td className="py-2 px-4 text-gray-500 text-xs">
+                                    {format(new Date(item.scheduledAt), 'MMM d, h:mm a')}
+                                  </td>
+                                  <td className="py-2 px-4">
+                                    <button
+                                      type="button"
+                                      onClick={() => setCompleteTarget(mapItemToFollowUp(item))}
+                                      className="text-emerald-600 hover:text-emerald-700 font-bold text-xs"
+                                    >
+                                      Complete
+                                    </button>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
                         </div>
-                        <p className="mt-2 text-gray-600">Customer: {activeItem.customerName}</p>
-                        <p className="mt-1 text-gray-600">
-                          Scheduled: {format(new Date(activeItem.scheduledAt), 'PPp')}
-                        </p>
-                        <p className="mt-1 font-bold text-red-600">Status: Overdue</p>
-                      </div>
+                      ) : (
+                        <div className="rounded-2xl border border-gray-100 bg-gray-50 p-4 text-sm">
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="font-black text-gray-900">{activeItem.leadName}</p>
+                            {activeItem.leadStage ? (
+                              <span
+                                className="rounded-full px-2 py-0.5 text-[10px] font-black"
+                                style={stageBadgeStyle(activeItem.leadStage.color)}
+                              >
+                                {activeItem.leadStage.name}
+                              </span>
+                            ) : null}
+                          </div>
+                          <p className="mt-2 text-gray-600">Customer: {activeItem.customerName}</p>
+                          <p className="mt-1 text-gray-600">
+                            Scheduled: {format(new Date(activeItem.scheduledAt), 'PPp')}
+                          </p>
+                          <p className="mt-1 font-bold text-red-600">Status: Overdue</p>
+                        </div>
+                      )}
 
                       <div className="mt-5 flex flex-col gap-2 sm:flex-row">
-                        <button
-                          type="button"
-                          onClick={() => setCompleteTarget(mapItemToFollowUp(activeItem))}
-                          className="flex-1 rounded-2xl bg-emerald-500 py-3 text-sm font-black text-white hover:bg-emerald-600"
-                        >
-                          Complete Follow-Up
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSnoozeTarget(mapItemToFollowUp(activeItem));
-                            setSnoozeDateTime('');
-                            setRecentDescription('');
-                            setSnoozeReasonId('');
-                          }}
-                          className="flex-1 rounded-2xl border border-amber-200 bg-amber-50 py-3 text-sm font-black text-amber-800 hover:bg-amber-100"
-                        >
-                          Extend Follow-Up
-                        </button>
+                        {hasBulkAccess && items.length > 1 ? (
+                          <button
+                            type="button"
+                            disabled={selectedBulkItems.length === 0}
+                            onClick={() => {
+                              setBulkTargetDate('');
+                              setBulkReasonId('');
+                              setBulkDescription('');
+                              setBulkAutoDistribute(false);
+                              setBulkModalOpen(true);
+                            }}
+                            className="flex-1 rounded-2xl bg-amber-500 py-3 text-sm font-black text-white hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            Bulk Extend Selected ({selectedBulkItems.length})
+                          </button>
+                        ) : (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => setCompleteTarget(mapItemToFollowUp(activeItem))}
+                              className="flex-1 rounded-2xl bg-emerald-500 py-3 text-sm font-black text-white hover:bg-emerald-600"
+                            >
+                              Complete Follow-Up
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSnoozeTarget(mapItemToFollowUp(activeItem));
+                                setSnoozeDateTime('');
+                                setRecentDescription('');
+                                setSnoozeReasonId('');
+                              }}
+                              className="flex-1 rounded-2xl border border-amber-200 bg-amber-50 py-3 text-sm font-black text-amber-800 hover:bg-amber-100"
+                            >
+                              Extend Follow-Up
+                            </button>
+                          </>
+                        )}
                       </div>
                     </div>
                   ) : null}
@@ -270,6 +360,65 @@ const MandatoryOverdueFollowUpGate: React.FC<Props> = ({ children }) => {
           setRecentDescription('');
           setSnoozeReasonId('');
           await advanceQueueAfterAction(resolvedId);
+        }}
+      />
+
+      <BulkExtendOverdueModal
+        isOpen={bulkModalOpen}
+        selectedCount={selectedBulkItems.length}
+        value={bulkTargetDate}
+        onChange={setBulkTargetDate}
+        recentDescription={bulkDescription}
+        onRecentDescriptionChange={setBulkDescription}
+        selectedReasonId={bulkReasonId}
+        onSelectedReasonIdChange={setBulkReasonId}
+        autoDistribute={bulkAutoDistribute}
+        onAutoDistributeChange={setBulkAutoDistribute}
+        isSubmitting={isBulkExtending}
+        stackAboveMandatoryGate
+        onClose={() => setBulkModalOpen(false)}
+        onSubmit={async () => {
+          if (!bulkTargetDate) {
+            toast.error('Please choose a new target date');
+            return;
+          }
+          if (!bulkReasonId && !bulkDescription.trim()) {
+            toast.error('Please provide a reason or description');
+            return;
+          }
+          const nextTime = new Date(bulkTargetDate);
+          if (Number.isNaN(nextTime.getTime()) || nextTime.getTime() <= Date.now()) {
+            toast.error('Please choose a future date');
+            return;
+          }
+          const proceed = await confirmIfWeeklyOff(nextTime);
+          if (!proceed) return;
+
+          try {
+            setIsBulkExtending(true);
+            const res = await bulkExtendFollowUps({
+              followUpIds: selectedBulkItems,
+              scheduledAt: new Date(bulkTargetDate).toISOString(),
+              extensionReasonId: bulkReasonId || undefined,
+              recentDescription: bulkDescription.trim() || undefined,
+              autoDistribute: bulkAutoDistribute,
+            });
+            if (res.success) {
+              toast.success(`Successfully extended ${res.data?.extendedCount || selectedBulkItems.length} follow-ups`);
+              setBulkModalOpen(false);
+              setSelectedBulkItems([]);
+              
+              // Remove them from the overdue cache so it bypasses if empty
+              selectedBulkItems.forEach(id => removeResolvedFromOverdueCache(id));
+              setQueueIndex(0);
+              invalidateOverdue();
+              await query.refetch();
+            }
+          } catch (err: any) {
+            toast.error(err.response?.data?.message || 'Failed to bulk extend follow-ups');
+          } finally {
+            setIsBulkExtending(false);
+          }
         }}
       />
 

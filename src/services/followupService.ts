@@ -126,8 +126,8 @@ export const getFollowUpHistory = async (params: {
 };
 
 export const getFollowUpUsers = async (): Promise<FollowUpUserOption[]> => {
-  const response = await getUsers({ page: 1, limit: 100, isActive: true });
-  const users = response?.users || [];
+  const response = await api.get<{ success: boolean; data: any[] }>('/followups/users');
+  const users = response.data?.data || [];
   return users.map((user: any) => ({
     id: user.id,
     label: user.name || user.username || user.email,

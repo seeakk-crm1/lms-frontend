@@ -185,6 +185,7 @@ const FollowUpSettingsPage: React.FC = () => {
     try {
       setLoading(true);
       const res = await getFollowUpHistory({
+        userId: bulkAssigneeFilter || 'ALL',
         status: 'PENDING',
         page: 1,
         limit: 100,
@@ -289,7 +290,7 @@ const FollowUpSettingsPage: React.FC = () => {
       void loadPendingFollowUps();
     }, 300);
     return () => window.clearTimeout(timer);
-  }, [activeTab, bulkScheduledFrom, bulkScheduledTo]);
+  }, [activeTab, bulkScheduledFrom, bulkScheduledTo, bulkAssigneeFilter]);
 
   // Handle settings update submit
   const handleUpdateSettings = async (e: React.FormEvent) => {
@@ -388,6 +389,14 @@ const FollowUpSettingsPage: React.FC = () => {
     [pendingFollowUps, bulkFollowUpFilterCriteria],
   );
 
+  const pendingOnlyList = useMemo(() => 
+    filteredPendingFollowUps.filter(item => new Date(item.scheduledAt).getTime() > Date.now()),
+  [filteredPendingFollowUps]);
+
+  const overdueList = useMemo(() => 
+    filteredPendingFollowUps.filter(item => new Date(item.scheduledAt).getTime() <= Date.now()),
+  [filteredPendingFollowUps]);
+
   const clearBulkFollowUpFilters = () => {
     setBulkFollowUpSearch('');
     setBulkAssigneeFilter('');
@@ -395,15 +404,21 @@ const FollowUpSettingsPage: React.FC = () => {
     setBulkScheduledTo('');
   };
 
-  const bulkAssigneeOptions = useMemo(() => {
-    const options = new Map<string, string>();
-    pendingFollowUps.forEach((row) => {
-      if (row.userId) {
-        options.set(row.userId, row.userName);
-      }
+  // Load Assignee Users for Bulk Extend from hierarchy
+  const [bulkUsers, setBulkUsers] = useState<Array<{ id: string; name: string }>>([]);
+  useEffect(() => {
+    import('../../services/followupService').then((module) => {
+      module.getFollowUpUsers().then((users) => {
+        setBulkUsers(users.map((u) => ({ id: u.id, name: u.label })));
+      }).catch((err) => {
+        console.error('Failed to load bulk assignees', err);
+      });
     });
-    return Array.from(options.entries()).map(([id, name]) => ({ id, name }));
-  }, [pendingFollowUps]);
+  }, []);
+
+  const bulkAssigneeOptions = useMemo(() => {
+    return bulkUsers;
+  }, [bulkUsers]);
 
   const allFilteredSelected =
     filteredPendingFollowUps.length > 0 &&
@@ -931,77 +946,107 @@ const FollowUpSettingsPage: React.FC = () => {
                             onClick={clearBulkFollowUpFilters}
                             className="text-xs font-bold text-gray-500 hover:text-gray-800 sm:pb-2.5"
                           >
-                            Clear filters
-                          </button>
-                        ) : null}
+                                      <td className="py-2.5 px-4 text-center">
+                                        <input
+                                          type="checkbox"
+                                          checked={selectedFollowUps.includes(item.id)}
+                                          onChange={() => toggleFollowUpSelect(item.id)}
+                                          className="w-4 h-4 accent-red-500 rounded"
+                                        />
+                                      </td>
+                                      <td className="py-2.5 px-4">
+                                        <span className="font-bold text-gray-900 block">{item.leadName}</span>
+                                        <span className="text-xs text-gray-400">
+                                          {item.leadPhone && item.leadEmail
+                                            ? `${item.leadPhone} · ${item.leadEmail}`
+                                            : item.leadPhone || item.leadEmail || 'No contact'}
+                                        </span>
+                                      </td>
+                                      <td className="py-2.5 px-4 text-xs">{item.userName || 'Unassigned'}</td>
+                                      <td className="py-2.5 px-4 text-xs font-mono">{new Date(item.scheduledAt).toLocaleString()}</td>
+                                      <td className="py-2.5 px-4 text-xs font-bold text-red-500">{daysOverdue > 0 ? `${daysOverdue} days` : 'Today'}</td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          )}
+                        </div>
+
+                        <div className="flex items-center justify-between mb-4 mt-2">
+                          <h3 className="text-xl font-black text-gray-900">Pending Follow-Ups ({pendingOnlyList.length})</h3>
+                          {pendingOnlyList.length > 0 && (
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-bold text-gray-500 uppercase">Select All</span>
+                              <input
+                                type="checkbox"
+                                checked={pendingOnlyList.every((row) => selectedFollowUps.includes(row.id))}
+                                onChange={(e) => {
+                                  const checked = e.target.checked;
+                                  setSelectedFollowUps((prev) => {
+                                    const newSelection = new Set(prev);
+                                    pendingOnlyList.forEach((row) => {
+                                      if (checked) newSelection.add(row.id);
+                                      else newSelection.delete(row.id);
+                                    });
+                                    return Array.from(newSelection);
+                                  });
+                                }}
+                                className="w-4 h-4 accent-emerald-500 rounded"
+                              />
+                            </div>
+                          )}
+                        </div>
+                        <div className="overflow-y-auto max-h-[300px] border border-gray-100 rounded-2xl">
+                          {pendingOnlyList.length === 0 ? (
+                            <div className="p-8 text-center text-sm font-semibold text-gray-400">
+                              No future pending follow-ups match your filters.
+                            </div>
+                          ) : (
+                            <table className="w-full text-left border-collapse">
+                              <thead>
+                                <tr className="border-b border-gray-100 bg-emerald-50/50 text-xs font-black uppercase text-emerald-600 tracking-wider">
+                                  <th className="py-2.5 px-4 w-12 text-center">Select</th>
+                                  <th className="py-2.5 px-4">Lead & Contact</th>
+                                  <th className="py-2.5 px-4">Assigned To</th>
+                                  <th className="py-2.5 px-4">Scheduled Date</th>
+                                  <th className="py-2.5 px-4">Reason</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {pendingOnlyList.map((item) => (
+                                  <tr
+                                    key={item.id}
+                                    className={`border-b border-gray-50 text-sm font-semibold text-gray-600 transition-colors ${
+                                      selectedFollowUps.includes(item.id) ? 'bg-emerald-50/30' : 'hover:bg-gray-50/30'
+                                    }`}
+                                  >
+                                    <td className="py-2.5 px-4 text-center">
+                                      <input
+                                        type="checkbox"
+                                        checked={selectedFollowUps.includes(item.id)}
+                                        onChange={() => toggleFollowUpSelect(item.id)}
+                                        className="w-4 h-4 accent-emerald-500 rounded"
+                                      />
+                                    </td>
+                                    <td className="py-2.5 px-4">
+                                      <span className="font-bold text-gray-900 block">{item.leadName}</span>
+                                      <span className="text-xs text-gray-400">
+                                        {item.leadPhone && item.leadEmail
+                                          ? `${item.leadPhone} · ${item.leadEmail}`
+                                          : item.leadPhone || item.leadEmail || 'No contact'}
+                                      </span>
+                                    </td>
+                                    <td className="py-2.5 px-4 text-xs">{item.userName || 'Unassigned'}</td>
+                                    <td className="py-2.5 px-4 text-xs font-mono">{new Date(item.scheduledAt).toLocaleString()}</td>
+                                    <td className="py-2.5 px-4 text-xs">{item.extensionReasonName || item.description || 'N/A'}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          )}
+                        </div>
                       </div>
-                    </div>
-
-                    <p className="text-xs font-semibold text-gray-500">
-                      Showing {filteredPendingFollowUps.length} of {pendingFollowUps.length} pending follow-up
-                      {pendingFollowUps.length === 1 ? '' : 's'}
-                    </p>
-
-                    <div className="overflow-y-auto max-h-[500px] border border-gray-100 rounded-2xl">
-                      {pendingFollowUps.length === 0 ? (
-                        <div className="p-12 text-center text-sm font-semibold text-gray-400">
-                          No pending or missed follow-ups found for bulk rescheduling.
-                        </div>
-                      ) : filteredPendingFollowUps.length === 0 ? (
-                        <div className="p-12 text-center text-sm font-semibold text-gray-400">
-                          No follow-ups match your filters. Try adjusting search, assignee, or scheduled dates.
-                        </div>
-                      ) : (
-                        <table className="w-full text-left border-collapse">
-                          <thead>
-                            <tr className="border-b border-gray-100 bg-gray-50/50 text-xs font-black uppercase text-gray-400 tracking-wider">
-                              <th className="py-2.5 px-4 w-12 text-center">Select</th>
-                              <th className="py-2.5 px-4">Lead Name</th>
-                              <th className="py-2.5 px-4">Assigned To</th>
-                              <th className="py-2.5 px-4">Scheduled Date</th>
-                              <th className="py-2.5 px-4">Reason</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {filteredPendingFollowUps.map((item) => (
-                              <tr
-                                key={item.id}
-                                className={`border-b border-gray-50 text-sm font-semibold text-gray-600 transition-colors ${
-                                  selectedFollowUps.includes(item.id) ? 'bg-emerald-50/30' : 'hover:bg-gray-50/30'
-                                }`}
-                              >
-                                <td className="py-2.5 px-4 text-center">
-                                  <input
-                                    type="checkbox"
-                                    checked={selectedFollowUps.includes(item.id)}
-                                    onChange={() => toggleFollowUpSelect(item.id)}
-                                    className="w-4 h-4 accent-emerald-500 rounded"
-                                  />
-                                </td>
-                                <td className="py-2.5 px-4">
-                                  <span className="font-bold text-gray-900 block">{item.leadName}</span>
-                                  <span className="text-xs text-gray-400">
-                                    {item.leadPhone && item.leadEmail
-                                      ? `${item.leadPhone} · ${item.leadEmail}`
-                                      : item.leadPhone || item.leadEmail || 'No contact'}
-                                  </span>
-                                </td>
-                                <td className="py-2.5 px-4">
-                                  <span className="text-xs">{item.userName || 'Unassigned'}</span>
-                                </td>
-                                <td className="py-2.5 px-4 text-xs font-mono">
-                                  {new Date(item.scheduledAt).toLocaleString()}
-                                </td>
-                                <td className="py-2.5 px-4 text-xs">
-                                  {item.extensionReasonName || item.description || 'N/A'}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      )}
-                    </div>
-                  </div>
 
                   {/* Reschedule parameters */}
                   <div className="bg-white/95 border border-white/70 p-6 rounded-[28px] shadow-[0_20px_50px_-30px_rgba(15,23,42,0.25)] backdrop-blur lg:col-span-1">
