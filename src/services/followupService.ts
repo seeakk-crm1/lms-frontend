@@ -115,6 +115,8 @@ export const snoozeFollowUp = async (id: string, payload: SnoozeFollowUpInput) =
 
 export const getFollowUpHistory = async (params: {
   userId?: string;
+  /** Filters by lead owner (`Lead.assignedToId`) for bulk reschedule. */
+  assignedToId?: string;
   status?: string;
   startDate?: string;
   endDate?: string;

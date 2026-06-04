@@ -185,7 +185,7 @@ const FollowUpSettingsPage: React.FC = () => {
     try {
       setLoading(true);
       const res = await getFollowUpHistory({
-        userId: bulkAssigneeFilter || 'ALL',
+        assignedToId: bulkAssigneeFilter || 'ALL',
         status: 'PENDING',
         page: 1,
         limit: 500,

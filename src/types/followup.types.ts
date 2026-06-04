@@ -41,6 +41,8 @@ export interface FollowUp {
     name: string;
     email: string | null;
     phone: string | null;
+    assignedToId?: string | null;
+    assignedTo?: FollowUpUser | null;
   };
   userId: string;
   workspaceId: string;
