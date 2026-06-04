@@ -92,7 +92,12 @@ export const useCreateTargetCycleMutation = () => {
     },
     onError: (error: any, _payload, context) => {
       context?.previous?.forEach(([queryKey, data]) => queryClient.setQueryData(queryKey, data));
-      toast.error(error?.response?.data?.message || 'Failed to create target cycle');
+      
+      if (error?.response?.status === 409 || error?.response?.data?.code === 'TARGET_CYCLE_ALREADY_EXISTS') {
+        toast.error('Target Cycle name already exists. Please choose a different name.');
+      } else {
+        toast.error(error?.response?.data?.message || 'Failed to create target cycle');
+      }
     },
     onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: ['target-cycles'] });
@@ -115,7 +120,12 @@ export const useUpdateTargetCycleMutation = () => {
     },
     onError: (error: any, _payload, context) => {
       context?.previous?.forEach(([queryKey, data]) => queryClient.setQueryData(queryKey, data));
-      toast.error(error?.response?.data?.message || 'Failed to update target cycle');
+      
+      if (error?.response?.status === 409 || error?.response?.data?.code === 'TARGET_CYCLE_ALREADY_EXISTS') {
+        toast.error('Target Cycle name already exists. Please choose a different name.');
+      } else {
+        toast.error(error?.response?.data?.message || 'Failed to update target cycle');
+      }
     },
     onSuccess: (response, { id }) => {
       queryClient.invalidateQueries({ queryKey: ['target-cycles'] });
