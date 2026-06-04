@@ -43,24 +43,26 @@ const PipelineStages: React.FC = () => {
                     No pipeline stages have lead data yet.
                 </div>
             ) : (
-            <div className="flex-1 flex flex-col justify-center gap-6">
-                {pipelineData.map((stage, idx) => (
-                    <div key={idx} className="group cursor-pointer">
-                        <div className="flex justify-between items-end mb-2">
-                            <span className="text-sm font-bold text-gray-700 group-hover:text-emerald-600 transition-colors uppercase tracking-wider">{stage.name}</span>
-                            <span className="text-xs font-black text-gray-900 bg-gray-50 px-2 py-1 rounded">{stage.count} Leads</span>
+            <div className="flex-1 flex flex-col gap-5 overflow-y-auto custom-scrollbar pr-1">
+                <div className="flex flex-col gap-5 my-auto">
+                    {pipelineData.map((stage, idx) => (
+                        <div key={idx} className="group cursor-pointer shrink-0">
+                            <div className="flex justify-between items-end mb-2">
+                                <span className="text-sm font-bold text-gray-700 group-hover:text-emerald-600 transition-colors uppercase tracking-wider">{stage.name}</span>
+                                <span className="text-xs font-black text-gray-900 bg-gray-50 px-2 py-1 rounded">{stage.count} Leads</span>
+                            </div>
+                            <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden shadow-inner">
+                                <motion.div
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${stage.percent}%` }}
+                                    transition={{ duration: 1, delay: 0.3 + (idx * 0.1), ease: "easeOut" }}
+                                    className="h-full rounded-full shadow-sm group-hover:brightness-110"
+                                    style={{ backgroundColor: stage.color }}
+                                />
+                            </div>
                         </div>
-                        <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden shadow-inner">
-                            <motion.div
-                                initial={{ width: 0 }}
-                                animate={{ width: `${stage.percent}%` }}
-                                transition={{ duration: 1, delay: 0.3 + (idx * 0.1), ease: "easeOut" }}
-                                className="h-full rounded-full shadow-sm group-hover:brightness-110"
-                                style={{ backgroundColor: stage.color }}
-                            />
-                        </div>
-                    </div>
-                ))}
+                    ))}
+                </div>
             </div>
             )}
         </motion.div>
