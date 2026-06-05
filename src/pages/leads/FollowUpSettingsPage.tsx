@@ -406,10 +406,36 @@ const FollowUpSettingsPage: React.FC = () => {
     setBulkScheduledTo('');
   };
 
-  const bulkAssigneeOptions = useMemo(
-    () => (followUpUsersQuery.data || []).map((user) => ({ id: user.id, name: user.label })),
-    [followUpUsersQuery.data],
-  );
+  const bulkAssigneeOptions = useMemo(() => {
+    const scopedUsers = (followUpUsersQuery.data || []).map((user) => ({
+      id: user.id,
+      name: user.label,
+    }));
+    const workspaceUsers = (leadMeta.data?.users || []).map((user) => ({
+      id: user.id,
+      name: user.label,
+    }));
+
+    const useWorkspaceAssigneeList =
+      permissions.includes('SUPERADMIN') ||
+      access.canManageSettings ||
+      access.canGrantTemp ||
+      access.canViewReports ||
+      Boolean(leadMeta.data?.canAssignOtherUsers);
+
+    const source =
+      useWorkspaceAssigneeList && workspaceUsers.length > 0 ? workspaceUsers : scopedUsers;
+
+    return Array.from(new Map(source.map((option) => [option.id, option])).values());
+  }, [
+    access.canGrantTemp,
+    access.canManageSettings,
+    access.canViewReports,
+    followUpUsersQuery.data,
+    leadMeta.data?.canAssignOtherUsers,
+    leadMeta.data?.users,
+    permissions,
+  ]);
 
   const allFilteredSelected =
     filteredPendingFollowUps.length > 0 &&

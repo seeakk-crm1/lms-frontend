@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { endOfDay, endOfMonth, endOfWeek, formatISO, parseISO, startOfDay, startOfMonth, startOfWeek } from 'date-fns';
 import { toast } from 'react-hot-toast';
 import useFollowupStore from '../store/followupStore';
+import useAuthStore from '../store/useAuthStore';
 import {
   completeFollowUp,
   createFollowUp,
@@ -172,14 +173,24 @@ export const useFollowUpReminderAlertsQuery = (enabled = true) => {
   });
 };
 
-export const useFollowUpUsersQuery = () =>
-  useQuery({
-    queryKey: ['followups', 'users'],
+export const useFollowUpUsersQuery = () => {
+  const workspaceId = useAuthStore((state) => state.user?.workspaceId);
+  const userId = useAuthStore((state) => state.user?.id);
+
+  return useQuery({
+    queryKey: ['followups', 'users', workspaceId, userId],
     queryFn: getFollowUpUsers,
+    enabled: Boolean(workspaceId && userId),
     staleTime: 300_000,
     gcTime: 600_000,
     refetchOnWindowFocus: false,
+    retry: (failureCount, error: any) => {
+      const status = error?.response?.status;
+      if (status === 401 || status === 403 || status === 422 || status === 423 || status === 503) return false;
+      return failureCount < 2;
+    },
   });
+};
 
 export const useFollowUpLeadsQuery = () =>
   useQuery({
