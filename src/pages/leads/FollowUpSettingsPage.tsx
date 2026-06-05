@@ -32,6 +32,7 @@ import {
   TemporaryAccessEntry,
 } from '../../services/followupSettings.api';
 import { getFollowUpHistory } from '../../services/followupService';
+import { useFollowUpUsersQuery } from '../../hooks/useFollowUps';
 import api from '../../services/api';
 import useAuthStore from '../../store/useAuthStore';
 import {
@@ -136,6 +137,7 @@ const FollowUpSettingsPage: React.FC = () => {
   // Queries
   const leadMeta = useLeadMetaQuery();
   const extensionReasons = useActiveExtensionReasonsQuery();
+  const followUpUsersQuery = useFollowUpUsersQuery();
 
   // Load Users List from lead meta query
   useEffect(() => {
@@ -404,27 +406,10 @@ const FollowUpSettingsPage: React.FC = () => {
     setBulkScheduledTo('');
   };
 
-  // Load Assignee Users for Bulk Extend from hierarchy
-  const [bulkUsers, setBulkUsers] = useState<Array<{ id: string; name: string }>>([]);
-  useEffect(() => {
-    import('../../services/followupService').then((module) => {
-      module.getFollowUpUsers().then((users) => {
-        if (import.meta.env.DEV) {
-          console.info('[BulkReschedule] assignee options loaded', {
-            count: users.length,
-            userIds: users.map((u) => u.id),
-          });
-        }
-        setBulkUsers(users.map((u) => ({ id: u.id, name: u.label })));
-      }).catch((err) => {
-        console.error('Failed to load bulk assignees', err);
-      });
-    });
-  }, []);
-
-  const bulkAssigneeOptions = useMemo(() => {
-    return bulkUsers;
-  }, [bulkUsers]);
+  const bulkAssigneeOptions = useMemo(
+    () => (followUpUsersQuery.data || []).map((user) => ({ id: user.id, name: user.label })),
+    [followUpUsersQuery.data],
+  );
 
   const allFilteredSelected =
     filteredPendingFollowUps.length > 0 &&

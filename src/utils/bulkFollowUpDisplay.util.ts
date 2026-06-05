@@ -4,7 +4,6 @@ export type BulkExtendFollowUpRow = {
   id: string;
   leadId: string;
   userId: string;
-  leadAssignedToId: string | null;
   scheduledAt: string;
   description: string | null;
   extensionReasonName: string | null;
@@ -59,34 +58,24 @@ export const normalizeScheduledDateRange = (
   return { from, to };
 };
 
-const resolveLeadAssigneeDisplayName = (item: FollowUp): string => {
-  const assignedTo = item.lead?.assignedTo;
-  if (assignedTo?.displayName?.trim()) return assignedTo.displayName.trim();
-  if (assignedTo?.name?.trim()) return assignedTo.name.trim();
-  if (assignedTo?.username?.trim()) return assignedTo.username.trim();
-  if (assignedTo?.email?.trim()) return assignedTo.email.trim();
-  return 'Unassigned';
-};
-
 export const mapFollowUpToBulkExtendRow = (item: FollowUp): BulkExtendFollowUpRow => ({
   id: item.id,
   leadId: item.leadId,
   userId: item.userId,
-  leadAssignedToId: item.lead?.assignedToId ?? null,
   scheduledAt: item.scheduledAt,
   description: item.description,
   extensionReasonName: item.extensionReasonName ?? null,
   leadName: resolveLeadDisplayName(item.lead),
   leadPhone: item.lead?.phone?.trim() || null,
   leadEmail: item.lead?.email?.trim() || null,
-  userName: resolveLeadAssigneeDisplayName(item),
+  userName: item.user?.displayName || item.user?.name || item.user?.email || 'Unassigned',
 });
 
 export const matchesBulkFollowUpFilter = (
   row: BulkExtendFollowUpRow,
   criteria: BulkFollowUpFilterCriteria,
 ): boolean => {
-  if (criteria.assigneeUserId && row.leadAssignedToId !== criteria.assigneeUserId) {
+  if (criteria.assigneeUserId && row.userId !== criteria.assigneeUserId) {
     return false;
   }
 
