@@ -68,7 +68,17 @@ export const bulkExtendFollowUps = async (payload: {
   extensionReasonId?: string | null;
   recentDescription?: string | null;
   autoDistribute?: boolean;
-}): Promise<{ success: boolean; message: string; successCount: number; blockedCount: number }> => {
+}): Promise<{
+  success: boolean;
+  message: string;
+  successCount: number;
+  blockedCount: number;
+  overdueSession?: {
+    overdueFollowupRequired: boolean;
+    overdueFollowupCount: number;
+    items: Array<{ id: string }>;
+  };
+}> => {
   const response = await api.post('/followups/bulk-extend', payload);
   return response.data;
 };

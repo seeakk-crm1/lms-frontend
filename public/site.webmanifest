@@ -5,12 +5,14 @@
     {
       "src": "/favicon.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
       "src": "/apple-touch-icon.png",
-      "sizes": "512x512",
-      "type": "image/png"
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
     }
   ],
   "theme_color": "#2a7a3b",

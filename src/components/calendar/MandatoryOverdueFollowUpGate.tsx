@@ -414,9 +414,19 @@ const MandatoryOverdueFollowUpGate: React.FC<Props> = ({ children }) => {
               setBulkAutoDistribute(false);
 
               processedIds.forEach((id) => removeResolvedFromOverdueCache(id));
+
+              if (res.overdueSession) {
+                queryClient.setQueryData(OVERDUE_MANDATORY_QUERY_KEY, {
+                  success: true,
+                  message: res.message,
+                  data: res.overdueSession,
+                });
+              }
+
               setQueueIndex(0);
               invalidateOverdue();
-              const refetched = await query.refetch();
+
+              const refetched = res.overdueSession ? { data: { data: res.overdueSession } } : await query.refetch();
               const remainingCount = refetched.data?.data?.items?.length ?? 0;
               if (remainingCount === 0) {
                 useAuthStore.getState().clearMandatoryFollowupBlock();
