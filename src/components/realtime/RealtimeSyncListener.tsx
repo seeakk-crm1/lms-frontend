@@ -4,6 +4,8 @@ import { queryClient } from '../../lib/queryClient';
 import { connectRealtime, disconnectRealtime } from '../../services/realtime';
 import useAuthStore from '../../store/useAuthStore';
 import { useAuthenticatedWorkflowEnabled } from '../../hooks/useAuthenticatedWorkflowEnabled';
+import { useOverdueMandatoryBlocked } from '../../hooks/useOverdueMandatoryFollowUps';
+import { useMandatoryFollowUpBlocked } from '../../hooks/useMandatoryFollowUpBlocked';
 import useDashboardStore from '../../store/useDashboardStore';
 import { dispatchAttendanceRefresh } from '../../utils/attendanceRefresh';
 
@@ -46,9 +48,18 @@ const refetchDashboardIfLoaded = (): void => {
 const RealtimeSyncListener = () => {
   const workflowEnabled = useAuthenticatedWorkflowEnabled();
   const userId = useAuthStore((state) => state.user?.id);
+  const { blocked: overdueBlocked, query: overdueQuery } = useOverdueMandatoryBlocked();
+  const { blocked: lifecycleBlocked, query: lifecycleQuery } = useMandatoryFollowUpBlocked();
+  const followUpLockActive =
+    overdueBlocked ||
+    lifecycleBlocked ||
+    overdueQuery.isLoading ||
+    overdueQuery.isPending ||
+    lifecycleQuery.isLoading ||
+    lifecycleQuery.isPending;
 
   useEffect(() => {
-    if (!workflowEnabled || !userId) {
+    if (!workflowEnabled || !userId || followUpLockActive) {
       disconnectRealtime();
       return;
     }
@@ -116,7 +127,7 @@ const RealtimeSyncListener = () => {
       socket.off('report_updated', onReportUpdated);
       socket.off('attendance_updated', onAttendanceUpdated);
     };
-  }, [workflowEnabled, userId]);
+  }, [followUpLockActive, workflowEnabled, userId]);
 
   return null;
 };
