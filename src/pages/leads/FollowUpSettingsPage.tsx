@@ -406,6 +406,14 @@ const FollowUpSettingsPage: React.FC = () => {
     setBulkScheduledTo('');
   };
 
+  const getBulkFollowUpDaysOverdue = (scheduledAt: string) => {
+    const scheduled = new Date(scheduledAt);
+    const now = new Date();
+    const scheduledDay = new Date(scheduled.getFullYear(), scheduled.getMonth(), scheduled.getDate());
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    return Math.max(0, Math.floor((today.getTime() - scheduledDay.getTime()) / (1000 * 60 * 60 * 24)));
+  };
+
   const bulkAssigneeOptions = useMemo(() => {
     const scopedUsers = (followUpUsersQuery.data || []).map((user) => ({
       id: user.id,
@@ -514,20 +522,22 @@ const FollowUpSettingsPage: React.FC = () => {
       <div className="flex-1 overflow-y-auto px-4 pb-8 pt-5 md:px-6 lg:px-8 print:p-0 print:bg-white print:text-black">
         <div className="mx-auto flex w-full max-w-[1700px] flex-col gap-6 print:max-w-full">
           {/* Header Card */}
-          <section className="relative overflow-hidden rounded-[32px] border border-white/70 bg-[radial-gradient(circle_at_top_left,_rgba(16,185,129,0.18),_transparent_42%),linear-gradient(180deg,rgba(255,255,255,0.98),rgba(249,250,251,0.96))] p-6 shadow-[0_30px_80px_-40px_rgba(15,23,42,0.35)] print:hidden">
-            <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-              <div className="max-w-3xl">
-                <p className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-4 py-1.5 text-xs font-black uppercase tracking-[0.24em] text-emerald-600">
+          <section className="relative overflow-hidden rounded-[24px] border border-white/70 bg-[radial-gradient(circle_at_top_left,_rgba(16,185,129,0.18),_transparent_42%),linear-gradient(180deg,rgba(255,255,255,0.98),rgba(249,250,251,0.96))] p-4 shadow-[0_30px_80px_-40px_rgba(15,23,42,0.35)] sm:rounded-[32px] sm:p-6 print:hidden">
+            <div className="flex flex-col gap-4 sm:gap-6 lg:flex-row lg:items-end lg:justify-between">
+              <div className="min-w-0 max-w-3xl">
+                <p className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-emerald-600 sm:px-4 sm:py-1.5 sm:text-xs sm:tracking-[0.24em]">
                   <Settings size={14} />
                   Follow-Up Settings
                 </p>
-                <h1 className="mt-4 text-4xl font-black tracking-tight text-gray-950 md:text-5xl">Capacity &amp; Extensions</h1>
-                <p className="mt-4 max-w-2xl text-base font-semibold leading-7 text-gray-500">
+                <h1 className="mt-3 text-3xl font-black tracking-tight text-gray-950 sm:mt-4 sm:text-4xl md:text-5xl">
+                  Capacity &amp; Extensions
+                </h1>
+                <p className="mt-3 max-w-2xl text-sm font-semibold leading-6 text-gray-500 sm:mt-4 sm:text-base sm:leading-7">
                   Centrally control daily follow-up limits, manage temporary bulk extension access, execute bulk reassignments, and analyze capacities with reports.
                 </p>
               </div>
 
-              <div className="flex flex-wrap gap-3">
+              <div className="flex w-full flex-wrap gap-3 sm:w-auto">
                 <button
                   type="button"
                   onClick={() => {
@@ -537,7 +547,7 @@ const FollowUpSettingsPage: React.FC = () => {
                     if (activeTab === 'reports') loadReport();
                     if (activeTab === 'audit') loadAuditLogs(auditPage);
                   }}
-                  className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-bold text-gray-700 transition hover:border-gray-300 hover:text-gray-900"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-bold text-gray-700 transition hover:border-gray-300 hover:text-gray-900 sm:w-auto"
                 >
                   <RefreshCw size={16} className={`${loading ? 'animate-spin' : ''}`} />
                   Refresh
@@ -547,60 +557,60 @@ const FollowUpSettingsPage: React.FC = () => {
           </section>
 
           {/* Navigation Tabs */}
-          <div className="flex border-b border-gray-200 bg-white/70 rounded-2xl p-1.5 shadow-sm print:hidden">
+          <div className="flex gap-1.5 overflow-x-auto rounded-2xl bg-white/70 p-1.5 shadow-sm [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden print:hidden">
             {access.canManageSettings ? (
               <button
                 onClick={() => setActiveTab('settings')}
-                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all ${
-                  activeTab === 'settings' ? 'bg-emerald-500 text-white shadow-md' : 'text-gray-500 hover:text-gray-950 hover:bg-gray-50'
+                className={`flex shrink-0 items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-xs font-bold transition-all sm:min-w-[7.5rem] sm:flex-1 sm:gap-2 sm:px-4 sm:py-3 sm:text-sm ${
+                  activeTab === 'settings' ? 'bg-emerald-500 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-950'
                 }`}
               >
-                <Settings size={16} />
-                Settings
+                <Settings size={16} className="shrink-0" />
+                <span className="whitespace-nowrap">Settings</span>
               </button>
             ) : null}
             {access.canGrantTemp ? (
               <button
                 onClick={() => setActiveTab('temp-access')}
-                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all ${
-                  activeTab === 'temp-access' ? 'bg-emerald-500 text-white shadow-md' : 'text-gray-500 hover:text-gray-950 hover:bg-gray-50'
+                className={`flex shrink-0 items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-xs font-bold transition-all sm:min-w-[7.5rem] sm:flex-1 sm:gap-2 sm:px-4 sm:py-3 sm:text-sm ${
+                  activeTab === 'temp-access' ? 'bg-emerald-500 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-950'
                 }`}
               >
-                <UserCheck size={16} />
-                Temporary Access
+                <UserCheck size={16} className="shrink-0" />
+                <span className="whitespace-nowrap">Temporary Access</span>
               </button>
             ) : null}
             {access.canBulkExtend ? (
               <button
                 onClick={() => setActiveTab('bulk-extend')}
-                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all ${
-                  activeTab === 'bulk-extend' ? 'bg-emerald-500 text-white shadow-md' : 'text-gray-500 hover:text-gray-950 hover:bg-gray-50'
+                className={`flex shrink-0 items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-xs font-bold transition-all sm:min-w-[7.5rem] sm:flex-1 sm:gap-2 sm:px-4 sm:py-3 sm:text-sm ${
+                  activeTab === 'bulk-extend' ? 'bg-emerald-500 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-950'
                 }`}
               >
-                <Calendar size={16} />
-                Bulk Reschedule
+                <Calendar size={16} className="shrink-0" />
+                <span className="whitespace-nowrap">Bulk Reschedule</span>
               </button>
             ) : null}
             {access.canViewReports ? (
               <button
                 onClick={() => setActiveTab('reports')}
-                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all ${
-                  activeTab === 'reports' ? 'bg-emerald-500 text-white shadow-md' : 'text-gray-500 hover:text-gray-950 hover:bg-gray-50'
+                className={`flex shrink-0 items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-xs font-bold transition-all sm:min-w-[7.5rem] sm:flex-1 sm:gap-2 sm:px-4 sm:py-3 sm:text-sm ${
+                  activeTab === 'reports' ? 'bg-emerald-500 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-950'
                 }`}
               >
-                <FileText size={16} />
-                Capacity Reports
+                <FileText size={16} className="shrink-0" />
+                <span className="whitespace-nowrap">Capacity Reports</span>
               </button>
             ) : null}
             {access.canViewAudit ? (
               <button
                 onClick={() => setActiveTab('audit')}
-                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all ${
-                  activeTab === 'audit' ? 'bg-emerald-500 text-white shadow-md' : 'text-gray-500 hover:text-gray-950 hover:bg-gray-50'
+                className={`flex shrink-0 items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-xs font-bold transition-all sm:min-w-[7.5rem] sm:flex-1 sm:gap-2 sm:px-4 sm:py-3 sm:text-sm ${
+                  activeTab === 'audit' ? 'bg-emerald-500 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-950'
                 }`}
               >
-                <History size={16} />
-                Audit Logs
+                <History size={16} className="shrink-0" />
+                <span className="whitespace-nowrap">Audit Logs</span>
               </button>
             ) : null}
           </div>
@@ -613,14 +623,14 @@ const FollowUpSettingsPage: React.FC = () => {
                   initial={{ opacity: 0, y: 15 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -15 }}
-                  className="bg-white/95 border border-white/70 p-6 rounded-[28px] shadow-[0_20px_50px_-30px_rgba(15,23,42,0.25)] backdrop-blur print:hidden"
+                  className="rounded-[24px] border border-white/70 bg-white/95 p-4 shadow-[0_20px_50px_-30px_rgba(15,23,42,0.25)] backdrop-blur sm:rounded-[28px] sm:p-6 print:hidden"
                 >
-                  <h2 className="text-2xl font-black text-gray-900 mb-6">Global Policy Configuration</h2>
+                  <h2 className="mb-4 text-xl font-black text-gray-900 sm:mb-6 sm:text-2xl">Global Policy Configuration</h2>
                   <form onSubmit={handleUpdateSettings} className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="rounded-2xl border border-gray-100 bg-gray-50/50 p-5 space-y-4">
-                        <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest">Daily Follow-Up Limit</h3>
-                        <div className="flex items-center justify-between">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
+                      <div className="space-y-4 rounded-2xl border border-gray-100 bg-gray-50/50 p-4 sm:p-5">
+                        <h3 className="text-sm font-bold uppercase tracking-widest text-gray-400">Daily Follow-Up Limit</h3>
+                        <div className="flex items-center justify-between gap-3">
                           <label className="text-sm font-bold text-gray-700">Enable Daily Limit</label>
                           <input
                             type="checkbox"
@@ -640,7 +650,7 @@ const FollowUpSettingsPage: React.FC = () => {
                             className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm font-semibold disabled:bg-gray-100 disabled:opacity-50"
                           />
                         </div>
-                        <div className="flex items-center justify-between pt-2">
+                        <div className="flex items-center justify-between gap-3 pt-2">
                           <label className="text-sm font-bold text-gray-700">Settings Status (Active/Inactive)</label>
                           <input
                             type="checkbox"
@@ -651,37 +661,37 @@ const FollowUpSettingsPage: React.FC = () => {
                         </div>
                       </div>
 
-                      <div className="rounded-2xl border border-gray-100 bg-gray-50/50 p-5 space-y-4">
-                        <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest">Validation &amp; Distribution</h3>
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <label className="text-sm font-bold text-gray-700 block">Enforce Capacity Validation</label>
-                            <span className="text-xs text-gray-400 font-semibold block">Block follow-ups when daily limit is reached</span>
+                      <div className="space-y-4 rounded-2xl border border-gray-100 bg-gray-50/50 p-4 sm:p-5">
+                        <h3 className="text-sm font-bold uppercase tracking-widest text-gray-400">Validation &amp; Distribution</h3>
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                          <div className="min-w-0 flex-1">
+                            <label className="block text-sm font-bold text-gray-700">Enforce Capacity Validation</label>
+                            <span className="block text-xs font-semibold text-gray-400">Block follow-ups when daily limit is reached</span>
                           </div>
                           <input
                             type="checkbox"
                             checked={settings.capacityValidationEnabled}
                             onChange={(e) => setSettings({ ...settings, capacityValidationEnabled: e.target.checked })}
-                            className="w-5 h-5 accent-emerald-500 rounded"
+                            className="h-5 w-5 shrink-0 self-start rounded accent-emerald-500 sm:self-center"
                           />
                         </div>
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <label className="text-sm font-bold text-gray-700 block">Enable Auto Distribution</label>
-                            <span className="text-xs text-gray-400 font-semibold block">Automatically place overflow on next available days</span>
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                          <div className="min-w-0 flex-1">
+                            <label className="block text-sm font-bold text-gray-700">Enable Auto Distribution</label>
+                            <span className="block text-xs font-semibold text-gray-400">Automatically place overflow on next available days</span>
                           </div>
                           <input
                             type="checkbox"
                             checked={settings.autoDistributionEnabled}
                             onChange={(e) => setSettings({ ...settings, autoDistributionEnabled: e.target.checked })}
-                            className="w-5 h-5 accent-emerald-500 rounded"
+                            className="h-5 w-5 shrink-0 self-start rounded accent-emerald-500 sm:self-center"
                           />
                         </div>
                       </div>
 
-                      <div className="rounded-2xl border border-gray-100 bg-gray-50/50 p-5 space-y-4">
-                        <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest">Bulk Extension Rules</h3>
-                        <div className="flex items-center justify-between">
+                      <div className="space-y-4 rounded-2xl border border-gray-100 bg-gray-50/50 p-4 sm:p-5 md:col-span-2">
+                        <h3 className="text-sm font-bold uppercase tracking-widest text-gray-400">Bulk Extension Rules</h3>
+                        <div className="flex items-center justify-between gap-3">
                           <label className="text-sm font-bold text-gray-700">Enable Bulk Extension</label>
                           <input
                             type="checkbox"
@@ -716,11 +726,11 @@ const FollowUpSettingsPage: React.FC = () => {
                       </div>
                     </div>
 
-                    <div className="flex justify-end pt-4">
+                    <div className="flex justify-stretch pt-4 sm:justify-end">
                       <button
                         type="submit"
                         disabled={loading}
-                        className="rounded-2xl bg-emerald-500 px-6 py-3 text-sm font-black text-white shadow-md hover:bg-emerald-600 transition"
+                        className="w-full rounded-2xl bg-emerald-500 px-6 py-3 text-sm font-black text-white shadow-md transition hover:bg-emerald-600 sm:w-auto"
                       >
                         {loading ? 'Saving Settings...' : 'Save Settings Policy'}
                       </button>
@@ -737,8 +747,8 @@ const FollowUpSettingsPage: React.FC = () => {
                   className="grid grid-cols-1 lg:grid-cols-3 gap-6 print:hidden"
                 >
                   {/* Grant Access Form */}
-                  <div className="bg-white/95 border border-white/70 p-6 rounded-[28px] shadow-[0_20px_50px_-30px_rgba(15,23,42,0.25)] backdrop-blur lg:col-span-1">
-                    <h3 className="text-xl font-black text-gray-900 mb-6">Grant Bulk Extension</h3>
+                  <div className="rounded-[24px] border border-white/70 bg-white/95 p-4 shadow-[0_20px_50px_-30px_rgba(15,23,42,0.25)] backdrop-blur sm:rounded-[28px] sm:p-6 lg:col-span-1">
+                    <h3 className="mb-4 text-lg font-black text-gray-900 sm:mb-6 sm:text-xl">Grant Bulk Extension</h3>
                     <form onSubmit={handleGrantAccess} className="space-y-4">
                       <div>
                         <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Select User</label>
@@ -794,10 +804,10 @@ const FollowUpSettingsPage: React.FC = () => {
                   </div>
 
                   {/* Access Entries List */}
-                  <div className="bg-white/95 border border-white/70 p-6 rounded-[28px] shadow-[0_20px_50px_-30px_rgba(15,23,42,0.25)] backdrop-blur lg:col-span-2">
-                    <h3 className="text-xl font-black text-gray-900 mb-6">Temporary Access Control List</h3>
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-left border-collapse">
+                  <div className="rounded-[24px] border border-white/70 bg-white/95 p-4 shadow-[0_20px_50px_-30px_rgba(15,23,42,0.25)] backdrop-blur sm:rounded-[28px] sm:p-6 lg:col-span-2">
+                    <h3 className="mb-4 text-lg font-black text-gray-900 sm:mb-6 sm:text-xl">Temporary Access Control List</h3>
+                    <div className="overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                      <table className="min-w-[760px] w-full border-collapse text-left">
                         <thead>
                           <tr className="border-b border-gray-100 text-xs font-black uppercase text-gray-400 tracking-wider">
                             <th className="py-3 px-4">User</th>
@@ -884,9 +894,9 @@ const FollowUpSettingsPage: React.FC = () => {
                     </div>
                   ) : null}
                   {/* Select Follow-ups Panel */}
-                  <div className="bg-white/95 border border-white/70 p-6 rounded-[28px] shadow-[0_20px_50px_-30px_rgba(15,23,42,0.25)] backdrop-blur lg:col-span-2 space-y-4">
-                    <div className="flex items-center justify-between gap-3">
-                      <h3 className="text-xl font-black text-gray-900">Select Pending Follow-Ups</h3>
+                  <div className="space-y-4 rounded-[24px] border border-white/70 bg-white/95 p-4 shadow-[0_20px_50px_-30px_rgba(15,23,42,0.25)] backdrop-blur sm:rounded-[28px] sm:p-6 lg:col-span-2">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <h3 className="text-lg font-black text-gray-900 sm:text-xl">Select Pending Follow-Ups</h3>
                       <button
                         type="button"
                         onClick={selectAllFollowUps}
@@ -961,113 +971,196 @@ const FollowUpSettingsPage: React.FC = () => {
                           <button
                             type="button"
                             onClick={clearBulkFollowUpFilters}
-                            className="text-xs font-bold text-gray-500 hover:text-gray-800 sm:pb-2.5"
+                            className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-xs font-bold text-gray-500 hover:text-gray-800 sm:w-auto sm:border-0 sm:bg-transparent sm:px-0 sm:py-0 sm:pb-2.5"
                           >
-                                      <td className="py-2.5 px-4 text-center">
+                            Clear filters
+                          </button>
+                        ) : null}
+                      </div>
+                    </div>
+
+                    <p className="text-xs font-semibold text-gray-500">
+                      Showing {filteredPendingFollowUps.length} of {pendingFollowUps.length} pending follow-up
+                      {pendingFollowUps.length === 1 ? '' : 's'}
+                    </p>
+
+                    {pendingFollowUps.length === 0 ? (
+                      <div className="rounded-2xl border border-gray-100 p-8 text-center text-sm font-semibold text-gray-400 sm:p-12">
+                        No pending or missed follow-ups found for bulk rescheduling.
+                      </div>
+                    ) : filteredPendingFollowUps.length === 0 ? (
+                      <div className="rounded-2xl border border-gray-100 p-8 text-center text-sm font-semibold text-gray-400 sm:p-12">
+                        No follow-ups match your filters. Try adjusting search, assignee, or scheduled dates.
+                      </div>
+                    ) : (
+                      <div className="space-y-6">
+                        <div>
+                          <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                            <h3 className="text-lg font-black text-gray-900 sm:text-xl">
+                              Overdue Follow-Ups ({overdueList.length})
+                            </h3>
+                            {overdueList.length > 0 ? (
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-bold uppercase text-gray-500">Select All</span>
+                                <input
+                                  type="checkbox"
+                                  checked={overdueList.every((row) => selectedFollowUps.includes(row.id))}
+                                  onChange={(e) => {
+                                    const checked = e.target.checked;
+                                    setSelectedFollowUps((prev) => {
+                                      const newSelection = new Set(prev);
+                                      overdueList.forEach((row) => {
+                                        if (checked) newSelection.add(row.id);
+                                        else newSelection.delete(row.id);
+                                      });
+                                      return Array.from(newSelection);
+                                    });
+                                  }}
+                                  className="h-4 w-4 rounded accent-red-500"
+                                />
+                              </div>
+                            ) : null}
+                          </div>
+                          <div className="overflow-x-auto overflow-y-auto max-h-[280px] rounded-2xl border border-gray-100 sm:max-h-[300px]">
+                            {overdueList.length === 0 ? (
+                              <div className="p-8 text-center text-sm font-semibold text-gray-400">
+                                No overdue follow-ups match your filters.
+                              </div>
+                            ) : (
+                              <table className="min-w-[640px] w-full border-collapse text-left">
+                                <thead>
+                                  <tr className="border-b border-gray-100 bg-red-50/60 text-xs font-black uppercase tracking-wider text-red-600">
+                                    <th className="w-12 px-4 py-2.5 text-center">Select</th>
+                                    <th className="px-4 py-2.5">Lead &amp; Contact</th>
+                                    <th className="px-4 py-2.5">Assigned To</th>
+                                    <th className="px-4 py-2.5">Scheduled Date</th>
+                                    <th className="px-4 py-2.5">Overdue</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {overdueList.map((item) => {
+                                    const daysOverdue = getBulkFollowUpDaysOverdue(item.scheduledAt);
+                                    return (
+                                      <tr
+                                        key={item.id}
+                                        className={`border-b border-gray-50 text-sm font-semibold text-gray-600 transition-colors ${
+                                          selectedFollowUps.includes(item.id) ? 'bg-red-50/30' : 'hover:bg-gray-50/30'
+                                        }`}
+                                      >
+                                        <td className="px-4 py-2.5 text-center">
+                                          <input
+                                            type="checkbox"
+                                            checked={selectedFollowUps.includes(item.id)}
+                                            onChange={() => toggleFollowUpSelect(item.id)}
+                                            className="h-4 w-4 rounded accent-red-500"
+                                          />
+                                        </td>
+                                        <td className="px-4 py-2.5">
+                                          <span className="block font-bold text-gray-900">{item.leadName}</span>
+                                          <span className="text-xs text-gray-400">
+                                            {item.leadPhone && item.leadEmail
+                                              ? `${item.leadPhone} · ${item.leadEmail}`
+                                              : item.leadPhone || item.leadEmail || 'No contact'}
+                                          </span>
+                                        </td>
+                                        <td className="px-4 py-2.5 text-xs">{item.userName || 'Unassigned'}</td>
+                                        <td className="px-4 py-2.5 font-mono text-xs">{new Date(item.scheduledAt).toLocaleString()}</td>
+                                        <td className="px-4 py-2.5 text-xs font-bold text-red-500">
+                                          {daysOverdue > 0 ? `${daysOverdue} days` : 'Today'}
+                                        </td>
+                                      </tr>
+                                    );
+                                  })}
+                                </tbody>
+                              </table>
+                            )}
+                          </div>
+                        </div>
+
+                        <div>
+                          <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                            <h3 className="text-lg font-black text-gray-900 sm:text-xl">
+                              Pending Follow-Ups ({pendingOnlyList.length})
+                            </h3>
+                            {pendingOnlyList.length > 0 ? (
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-bold uppercase text-gray-500">Select All</span>
+                                <input
+                                  type="checkbox"
+                                  checked={pendingOnlyList.every((row) => selectedFollowUps.includes(row.id))}
+                                  onChange={(e) => {
+                                    const checked = e.target.checked;
+                                    setSelectedFollowUps((prev) => {
+                                      const newSelection = new Set(prev);
+                                      pendingOnlyList.forEach((row) => {
+                                        if (checked) newSelection.add(row.id);
+                                        else newSelection.delete(row.id);
+                                      });
+                                      return Array.from(newSelection);
+                                    });
+                                  }}
+                                  className="h-4 w-4 rounded accent-emerald-500"
+                                />
+                              </div>
+                            ) : null}
+                          </div>
+                          <div className="overflow-x-auto overflow-y-auto max-h-[280px] rounded-2xl border border-gray-100 sm:max-h-[300px]">
+                            {pendingOnlyList.length === 0 ? (
+                              <div className="p-8 text-center text-sm font-semibold text-gray-400">
+                                No future pending follow-ups match your filters.
+                              </div>
+                            ) : (
+                              <table className="min-w-[640px] w-full border-collapse text-left">
+                                <thead>
+                                  <tr className="border-b border-gray-100 bg-emerald-50/50 text-xs font-black uppercase tracking-wider text-emerald-600">
+                                    <th className="w-12 px-4 py-2.5 text-center">Select</th>
+                                    <th className="px-4 py-2.5">Lead &amp; Contact</th>
+                                    <th className="px-4 py-2.5">Assigned To</th>
+                                    <th className="px-4 py-2.5">Scheduled Date</th>
+                                    <th className="px-4 py-2.5">Reason</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {pendingOnlyList.map((item) => (
+                                    <tr
+                                      key={item.id}
+                                      className={`border-b border-gray-50 text-sm font-semibold text-gray-600 transition-colors ${
+                                        selectedFollowUps.includes(item.id) ? 'bg-emerald-50/30' : 'hover:bg-gray-50/30'
+                                      }`}
+                                    >
+                                      <td className="px-4 py-2.5 text-center">
                                         <input
                                           type="checkbox"
                                           checked={selectedFollowUps.includes(item.id)}
                                           onChange={() => toggleFollowUpSelect(item.id)}
-                                          className="w-4 h-4 accent-red-500 rounded"
+                                          className="h-4 w-4 rounded accent-emerald-500"
                                         />
                                       </td>
-                                      <td className="py-2.5 px-4">
-                                        <span className="font-bold text-gray-900 block">{item.leadName}</span>
+                                      <td className="px-4 py-2.5">
+                                        <span className="block font-bold text-gray-900">{item.leadName}</span>
                                         <span className="text-xs text-gray-400">
                                           {item.leadPhone && item.leadEmail
                                             ? `${item.leadPhone} · ${item.leadEmail}`
                                             : item.leadPhone || item.leadEmail || 'No contact'}
                                         </span>
                                       </td>
-                                      <td className="py-2.5 px-4 text-xs">{item.userName || 'Unassigned'}</td>
-                                      <td className="py-2.5 px-4 text-xs font-mono">{new Date(item.scheduledAt).toLocaleString()}</td>
-                                      <td className="py-2.5 px-4 text-xs font-bold text-red-500">{daysOverdue > 0 ? `${daysOverdue} days` : 'Today'}</td>
+                                      <td className="px-4 py-2.5 text-xs">{item.userName || 'Unassigned'}</td>
+                                      <td className="px-4 py-2.5 font-mono text-xs">{new Date(item.scheduledAt).toLocaleString()}</td>
+                                      <td className="px-4 py-2.5 text-xs">{item.extensionReasonName || item.description || 'N/A'}</td>
                                     </tr>
-                                  );
-                                })}
-                              </tbody>
-                            </table>
-                          )}
-                        </div>
-
-                        <div className="flex items-center justify-between mb-4 mt-2">
-                          <h3 className="text-xl font-black text-gray-900">Pending Follow-Ups ({pendingOnlyList.length})</h3>
-                          {pendingOnlyList.length > 0 && (
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs font-bold text-gray-500 uppercase">Select All</span>
-                              <input
-                                type="checkbox"
-                                checked={pendingOnlyList.every((row) => selectedFollowUps.includes(row.id))}
-                                onChange={(e) => {
-                                  const checked = e.target.checked;
-                                  setSelectedFollowUps((prev) => {
-                                    const newSelection = new Set(prev);
-                                    pendingOnlyList.forEach((row) => {
-                                      if (checked) newSelection.add(row.id);
-                                      else newSelection.delete(row.id);
-                                    });
-                                    return Array.from(newSelection);
-                                  });
-                                }}
-                                className="w-4 h-4 accent-emerald-500 rounded"
-                              />
-                            </div>
-                          )}
-                        </div>
-                        <div className="overflow-y-auto max-h-[300px] border border-gray-100 rounded-2xl">
-                          {pendingOnlyList.length === 0 ? (
-                            <div className="p-8 text-center text-sm font-semibold text-gray-400">
-                              No future pending follow-ups match your filters.
-                            </div>
-                          ) : (
-                            <table className="w-full text-left border-collapse">
-                              <thead>
-                                <tr className="border-b border-gray-100 bg-emerald-50/50 text-xs font-black uppercase text-emerald-600 tracking-wider">
-                                  <th className="py-2.5 px-4 w-12 text-center">Select</th>
-                                  <th className="py-2.5 px-4">Lead & Contact</th>
-                                  <th className="py-2.5 px-4">Assigned To</th>
-                                  <th className="py-2.5 px-4">Scheduled Date</th>
-                                  <th className="py-2.5 px-4">Reason</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {pendingOnlyList.map((item) => (
-                                  <tr
-                                    key={item.id}
-                                    className={`border-b border-gray-50 text-sm font-semibold text-gray-600 transition-colors ${
-                                      selectedFollowUps.includes(item.id) ? 'bg-emerald-50/30' : 'hover:bg-gray-50/30'
-                                    }`}
-                                  >
-                                    <td className="py-2.5 px-4 text-center">
-                                      <input
-                                        type="checkbox"
-                                        checked={selectedFollowUps.includes(item.id)}
-                                        onChange={() => toggleFollowUpSelect(item.id)}
-                                        className="w-4 h-4 accent-emerald-500 rounded"
-                                      />
-                                    </td>
-                                    <td className="py-2.5 px-4">
-                                      <span className="font-bold text-gray-900 block">{item.leadName}</span>
-                                      <span className="text-xs text-gray-400">
-                                        {item.leadPhone && item.leadEmail
-                                          ? `${item.leadPhone} · ${item.leadEmail}`
-                                          : item.leadPhone || item.leadEmail || 'No contact'}
-                                      </span>
-                                    </td>
-                                    <td className="py-2.5 px-4 text-xs">{item.userName || 'Unassigned'}</td>
-                                    <td className="py-2.5 px-4 text-xs font-mono">{new Date(item.scheduledAt).toLocaleString()}</td>
-                                    <td className="py-2.5 px-4 text-xs">{item.extensionReasonName || item.description || 'N/A'}</td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          )}
+                                  ))}
+                                </tbody>
+                              </table>
+                            )}
+                          </div>
                         </div>
                       </div>
+                    )}
+                  </div>
 
                   {/* Reschedule parameters */}
-                  <div className="bg-white/95 border border-white/70 p-6 rounded-[28px] shadow-[0_20px_50px_-30px_rgba(15,23,42,0.25)] backdrop-blur lg:col-span-1">
-                    <h3 className="text-xl font-black text-gray-900 mb-6">Reschedule Parameters</h3>
+                  <div className="rounded-[24px] border border-white/70 bg-white/95 p-4 shadow-[0_20px_50px_-30px_rgba(15,23,42,0.25)] backdrop-blur sm:rounded-[28px] sm:p-6 lg:col-span-1 lg:sticky lg:top-4 lg:self-start">
+                    <h3 className="mb-4 text-lg font-black text-gray-900 sm:mb-6 sm:text-xl">Reschedule Parameters</h3>
                     <form onSubmit={handleBulkExtendSubmit} className="space-y-4">
                       <div>
                         <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">New Scheduled Date</label>
@@ -1141,14 +1234,14 @@ const FollowUpSettingsPage: React.FC = () => {
                   className="space-y-6"
                 >
                   {/* Query / Filters block */}
-                  <div className="bg-white/95 border border-white/70 p-6 rounded-[28px] shadow-[0_20px_50px_-30px_rgba(15,23,42,0.25)] backdrop-blur flex flex-wrap gap-4 items-end justify-between print:hidden">
-                    <div className="flex flex-wrap gap-4 flex-1">
-                      <div>
-                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Report Type</label>
+                  <div className="flex flex-col gap-4 rounded-[24px] border border-white/70 bg-white/95 p-4 shadow-[0_20px_50px_-30px_rgba(15,23,42,0.25)] backdrop-blur sm:rounded-[28px] sm:p-6 lg:flex-row lg:items-end lg:justify-between print:hidden">
+                    <div className="grid w-full flex-1 grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                      <div className="min-w-0">
+                        <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-gray-500">Report Type</label>
                         <select
                           value={reportType}
                           onChange={(e) => setReportType(e.target.value as any)}
-                          className="bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm font-semibold"
+                          className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold"
                         >
                           <option value="bulk-extensions">Bulk Extension Report</option>
                           <option value="capacity">Follow-Up Capacity Report</option>
@@ -1159,35 +1252,35 @@ const FollowUpSettingsPage: React.FC = () => {
 
                       {reportType !== 'user-limits' && (
                         <>
-                          <div>
-                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Start Date</label>
+                          <div className="min-w-0">
+                            <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-gray-500">Start Date</label>
                             <input
                               type="date"
                               value={reportStartDate}
                               onChange={(e) => setReportStartDate(e.target.value)}
-                              className="bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm font-semibold"
+                              className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold"
                             />
                           </div>
 
-                          <div>
-                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">End Date</label>
+                          <div className="min-w-0">
+                            <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-gray-500">End Date</label>
                             <input
                               type="date"
                               value={reportEndDate}
                               onChange={(e) => setReportEndDate(e.target.value)}
-                              className="bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm font-semibold"
+                              className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold"
                             />
                           </div>
                         </>
                       )}
 
                       {(reportType === 'capacity' || reportType === 'utilization') && (
-                        <div>
-                          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">User</label>
+                        <div className="min-w-0">
+                          <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-gray-500">User</label>
                           <select
                             value={reportUserId}
                             onChange={(e) => setReportUserId(e.target.value)}
-                            className="bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm font-semibold min-w-[150px]"
+                            className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold"
                           >
                             <option value="">-- All Users --</option>
                             {usersList.map((user) => (
@@ -1200,23 +1293,23 @@ const FollowUpSettingsPage: React.FC = () => {
                       )}
                     </div>
 
-                    <div className="flex gap-2">
+                    <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
                       <button
                         onClick={loadReport}
-                        className="bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl px-5 py-3 text-sm font-bold shadow-sm"
+                        className="w-full rounded-xl bg-emerald-500 px-5 py-3 text-sm font-bold text-white shadow-sm hover:bg-emerald-600 sm:w-auto"
                       >
                         Apply Filters
                       </button>
                       <button
                         onClick={handleExportExcel}
-                        className="bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-xl px-4 py-3 text-sm font-bold flex items-center gap-1.5"
+                        className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-bold text-gray-700 hover:bg-gray-50 sm:w-auto"
                       >
                         <Download size={15} />
                         Export Excel
                       </button>
                       <button
                         onClick={handlePrintPDF}
-                        className="bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-xl px-4 py-3 text-sm font-bold flex items-center gap-1.5"
+                        className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-bold text-gray-700 hover:bg-gray-50 sm:w-auto"
                       >
                         <Printer size={15} />
                         Print PDF
@@ -1234,14 +1327,14 @@ const FollowUpSettingsPage: React.FC = () => {
                   </div>
 
                   {/* Report Display Table */}
-                  <div className="bg-white/95 border border-white/70 p-6 rounded-[28px] shadow-[0_20px_50px_-30px_rgba(15,23,42,0.25)] backdrop-blur print:border-none print:shadow-none print:p-0">
-                    <div className="overflow-x-auto">
+                  <div className="rounded-[24px] border border-white/70 bg-white/95 p-4 shadow-[0_20px_50px_-30px_rgba(15,23,42,0.25)] backdrop-blur sm:rounded-[28px] sm:p-6 print:border-none print:p-0 print:shadow-none">
+                    <div className="overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                       {reportData.length === 0 ? (
                         <div className="py-12 text-center text-sm font-semibold text-gray-400">
                           No report records match the selected query filters.
                         </div>
                       ) : (
-                        <table className="w-full text-left border-collapse print:table">
+                        <table className="min-w-[720px] w-full border-collapse text-left print:min-w-0 print:table">
                           <thead>
                             {reportType === 'bulk-extensions' ? (
                               <tr className="border-b border-gray-100 text-xs font-black uppercase text-gray-400 tracking-wider">
@@ -1346,11 +1439,11 @@ const FollowUpSettingsPage: React.FC = () => {
                   initial={{ opacity: 0, y: 15 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -15 }}
-                  className="bg-white/95 border border-white/70 p-6 rounded-[28px] shadow-[0_20px_50px_-30px_rgba(15,23,42,0.25)] backdrop-blur print:hidden space-y-4"
+                  className="space-y-4 rounded-[24px] border border-white/70 bg-white/95 p-4 shadow-[0_20px_50px_-30px_rgba(15,23,42,0.25)] backdrop-blur sm:rounded-[28px] sm:p-6 print:hidden"
                 >
-                  <h3 className="text-xl font-black text-gray-900 mb-6">Settings Audit Log Trail</h3>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
+                  <h3 className="mb-4 text-lg font-black text-gray-900 sm:mb-6 sm:text-xl">Settings Audit Log Trail</h3>
+                  <div className="overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                    <table className="min-w-[680px] w-full border-collapse text-left">
                       <thead>
                         <tr className="border-b border-gray-100 text-xs font-black uppercase text-gray-400 tracking-wider">
                           <th className="py-3 px-4">Date</th>
@@ -1397,11 +1490,11 @@ const FollowUpSettingsPage: React.FC = () => {
                   </div>
 
                   {auditTotalPages > 1 && (
-                    <div className="flex items-center justify-between pt-4 border-t border-gray-50">
+                    <div className="flex flex-col gap-3 border-t border-gray-50 pt-4 sm:flex-row sm:items-center sm:justify-between">
                       <p className="text-xs font-bold text-gray-500">
                         Page {auditPage} of {auditTotalPages}
                       </p>
-                      <div className="flex gap-2">
+                      <div className="flex w-full gap-2 sm:w-auto">
                         <button
                           onClick={() => loadAuditLogs(Math.max(1, auditPage - 1))}
                           disabled={auditPage <= 1}

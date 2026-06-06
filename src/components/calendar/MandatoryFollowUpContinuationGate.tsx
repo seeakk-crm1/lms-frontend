@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   useSaveMandatoryFollowUpContinuationMutation,
 } from '../../hooks/useMandatoryFollowUpContinuation';
@@ -7,6 +8,8 @@ import { useMandatoryFollowUpBlocked } from '../../hooks/useMandatoryFollowUpBlo
 import { useMandatoryNavigationLock } from '../../hooks/useMandatoryNavigationLock';
 import MandatoryFollowUpContinuationModal from './MandatoryFollowUpContinuationModal';
 import { useWeeklyOffScheduleGuard } from '../../hooks/useWeeklyOffScheduleGuard';
+import { MANDATORY_FOLLOWUP_QUERY_KEY } from '../../constants/mandatoryFollowup.constants';
+import { useInvalidateOverdueMandatory } from '../../hooks/useOverdueMandatoryFollowUps';
 
 interface Props {
   children: React.ReactNode;
@@ -15,10 +18,38 @@ interface Props {
 const MandatoryFollowUpContinuationGate: React.FC<Props> = ({ children }) => {
   const { blocked, enabled, items, query, clearSessionBlock, setSessionBlock } = useMandatoryFollowUpBlocked();
   const saveMutation = useSaveMandatoryFollowUpContinuationMutation();
+  const queryClient = useQueryClient();
+  const invalidateOverdue = useInvalidateOverdueMandatory();
   const { confirmIfWeeklyOff, WeeklyOffScheduleModal } = useWeeklyOffScheduleGuard();
   const [queueIndex, setQueueIndex] = useState(0);
 
   const activeItem = useMemo(() => items[queueIndex] ?? items[0] ?? null, [items, queueIndex]);
+
+  const removeResolvedFromMandatoryCache = (leadId: string) => {
+    queryClient.setQueryData(
+      MANDATORY_FOLLOWUP_QUERY_KEY,
+      (oldData: { data?: { items?: Array<{ leadId: string }>; mandatoryFollowupRequired?: boolean; mandatoryFollowupCount?: number } } | undefined) => {
+        if (!oldData?.data?.items) return oldData;
+        const nextItems = oldData.data.items.filter((item) => item.leadId !== leadId);
+        return {
+          ...oldData,
+          data: {
+            ...oldData.data,
+            items: nextItems,
+            mandatoryFollowupCount: nextItems.length,
+            mandatoryFollowupRequired: nextItems.length > 0,
+          },
+        };
+      },
+    );
+  };
+
+  const advanceQueueAfterAction = async (resolvedLeadId: string) => {
+    removeResolvedFromMandatoryCache(resolvedLeadId);
+    setQueueIndex(0);
+    invalidateOverdue();
+    await query.refetch();
+  };
 
   useEffect(() => {
     if (!enabled) {
@@ -85,6 +116,7 @@ const MandatoryFollowUpContinuationGate: React.FC<Props> = ({ children }) => {
             type: payload.type,
             description: payload.description || undefined,
           });
+          await advanceQueueAfterAction(activeItem.leadId);
         }}
       />
     ) : null;

@@ -53,7 +53,12 @@ export const useSaveMandatoryFollowUpContinuationMutation = () => {
       queryClient.invalidateQueries({ queryKey: ['followups'] });
       queryClient.invalidateQueries({ queryKey: ['leads'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
-      toast.success('Next follow-up scheduled. You can continue working.');
+      void queryClient.invalidateQueries({ queryKey: ['followups', 'overdue-mandatory'] });
+      toast.success(
+        session.mandatoryFollowupRequired
+          ? 'Next follow-up scheduled. Continue with the remaining mandatory items.'
+          : 'Next follow-up scheduled. You can continue working.',
+      );
     },
     onError: (error: any) => {
       toast.error(error?.response?.data?.message || 'Failed to schedule the next follow-up.');
