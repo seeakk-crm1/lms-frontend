@@ -73,6 +73,14 @@ export const bulkExtendFollowUps = async (payload: {
   message: string;
   successCount: number;
   blockedCount: number;
+  successIds?: string[];
+  blockedIds?: string[];
+  selectedCount?: number;
+  movedCount?: number;
+  remainingCount?: number;
+  availableSlots?: number;
+  lifecycleBlockedCount?: number;
+  targetDate?: string;
   overdueSession?: {
     overdueFollowupRequired: boolean;
     overdueFollowupCount: number;

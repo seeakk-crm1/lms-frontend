@@ -404,16 +404,38 @@ const MandatoryOverdueFollowUpGate: React.FC<Props> = ({ children }) => {
               autoDistribute: bulkAutoDistribute,
             });
             if (res.success) {
-              toast.success(`Successfully extended ${res.successCount || selectedBulkItems.length} follow-ups`);
+              const movedIds = res.successIds ?? [];
+              const movedCount = res.movedCount ?? res.successCount ?? movedIds.length;
+              const remainingUnresolved =
+                res.remainingCount ?? res.blockedCount ?? Math.max(0, selectedBulkItems.length - movedCount);
+
+              if (movedCount === 0) {
+                const statsSuffix =
+                  res.selectedCount != null && res.availableSlots != null
+                    ? ` Selected: ${res.selectedCount}. Moved: 0. Remaining: ${remainingUnresolved}. Available slots: ${res.availableSlots}.`
+                    : '';
+                toast.error((res.message || 'No follow-ups could be extended for the selected date.') + statsSuffix, {
+                  duration: 7000,
+                });
+                return;
+              }
+
+              const statsSuffix =
+                res.selectedCount != null && res.availableSlots != null
+                  ? ` Selected: ${res.selectedCount}. Moved: ${movedCount}. Remaining: ${remainingUnresolved}. Available slots: ${res.availableSlots}.`
+                  : '';
+              toast.success((res.message || `Successfully extended ${movedCount} follow-up(s).`) + statsSuffix, {
+                duration: 7000,
+              });
+
               setBulkModalOpen(false);
-              const processedIds = [...selectedBulkItems];
-              setSelectedBulkItems([]);
               setBulkTargetDate('');
               setBulkReasonId('');
               setBulkDescription('');
               setBulkAutoDistribute(false);
 
-              processedIds.forEach((id) => removeResolvedFromOverdueCache(id));
+              movedIds.forEach((id) => removeResolvedFromOverdueCache(id));
+              setSelectedBulkItems((prev) => prev.filter((id) => !movedIds.includes(id)));
 
               if (res.overdueSession) {
                 queryClient.setQueryData(OVERDUE_MANDATORY_QUERY_KEY, {
@@ -427,8 +449,8 @@ const MandatoryOverdueFollowUpGate: React.FC<Props> = ({ children }) => {
               invalidateOverdue();
 
               const refetched = res.overdueSession ? { data: { data: res.overdueSession } } : await query.refetch();
-              const remainingCount = refetched.data?.data?.items?.length ?? 0;
-              if (remainingCount === 0) {
+              const overdueRemaining = refetched.data?.data?.items?.length ?? 0;
+              if (overdueRemaining === 0) {
                 useAuthStore.getState().clearMandatoryFollowupBlock();
               }
             }

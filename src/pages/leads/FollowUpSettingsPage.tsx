@@ -485,12 +485,20 @@ const FollowUpSettingsPage: React.FC = () => {
       });
 
       if (res.success) {
-        toast.success(res.message);
-        setSelectedFollowUps([]);
-        setBulkTargetDate('');
-        setBulkReasonId('');
-        setBulkDescription('');
-        setBulkAutoDistribute(false);
+        const movedCount = res.movedCount ?? res.successCount ?? 0;
+        const movedIds = res.successIds ?? [];
+        if (movedCount === 0) {
+          toast.error(res.message);
+        } else {
+          toast.success(res.message);
+        }
+        setSelectedFollowUps((prev) => prev.filter((id) => !movedIds.includes(id)));
+        if (movedCount > 0 && (res.remainingCount ?? res.blockedCount ?? 0) === 0) {
+          setBulkTargetDate('');
+          setBulkReasonId('');
+          setBulkDescription('');
+          setBulkAutoDistribute(false);
+        }
         loadPendingFollowUps();
       }
     } catch (err: any) {
