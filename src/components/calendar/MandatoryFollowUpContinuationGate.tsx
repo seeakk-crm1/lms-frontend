@@ -130,6 +130,20 @@ const MandatoryFollowUpContinuationGate: React.FC<Props> = ({ children }) => {
     );
   }
 
+  if (!query.data && (query.isLoading || query.isPending)) {
+    return (
+      <>
+        <div className="fixed inset-0 z-[9998] flex items-center justify-center bg-slate-950/70 backdrop-blur-md">
+          <div className="flex flex-col items-center gap-3 text-white">
+            <div className="h-12 w-12 animate-spin rounded-full border-4 border-white/20 border-t-emerald-400" />
+            <p className="text-sm font-bold tracking-wide">Checking mandatory follow-ups...</p>
+          </div>
+        </div>
+        {WeeklyOffScheduleModal}
+      </>
+    );
+  }
+
   if (blocked) {
     const showLoader = !activeItem && (query.isLoading || query.isPending);
     const showRetry = !activeItem && query.isError;

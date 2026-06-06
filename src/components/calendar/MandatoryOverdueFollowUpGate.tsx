@@ -146,9 +146,23 @@ const MandatoryOverdueFollowUpGate: React.FC<Props> = ({ children }) => {
     return <>{children}</>;
   }
 
+  if (!query.data && (query.isLoading || query.isPending)) {
+    return (
+      <>
+        <div className="fixed inset-0 z-[9998] flex items-center justify-center bg-slate-950/70 backdrop-blur-md">
+          <div className="flex flex-col items-center gap-3 text-white">
+            <Loader2 className="h-10 w-10 animate-spin text-emerald-400" />
+            <p className="text-sm font-bold">Checking overdue follow-ups...</p>
+          </div>
+        </div>
+        {WeeklyOffScheduleModal}
+      </>
+    );
+  }
+
   return (
     <>
-      {children}
+      {blocked ? null : children}
 
       {blocked && !actionModalOpen ? (
         <>
