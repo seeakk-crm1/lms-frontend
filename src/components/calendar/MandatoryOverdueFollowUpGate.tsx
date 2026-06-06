@@ -406,13 +406,21 @@ const MandatoryOverdueFollowUpGate: React.FC<Props> = ({ children }) => {
             if (res.success) {
               toast.success(`Successfully extended ${res.successCount || selectedBulkItems.length} follow-ups`);
               setBulkModalOpen(false);
+              const processedIds = [...selectedBulkItems];
               setSelectedBulkItems([]);
-              
-              // Remove them from the overdue cache so it bypasses if empty
-              selectedBulkItems.forEach(id => removeResolvedFromOverdueCache(id));
+              setBulkTargetDate('');
+              setBulkReasonId('');
+              setBulkDescription('');
+              setBulkAutoDistribute(false);
+
+              processedIds.forEach((id) => removeResolvedFromOverdueCache(id));
               setQueueIndex(0);
               invalidateOverdue();
-              await query.refetch();
+              const refetched = await query.refetch();
+              const remainingCount = refetched.data?.data?.items?.length ?? 0;
+              if (remainingCount === 0) {
+                useAuthStore.getState().clearMandatoryFollowupBlock();
+              }
             }
           } catch (err: any) {
             toast.error(err.response?.data?.message || 'Failed to bulk extend follow-ups');

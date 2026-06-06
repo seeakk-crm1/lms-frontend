@@ -5,6 +5,8 @@ import { useFollowUpReminderAlertsQuery } from '../../hooks/useFollowUps';
 import { useCompleteFollowUpMutation, useSnoozeFollowUpMutation } from '../../hooks/useFollowUps';
 import { useWeeklyOffScheduleGuard } from '../../hooks/useWeeklyOffScheduleGuard';
 import { useAuthenticatedWorkflowEnabled } from '../../hooks/useAuthenticatedWorkflowEnabled';
+import { useOverdueMandatoryBlocked } from '../../hooks/useOverdueMandatoryFollowUps';
+import { useMandatoryFollowUpBlocked } from '../../hooks/useMandatoryFollowUpBlocked';
 import { formatFollowUpTypeLabel } from '../../modules/followups/followUpTypeUi';
 import type { FollowUp, FollowUpReminderItem } from '../../types/followup.types';
 import FollowUpActionModal from './FollowUpActionModal';
@@ -68,8 +70,12 @@ const buildAlertMessage = (item: FollowUpReminderItem): string => {
 
 const FollowUpReminderListener: React.FC = () => {
   const workflowEnabled = useAuthenticatedWorkflowEnabled();
+  const { blocked: overdueMandatoryBlocked } = useOverdueMandatoryBlocked();
+  const { blocked: lifecycleMandatoryBlocked } = useMandatoryFollowUpBlocked();
+  const remindersEnabled =
+    workflowEnabled && !overdueMandatoryBlocked && !lifecycleMandatoryBlocked;
   const navigate = useNavigate();
-  const query = useFollowUpReminderAlertsQuery(workflowEnabled);
+  const query = useFollowUpReminderAlertsQuery(remindersEnabled);
   const completeMutation = useCompleteFollowUpMutation();
   const snoozeMutation = useSnoozeFollowUpMutation();
   const { confirmIfWeeklyOff, WeeklyOffScheduleModal } = useWeeklyOffScheduleGuard();
