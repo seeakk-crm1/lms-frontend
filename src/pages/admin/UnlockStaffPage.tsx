@@ -11,6 +11,7 @@ const UnlockStaffPage: React.FC = () => {
   const [graceUserId, setGraceUserId] = useState<string | null>(null);
   const [graceDate, setGraceDate] = useState('');
   const [reason, setReason] = useState('');
+  const [filter, setFilter] = useState<'ALL' | 'TARGET' | 'ESCALATED' | 'SELF_UNLOCK' | 'ADMIN_UNLOCK'>('ALL');
 
   const { data, isLoading } = useQuery({
     queryKey: ['locked-staff'],
@@ -41,17 +42,41 @@ const UnlockStaffPage: React.FC = () => {
     onError: (err: any) => toast.error(err?.response?.data?.message || 'Failed to extend grace'),
   });
 
-  const lockedUsers = data?.data || [];
+  const allLockedUsers = data?.data || [];
+
+  const lockedUsers = allLockedUsers.filter((user: any) => {
+    if (filter === 'ESCALATED') return user.isEscalatedLock;
+    if (filter === 'SELF_UNLOCK') return user.hasUsedSelfUnlock;
+    if (filter === 'ADMIN_UNLOCK') return user.lastUnlockType === 'ADMIN';
+    if (filter === 'TARGET') return user.targetLockedAt;
+    return true; // ALL
+  });
 
   return (
     <DashboardLayout>
       <div className="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-8">
         <div className="max-w-[1200px] mx-auto space-y-6">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-black text-gray-900">Unlock Staff</h1>
-            <p className="text-sm text-gray-500 mt-1">
-              Target-locked accounts can only be unlocked by their supervisor or an authorized admin.
-            </p>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <h1 className="text-2xl md:text-3xl font-black text-gray-900">Unlock Staff</h1>
+              <p className="text-sm text-gray-500 mt-1">
+                Target-locked accounts can only be unlocked by their supervisor or an authorized admin.
+              </p>
+            </div>
+            
+            <div className="flex flex-wrap gap-2">
+              <select
+                value={filter}
+                onChange={(e) => setFilter(e.target.value as any)}
+                className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 bg-white"
+              >
+                <option value="ALL">All Locks</option>
+                <option value="TARGET">Target Locks</option>
+                <option value="ESCALATED">Escalated Locks</option>
+                <option value="SELF_UNLOCK">Self Unlocks</option>
+                <option value="ADMIN_UNLOCK">Admin Unlocks</option>
+              </select>
+            </div>
           </div>
 
           <div className="overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm">
@@ -99,6 +124,18 @@ const UnlockStaffPage: React.FC = () => {
                             {format(new Date(row.targetLockedAt), 'dd MMM yyyy, hh:mm a')}
                           </p>
                         ) : null}
+                        <div className="mt-2 flex flex-wrap gap-1">
+                          {row.hasUsedSelfUnlock && (
+                            <span className="inline-block px-2 py-0.5 rounded-md bg-blue-50 text-blue-600 text-[10px] font-bold">
+                              Self Unlocked
+                            </span>
+                          )}
+                          {row.isEscalatedLock && (
+                            <span className="inline-block px-2 py-0.5 rounded-md bg-rose-100 text-rose-700 text-[10px] font-bold">
+                              Escalated Lock
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-4 py-4 text-sm text-gray-600">
                         {row.supervisor?.name || row.supervisor?.email || 'No supervisor'}

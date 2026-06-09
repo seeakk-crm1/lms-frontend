@@ -9,6 +9,13 @@ export type TargetLockDetailsData = {
   pendingTargetBalance?: number;
   lockDate?: string | null;
   lastPeriodLabel?: string | null;
+  canSelfUnlock?: boolean;
+};
+
+type TargetLockDetailsProps = {
+  lock: TargetLockDetailsData;
+  onSelfUnlock?: () => void;
+  isUnlocking?: boolean;
 };
 
 const formatLockDate = (value?: string | null) => {
@@ -18,7 +25,7 @@ const formatLockDate = (value?: string | null) => {
   return date.toLocaleString();
 };
 
-const TargetLockDetails: React.FC<{ lock: TargetLockDetailsData }> = ({ lock }) => (
+const TargetLockDetails: React.FC<TargetLockDetailsProps> = ({ lock, onSelfUnlock, isUnlocking }) => (
   <div className="flex flex-col items-center p-8 text-center">
     <div className="mb-4 rounded-full bg-rose-50 p-5 text-rose-500">
       <svg className="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
@@ -68,6 +75,21 @@ const TargetLockDetails: React.FC<{ lock: TargetLockDetailsData }> = ({ lock }) 
         </div>
       </dl>
     </div>
+
+    {lock.canSelfUnlock && onSelfUnlock && (
+      <div className="mt-8 w-full max-w-md">
+        <button
+          onClick={onSelfUnlock}
+          disabled={isUnlocking}
+          className="w-full flex items-center justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-bold text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 transition-colors"
+        >
+          {isUnlocking ? 'Unlocking...' : 'Self Unlock Account (1 Available)'}
+        </button>
+        <p className="mt-2 text-xs text-gray-500">
+          You may use this one-time self unlock to restore access to your account.
+        </p>
+      </div>
+    )}
   </div>
 );
 
