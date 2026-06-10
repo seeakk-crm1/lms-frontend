@@ -53,6 +53,7 @@ import PendingApprovalPage from './pages/admin/PendingApprovalPage';
 import LocationsPage from './modules/locations/LocationsPage';
 import ReportTypePage from './modules/report-types/pages/ReportTypePage';
 import ReportsPage from './modules/reports/ReportsPage';
+import SummaryReportsPage from './modules/reports/summary/SummaryReportsPage';
 import LOBAnalysisPage from './modules/lob-analysis/LOBAnalysisPage';
 import LOBReasonsPage from './modules/lob-reasons/pages/LOBReasonsPage';
 import FollowUpExtensionReasonsPage from './modules/followup-extension-reasons/pages/FollowUpExtensionReasonsPage';
@@ -364,6 +365,12 @@ function App() {
         <Route path="/reports" element={
           <PermissionRoute permissions={['REPORTS_VIEW', 'REPORTS_GENERATE']}>
             <ReportsPage />
+          </PermissionRoute>
+        } />
+
+        <Route path="/reports/summary" element={
+          <PermissionRoute permissions={['REPORTS_VIEW', 'REPORTS_GENERATE']}>
+            <SummaryReportsPage />
           </PermissionRoute>
         } />
 

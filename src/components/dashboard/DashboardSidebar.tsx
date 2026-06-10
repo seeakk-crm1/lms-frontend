@@ -61,7 +61,6 @@ const sidebarMenus: SidebarSection[] = [
                     { label: 'Lead Life Cycle', path: '/admin/lead-life-cycles', requiredPermissions: ['SYSTEM_CONFIG'] },
                     { label: 'Calendar', path: '/calendar', requiredPermissions: ['LEADS_VIEW_ALL', 'LEADS_VIEW_OWN', 'LEADS_VIEW_TEAM', 'SYSTEM_CONFIG'] },
                     { label: 'Holiday List', path: '/admin/holidays', requiredPermissions: ['SYSTEM_CONFIG'] },
-                    { label: 'Report Types', path: '/admin/report-types', requiredPermissions: ['REPORT_TYPE_MANAGE', 'SYSTEM_CONFIG'] },
                     { label: 'LOB Reasons', path: '/admin/lob-reasons', requiredPermissions: ['LOB_REASONS_VIEW', 'SYSTEM_CONFIG'] },
                     { label: 'Follow-Up Extension Reasons', path: '/admin/followup-extension-reasons', requiredPermissions: ['view_followup_extension_reasons', 'SYSTEM_CONFIG'] }
                 ]
@@ -85,7 +84,14 @@ const sidebarMenus: SidebarSection[] = [
                     },
                 ]
             },
-            { icon: FileText, label: 'Reports', path: '/reports', requiredPermissions: ['REPORTS_VIEW', 'REPORTS_GENERATE'] },
+            {
+                icon: FileText, label: 'Reports',
+                subItems: [
+                    { label: 'Summary Reports', path: '/reports/summary', requiredPermissions: ['REPORTS_VIEW', 'REPORTS_GENERATE'] },
+                    { label: 'Download Reports', path: '/reports', requiredPermissions: ['REPORTS_VIEW', 'REPORTS_GENERATE'] },
+                    { label: 'Report Types', path: '/admin/report-types', requiredPermissions: ['REPORT_TYPE_MANAGE', 'SYSTEM_CONFIG'] }
+                ]
+            },
             { icon: FileBarChart, label: 'LOB Analysis', path: '/lob-analysis', requiredPermissions: ['LOB_ANALYSIS_VIEW'] }
         ]
     },
