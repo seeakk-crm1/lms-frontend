@@ -3,11 +3,11 @@ import { useQuery } from '@tanstack/react-query';
 import { fetchOverviewCard, SummaryFilters } from '../../../../services/summaryReports.api';
 import { Briefcase, CheckCircle, IndianRupee, Sparkles } from 'lucide-react';
 
-interface SummaryCardSectionProps {
+interface ExecutiveSummarySectionProps {
   filters: SummaryFilters;
 }
 
-const SummaryCardSection: React.FC<SummaryCardSectionProps> = ({ filters }) => {
+const ExecutiveSummarySection: React.FC<ExecutiveSummarySectionProps> = ({ filters }) => {
   const { data, isLoading } = useQuery({
     queryKey: ['summary-overview', filters],
     queryFn: () => fetchOverviewCard(filters),
@@ -59,4 +59,4 @@ const SummaryCardSection: React.FC<SummaryCardSectionProps> = ({ filters }) => {
   );
 };
 
-export default SummaryCardSection;
+export default ExecutiveSummarySection;

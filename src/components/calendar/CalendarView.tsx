@@ -13,9 +13,9 @@ import CalendarDetailsModal from './CalendarDetailsModal';
 type SummaryDay = {
   date: string;
   leadsCreated: number;
-  leadsCreatedByStage: Array<{ stageId: string; count: number; name: string; color: string }>;
+  leadsCreatedByStage: Array<{ stageId: string; count: number; name: string; color: string; shortForm?: string }>;
   totalFollowUps: number;
-  stageTransitions: Array<{ stageId: string; count: number; name: string; color: string }>;
+  stageTransitions: Array<{ stageId: string; count: number; name: string; color: string; shortForm?: string }>;
   stageFollowUps: Array<{
     stageId: string;
     count: number;
@@ -25,20 +25,7 @@ type SummaryDay = {
     overdueHistoryCount?: number;
     shortForm?: string;
   }>;
-  leadsCreatedByStage?: Array<{
-    stageId: string;
-    count: number;
-    name: string;
-    shortForm?: string;
-    color: string;
-  }>;
-  stageTransitions?: Array<{
-    stageId: string;
-    count: number;
-    name: string;
-    shortForm?: string;
-    color: string;
-  }>;
+
 };
 
 const calendarStageLabel = (stage: { shortForm?: string; name: string }) => stage.shortForm || stage.name;

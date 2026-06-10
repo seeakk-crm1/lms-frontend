@@ -1,30 +1,57 @@
 import React, { useState } from 'react';
 import DashboardLayout from '../../../components/dashboard/DashboardLayout';
 import SummaryFilters from './components/SummaryFilters';
-import SummaryCardSection from './components/SummaryCardSection';
-import ActivityTimelineSection from './components/ActivityTimelineSection';
-import LeadsSection from './components/LeadsSection';
+import UserReportView from './components/UserReportView';
+import CompanyReportView from './components/CompanyReportView';
 import { useQuery } from '@tanstack/react-query';
 import api from '../../../services/api';
 import { FileText, Download } from 'lucide-react';
-import { format, startOfDay, endOfDay } from 'date-fns';
+import { startOfDay, endOfDay } from 'date-fns';
 
 const SummaryReportsPage: React.FC = () => {
   const [filters, setFilters] = useState<any>({
     startDate: startOfDay(new Date()).toISOString(),
     endDate: endOfDay(new Date()).toISOString(),
+    userId: undefined, // undefined = All Users
   });
 
   const { data: users } = useQuery({
     queryKey: ['users-list'],
     queryFn: async () => {
       const res = await api.get('/admin/users');
-      return res.data.users;
+      return res.data.users || [];
     }
   });
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const renderContent = () => {
+    if (!filters.userId) {
+      // Company Wide Report
+      return <CompanyReportView filters={filters} />;
+    }
+
+    if (Array.isArray(filters.userId)) {
+      // Multiple Users Report
+      return (
+        <div className="space-y-12">
+          {filters.userId.map((uid: string) => {
+            const user = users?.find((u: any) => u.id === uid);
+            return (
+              <div key={uid} className="bg-white p-6 rounded-3xl shadow-sm border border-gray-200 print:shadow-none print:border-none print:p-0">
+                <UserReportView filters={{ ...filters, userId: uid }} userName={user?.name || 'Unknown User'} />
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+
+    // Single User Report
+    const singleUser = users?.find((u: any) => u.id === filters.userId);
+    return <UserReportView filters={filters} userName={singleUser?.name || 'Unknown User'} />;
   };
 
   return (
@@ -35,9 +62,9 @@ const SummaryReportsPage: React.FC = () => {
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 print:hidden">
             <div>
               <h1 className="text-2xl md:text-3xl font-black text-gray-900 flex items-center gap-3">
-                <FileText className="text-emerald-500" size={28} /> Summary Reports
+                <FileText className="text-emerald-500" size={28} /> Activity Reports
               </h1>
-              <p className="text-sm text-gray-500 mt-1">Generate human-readable business summaries instantly.</p>
+              <p className="text-sm text-gray-500 mt-1">Detailed chronological activity, movements, and analytics.</p>
             </div>
             
             <div className="flex items-center gap-3">
@@ -54,19 +81,17 @@ const SummaryReportsPage: React.FC = () => {
             <SummaryFilters filters={filters} setFilters={setFilters} users={users || []} />
           </div>
 
-          <div className="hidden print:block mb-8">
-            <h1 className="text-2xl font-black text-gray-900 border-b border-gray-200 pb-4 mb-4">
-              Business Summary Report
+          <div className="hidden print:block mb-8 border-b-2 border-gray-900 pb-4">
+            <h1 className="text-3xl font-black text-gray-900 mb-2">
+              Seeakk - Activity Report
             </h1>
-            <p className="text-gray-600 font-medium">Date Range: {format(new Date(filters.startDate), 'MMM dd, yyyy')} - {format(new Date(filters.endDate), 'MMM dd, yyyy')}</p>
+            <p className="text-gray-600 font-bold">
+              Generated on: {new Date().toLocaleString()}
+            </p>
           </div>
 
-          <SummaryCardSection filters={filters} />
-          <ActivityTimelineSection filters={filters} />
-          <LeadsSection filters={filters} />
+          {renderContent()}
           
-          {/* Add more sections here (Followups, Revenue, Attendance, Targets) 
-              following the exact same lazy-loaded pattern as LeadsSection */}
         </div>
       </div>
     </DashboardLayout>

@@ -76,3 +76,18 @@ export const fetchAuditSummary = async (filters: SummaryFilters) => {
   const { data } = await api.get(`/reports/summary/audit?${buildQuery(filters)}`);
   return data;
 };
+
+export const fetchLeadUpdates = async (filters: SummaryFilters) => {
+  const { data } = await api.get(`/reports/summary/lead-updates?${buildQuery(filters)}`);
+  return data;
+};
+
+export const fetchApprovalsSummary = async (filters: SummaryFilters) => {
+  const { data } = await api.get(`/reports/summary/approvals?${buildQuery(filters)}`);
+  return data;
+};
+
+export const fetchCompanySummary = async (filters: SummaryFilters) => {
+  const { data } = await api.get(`/reports/summary/company-summary?${buildQuery(filters)}`);
+  return data;
+};
