@@ -26,6 +26,8 @@ import RealtimeSyncListener from './components/realtime/RealtimeSyncListener';
 import { shouldRunAuthenticatedWorkflow } from './utils/publicRoutes';
 import Login from './pages/Login';
 import InvitePage from './pages/InvitePage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 import DashboardRouter from './components/dashboard/DashboardRouter';
 import WorkspaceSetup from './pages/WorkspaceSetup';
 import AdminUsersPage from './pages/AdminUsersPage';
@@ -235,6 +237,13 @@ function App() {
         <Route path="/activate-account" element={<InvitePage />} />
         <Route path="/invite" element={<InvitePage />} />
         <Route path="/invite/accept" element={<InvitePage />} />
+
+        <Route path="/forgot-password" element={
+          <PublicRoute>
+            <ForgotPasswordPage />
+          </PublicRoute>
+        } />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
 
         <Route path="/workspace/setup" element={
           <OnboardingRoute>

@@ -300,7 +300,7 @@ const Login = () => {
                         <div>
                             <div className="flex justify-between items-center mb-2">
                                 <label className="block text-sm font-bold text-gray-900">Password</label>
-                                <a href="#" className="text-sm font-bold text-emerald-500 hover:text-emerald-600">Forgot password?</a>
+                                <Link to="/forgot-password" className="text-sm font-bold text-emerald-500 hover:text-emerald-600">Forgot password?</Link>
                             </div>
                             <div className="relative">
                                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">

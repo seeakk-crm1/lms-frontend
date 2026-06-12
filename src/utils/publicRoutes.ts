@@ -6,6 +6,8 @@ export const isPublicMarketingRoute = (pathname: string): boolean => {
   if (normalized === '/login' || normalized.startsWith('/login/')) return true;
   if (normalized.startsWith('/invite')) return true;
   if (normalized === '/activate-account') return true;
+  if (normalized === '/forgot-password') return true;
+  if (normalized === '/reset-password') return true;
 
   return false;
 };
