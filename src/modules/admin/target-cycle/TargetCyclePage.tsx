@@ -84,15 +84,19 @@ const TargetCyclePage: React.FC = () => {
 
   const handleSubmit = useCallback(
     async (payload: PerformanceTargetCyclePayload) => {
-      if (formState.mode === 'edit' && formState.selectedCycle) {
-        await updateMutation.mutateAsync({
-          id: formState.selectedCycle.id,
-          payload,
-        });
-      } else {
-        await createMutation.mutateAsync(payload);
+      try {
+        if (formState.mode === 'edit' && formState.selectedCycle) {
+          await updateMutation.mutateAsync({
+            id: formState.selectedCycle.id,
+            payload,
+          });
+        } else {
+          await createMutation.mutateAsync(payload);
+        }
+        resetForm();
+      } catch (error) {
+        // Promise rejection handled to prevent console error; interceptor toasts it
       }
-      resetForm();
     },
     [createMutation, formState.mode, formState.selectedCycle, resetForm, updateMutation],
   );

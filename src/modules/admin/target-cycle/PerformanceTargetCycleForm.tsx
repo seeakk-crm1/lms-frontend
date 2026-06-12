@@ -163,7 +163,18 @@ const PerformanceTargetCycleForm: React.FC<Props> = ({ initialData, isSubmitting
   const addManualPeriod = () => {
     setPeriodsState((prev) => {
       const nextIndex = prev.length;
-      const next = [...prev, createEmptyManualPeriod(nextIndex, startDate)];
+      let nextStartDate = startDate;
+
+      if (prev.length > 0) {
+        const lastPeriod = prev[prev.length - 1];
+        if (lastPeriod.endDate) {
+          const d = new Date(lastPeriod.endDate);
+          d.setUTCDate(d.getUTCDate() + 1);
+          nextStartDate = d.toISOString().slice(0, 10);
+        }
+      }
+
+      const next = [...prev, createEmptyManualPeriod(nextIndex, nextStartDate)];
       setExpandedPeriods((exp) => ({ ...exp, [nextIndex]: true }));
       return next;
     });
