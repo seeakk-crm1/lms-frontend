@@ -14,8 +14,12 @@ const ForgotPasswordPage: React.FC = () => {
     e.preventDefault();
     const trimmed = email.trim();
     if (!trimmed) return;
-    await forgotMutation.mutateAsync(trimmed);
-    setSubmittedEmail(trimmed);
+    try {
+      await forgotMutation.mutateAsync(trimmed);
+      setSubmittedEmail(trimmed);
+    } catch {
+      // Error toast is shown by the mutation's onError handler.
+    }
   };
 
   return (

@@ -37,9 +37,13 @@ const ResetPasswordPage: React.FC = () => {
       toast.error('Passwords do not match.');
       return;
     }
-    const result = await resetMutation.mutateAsync({ token, newPassword });
-    setCompleted(true);
-    toast.success(result.message || 'Password updated successfully.');
+    try {
+      const result = await resetMutation.mutateAsync({ token, newPassword });
+      setCompleted(true);
+      toast.success(result.message || 'Password updated successfully.');
+    } catch {
+      // Error toast is shown by the mutation's onError handler.
+    }
   };
 
   const renderCard = () => {
