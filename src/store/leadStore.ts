@@ -21,17 +21,7 @@ interface LeadStoreState {
   openCreateDrawer: () => void;
   openEditDrawer: (lead: LeadListItem) => void;
   closeDrawer: () => void;
-  resetLeadStore: () => void;
 }
-
-const defaultPagination: LeadPagination = {
-  page: 1,
-  limit: 10,
-  total: 0,
-  totalPages: 1,
-  hasNext: false,
-  hasPrev: false,
-};
 
 export const createEmptyLeadFormValues = (): LeadFormValues => ({
   name: '',
@@ -55,7 +45,14 @@ export const useLeadStore = create<LeadStoreState>((set) => ({
   leads: [],
   filters: {},
   search: '',
-  pagination: defaultPagination,
+  pagination: {
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 1,
+    hasNext: false,
+    hasPrev: false,
+  },
   selectedLead: null,
   drawerState: {
     isOpen: false,
@@ -102,17 +99,6 @@ export const useLeadStore = create<LeadStoreState>((set) => ({
       drawerState: { isOpen: false, mode: 'create' },
       selectedLead: null,
       lobModalOpen: false,
-    }),
-  resetLeadStore: () =>
-    set({
-      leads: [],
-      filters: {},
-      search: '',
-      pagination: { ...defaultPagination },
-      selectedLead: null,
-      drawerState: { isOpen: false, mode: 'create' },
-      lobModalOpen: false,
-      dynamicFields: [],
     }),
 }));
 

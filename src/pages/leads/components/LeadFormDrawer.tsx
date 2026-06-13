@@ -363,7 +363,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
       phone: formValues.phone.trim() || undefined,
       companyName: formValues.companyName.trim() || undefined,
       address: formValues.address.trim() || undefined,
-      assignedToId: canAssignOtherUsers ? formValues.assignedToId || undefined : currentUser?.id || undefined,
+      assignedToId: canAssignOtherUsers ? formValues.assignedToId || undefined : undefined,
       stageId: formValues.stageId || undefined,
       lifecycleId: formValues.lifecycleId || undefined,
       sourceId: formValues.sourceId || undefined,
