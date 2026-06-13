@@ -104,9 +104,11 @@ const removeLeadFromListResponse = (
 
 export const useLeadsQuery = () => {
   const { filters, search, pagination } = useLeadStore();
+  const userId = useAuthStore((state) => state.user?.id);
+  const workspaceId = useAuthStore((state) => state.user?.workspaceId);
 
   return useQuery<ListLeadsResponse, Error>({
-    queryKey: ['leads', search, filters, pagination.page, pagination.limit],
+    queryKey: ['leads', userId, workspaceId, search, filters, pagination.page, pagination.limit],
     queryFn: ({ signal }) =>
       getLeads({
         page: pagination.page,

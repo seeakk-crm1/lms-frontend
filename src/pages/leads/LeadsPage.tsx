@@ -1,10 +1,11 @@
-import React, { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
+import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Download, Filter, Plus, TrendingUp, Upload } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useLocation, useNavigate } from 'react-router-dom';
 import DashboardLayout from '../../components/dashboard/DashboardLayout';
 import { useLeadStore } from '../../store/leadStore';
+import useAuthStore from '../../store/useAuthStore';
 import DeleteLeadModal from './components/DeleteLeadModal';
 import LeadFilters from './components/LeadFilters';
 import LeadSlaDecisionModal from './components/LeadSlaDecisionModal';
@@ -84,6 +85,21 @@ const LeadsPage: React.FC = () => {
     setLeads(data.leads || []);
     setPagination(data.pagination || {});
   }, [data, setLeads, setPagination]);
+
+  const userId = useAuthStore((state) => state.user?.id);
+  const resetLeadStore = useLeadStore((state) => state.resetLeadStore);
+  const prevUserIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!userId) {
+      prevUserIdRef.current = null;
+      return;
+    }
+    if (prevUserIdRef.current !== userId) {
+      resetLeadStore();
+      prevUserIdRef.current = userId;
+    }
+  }, [userId, resetLeadStore]);
 
   useEffect(() => {
     const candidate = leads.find(

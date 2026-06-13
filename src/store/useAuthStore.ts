@@ -48,6 +48,12 @@ const resetDashboardStore = (): void => {
     });
 };
 
+const resetLeadStore = (): void => {
+    void import('./leadStore').then((mod) => {
+        mod.useLeadStore.getState().resetLeadStore();
+    });
+};
+
 const normalizeUserRole = (role: unknown): User['role'] => {
     if (typeof role === 'object' && role !== null) {
         const normalizedRole = role as { id?: string; name?: string; status?: string; isSystemRole?: boolean };
@@ -103,6 +109,7 @@ const useAuthStore = create<AuthState>((set) => {
         localStorage.removeItem('jobId');
         queryClient.clear();
         resetDashboardStore();
+        resetLeadStore();
         set({
             user: null,
             accessToken: null,
