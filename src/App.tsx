@@ -54,6 +54,13 @@ import FollowUpSettingsPage from './pages/leads/FollowUpSettingsPage';
 import PendingApprovalPage from './pages/admin/PendingApprovalPage';
 import LocationsPage from './modules/locations/LocationsPage';
 import LOBAnalysisPage from './modules/lob-analysis/LOBAnalysisPage';
+import ActivityReportsPage from './modules/reports/pages/ActivityReportsPage';
+import ManagementSummaryPage from './modules/reports/pages/ManagementSummaryPage';
+import RevenueReportsPage from './modules/reports/pages/RevenueReportsPage';
+import LeadReportsPage from './modules/reports/pages/LeadReportsPage';
+import FollowupReportsPage from './modules/reports/pages/FollowupReportsPage';
+import AttendanceReportsPage from './modules/reports/pages/AttendanceReportsPage';
+import ExportCenterPage from './modules/reports/pages/ExportCenterPage';
 import LOBReasonsPage from './modules/lob-reasons/pages/LOBReasonsPage';
 import FollowUpExtensionReasonsPage from './modules/followup-extension-reasons/pages/FollowUpExtensionReasonsPage';
 import AttendancePage from './pages/attendance/AttendancePage';
@@ -350,7 +357,45 @@ function App() {
           </PermissionRoute>
         } />
 
-        <Route path="/admin/report-types" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/reports" element={<Navigate to="/reports/activity" replace />} />
+        <Route path="/reports/activity" element={
+          <PermissionRoute permissions={['REPORTS_VIEW', 'REPORTS_GENERATE']}>
+            <ActivityReportsPage />
+          </PermissionRoute>
+        } />
+        <Route path="/reports/summary" element={
+          <PermissionRoute permissions={['REPORTS_VIEW', 'REPORTS_GENERATE']}>
+            <ManagementSummaryPage />
+          </PermissionRoute>
+        } />
+        <Route path="/reports/revenue" element={
+          <PermissionRoute permissions={['REPORTS_VIEW', 'REPORTS_GENERATE']}>
+            <RevenueReportsPage />
+          </PermissionRoute>
+        } />
+        <Route path="/reports/leads" element={
+          <PermissionRoute permissions={['REPORTS_VIEW', 'REPORTS_GENERATE']}>
+            <LeadReportsPage />
+          </PermissionRoute>
+        } />
+        <Route path="/reports/followups" element={
+          <PermissionRoute permissions={['REPORTS_VIEW', 'REPORTS_GENERATE']}>
+            <FollowupReportsPage />
+          </PermissionRoute>
+        } />
+        <Route path="/reports/attendance" element={
+          <PermissionRoute permissions={['REPORTS_VIEW', 'REPORTS_GENERATE']}>
+            <AttendanceReportsPage />
+          </PermissionRoute>
+        } />
+        <Route path="/reports/export" element={
+          <PermissionRoute permissions={['REPORTS_VIEW', 'REPORTS_GENERATE']}>
+            <ExportCenterPage />
+          </PermissionRoute>
+        } />
+        <Route path="/reports/download" element={<Navigate to="/reports/export" replace />} />
+        <Route path="/reports/types" element={<Navigate to="/reports/activity" replace />} />
+        <Route path="/admin/report-types" element={<Navigate to="/reports/activity" replace />} />
 
         <Route path="/admin/lob-reasons" element={
           <PermissionRoute permissions={['LOB_REASONS_VIEW', 'SYSTEM_CONFIG']}>
@@ -363,11 +408,6 @@ function App() {
             <FollowUpExtensionReasonsPage />
           </PermissionRoute>
         } />
-
-        <Route path="/reports" element={<Navigate to="/dashboard" replace />} />
-        <Route path="/reports/summary" element={<Navigate to="/dashboard" replace />} />
-        <Route path="/reports/download" element={<Navigate to="/dashboard" replace />} />
-        <Route path="/reports/types" element={<Navigate to="/dashboard" replace />} />
 
         <Route path="/lob-analysis" element={
           <PermissionRoute permissions={['LOB_ANALYSIS_VIEW']}>
