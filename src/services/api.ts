@@ -6,6 +6,7 @@ import {
   isRefreshAuthFailure,
   refreshAccessToken,
 } from './authToken';
+import { ensureBackendReachable } from './backendWarmup';
 import { MANDATORY_FOLLOWUP_QUERY_KEY } from '../constants/mandatoryFollowup.constants';
 import { OVERDUE_MANDATORY_QUERY_KEY } from '../hooks/useOverdueMandatoryFollowUps';
 import { queryClient } from '../lib/queryClient';
@@ -55,6 +56,8 @@ const clearExpiredSession = () => {
   redirectToLogin();
 };
 
+let backendReadyChain: Promise<boolean> = Promise.resolve(true);
+
 // Add a request interceptor to attach tokens AND proactively refresh
 api.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
@@ -62,12 +65,20 @@ api.interceptors.request.use(
 
     config.headers['x-device-id'] = deviceId as string;
 
-    // Skip proactive refresh for auth endpoints
-    if (
+    const isAuthRoute =
       config.url?.includes('/auth/login') ||
       config.url?.includes('/auth/google') ||
-      config.url?.includes('/auth/refresh')
-    ) {
+      config.url?.includes('/auth/refresh') ||
+      config.url?.includes('/auth/forgot-password') ||
+      config.url?.includes('/auth/reset-password');
+
+    if (!isAuthRoute) {
+      backendReadyChain = backendReadyChain.then(() => ensureBackendReachable());
+      await backendReadyChain;
+    }
+
+    // Skip proactive refresh for auth endpoints
+    if (isAuthRoute) {
       return config;
     }
 
