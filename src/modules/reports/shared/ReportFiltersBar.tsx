@@ -116,8 +116,9 @@ const ReportFiltersBar: React.FC<ReportFiltersBarProps> = ({ filters, setFilters
         {filters.userMode === 'multiple' ? (
           <div className="md:col-span-2">
             <MultiSearchableSelect
+              name="reportUsers"
               options={userOptions}
-              value={selectedUserIds}
+              values={selectedUserIds}
               onChange={(values) => setFilters((prev) => ({ ...prev, userId: values, page: 1 }))}
               placeholder="Select users"
             />

@@ -19,7 +19,11 @@ const SummaryReportsPage: React.FC = () => {
     queryKey: ['users-list'],
     queryFn: async () => {
       const res = await api.get('/admin/users');
-      return res.data.users || [];
+      const payload = res.data?.data;
+      if (Array.isArray(payload)) return payload;
+      if (Array.isArray(payload?.users)) return payload.users;
+      if (Array.isArray(res.data?.users)) return res.data.users;
+      return [];
     }
   });
 

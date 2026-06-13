@@ -8,7 +8,11 @@ export const useReportUsers = () =>
     queryKey: ['reports-users-list'],
     queryFn: async () => {
       const res = await api.get('/admin/users', { params: { limit: 500 } });
-      return res.data.users || res.data.data || [];
+      const payload = res.data?.data;
+      if (Array.isArray(payload)) return payload;
+      if (Array.isArray(payload?.users)) return payload.users;
+      if (Array.isArray(res.data?.users)) return res.data.users;
+      return [];
     },
   });
 
@@ -16,7 +20,8 @@ export const resolveFilteredUserIds = (
   users: any[],
   filters: ReportFilterState,
 ): string[] | undefined => {
-  let filtered = [...users];
+  const safeUsers = Array.isArray(users) ? users : [];
+  let filtered = [...safeUsers];
 
   if (filters.role) {
     filtered = filtered.filter((user) => user.role?.id === filters.role || user.role?.name === filters.role);

@@ -20,9 +20,9 @@ const ManagementSummaryView: React.FC<ManagementSummaryViewProps> = ({ filters, 
   }
 
   const overview = overviewQuery.data;
-  const leads = leadsQuery.data?.data || [];
-  const followups = followupsQuery.data?.data || [];
-  const attendance = attendanceQuery.data?.data?.[0];
+  const leads = Array.isArray(leadsQuery.data?.data) ? leadsQuery.data.data : [];
+  const followups = Array.isArray(followupsQuery.data?.data) ? followupsQuery.data.data : [];
+  const attendance = Array.isArray(attendanceQuery.data?.data) ? attendanceQuery.data.data[0] : undefined;
 
   const sourceBreakdown = leads.reduce((acc: Record<string, number>, lead: any) => {
     const key = lead.source?.name || 'Unknown';
