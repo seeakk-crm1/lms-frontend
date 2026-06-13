@@ -53,9 +53,6 @@ import BulkAssignPage from './pages/leads/BulkAssignPage';
 import FollowUpSettingsPage from './pages/leads/FollowUpSettingsPage';
 import PendingApprovalPage from './pages/admin/PendingApprovalPage';
 import LocationsPage from './modules/locations/LocationsPage';
-import ReportTypePage from './modules/report-types/pages/ReportTypePage';
-import ReportsPage from './modules/reports/ReportsPage';
-import SummaryReportsPage from './modules/reports/summary/SummaryReportsPage';
 import LOBAnalysisPage from './modules/lob-analysis/LOBAnalysisPage';
 import LOBReasonsPage from './modules/lob-reasons/pages/LOBReasonsPage';
 import FollowUpExtensionReasonsPage from './modules/followup-extension-reasons/pages/FollowUpExtensionReasonsPage';
@@ -353,11 +350,7 @@ function App() {
           </PermissionRoute>
         } />
 
-        <Route path="/admin/report-types" element={
-          <PermissionRoute permissions={['REPORT_TYPE_MANAGE', 'SYSTEM_CONFIG']}>
-            <ReportTypePage />
-          </PermissionRoute>
-        } />
+        <Route path="/admin/report-types" element={<Navigate to="/dashboard" replace />} />
 
         <Route path="/admin/lob-reasons" element={
           <PermissionRoute permissions={['LOB_REASONS_VIEW', 'SYSTEM_CONFIG']}>
@@ -371,17 +364,10 @@ function App() {
           </PermissionRoute>
         } />
 
-        <Route path="/reports" element={
-          <PermissionRoute permissions={['REPORTS_VIEW', 'REPORTS_GENERATE']}>
-            <ReportsPage />
-          </PermissionRoute>
-        } />
-
-        <Route path="/reports/summary" element={
-          <PermissionRoute permissions={['REPORTS_VIEW', 'REPORTS_GENERATE']}>
-            <SummaryReportsPage />
-          </PermissionRoute>
-        } />
+        <Route path="/reports" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/reports/summary" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/reports/download" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/reports/types" element={<Navigate to="/dashboard" replace />} />
 
         <Route path="/lob-analysis" element={
           <PermissionRoute permissions={['LOB_ANALYSIS_VIEW']}>

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    LayoutDashboard, Users, Settings, FileText, Calendar as CalendarIcon,
+    LayoutDashboard, Users, Settings, Calendar as CalendarIcon,
     Briefcase, FileBarChart, Unplug, MapPin, ChevronDown, Activity, ChevronRight, LogOut, LucideIcon, X
 } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
@@ -68,7 +68,7 @@ const sidebarMenus: SidebarSection[] = [
         ]
     },
     {
-        title: 'LEADS & REPORTS',
+        title: 'LEADS',
         items: [
             {
                 icon: Briefcase, label: 'Leads',
@@ -82,14 +82,6 @@ const sidebarMenus: SidebarSection[] = [
                       path: '/leads/settings',
                       requiredPermissions: ['manage_followup_settings', 'view_followup_capacity', 'bulk_extend_followups'],
                     },
-                ]
-            },
-            {
-                icon: FileText, label: 'Reports',
-                subItems: [
-                    { label: 'Summary Reports', path: '/reports/summary', requiredPermissions: ['REPORTS_VIEW', 'REPORTS_GENERATE'] },
-                    { label: 'Download Reports', path: '/reports', requiredPermissions: ['REPORTS_VIEW', 'REPORTS_GENERATE'] },
-                    { label: 'Report Types', path: '/admin/report-types', requiredPermissions: ['REPORT_TYPE_MANAGE', 'SYSTEM_CONFIG'] }
                 ]
             },
             { icon: FileBarChart, label: 'LOB Analysis', path: '/lob-analysis', requiredPermissions: ['LOB_ANALYSIS_VIEW'] }
