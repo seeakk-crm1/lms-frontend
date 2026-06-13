@@ -1,8 +1,9 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { fetchExtensionsSummary, SummaryFilters } from '../../../../services/summaryReports.api';
 import { CalendarClock } from 'lucide-react';
 import { format } from 'date-fns';
+import { fetchFollowupsDetailReport, SummaryFilters } from '../../../../services/summaryReports.api';
+import type { FollowupDetailReportItem } from '../../shared/followupReport.types';
 
 interface FollowupExtensionsSectionProps {
   filters: SummaryFilters;
@@ -10,39 +11,38 @@ interface FollowupExtensionsSectionProps {
 
 const FollowupExtensionsSection: React.FC<FollowupExtensionsSectionProps> = ({ filters }) => {
   const { data, isLoading } = useQuery({
-    queryKey: ['summary-extensions', filters],
-    queryFn: () => fetchExtensionsSummary(filters),
+    queryKey: ['summary-followups-detail', filters],
+    queryFn: () => fetchFollowupsDetailReport(filters),
   });
 
-  if (isLoading) return <div className="h-40 bg-gray-100 animate-pulse rounded-2xl mt-6"></div>;
-  if (!data?.data || data.data.length === 0) return null;
+  if (isLoading) return <div className="mt-8 h-40 animate-pulse rounded-2xl bg-gray-100" />;
+  const items = ((data?.data || []) as FollowupDetailReportItem[]).filter((item) => item.extensions.length > 0);
+  if (items.length === 0) return null;
 
   return (
-    <div className="mt-8">
-      <h2 className="text-lg font-black text-gray-900 mb-4 flex items-center gap-2">
+    <div className="mt-8 print:break-before-page">
+      <h2 className="mb-4 flex items-center gap-2 text-lg font-black text-gray-900">
         <CalendarClock className="text-rose-500" size={20} /> Followup Extension History
       </h2>
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm text-gray-500">
-            <thead className="text-xs text-gray-700 uppercase bg-gray-50 font-bold border-b border-gray-200">
-              <tr>
-                <th className="px-6 py-4">Lead Name</th>
-                <th className="px-6 py-4">Extended By</th>
-                <th className="px-6 py-4">Timestamp</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.data.map((ext: any) => (
-                <tr key={ext.id} className="border-b border-gray-50 hover:bg-gray-50">
-                  <td className="px-6 py-4 font-bold text-gray-900">{ext.lead?.name || '-'}</td>
-                  <td className="px-6 py-4">{ext.createdBy?.name || '-'}</td>
-                  <td className="px-6 py-4">{format(new Date(ext.createdAt), 'dd MMM yyyy, hh:mm a')}</td>
-                </tr>
+      <div className="space-y-6">
+        {items.map((followup) => (
+          <div key={followup.id} className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm print:break-inside-avoid">
+            <p className="text-sm font-black text-gray-900">{followup.leadName}</p>
+            <p className="text-xs text-gray-500">Assigned User: {followup.assignedUser}</p>
+            <div className="mt-4 space-y-4">
+              {followup.extensions.map((ext, index) => (
+                <div key={`${followup.id}-extension-${index}`} className="rounded-xl border border-rose-100 bg-rose-50/50 p-4 text-sm text-gray-800">
+                  <p><strong>Original Date:</strong> {ext.originalDate}</p>
+                  <p><strong>Extended To:</strong> {ext.extendedTo}</p>
+                  <p><strong>Extension Reason:</strong> {ext.reason || 'Not specified'}</p>
+                  <p><strong>Extended By:</strong> {ext.extendedBy}</p>
+                  <p><strong>Extension Time:</strong> {format(new Date(ext.extendedAt), 'dd/MM/yyyy hh:mm a')}</p>
+                  <p className="mt-2 whitespace-pre-wrap"><strong>Description:</strong> {ext.description || 'No description provided.'}</p>
+                </div>
               ))}
-            </tbody>
-          </table>
-        </div>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );

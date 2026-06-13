@@ -5,6 +5,7 @@ import LeadsSection from './LeadsSection';
 import LeadUpdatesSection from './LeadUpdatesSection';
 import FollowupActivitySection from './FollowupActivitySection';
 import FollowupExtensionsSection from './FollowupExtensionsSection';
+import FollowupHistoryTimelineSection from './FollowupHistoryTimelineSection';
 import StageMovementsSection from './StageMovementsSection';
 import RevenueActivitySection from './RevenueActivitySection';
 import AttendanceActivitySection from './AttendanceActivitySection';
@@ -34,6 +35,7 @@ const UserReportView: React.FC<UserReportViewProps> = ({ filters, userName }) =>
       <LeadUpdatesSection filters={filters} />
       <FollowupActivitySection filters={filters} />
       <FollowupExtensionsSection filters={filters} />
+      <FollowupHistoryTimelineSection filters={filters} />
       <StageMovementsSection filters={filters} />
       <RevenueActivitySection filters={filters} />
       <AttendanceActivitySection filters={filters} />

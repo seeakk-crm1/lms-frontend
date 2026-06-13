@@ -6,6 +6,11 @@ import { createDefaultReportFilters } from '../shared/reportFilterDefaults';
 import { buildApiFilters, useReportUsers } from '../shared/useReportUsers';
 import CompanyReportView from '../summary/components/CompanyReportView';
 import ManagementSummaryView from './components/ManagementSummaryView';
+import FollowupActivitySection from '../summary/components/FollowupActivitySection';
+import FollowupExtensionsSection from '../summary/components/FollowupExtensionsSection';
+import FollowupHistoryTimelineSection from '../summary/components/FollowupHistoryTimelineSection';
+import FollowupLatestNotesSection from '../summary/components/FollowupLatestNotesSection';
+import FollowupPerformanceSection from '../summary/components/FollowupPerformanceSection';
 
 const ManagementSummaryPage: React.FC = () => {
   const [filters, setFilters] = useState(createDefaultReportFilters());
@@ -17,6 +22,11 @@ const ManagementSummaryPage: React.FC = () => {
       return (
         <div className="space-y-8">
           <CompanyReportView filters={apiFilters} />
+          <FollowupPerformanceSection filters={apiFilters} />
+          <FollowupLatestNotesSection filters={apiFilters} />
+          <FollowupActivitySection filters={apiFilters} />
+          <FollowupExtensionsSection filters={apiFilters} />
+          <FollowupHistoryTimelineSection filters={apiFilters} />
           <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
             <h3 className="text-lg font-black text-gray-900">All Users Summary</h3>
             <p className="mt-2 text-sm text-gray-500">
@@ -32,12 +42,17 @@ const ManagementSummaryPage: React.FC = () => {
       <div className="space-y-10">
         {userIds.map((userId) => {
           const user = users.find((item: any) => item.id === userId);
+          const userFilters = { ...apiFilters, userId };
           return (
-            <ManagementSummaryView
-              key={userId}
-              filters={{ ...apiFilters, userId }}
-              userName={user?.name || 'Unknown User'}
-            />
+            <div key={userId} className="space-y-8 print:break-before-page">
+              <ManagementSummaryView
+                filters={userFilters}
+                userName={user?.name || 'Unknown User'}
+              />
+              <FollowupActivitySection filters={userFilters} />
+              <FollowupExtensionsSection filters={userFilters} />
+              <FollowupHistoryTimelineSection filters={userFilters} />
+            </div>
           );
         })}
       </div>

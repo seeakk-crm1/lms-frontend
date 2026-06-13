@@ -1,4 +1,8 @@
 import api from './api';
+import type {
+  FollowupLatestNoteItem,
+  FollowupPerformanceItem,
+} from '../modules/reports/shared/followupReport.types';
 
 export interface SummaryFilters {
   startDate?: string;
@@ -45,6 +49,21 @@ export const fetchLeadsSummary = async (filters: SummaryFilters) => {
 export const fetchFollowupsSummary = async (filters: SummaryFilters) => {
   const { data } = await api.get(`/reports/summary/followups?${buildQuery(filters)}`);
   return data;
+};
+
+export const fetchFollowupsDetailReport = async (filters: SummaryFilters) => {
+  const { data } = await api.get(`/reports/summary/followups/detail?${buildQuery(filters)}`);
+  return data;
+};
+
+export const fetchFollowupsPerformanceReport = async (filters: SummaryFilters): Promise<FollowupPerformanceItem[]> => {
+  const { data } = await api.get(`/reports/summary/followups/performance?${buildQuery(filters)}`);
+  return data.data;
+};
+
+export const fetchFollowupsLatestNotesReport = async (filters: SummaryFilters): Promise<FollowupLatestNoteItem[]> => {
+  const { data } = await api.get(`/reports/summary/followups/latest-notes?${buildQuery(filters)}`);
+  return data.data;
 };
 
 export const fetchExtensionsSummary = async (filters: SummaryFilters) => {

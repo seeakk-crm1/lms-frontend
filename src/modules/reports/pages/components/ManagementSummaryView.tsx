@@ -2,7 +2,14 @@ import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { User as UserIcon } from 'lucide-react';
-import { fetchOverviewCard, fetchAttendanceSummary, fetchFollowupsSummary, fetchLeadsSummary, SummaryFilters } from '../../../../services/summaryReports.api';
+import {
+  fetchAttendanceSummary,
+  fetchLeadsSummary,
+  fetchOverviewCard,
+  SummaryFilters,
+} from '../../../../services/summaryReports.api';
+import FollowupLatestNotesSection from '../../summary/components/FollowupLatestNotesSection';
+import FollowupPerformanceSection from '../../summary/components/FollowupPerformanceSection';
 
 interface ManagementSummaryViewProps {
   filters: SummaryFilters;
@@ -12,7 +19,6 @@ interface ManagementSummaryViewProps {
 const ManagementSummaryView: React.FC<ManagementSummaryViewProps> = ({ filters, userName }) => {
   const overviewQuery = useQuery({ queryKey: ['mgmt-overview', filters], queryFn: () => fetchOverviewCard(filters) });
   const leadsQuery = useQuery({ queryKey: ['mgmt-leads', filters], queryFn: () => fetchLeadsSummary(filters) });
-  const followupsQuery = useQuery({ queryKey: ['mgmt-followups', filters], queryFn: () => fetchFollowupsSummary(filters) });
   const attendanceQuery = useQuery({ queryKey: ['mgmt-attendance', filters], queryFn: () => fetchAttendanceSummary(filters) });
 
   if (overviewQuery.isLoading) {
@@ -21,7 +27,6 @@ const ManagementSummaryView: React.FC<ManagementSummaryViewProps> = ({ filters, 
 
   const overview = overviewQuery.data;
   const leads = Array.isArray(leadsQuery.data?.data) ? leadsQuery.data.data : [];
-  const followups = Array.isArray(followupsQuery.data?.data) ? followupsQuery.data.data : [];
   const attendance = Array.isArray(attendanceQuery.data?.data) ? attendanceQuery.data.data[0] : undefined;
 
   const sourceBreakdown = leads.reduce((acc: Record<string, number>, lead: any) => {
@@ -36,12 +41,9 @@ const ManagementSummaryView: React.FC<ManagementSummaryViewProps> = ({ filters, 
     return acc;
   }, {});
 
-  const completedFollowups = followups.filter((item: any) => String(item.activityType || '').includes('COMPLETED')).length;
-  const extendedFollowups = followups.filter((item: any) => String(item.activityType || '').includes('EXTENDED')).length;
-
   const insight =
     overview?.aiInsight ||
-    `${userName} created ${overview?.leadsCreated || 0} leads, completed ${completedFollowups} follow-ups, and generated ₹${(overview?.revenueGenerated || 0).toLocaleString()} revenue during the selected period.`;
+    `${userName} created ${overview?.leadsCreated || 0} leads and generated ₹${(overview?.revenueGenerated || 0).toLocaleString()} revenue during the selected period.`;
 
   return (
     <div className="space-y-6 rounded-3xl border border-gray-200 bg-white p-6 shadow-sm print:shadow-none">
@@ -80,14 +82,8 @@ const ManagementSummaryView: React.FC<ManagementSummaryViewProps> = ({ filters, 
           </ul>
         </div>
 
-        <div>
-          <p className="font-bold text-gray-900">Followup Performance</p>
-          <ul className="ml-5 list-disc">
-            <li>Created: {followups.length}</li>
-            <li>Completed: {completedFollowups}</li>
-            <li>Extended: {extendedFollowups}</li>
-          </ul>
-        </div>
+        <FollowupPerformanceSection filters={filters} />
+        <FollowupLatestNotesSection filters={filters} />
 
         <p><strong>Revenue Generated:</strong> ₹{(overview?.revenueGenerated || 0).toLocaleString()}</p>
         <p><strong>Attendance:</strong> {attendance?.status || 'Not recorded'}</p>
