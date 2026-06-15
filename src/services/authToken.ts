@@ -8,6 +8,14 @@ const API_URL = ENV.API_URL;
 /** Single-flight refresh so Socket + many axios callers share one rotation. */
 let refreshPromise: Promise<string> | null = null;
 
+const MAX_REFRESH_ATTEMPTS = 2;
+const REFRESH_RETRY_DELAY_MS = 350;
+
+type TokenRefreshListener = (accessToken: string) => void;
+const tokenRefreshListeners = new Set<TokenRefreshListener>();
+
+const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
+
 export const getAccessTokenExpMs = (token: string): number | null => {
   try {
     const payload = JSON.parse(atob(token.split('.')[1])) as { exp?: number };
@@ -27,10 +35,56 @@ export const isAccessTokenExpired = (token: string, skewMs = 120_000): boolean =
   return exp < Date.now() + skewMs;
 };
 
+/** Definitive auth failures — only these should clear the session. */
 export const isRefreshAuthFailure = (error: unknown): boolean => {
   if (!axios.isAxiosError(error)) return false;
   const status = error.response?.status;
   return status === 400 || status === 401 || status === 403;
+};
+
+/** Transient failures (Redis/DB blip, network) — retry refresh, do not logout. */
+export const isTransientRefreshFailure = (error: unknown): boolean => {
+  if (!axios.isAxiosError(error)) {
+    return error instanceof Error;
+  }
+  const status = error.response?.status;
+  if (!status) return true;
+  return status === 502 || status === 503 || status === 504;
+};
+
+export const onAccessTokenRefreshed = (listener: TokenRefreshListener): (() => void) => {
+  tokenRefreshListeners.add(listener);
+  return () => {
+    tokenRefreshListeners.delete(listener);
+  };
+};
+
+const notifyAccessTokenRefreshed = (accessToken: string): void => {
+  tokenRefreshListeners.forEach((listener) => {
+    try {
+      listener(accessToken);
+    } catch {
+      // Listener errors must not break refresh flow
+    }
+  });
+};
+
+/**
+ * Handles 401 from API calls: refresh once, retry the request config, logout only on auth failure.
+ */
+export const handleUnauthorizedRequest = async <T>(
+  retry: () => Promise<T>,
+): Promise<T> => {
+  try {
+    const accessToken = await refreshAccessToken();
+    notifyAccessTokenRefreshed(accessToken);
+    return retry();
+  } catch (error) {
+    if (isRefreshAuthFailure(error)) {
+      throw error;
+    }
+    throw error;
+  }
 };
 
 /**
@@ -46,14 +100,41 @@ export const refreshAccessToken = async (): Promise<string> => {
   }
 
   refreshPromise = (async () => {
+    let lastError: unknown;
+
     try {
-      const { data } = await axios.post<{
-        accessToken: string;
-        refreshToken: string;
-        user: User;
-      }>(`${API_URL}/auth/refresh`, { refreshToken }, { withCredentials: true });
-      useAuthStore.getState().setAuth(data.user, data.accessToken, data.refreshToken);
-      return data.accessToken;
+      for (let attempt = 0; attempt < MAX_REFRESH_ATTEMPTS; attempt += 1) {
+        const currentRefreshToken = localStorage.getItem('refreshToken');
+        if (!currentRefreshToken) {
+          throw new Error('No refresh token available');
+        }
+
+        try {
+          const { data } = await axios.post<{
+            accessToken: string;
+            refreshToken: string;
+            user: User;
+          }>(
+            `${API_URL}/auth/refresh`,
+            { refreshToken: currentRefreshToken },
+            { withCredentials: true },
+          );
+
+          useAuthStore.getState().setAuth(data.user, data.accessToken, data.refreshToken);
+          notifyAccessTokenRefreshed(data.accessToken);
+          return data.accessToken;
+        } catch (error) {
+          lastError = error;
+          const canRetry =
+            isTransientRefreshFailure(error) && attempt < MAX_REFRESH_ATTEMPTS - 1;
+          if (!canRetry) {
+            throw error;
+          }
+          await sleep(REFRESH_RETRY_DELAY_MS * (attempt + 1));
+        }
+      }
+
+      throw lastError ?? new Error('Refresh token request failed');
     } finally {
       refreshPromise = null;
     }

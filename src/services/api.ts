@@ -4,6 +4,7 @@ import { ENV } from '../config/env';
 import {
   isAccessTokenExpired,
   isRefreshAuthFailure,
+  isTransientRefreshFailure,
   refreshAccessToken,
 } from './authToken';
 import { ensureBackendReachable } from './backendWarmup';
@@ -88,7 +89,14 @@ api.interceptors.request.use(
     if (accessToken && refreshToken && isAccessTokenExpired(accessToken)) {
       try {
         accessToken = await refreshAccessToken();
-      } catch {
+      } catch (err) {
+        if (isRefreshAuthFailure(err)) {
+          clearExpiredSession();
+          return Promise.reject(err);
+        }
+        if (!isTransientRefreshFailure(err)) {
+          return Promise.reject(err);
+        }
         accessToken = localStorage.getItem('accessToken');
       }
     }

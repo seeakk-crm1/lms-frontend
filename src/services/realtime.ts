@@ -9,6 +9,7 @@ import {
 import {
   isRefreshAuthFailure,
   isAccessTokenExpired,
+  onAccessTokenRefreshed,
   refreshAccessToken,
 } from './authToken';
 
@@ -17,7 +18,7 @@ let lastSocketUserId: string | null = null;
 let authRecoveryInFlight = false;
 /** Prevents infinite connect_error → refresh → connect loops on persistent auth failure */
 let consecutiveSocketAuthRecoveries = 0;
-const MAX_SOCKET_AUTH_RECOVERIES = 5;
+const MAX_SOCKET_AUTH_RECOVERIES = 8;
 
 const readStoredUserId = (): string | null => {
   try {
@@ -82,6 +83,43 @@ const isLikelySocketAuthError = (msg: string): boolean => {
   );
 };
 
+const applyFreshTokenToSocket = (s: Socket, token: string): void => {
+  s.auth = { token };
+};
+
+const scheduleSocketReconnect = (s: Socket, delayMs = 400): void => {
+  setTimeout(() => {
+    if (s.disconnected) {
+      s.connect();
+    }
+  }, delayMs);
+};
+
+/** Reconnect Engine.IO with the latest access JWT after a successful refresh elsewhere. */
+export const reconnectRealtimeWithFreshToken = (): void => {
+  if (!socket) return;
+
+  const token = localStorage.getItem('accessToken') || '';
+  if (!token) return;
+
+  consecutiveSocketAuthRecoveries = 0;
+  applyFreshTokenToSocket(socket, token);
+
+  if (socket.connected) {
+    socket.disconnect();
+  }
+  scheduleSocketReconnect(socket, 50);
+};
+
+onAccessTokenRefreshed((accessToken) => {
+  if (!socket || !lastSocketUserId) return;
+  applyFreshTokenToSocket(socket, accessToken);
+  consecutiveSocketAuthRecoveries = 0;
+  if (!socket.connected) {
+    scheduleSocketReconnect(socket, 50);
+  }
+});
+
 const attachCoreSocketHandlers = (s: Socket, baseUrl: string): void => {
   s.on('connect', () => {
     consecutiveSocketAuthRecoveries = 0;
@@ -123,7 +161,8 @@ const attachCoreSocketHandlers = (s: Socket, baseUrl: string): void => {
 
     authRecoveryInFlight = true;
     try {
-      await refreshAccessToken();
+      const newToken = await refreshAccessToken();
+      applyFreshTokenToSocket(s, newToken);
       s.connect();
     } catch (e) {
       if (isRefreshAuthFailure(e)) {
@@ -145,13 +184,15 @@ const attachCoreSocketHandlers = (s: Socket, baseUrl: string): void => {
       console.warn('[Socket.io] Server closed the connection');
       return;
     }
-    // Stale Engine.IO session on Render (400 on polling) — force a fresh handshake without logging out.
-    if (reason === 'transport error' || reason === 'ping timeout') {
+    // Stale Engine.IO session on Render — force a fresh handshake without logging out.
+    if (
+      reason === 'transport error' ||
+      reason === 'ping timeout' ||
+      reason === 'transport close'
+    ) {
       console.warn('[Socket.io] Transport dropped — opening a new session');
       s.disconnect();
-      setTimeout(() => {
-        if (s.disconnected) s.connect();
-      }, 400);
+      scheduleSocketReconnect(s);
     }
   });
 
@@ -195,6 +236,7 @@ export const connectRealtime = (): Socket | null => {
 
   if (socket && lastSocketUserId === userId) {
     if (!socket.connected) {
+      applyFreshTokenToSocket(socket, accessToken);
       socket.connect();
     }
     return socket;
