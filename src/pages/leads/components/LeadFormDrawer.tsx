@@ -363,7 +363,9 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
       phone: formValues.phone.trim() || undefined,
       companyName: formValues.companyName.trim() || undefined,
       address: formValues.address.trim() || undefined,
-      assignedToId: canAssignOtherUsers ? formValues.assignedToId || undefined : undefined,
+      assignedToId: canAssignOtherUsers
+        ? formValues.assignedToId || undefined
+        : currentUser?.id || undefined,
       stageId: formValues.stageId || undefined,
       lifecycleId: formValues.lifecycleId || undefined,
       sourceId: formValues.sourceId || undefined,
@@ -609,9 +611,11 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
                             />
                           ) : (
                             <div className={`${inputClassName} flex min-h-[50px] items-center`}>
-                              {hydratedLead?.assignedTo?.displayName || 
-                               hydratedLead?.assignedTo?.name || 
-                               (mode === 'create' ? currentUser?.name : 'Unassigned')}
+                              {hydratedLead?.assignedTo?.displayName ||
+                               hydratedLead?.assignedTo?.name ||
+                               (mode === 'create'
+                                 ? currentUser?.name || currentUser?.email || 'You'
+                                 : 'Unassigned')}
                             </div>
                           )}
                         </div>
