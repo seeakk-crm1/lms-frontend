@@ -1,15 +1,19 @@
 import React, { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { uploadLeadFile } from './import.service';
-import { DownloadCloud, UploadCloud, FileType } from 'lucide-react';
+import { DownloadCloud, UploadCloud, FileType, CheckCircle2, AlertTriangle, XCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 interface UploadSectionProps {
-  onUploadStart: (jobId: string) => void;
-  isUploading: boolean;
+  onUploadStart: (payload: { jobId: string; fileName: string }) => void;
+  importState: 'idle' | 'processing' | 'completed' | 'completed_with_errors' | 'failed';
+  importSummary?: {
+    success: number;
+    failed: number;
+  } | null;
 }
 
-export default function UploadSection({ onUploadStart, isUploading }: UploadSectionProps) {
+export default function UploadSection({ onUploadStart, importState, importSummary }: UploadSectionProps) {
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -35,7 +39,7 @@ export default function UploadSection({ onUploadStart, isUploading }: UploadSect
       const res = await uploadLeadFile(file);
       if (res.success && res.data.job_id) {
         toast.success("Upload started successfully!");
-        onUploadStart(res.data.job_id);
+        onUploadStart({ jobId: res.data.job_id, fileName: file.name });
         setFile(null);
       }
     } catch (error: any) {
@@ -48,7 +52,7 @@ export default function UploadSection({ onUploadStart, isUploading }: UploadSect
 
   return (
     <div className="rounded-3xl border border-gray-100 bg-white p-8 shadow-sm relative overflow-hidden">
-      {isUploading && (
+      {importState === 'processing' && (
         <div className="absolute inset-0 bg-white/70 backdrop-blur-md z-10 flex items-center justify-center rounded-3xl">
           <p className="font-bold text-gray-900 bg-white px-6 py-3 rounded-2xl shadow-xl border border-gray-100 flex items-center gap-3">
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
@@ -61,6 +65,52 @@ export default function UploadSection({ onUploadStart, isUploading }: UploadSect
         <UploadCloud className="h-5 w-5 text-emerald-500" />
         <h3 className="text-sm font-black uppercase tracking-[0.2em] text-gray-900">Upload Data</h3>
       </div>
+
+      {importState !== 'idle' && importState !== 'processing' && (
+        <div
+          className={`mb-6 rounded-2xl border px-5 py-4 ${
+            importState === 'completed'
+              ? 'border-emerald-200 bg-emerald-50'
+              : importState === 'completed_with_errors'
+                ? 'border-amber-200 bg-amber-50'
+                : 'border-rose-200 bg-rose-50'
+          }`}
+        >
+          <div className="flex items-start gap-3">
+            {importState === 'completed' && <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-emerald-600" />}
+            {importState === 'completed_with_errors' && <AlertTriangle className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-600" />}
+            {importState === 'failed' && <XCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-rose-600" />}
+            <div>
+              <p
+                className={`text-sm font-black uppercase tracking-[0.18em] ${
+                  importState === 'completed'
+                    ? 'text-emerald-800'
+                    : importState === 'completed_with_errors'
+                      ? 'text-amber-800'
+                      : 'text-rose-800'
+                }`}
+              >
+                {importState === 'completed' && 'Import Completed Successfully'}
+                {importState === 'completed_with_errors' && 'Import Completed With Errors'}
+                {importState === 'failed' && 'Import Failed'}
+              </p>
+              <p
+                className={`mt-1 text-sm font-semibold ${
+                  importState === 'completed'
+                    ? 'text-emerald-700'
+                    : importState === 'completed_with_errors'
+                      ? 'text-amber-700'
+                      : 'text-rose-700'
+                }`}
+              >
+                {importState === 'completed' && `${importSummary?.success ?? 0} leads imported successfully.`}
+                {importState === 'completed_with_errors' && `${importSummary?.success ?? 0} imported, ${importSummary?.failed ?? 0} failed.`}
+                {importState === 'failed' && `${importSummary?.failed ?? 0} records failed during import.`}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div 
         {...getRootProps()} 
@@ -125,7 +175,7 @@ export default function UploadSection({ onUploadStart, isUploading }: UploadSect
           className={`flex w-full sm:w-auto items-center justify-center gap-2 px-8 py-3 rounded-2xl text-sm font-black transition-all
             ${(!file || loading) 
               ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-              : 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/25 hover:bg-emerald-600 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-emerald-500/30'}`
+              : 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/25 hover:bg-emerald-600 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-emerald-500/30'}` 
           }
         >
           {loading ? (
@@ -139,7 +189,9 @@ export default function UploadSection({ onUploadStart, isUploading }: UploadSect
           ) : (
              <>
                <UploadCloud className="w-4 h-4" />
-               Start Import Process
+               {importState === 'completed' || importState === 'completed_with_errors' || importState === 'failed'
+                 ? 'Start Another Import'
+                 : 'Start Import Process'}
              </>
           )}
         </button>
