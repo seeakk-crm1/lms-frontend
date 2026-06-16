@@ -18,7 +18,7 @@ import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import useAuthStore from './store/useAuthStore';
 import { hasAnyPermission, canAccessPendingApproval } from './utils/permission.util';
-import api from './services/api';
+import api, { handleSessionExpired } from './services/api';
 import { queryClient } from './lib/queryClient';
 import FollowUpReminderListener from './components/calendar/FollowUpReminderListener';
 import AuthenticatedWorkflowGates from './components/AuthenticatedWorkflowGates';
@@ -117,7 +117,6 @@ function App() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const isOnboarded = useAuthStore((state) => state.user?.isOnboarded);
   const updateUser = useAuthStore((state) => state.updateUser);
-  const clearAuth = useAuthStore((state) => state.clearAuth);
   const workflowEnabled = shouldRunAuthenticatedWorkflow(
     isAuthenticated,
     isOnboarded,
@@ -153,14 +152,14 @@ function App() {
         if (cancelled) return;
         const status = error?.response?.status;
         if (status === 401 || status === 403) {
-          clearAuth();
+          handleSessionExpired();
         }
       });
 
     return () => {
       cancelled = true;
     };
-  }, [clearAuth, updateUser, workflowEnabled]);
+  }, [updateUser, workflowEnabled]);
 
   return (
     <>

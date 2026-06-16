@@ -2,9 +2,8 @@ import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import useAuthStore from '../store/useAuthStore';
 import { ENV } from '../config/env';
 import {
-  isAccessTokenExpired,
   isRefreshAuthFailure,
-  isTransientRefreshFailure,
+  resolveValidAccessToken,
   refreshAccessToken,
 } from './authToken';
 import { ensureBackendReachable } from './backendWarmup';
@@ -36,6 +35,11 @@ if (!deviceId) {
 
 let isRedirectingToLogin = false;
 
+export const handleSessionExpired = (): void => {
+  useAuthStore.getState().clearAuth();
+  redirectToLogin();
+};
+
 const redirectToLogin = () => {
   if (typeof window === 'undefined' || isRedirectingToLogin) return;
   isRedirectingToLogin = true;
@@ -53,11 +57,34 @@ const redirectToLogin = () => {
 };
 
 const clearExpiredSession = () => {
-  useAuthStore.getState().clearAuth();
-  redirectToLogin();
+  handleSessionExpired();
 };
 
 let backendReadyChain: Promise<boolean> = Promise.resolve(true);
+
+const isAuthRoute = (url?: string): boolean =>
+  Boolean(
+    url?.includes('/auth/login') ||
+      url?.includes('/auth/google') ||
+      url?.includes('/auth/refresh') ||
+      url?.includes('/auth/forgot-password') ||
+      url?.includes('/auth/reset-password'),
+  );
+
+const setAuthorizationHeader = (
+  config: InternalAxiosRequestConfig,
+  accessToken: string,
+): void => {
+  if (!config.headers) return;
+  if (typeof (config.headers as { set?: unknown }).set === 'function') {
+    (config.headers as { set: (key: string, value: string) => void }).set(
+      'Authorization',
+      `Bearer ${accessToken}`,
+    );
+    return;
+  }
+  config.headers.Authorization = `Bearer ${accessToken}`;
+};
 
 // Add a request interceptor to attach tokens AND proactively refresh
 api.interceptors.request.use(
@@ -66,43 +93,25 @@ api.interceptors.request.use(
 
     config.headers['x-device-id'] = deviceId as string;
 
-    const isAuthRoute =
-      config.url?.includes('/auth/login') ||
-      config.url?.includes('/auth/google') ||
-      config.url?.includes('/auth/refresh') ||
-      config.url?.includes('/auth/forgot-password') ||
-      config.url?.includes('/auth/reset-password');
-
-    if (!isAuthRoute) {
+    if (!isAuthRoute(config.url)) {
       backendReadyChain = backendReadyChain.then(() => ensureBackendReachable());
       await backendReadyChain;
     }
 
-    // Skip proactive refresh for auth endpoints
-    if (isAuthRoute) {
+    if (isAuthRoute(config.url)) {
       return config;
     }
 
-    let accessToken = localStorage.getItem('accessToken');
-    const refreshToken = localStorage.getItem('refreshToken');
-
-    if (accessToken && refreshToken && isAccessTokenExpired(accessToken)) {
-      try {
-        accessToken = await refreshAccessToken();
-      } catch (err) {
-        if (isRefreshAuthFailure(err)) {
-          clearExpiredSession();
-          return Promise.reject(err);
-        }
-        if (!isTransientRefreshFailure(err)) {
-          return Promise.reject(err);
-        }
-        accessToken = localStorage.getItem('accessToken');
+    try {
+      const accessToken = await resolveValidAccessToken();
+      if (accessToken) {
+        setAuthorizationHeader(config, accessToken);
       }
-    }
-
-    if (accessToken) {
-      config.headers.Authorization = `Bearer ${accessToken}`;
+    } catch (err) {
+      if (isRefreshAuthFailure(err)) {
+        clearExpiredSession();
+      }
+      return Promise.reject(err);
     }
 
     return config;
@@ -120,11 +129,7 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    if (
-      originalRequest.url.includes('/auth/login') ||
-      originalRequest.url.includes('/auth/google') ||
-      originalRequest.url.includes('/auth/refresh')
-    ) {
+    if (isAuthRoute(originalRequest.url)) {
       return Promise.reject(error);
     }
 
@@ -151,16 +156,14 @@ api.interceptors.response.use(
       originalRequest._retry = true;
       try {
         const newAccessToken = await refreshAccessToken();
-        if (originalRequest.headers) {
-          originalRequest.headers['Authorization'] = `Bearer ${newAccessToken}`;
-        }
+        setAuthorizationHeader(originalRequest, newAccessToken);
         return api(originalRequest);
       } catch (err) {
-        if (!isRefreshAuthFailure(err)) {
-          return Promise.reject(error);
+        if (isRefreshAuthFailure(err)) {
+          clearExpiredSession();
+          return Promise.reject(err);
         }
-        clearExpiredSession();
-        return Promise.reject(err);
+        return Promise.reject(error);
       }
     }
 

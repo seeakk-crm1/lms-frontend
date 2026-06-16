@@ -16,6 +16,14 @@ const tokenRefreshListeners = new Set<TokenRefreshListener>();
 
 const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 
+/** Thrown when the session cannot be renewed (missing/invalid refresh token). */
+export class AuthSessionError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'AuthSessionError';
+  }
+}
+
 export const getAccessTokenExpMs = (token: string): number | null => {
   try {
     const payload = JSON.parse(atob(token.split('.')[1])) as { exp?: number };
@@ -37,6 +45,7 @@ export const isAccessTokenExpired = (token: string, skewMs = 120_000): boolean =
 
 /** Definitive auth failures — only these should clear the session. */
 export const isRefreshAuthFailure = (error: unknown): boolean => {
+  if (error instanceof AuthSessionError) return true;
   if (!axios.isAxiosError(error)) return false;
   const status = error.response?.status;
   return status === 400 || status === 401 || status === 403;
@@ -44,9 +53,7 @@ export const isRefreshAuthFailure = (error: unknown): boolean => {
 
 /** Transient failures (Redis/DB blip, network) — retry refresh, do not logout. */
 export const isTransientRefreshFailure = (error: unknown): boolean => {
-  if (!axios.isAxiosError(error)) {
-    return error instanceof Error;
-  }
+  if (!axios.isAxiosError(error)) return false;
   const status = error.response?.status;
   if (!status) return true;
   return status === 502 || status === 503 || status === 504;
@@ -70,21 +77,37 @@ const notifyAccessTokenRefreshed = (accessToken: string): void => {
 };
 
 /**
+ * Returns a valid access token, refreshing when needed.
+ * Never returns an expired token when a refresh token is available.
+ */
+export const resolveValidAccessToken = async (): Promise<string | null> => {
+  const refreshToken = localStorage.getItem('refreshToken');
+  const accessToken = localStorage.getItem('accessToken');
+
+  if (!accessToken && !refreshToken) {
+    return null;
+  }
+
+  if (accessToken && !isAccessTokenExpired(accessToken)) {
+    return accessToken;
+  }
+
+  if (!refreshToken) {
+    throw new AuthSessionError('No refresh token available');
+  }
+
+  return refreshAccessToken();
+};
+
+/**
  * Handles 401 from API calls: refresh once, retry the request config, logout only on auth failure.
  */
 export const handleUnauthorizedRequest = async <T>(
   retry: () => Promise<T>,
 ): Promise<T> => {
-  try {
-    const accessToken = await refreshAccessToken();
-    notifyAccessTokenRefreshed(accessToken);
-    return retry();
-  } catch (error) {
-    if (isRefreshAuthFailure(error)) {
-      throw error;
-    }
-    throw error;
-  }
+  const accessToken = await refreshAccessToken();
+  notifyAccessTokenRefreshed(accessToken);
+  return retry();
 };
 
 /**
@@ -96,7 +119,7 @@ export const refreshAccessToken = async (): Promise<string> => {
 
   const refreshToken = localStorage.getItem('refreshToken');
   if (!refreshToken) {
-    throw new Error('No refresh token available');
+    throw new AuthSessionError('No refresh token available');
   }
 
   refreshPromise = (async () => {
@@ -106,7 +129,7 @@ export const refreshAccessToken = async (): Promise<string> => {
       for (let attempt = 0; attempt < MAX_REFRESH_ATTEMPTS; attempt += 1) {
         const currentRefreshToken = localStorage.getItem('refreshToken');
         if (!currentRefreshToken) {
-          throw new Error('No refresh token available');
+          throw new AuthSessionError('No refresh token available');
         }
 
         try {
@@ -134,7 +157,7 @@ export const refreshAccessToken = async (): Promise<string> => {
         }
       }
 
-      throw lastError ?? new Error('Refresh token request failed');
+      throw lastError ?? new AuthSessionError('Refresh token request failed');
     } finally {
       refreshPromise = null;
     }
