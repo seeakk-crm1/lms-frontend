@@ -6,12 +6,12 @@ import CompanyReportView from './components/CompanyReportView';
 import { useQuery } from '@tanstack/react-query';
 import api from '../../../services/api';
 import { FileText, Download } from 'lucide-react';
-import { startOfDay, endOfDay } from 'date-fns';
+import { format } from 'date-fns';
 
 const SummaryReportsPage: React.FC = () => {
   const [filters, setFilters] = useState<any>({
-    startDate: startOfDay(new Date()).toISOString(),
-    endDate: endOfDay(new Date()).toISOString(),
+    startDate: format(new Date(), 'yyyy-MM-dd'),
+    endDate: format(new Date(), 'yyyy-MM-dd'),
     userId: undefined, // undefined = All Users
   });
 

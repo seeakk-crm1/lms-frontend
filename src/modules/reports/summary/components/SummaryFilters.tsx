@@ -1,6 +1,6 @@
 import React from 'react';
 import { Calendar, User, Briefcase, Filter, Building, Users as UsersIcon } from 'lucide-react';
-import { format, startOfDay, endOfDay, startOfWeek, startOfMonth, subDays } from 'date-fns';
+import { format, startOfWeek, startOfMonth, subDays } from 'date-fns';
 
 interface SummaryFiltersProps {
   filters: any;
@@ -11,24 +11,24 @@ interface SummaryFiltersProps {
 const SummaryFilters: React.FC<SummaryFiltersProps> = ({ filters, setFilters, users }) => {
   const handleDatePreset = (preset: string) => {
     const today = new Date();
-    let startDate = startOfDay(today);
-    let endDate = endOfDay(today);
+    let startDate = today;
+    let endDate = today;
 
     if (preset === 'today') {
-      startDate = startOfDay(today);
-      endDate = endOfDay(today);
+      startDate = today;
+      endDate = today;
     } else if (preset === 'yesterday') {
-      startDate = startOfDay(subDays(today, 1));
-      endDate = endOfDay(subDays(today, 1));
+      startDate = subDays(today, 1);
+      endDate = subDays(today, 1);
     } else if (preset === 'this-week') {
       startDate = startOfWeek(today, { weekStartsOn: 1 });
-      endDate = endOfDay(today);
+      endDate = today;
     } else if (preset === 'this-month') {
       startDate = startOfMonth(today);
-      endDate = endOfDay(today);
+      endDate = today;
     }
 
-    setFilters({ ...filters, startDate: startDate.toISOString(), endDate: endDate.toISOString() });
+    setFilters({ ...filters, startDate: format(startDate, 'yyyy-MM-dd'), endDate: format(endDate, 'yyyy-MM-dd') });
   };
 
   const handleUserSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -65,9 +65,9 @@ const SummaryFilters: React.FC<SummaryFiltersProps> = ({ filters, setFilters, us
             <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input 
               type="date" 
-              className="pl-9 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
-              value={format(new Date(filters.startDate), 'yyyy-MM-dd')}
-              onChange={(e) => setFilters({ ...filters, startDate: startOfDay(new Date(e.target.value)).toISOString() })}
+              className="pl-9 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none font-bold text-gray-700"
+              value={filters.startDate}
+              onChange={(e) => setFilters({ ...filters, startDate: e.target.value })}
             />
           </div>
           <span className="text-gray-400 text-sm font-medium">to</span>
@@ -75,9 +75,9 @@ const SummaryFilters: React.FC<SummaryFiltersProps> = ({ filters, setFilters, us
             <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input 
               type="date" 
-              className="pl-9 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
-              value={format(new Date(filters.endDate), 'yyyy-MM-dd')}
-              onChange={(e) => setFilters({ ...filters, endDate: endOfDay(new Date(e.target.value)).toISOString() })}
+              className="pl-9 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none font-bold text-gray-700"
+              value={filters.endDate}
+              onChange={(e) => setFilters({ ...filters, endDate: e.target.value })}
             />
           </div>
         </div>
