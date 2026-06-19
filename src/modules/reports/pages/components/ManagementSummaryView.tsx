@@ -66,7 +66,7 @@ const ManagementSummaryView: React.FC<ManagementSummaryViewProps> = ({ filters, 
           <p className="font-bold text-gray-900">Lead Sources</p>
           <ul className="ml-5 list-disc">
             {Object.entries(sourceBreakdown).map(([name, count]) => (
-              <li key={name}>{name}: {count}</li>
+              <li key={name}>{name}: {String(count)}</li>
             ))}
             {Object.keys(sourceBreakdown).length === 0 ? <li>No leads in this period.</li> : null}
           </ul>
@@ -76,7 +76,7 @@ const ManagementSummaryView: React.FC<ManagementSummaryViewProps> = ({ filters, 
           <p className="font-bold text-gray-900">Lead Stage Progress</p>
           <ul className="ml-5 list-disc">
             {Object.entries(stageBreakdown).map(([name, count]) => (
-              <li key={name}>{name}: {count}</li>
+              <li key={name}>{name}: {String(count)}</li>
             ))}
             {Object.keys(stageBreakdown).length === 0 ? <li>No stage movement data.</li> : null}
           </ul>

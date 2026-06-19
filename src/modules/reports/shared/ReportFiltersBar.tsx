@@ -107,7 +107,7 @@ const ReportFiltersBar: React.FC<ReportFiltersBarProps> = ({ filters, setFilters
             value={typeof filters.userId === 'string' ? filters.userId : ''}
             onChange={(e) => setFilters((prev) => ({ ...prev, userId: e.target.value, page: 1 }))}
           >
-            {userOptions.map((option) => (
+            {userOptions.map((option: any) => (
               <option key={option.value} value={option.value}>{option.label}</option>
             ))}
           </select>
