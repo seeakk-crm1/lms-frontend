@@ -113,3 +113,46 @@ export const getNotifications = async () => {
   const response = await api.get('/attendance/notifications');
   return response.data;
 };
+
+export const checkOut = async (data: {
+  workSummary: string;
+  achievements?: string | null;
+  pendingTasks?: string | null;
+  challenges?: string | null;
+  additionalNotes?: string | null;
+}) => {
+  const response = await api.post('/attendance/check-out', data);
+  return response.data;
+};
+
+export const getSchedules = async () => {
+  const response = await api.get('/attendance/schedules');
+  return response.data;
+};
+
+export const getSchedule = async (userId: string) => {
+  const response = await api.get(`/attendance/schedules/${userId}`);
+  return response.data;
+};
+
+export const updateSchedule = async (userId: string, data: {
+  checkInTime: string;
+  checkOutTime: string;
+  gracePeriod: number;
+  lateMarkThreshold: string;
+  halfDayThreshold: number;
+  workingHoursRequirement: number;
+}) => {
+  const response = await api.post(`/attendance/schedules/${userId}`, data);
+  return response.data;
+};
+
+export const requestClarification = async (recordId: string, reason: string) => {
+  const response = await api.post(`/attendance/clarification/${recordId}`, { reason });
+  return response.data;
+};
+
+export const getApprovalHistory = async () => {
+  const response = await api.get('/attendance/approval-history');
+  return response.data;
+};

@@ -45,7 +45,7 @@ const leadStageSchema = z
     path: ['stageShortForm'],
   });
 
-type LeadStageFormValues = z.infer<typeof leadStageSchema>;
+type LeadStageFormValues = z.input<typeof leadStageSchema>;
 
 interface LeadStageFormModalProps {
   isOpen: boolean;
@@ -239,7 +239,7 @@ const LeadStageFormModal: React.FC<LeadStageFormModalProps> = ({
       ...data,
       name: data.name.trim(),
       stageShortForm: data.stageShortForm || null,
-      showInCalendar: data.showInCalendar,
+      showInCalendar: Boolean(data.showInCalendar),
       ruleAssignments: Array.from(new Map(data.ruleAssignments.map((rule) => [rule.ruleId, rule])).values()),
     });
   };
@@ -343,7 +343,7 @@ const LeadStageFormModal: React.FC<LeadStageFormModalProps> = ({
                           <ToggleField
                             label="Show In Calendar"
                             description="Display this stage short form on follow-up and lead calendar views"
-                            value={field.value}
+                            value={Boolean(field.value)}
                             onChange={field.onChange}
                             ariaLabel="Toggle show in calendar"
                           />

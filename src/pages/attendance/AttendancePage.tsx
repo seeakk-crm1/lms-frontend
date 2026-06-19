@@ -105,6 +105,38 @@ const AttendancePage: React.FC = () => {
   const [attendanceType, setAttendanceType] = useState('PRESENT');
   const [notes, setNotes] = useState('');
   const [attachmentUrl, setAttachmentUrl] = useState('');
+
+  // Check-Out summary fields
+  const [showCheckOutModal, setShowCheckOutModal] = useState(false);
+  const [workSummary, setWorkSummary] = useState('');
+  const [achievements, setAchievements] = useState('');
+  const [pendingTasks, setPendingTasks] = useState('');
+  const [challenges, setChallenges] = useState('');
+  const [additionalNotes, setAdditionalNotes] = useState('');
+  const [checkoutSubmitting, setCheckoutSubmitting] = useState(false);
+
+  // Schedules management
+  const [schedulesList, setSchedulesList] = useState<any[]>([]);
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [selectedUserForSchedule, setSelectedUserForSchedule] = useState<any>(null);
+  const [scheduleForm, setScheduleForm] = useState({
+    checkInTime: '09:00',
+    checkOutTime: '18:00',
+    gracePeriod: 15,
+    lateMarkThreshold: '09:45',
+    halfDayThreshold: 4.0,
+    workingHoursRequirement: 8.0,
+  });
+
+  // Approval history and clarification request
+  const [approvalHistoryList, setApprovalHistoryList] = useState<any[]>([]);
+  const [clarificationRecordId, setClarificationRecordId] = useState<string | null>(null);
+  const [clarificationReason, setClarificationReason] = useState('');
+  const [showClarificationModal, setShowClarificationModal] = useState(false);
+
+  // Summary details viewing
+  const [showSummaryViewModal, setShowSummaryViewModal] = useState(false);
+  const [selectedRecordForSummary, setSelectedRecordForSummary] = useState<any>(null);
   
   const canManageLocations =
     hasPermission(permissions, 'manage_attendance_locations') ||
@@ -205,9 +237,37 @@ const AttendancePage: React.FC = () => {
     }
   };
 
+  const fetchSchedules = async () => {
+    if (!hasPermission(permissions, 'manage_attendance_settings') && !hasPermission(permissions, 'ATTENDANCE_APPROVE')) return;
+    try {
+      const res = await attendanceApi.getSchedules();
+      setSchedulesList(res.data || []);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const fetchApprovalHistory = async () => {
+    if (!hasPermission(permissions, 'approve_attendance') && !hasPermission(permissions, 'ATTENDANCE_APPROVE')) return;
+    try {
+      const res = await attendanceApi.getApprovalHistory();
+      setApprovalHistoryList(res.data || []);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const loadAll = async () => {
     setLoading(true);
-    const tasks: Promise<void>[] = [fetchTodayStatus(), fetchStats(), fetchNotifications(), fetchHistory(), fetchPendingQueue()];
+    const tasks: Promise<void>[] = [
+      fetchTodayStatus(),
+      fetchStats(),
+      fetchNotifications(),
+      fetchHistory(),
+      fetchPendingQueue(),
+      fetchSchedules(),
+      fetchApprovalHistory(),
+    ];
     if (hasPermission(permissions, 'view_all_attendance')) {
       tasks.push(fetchUsersList());
     }
@@ -222,7 +282,9 @@ const AttendancePage: React.FC = () => {
       fetchNotifications(),
       fetchHistory(),
       fetchPendingQueue(),
-      fetchUsersList()
+      fetchUsersList(),
+      fetchSchedules(),
+      fetchApprovalHistory(),
     ]);
   };
 
@@ -238,6 +300,8 @@ const AttendancePage: React.FC = () => {
     if (activeTab === 'users') fetchUsersList();
     if (activeTab === 'networks' || activeTab === 'users') fetchOfficeLocations();
     if (activeTab === 'settings') fetchSettings();
+    if (activeTab === 'schedules') fetchSchedules();
+    if (activeTab === 'approval-history') fetchApprovalHistory();
   }, [activeTab, historyFilters, adminFilters]);
 
   const refreshMarkGpsPreview = async () => {
@@ -388,6 +452,100 @@ const AttendancePage: React.FC = () => {
     }
   };
 
+  const handleCheckOut = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!workSummary.trim()) {
+      toast.error('Work Summary is mandatory.');
+      return;
+    }
+    setCheckoutSubmitting(true);
+    try {
+      const response = await attendanceApi.checkOut({
+        workSummary,
+        achievements: achievements || null,
+        pendingTasks: pendingTasks || null,
+        challenges: challenges || null,
+        additionalNotes: additionalNotes || null,
+      });
+      if (response.success) {
+        toast.success('Attendance summary submitted & checked out successfully');
+        setShowCheckOutModal(false);
+        setWorkSummary('');
+        setAchievements('');
+        setPendingTasks('');
+        setChallenges('');
+        setAdditionalNotes('');
+        dispatchAttendanceRefresh({ action: 'check-out' });
+        await refreshAll();
+        setActiveTab('dashboard');
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to check out');
+    } finally {
+      setCheckoutSubmitting(false);
+    }
+  };
+
+  const handleClarificationRequest = (recordId: string) => {
+    setClarificationRecordId(recordId);
+    setClarificationReason('');
+    setShowClarificationModal(true);
+  };
+
+  const submitClarification = async () => {
+    if (!clarificationReason.trim()) {
+      toast.error('Clarification request reason is mandatory.');
+      return;
+    }
+    try {
+      await attendanceApi.requestClarification(clarificationRecordId!, clarificationReason);
+      toast.success('Clarification request sent to employee.');
+      setClarificationRecordId(null);
+      setClarificationReason('');
+      setShowClarificationModal(false);
+      refreshAll();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to request clarification');
+    }
+  };
+
+  const handleEditSchedule = (user: any) => {
+    setSelectedUserForSchedule(user);
+    if (user.attendanceSchedule) {
+      setScheduleForm({
+        checkInTime: user.attendanceSchedule.checkInTime,
+        checkOutTime: user.attendanceSchedule.checkOutTime,
+        gracePeriod: user.attendanceSchedule.gracePeriod,
+        lateMarkThreshold: user.attendanceSchedule.lateMarkThreshold,
+        halfDayThreshold: user.attendanceSchedule.halfDayThreshold,
+        workingHoursRequirement: user.attendanceSchedule.workingHoursRequirement,
+      });
+    } else {
+      setScheduleForm({
+        checkInTime: '09:00',
+        checkOutTime: '18:00',
+        gracePeriod: 15,
+        lateMarkThreshold: '09:45',
+        halfDayThreshold: 4.0,
+        workingHoursRequirement: 8.0,
+      });
+    }
+    setShowScheduleModal(true);
+  };
+
+  const handleScheduleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await attendanceApi.updateSchedule(selectedUserForSchedule.id, scheduleForm);
+      toast.success('Attendance schedule updated successfully.');
+      setShowScheduleModal(false);
+      setSelectedUserForSchedule(null);
+      fetchSchedules();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to update schedule');
+    }
+  };
+
   // Inline User Apply Type Edit
   const handleInlineApplyTypeChange = async (userId: string, type: string) => {
     try {
@@ -530,6 +688,19 @@ const AttendancePage: React.FC = () => {
                 <span>Mark Attendance</span>
               </button>
             )}
+
+            {todayStatus && todayStatus.record && todayStatus.record.checkInTime && !todayStatus.record.checkOutTime && (
+              <button
+                onClick={() => {
+                  setActiveTab('mark');
+                  setShowCheckOutModal(true);
+                }}
+                className="flex items-center gap-2 px-6 py-3 bg-rose-500 text-white rounded-2xl text-sm font-bold shadow-lg shadow-rose-500/20 active:scale-95 transition-all hover:bg-rose-600 cursor-pointer"
+              >
+                <Clock size={16} />
+                <span>Check Out</span>
+              </button>
+            )}
           </div>
 
           {/* Navigation Tabs */}
@@ -539,6 +710,8 @@ const AttendancePage: React.FC = () => {
               { id: 'mark', label: 'Mark Attendance', icon: Clock },
               { id: 'history', label: 'History', icon: Calendar },
               { id: 'pending', label: 'Pending Approvals', icon: UserCheck, permission: 'view_pending_attendance' },
+              { id: 'approval-history', label: 'Approval History', icon: FileText, permission: 'ATTENDANCE_APPROVE' },
+              { id: 'schedules', label: 'Attendance Schedules', icon: Calendar, permission: 'ATTENDANCE_APPROVE' },
               { id: 'users', label: 'Users List', icon: Users, permission: 'view_all_attendance' },
               { id: 'networks', label: 'Location Settings', icon: Building, permission: 'manage_attendance_locations' },
               { id: 'settings', label: 'Settings', icon: Settings, permission: 'manage_attendance_settings' }
@@ -583,18 +756,30 @@ const AttendancePage: React.FC = () => {
                         <span className="px-3 py-1 bg-blue-50 text-blue-600 text-xs font-bold rounded-full">
                           Holiday: {todayStatus.holidayName || 'Public Holiday'}
                         </span>
-                      ) : todayStatus?.submissionState === 'APPROVED' || todayStatus?.submissionState === 'PENDING' ? (
-                        <span className={`px-3 py-1 text-xs font-bold rounded-full flex items-center gap-1 ${
-                          todayStatus.submissionState === 'APPROVED'
-                            ? 'bg-emerald-50 text-emerald-600'
-                            : 'bg-amber-50 text-amber-600'
-                        }`}>
-                          <CheckCircle size={14} />
-                          {todayStatus.submissionState === 'APPROVED' ? 'Approved' : 'Pending Approval'} ({todayStatus.record?.attendanceType})
+                      ) : todayStatus?.record?.approvalStatus === 'PENDING_APPROVAL' ? (
+                        <span className="px-3 py-1 bg-amber-50 text-amber-600 text-xs font-bold rounded-full flex items-center gap-1">
+                          <Clock size={14} />
+                          Pending Approval (Checked Out)
                         </span>
-                      ) : todayStatus?.submissionState === 'REJECTED' ? (
-                        <span className="px-3 py-1 text-xs font-bold rounded-full flex items-center gap-1 bg-rose-50 text-rose-600">
+                      ) : todayStatus?.record?.approvalStatus === 'CLARIFICATION_REQUESTED' ? (
+                        <span className="px-3 py-1 bg-blue-50 text-blue-600 text-xs font-bold rounded-full flex items-center gap-1">
+                          <AlertCircle size={14} />
+                          Clarification Requested
+                        </span>
+                      ) : todayStatus?.record?.approvalStatus === 'APPROVED' ? (
+                        <span className="px-3 py-1 bg-emerald-50 text-emerald-600 text-xs font-bold rounded-full flex items-center gap-1">
+                          <CheckCircle size={14} />
+                          Approved ({todayStatus.record?.attendanceType})
+                        </span>
+                      ) : todayStatus?.record?.approvalStatus === 'REJECTED' || todayStatus?.submissionState === 'REJECTED' ? (
+                        <span className="px-3 py-1 bg-rose-50 text-rose-600 text-xs font-bold rounded-full flex items-center gap-1">
+                          <AlertTriangle size={14} />
                           Rejected — resubmit required
+                        </span>
+                      ) : todayStatus?.submissionState === 'PENDING' ? (
+                        <span className="px-3 py-1 bg-amber-50 text-amber-600 text-xs font-bold rounded-full flex items-center gap-1">
+                          <Clock size={14} />
+                          Pending Approval (Checked In)
                         </span>
                       ) : (
                         <span className="px-3 py-1 bg-amber-50 text-amber-600 text-xs font-bold rounded-full">
@@ -697,6 +882,96 @@ const AttendancePage: React.FC = () => {
                   <div className="p-4 bg-blue-50 border border-blue-100 rounded-2xl text-center text-blue-700 text-xs font-semibold">
                     Today is a holiday ({todayStatus.holidayName}). Attendance registration is not required.
                   </div>
+                ) : todayStatus?.record?.approvalStatus === 'APPROVED' && todayStatus.record.checkOutTime ? (
+                  <div className="space-y-4">
+                    <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-4 text-center text-emerald-800">
+                      <p className="text-sm font-black">Attendance Approved & Checked Out</p>
+                      <p className="mt-2 text-xs font-semibold">
+                        Type: {todayStatus.record?.attendanceType?.replace(/_/g, ' ')} · Check-in:{' '}
+                        {todayStatus.record?.checkInTime
+                          ? new Date(todayStatus.record.checkInTime).toLocaleString()
+                          : '—'}
+                      </p>
+                      <p className="mt-1 text-xs">
+                        Check-out:{' '}
+                        {todayStatus.record?.checkOutTime
+                          ? new Date(todayStatus.record.checkOutTime).toLocaleString()
+                          : '—'}
+                      </p>
+                      <p className="mt-1 text-xs font-bold text-emerald-950">
+                        Total Working Hours: {todayStatus.record?.workingHours ?? '—'}
+                      </p>
+                    </div>
+                  </div>
+                ) : todayStatus?.record?.approvalStatus === 'PENDING_APPROVAL' ? (
+                  <div className="rounded-2xl border border-amber-100 bg-amber-50 p-4 text-center text-amber-800 space-y-3">
+                    <p className="text-sm font-black">Attendance Pending Approval</p>
+                    <p className="text-xs">You have checked out and submitted your daily work summary.</p>
+                    <div className="mt-2 text-xs font-semibold">
+                      Check-in:{' '}
+                      {todayStatus.record?.checkInTime
+                        ? new Date(todayStatus.record.checkInTime).toLocaleString()
+                        : '—'}
+                    </div>
+                    <div className="text-xs">
+                      Check-out:{' '}
+                      {todayStatus.record?.checkOutTime
+                        ? new Date(todayStatus.record.checkOutTime).toLocaleString()
+                        : '—'}
+                    </div>
+                    <button
+                      onClick={() => {
+                        setSelectedRecordForSummary(todayStatus.record);
+                        setShowSummaryViewModal(true);
+                      }}
+                      className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold cursor-pointer transition-colors"
+                    >
+                      View Submitted Summary
+                    </button>
+                  </div>
+                ) : todayStatus?.record?.approvalStatus === 'CLARIFICATION_REQUESTED' ? (
+                  <div className="rounded-2xl border border-blue-100 bg-blue-50 p-4 text-center text-blue-800 space-y-3">
+                    <p className="text-sm font-black">Clarification Requested</p>
+                    <p className="text-xs font-semibold">Reason: {todayStatus.record.rejectedReason}</p>
+                    <p className="text-xs text-blue-700">Please review and resubmit your work summary below.</p>
+                    <button
+                      onClick={() => {
+                        setWorkSummary(todayStatus.record.workSummary || '');
+                        setAchievements(todayStatus.record.achievements || '');
+                        setPendingTasks(todayStatus.record.pendingTasks || '');
+                        setChallenges(todayStatus.record.challenges || '');
+                        setAdditionalNotes(todayStatus.record.additionalNotes || '');
+                        setShowCheckOutModal(true);
+                      }}
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-2xl transition-colors shadow-md text-xs flex items-center justify-center gap-2 cursor-pointer font-black"
+                    >
+                      Update & Resubmit Summary
+                    </button>
+                  </div>
+                ) : todayStatus?.record && todayStatus.record.checkInTime && !todayStatus.record.checkOutTime ? (
+                  <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-6 text-center text-emerald-800 space-y-4">
+                    <p className="text-sm font-black">You are Checked In</p>
+                    <p className="text-xs font-semibold">
+                      Type: {todayStatus.record?.attendanceType?.replace(/_/g, ' ')} · Checked-in at:{' '}
+                      {todayStatus.record?.checkInTime
+                        ? new Date(todayStatus.record.checkInTime).toLocaleTimeString()
+                        : '—'}
+                    </p>
+                    <button
+                      onClick={() => {
+                        setWorkSummary('');
+                        setAchievements('');
+                        setPendingTasks('');
+                        setChallenges('');
+                        setAdditionalNotes('');
+                        setShowCheckOutModal(true);
+                      }}
+                      className="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold py-3 rounded-2xl transition-colors shadow-md text-xs flex items-center justify-center gap-2 cursor-pointer font-black"
+                    >
+                      <Clock size={16} />
+                      <span>Check Out & Submit Work Summary</span>
+                    </button>
+                  </div>
                 ) : todayStatus?.submissionState === 'APPROVED' ? (
                   <div className="space-y-4">
                     <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-4 text-center text-emerald-800">
@@ -732,7 +1007,7 @@ const AttendancePage: React.FC = () => {
                   </div>
                 ) : (
                   <>
-                    {todayStatus?.submissionState === 'REJECTED' ? (
+                    {todayStatus?.submissionState === 'REJECTED' || todayStatus?.record?.approvalStatus === 'REJECTED' ? (
                       <div className="mb-4 rounded-2xl border border-rose-100 bg-rose-50 p-4 text-center text-rose-800">
                         <p className="text-sm font-black">Attendance Rejected</p>
                         {todayStatus.record?.rejectedReason ? (
@@ -1023,9 +1298,30 @@ const AttendancePage: React.FC = () => {
                                 : '—'}
                             </p>
                           </td>
-                          <td className="p-4 max-w-[200px] truncate">{record.notes || '-'}</td>
+                          <td className="p-4 max-w-[200px] truncate">
+                            {record.notes && <p className="font-medium">Check-In: {record.notes}</p>}
+                            {record.workSummary && <p className="text-[10px] text-gray-500 mt-1 truncate">Check-Out Summary: {record.workSummary}</p>}
+                            {!record.notes && !record.workSummary && '—'}
+                          </td>
                           <td className="p-4 text-right">
                             <div className="flex justify-end gap-2">
+                              {(record.workSummary || record.notes) && (
+                                <button
+                                  onClick={() => {
+                                    setSelectedRecordForSummary(record);
+                                    setShowSummaryViewModal(true);
+                                  }}
+                                  className="px-3 py-1.5 bg-gray-50 text-gray-600 rounded-lg font-bold hover:bg-gray-100 transition-colors cursor-pointer"
+                                >
+                                  View Summary
+                                </button>
+                              )}
+                              <button
+                                onClick={() => handleClarificationRequest(record.id)}
+                                className="px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg font-bold hover:bg-blue-100 transition-colors cursor-pointer"
+                              >
+                                Clarify
+                              </button>
                               <button
                                 onClick={() => handleReview(record.id, 'APPROVE')}
                                 className="px-3 py-1.5 bg-emerald-50 text-emerald-600 rounded-lg font-bold hover:bg-emerald-100 transition-colors cursor-pointer"
@@ -1090,14 +1386,12 @@ const AttendancePage: React.FC = () => {
                     <thead>
                       <tr className="bg-gray-50 border-b border-gray-100 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
                         <th className="p-4">Employee</th>
-                        <th className="p-4">Role</th>
-                        <th className="p-4">Supervisor</th>
-                        <th className="p-4">Apply Type</th>
-                        <th className="p-4">Office Branch</th>
+                        <th className="p-4">Timing Schedule</th>
+                        <th className="p-4">Day Details</th>
                         <th className="p-4">Attendance Status</th>
-                        <th className="p-4">Last Check-In</th>
-                        <th className="p-4">Last Location / Distance</th>
-                        <th className="p-4">Compliance</th>
+                        <th className="p-4">Approver & Resolve Info</th>
+                        <th className="p-4">Location Settings / Branch</th>
+                        <th className="p-4">Compliance / Lock</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-50 text-xs text-gray-600">
@@ -1106,76 +1400,138 @@ const AttendancePage: React.FC = () => {
                           <td className="p-4">
                             <p className="font-bold text-gray-900">{record.user?.name}</p>
                             <p className="text-[10px] text-gray-400 mt-0.5">{record.user?.email}</p>
+                            <p className="text-[10px] text-gray-500 mt-0.5">{record.user?.role?.name || '—'} · {record.user?.department?.name || '—'}</p>
                           </td>
-                          <td className="p-4">{record.user?.role?.name || '—'}</td>
-                          <td className="p-4">{record.user?.supervisor?.name || 'No Supervisor'}</td>
                           <td className="p-4">
-                            {hasPermission(permissions, 'edit_attendance_apply_type') ? (
-                              <select
-                                value={record.attendanceApplyType || record.user?.attendanceApplyType || 'FROM_ANYWHERE'}
-                                onChange={e => handleInlineApplyTypeChange(record.user.id, e.target.value)}
-                                className="border border-gray-200 rounded-lg px-2 py-1 text-xs focus:outline-emerald-500 font-bold bg-white text-gray-700"
-                              >
-                                <option value="FROM_OFFICE">From Office</option>
-                                <option value="FROM_ANYWHERE">From Anywhere</option>
-                              </select>
+                            {record.user?.attendanceSchedule ? (
+                              <div className="space-y-1">
+                                <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded text-[10px] font-bold">
+                                  {record.user.attendanceSchedule.checkInTime} - {record.user.attendanceSchedule.checkOutTime}
+                                </span>
+                                <p className="text-[9px] text-gray-400 mt-0.5">Grace: {record.user.attendanceSchedule.gracePeriod}m · Late: {record.user.attendanceSchedule.lateMarkThreshold}</p>
+                              </div>
                             ) : (
-                              <span className="font-bold text-gray-700">
-                                {(record.attendanceApplyType || record.user?.attendanceApplyType) === 'FROM_OFFICE'
-                                  ? 'From Office'
-                                  : 'From Anywhere'}
+                              <span className="text-gray-400 font-medium">
+                                09:00 - 18:00 (Default)
                               </span>
                             )}
                           </td>
                           <td className="p-4">
-                            {hasPermission(permissions, 'assign_office_branch') ||
-                            hasPermission(permissions, 'edit_attendance_apply_type') ? (
-                              <select
-                                value={record.user?.attendanceOfficeLocationId || ''}
-                                onChange={(e) =>
-                                  handleInlineOfficeBranchChange(record.user.id, e.target.value)
-                                }
-                                className="border border-gray-200 rounded-lg px-2 py-1 text-xs focus:outline-emerald-500 font-bold bg-white text-gray-700 max-w-[140px]"
-                              >
-                                <option value="">Unassigned</option>
-                                {officeLocations.map((loc: any) => (
-                                  <option key={loc.id} value={loc.id}>
-                                    {loc.officeName}
-                                    {loc.branch ? ` (${loc.branch})` : ''}
-                                  </option>
-                                ))}
-                              </select>
-                            ) : (
-                              <span className="text-gray-700 font-bold">
-                                {record.user?.attendanceOfficeLocation?.officeName || '—'}
-                              </span>
-                            )}
+                            <div>
+                              <p className="font-semibold text-gray-800">
+                                In: {record.checkInTime ? new Date(record.checkInTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—'}
+                              </p>
+                              <p className="text-[10px] text-gray-500 mt-0.5">
+                                Out: {record.checkOutTime ? new Date(record.checkOutTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—'}
+                              </p>
+                              {record.workingHours != null && (
+                                <p className="text-[10px] text-emerald-600 font-bold mt-0.5">
+                                  Work: {record.workingHours} hrs
+                                </p>
+                              )}
+                            </div>
                           </td>
                           <td className="p-4">
-                            <span
-                              className={`rounded px-2 py-0.5 text-[10px] font-bold ${
-                                record.approvalStatus === 'APPROVED'
-                                  ? 'bg-emerald-50 text-emerald-600'
-                                  : record.approvalStatus === 'PENDING'
-                                  ? 'bg-amber-50 text-amber-600'
-                                  : record.approvalStatus === 'REJECTED'
-                                  ? 'bg-rose-50 text-rose-600'
-                                  : 'bg-gray-100 text-gray-600'
-                              }`}
-                            >
-                              {record.approvalStatus === 'NOT_SUBMITTED'
-                                ? 'Not Submitted'
-                                : `${record.approvalStatus} (${record.attendanceType})`}
-                            </span>
+                            <div className="space-y-1.5">
+                              <span
+                                className={`rounded px-2 py-0.5 text-[10px] font-bold block w-fit ${
+                                  record.approvalStatus === 'APPROVED'
+                                    ? 'bg-emerald-50 text-emerald-600'
+                                    : record.approvalStatus === 'PENDING' || record.approvalStatus === 'PENDING_APPROVAL'
+                                    ? 'bg-amber-50 text-amber-600'
+                                    : record.approvalStatus === 'CLARIFICATION_REQUESTED'
+                                    ? 'bg-blue-50 text-blue-600'
+                                    : record.approvalStatus === 'REJECTED'
+                                    ? 'bg-rose-50 text-rose-600'
+                                    : 'bg-gray-100 text-gray-600'
+                                }`}
+                              >
+                                {record.approvalStatus === 'NOT_SUBMITTED'
+                                  ? 'Not Submitted'
+                                  : record.approvalStatus === 'PENDING_APPROVAL'
+                                  ? 'Pending Approval (Checked Out)'
+                                  : record.approvalStatus === 'CLARIFICATION_REQUESTED'
+                                  ? 'Clarification Requested'
+                                  : `${record.approvalStatus} (${record.attendanceType})`}
+                              </span>
+                              {(record.workSummary || record.notes) && (
+                                <button
+                                  onClick={() => {
+                                    setSelectedRecordForSummary(record);
+                                    setShowSummaryViewModal(true);
+                                  }}
+                                  className="text-[10px] font-bold text-emerald-600 hover:underline cursor-pointer text-left block"
+                                >
+                                  View Notes/Summary
+                                </button>
+                              )}
+                            </div>
                           </td>
-                          <td className="p-4">{record.checkInTime ? new Date(record.checkInTime).toLocaleString() : '-'}</td>
-                          <td className="p-4 font-mono text-[10px] text-gray-500">
-                            <p>{record.geoLocation || record.latitude != null ? `${record.latitude?.toFixed?.(4) ?? record.latitude}, ${record.longitude?.toFixed?.(4) ?? record.longitude}` : '-'}</p>
-                            <p className="text-gray-400">
-                              {record.calculatedDistanceMeters != null
-                                ? `${Math.round(record.calculatedDistanceMeters)} m`
-                                : '—'}
-                            </p>
+                          <td className="p-4">
+                            {record.approvalStatus === 'APPROVED' ? (
+                              <div>
+                                <p className="font-semibold text-gray-700">By: {record.approvedByName || 'System'}</p>
+                                <p className="text-[10px] text-gray-400 mt-0.5">{record.approvedAt ? new Date(record.approvedAt).toLocaleDateString() : ''}</p>
+                              </div>
+                            ) : record.approvalStatus === 'REJECTED' ? (
+                              <div>
+                                <p className="font-bold text-rose-600">Rejected</p>
+                                {record.rejectedReason && <p className="text-[10px] text-rose-500 mt-0.5 line-clamp-2" title={record.rejectedReason}>Reason: {record.rejectedReason}</p>}
+                              </div>
+                            ) : record.approvalStatus === 'CLARIFICATION_REQUESTED' ? (
+                              <div>
+                                <p className="font-bold text-blue-600">Clarification Req.</p>
+                                {record.rejectedReason && <p className="text-[10px] text-blue-500 mt-0.5 line-clamp-2" title={record.rejectedReason}>Reason: {record.rejectedReason}</p>}
+                              </div>
+                            ) : (
+                              <span className="text-gray-400">—</span>
+                            )}
+                          </td>
+                          <td className="p-4 space-y-2">
+                            <div className="flex flex-col gap-1.5">
+                              <span className="text-[10px] font-bold text-gray-500">Apply Type:</span>
+                              {hasPermission(permissions, 'edit_attendance_apply_type') ? (
+                                <select
+                                  value={record.attendanceApplyType || record.user?.attendanceApplyType || 'FROM_ANYWHERE'}
+                                  onChange={e => handleInlineApplyTypeChange(record.user.id, e.target.value)}
+                                  className="border border-gray-200 rounded-lg px-2 py-1 text-[11px] focus:outline-emerald-500 font-bold bg-white text-gray-700"
+                                >
+                                  <option value="FROM_OFFICE">From Office</option>
+                                  <option value="FROM_ANYWHERE">From Anywhere</option>
+                                </select>
+                              ) : (
+                                <span className="font-bold text-gray-700">
+                                  {(record.attendanceApplyType || record.user?.attendanceApplyType) === 'FROM_OFFICE'
+                                    ? 'From Office'
+                                    : 'From Anywhere'}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex flex-col gap-1.5">
+                              <span className="text-[10px] font-bold text-gray-500">Office Location:</span>
+                              {hasPermission(permissions, 'assign_office_branch') ||
+                              hasPermission(permissions, 'edit_attendance_apply_type') ? (
+                                <select
+                                  value={record.user?.attendanceOfficeLocationId || ''}
+                                  onChange={(e) =>
+                                    handleInlineOfficeBranchChange(record.user.id, e.target.value)
+                                  }
+                                  className="border border-gray-200 rounded-lg px-2 py-1 text-[11px] focus:outline-emerald-500 font-bold bg-white text-gray-700 max-w-[140px]"
+                                >
+                                  <option value="">Unassigned</option>
+                                  {officeLocations.map((loc: any) => (
+                                    <option key={loc.id} value={loc.id}>
+                                      {loc.officeName}
+                                      {loc.branch ? ` (${loc.branch})` : ''}
+                                    </option>
+                                  ))}
+                                </select>
+                              ) : (
+                                <span className="text-gray-700 font-bold">
+                                  {record.user?.attendanceOfficeLocation?.officeName || '—'}
+                                </span>
+                              )}
+                            </div>
                           </td>
                           <td className="p-4">
                             <div className="flex flex-col gap-1.5">
@@ -1215,7 +1571,7 @@ const AttendancePage: React.FC = () => {
                       ))}
                       {(!usersOverview?.records || usersOverview.records.length === 0) && (
                         <tr>
-                          <td colSpan={9} className="text-center p-8 text-gray-400 font-semibold">
+                          <td colSpan={7} className="text-center p-8 text-gray-400 font-semibold">
                             No users found for this workspace.
                           </td>
                         </tr>
@@ -1432,6 +1788,171 @@ const AttendancePage: React.FC = () => {
               </div>
             )}
 
+            {/* 8. APPROVAL HISTORY */}
+            {activeTab === 'approval-history' && (
+              <div className="space-y-6">
+                <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+                  <table className="w-full border-collapse text-left">
+                    <thead>
+                      <tr className="bg-gray-50 border-b border-gray-100 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                        <th className="p-4">Employee</th>
+                        <th className="p-4">Date</th>
+                        <th className="p-4">Type</th>
+                        <th className="p-4">Status</th>
+                        <th className="p-4">Working Hours</th>
+                        <th className="p-4">Review Details</th>
+                        <th className="p-4 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50 text-xs text-gray-600">
+                      {approvalHistoryList.map((record: any) => (
+                        <tr key={record.id} className="hover:bg-gray-50/50">
+                          <td className="p-4">
+                            <p className="font-bold text-gray-900">{record.user?.name}</p>
+                            <p className="text-[10px] text-gray-400 mt-0.5">{record.user?.email}</p>
+                          </td>
+                          <td className="p-4 font-bold">{new Date(record.date).toLocaleDateString()}</td>
+                          <td className="p-4">
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                              record.attendanceType === 'PRESENT' ? 'bg-emerald-100 text-emerald-600' :
+                              record.attendanceType === 'WORK_FROM_HOME' ? 'bg-blue-100 text-blue-600' :
+                              record.attendanceType === 'HALF_DAY' ? 'bg-amber-100 text-amber-600' :
+                              'bg-rose-100 text-rose-600'
+                            }`}>
+                              {record.attendanceType}
+                            </span>
+                          </td>
+                          <td className="p-4">
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                              record.approvalStatus === 'APPROVED' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'
+                            }`}>
+                              {record.approvalStatus}
+                            </span>
+                          </td>
+                          <td className="p-4 font-bold text-gray-800">{record.workingHours ?? '—'} hrs</td>
+                          <td className="p-4">
+                            {record.approvalStatus === 'APPROVED' ? (
+                              <div>
+                                <p className="font-semibold text-gray-700">Approved by {record.approvedByName || 'System'}</p>
+                                <p className="text-[10px] text-gray-400 mt-0.5">{record.approvedAt ? new Date(record.approvedAt).toLocaleString() : '—'}</p>
+                              </div>
+                            ) : (
+                              <div>
+                                <p className="font-semibold text-rose-700">Rejected by {record.rejectedByName || 'System'}</p>
+                                {record.rejectedReason && <p className="text-[10px] text-rose-500 mt-1">Reason: {record.rejectedReason}</p>}
+                                <p className="text-[10px] text-gray-400 mt-0.5">{record.rejectedAt ? new Date(record.rejectedAt).toLocaleString() : '—'}</p>
+                              </div>
+                            )}
+                          </td>
+                          <td className="p-4 text-right">
+                            <button
+                              onClick={() => {
+                                setSelectedRecordForSummary(record);
+                                setShowSummaryViewModal(true);
+                              }}
+                              className="px-3 py-1.5 bg-gray-50 text-gray-600 hover:bg-gray-100 rounded-lg font-bold transition-colors cursor-pointer"
+                            >
+                              View Summary
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                      {approvalHistoryList.length === 0 && (
+                        <tr>
+                          <td colSpan={7} className="text-center p-8 text-gray-400 font-semibold">
+                            No approval/rejection history found.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* 9. ATTENDANCE SCHEDULES */}
+            {activeTab === 'schedules' && (
+              <div className="space-y-6">
+                <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+                  <table className="w-full border-collapse text-left">
+                    <thead>
+                      <tr className="bg-gray-50 border-b border-gray-100 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                        <th className="p-4">Employee</th>
+                        <th className="p-4">Dept / Role</th>
+                        <th className="p-4">Shift Timings</th>
+                        <th className="p-4">Grace / Late</th>
+                        <th className="p-4">Half / Full Hours</th>
+                        <th className="p-4 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50 text-xs text-gray-600">
+                      {schedulesList.map((emp: any) => {
+                        const sched = emp.attendanceSchedule;
+                        return (
+                          <tr key={emp.id} className="hover:bg-gray-50/50">
+                            <td className="p-4">
+                              <p className="font-bold text-gray-900">{emp.name}</p>
+                              <p className="text-[10px] text-gray-400 mt-0.5">{emp.email}</p>
+                            </td>
+                            <td className="p-4">
+                              <p className="font-bold">{emp.department?.name || 'No Dept'}</p>
+                              <p className="text-[10px] text-gray-400 mt-0.5">{emp.role?.name || 'No Role'}</p>
+                            </td>
+                            <td className="p-4">
+                              {sched ? (
+                                <span className="px-2 py-1 bg-emerald-50 text-emerald-700 rounded-lg font-bold">
+                                  {sched.checkInTime} - {sched.checkOutTime}
+                                </span>
+                              ) : (
+                                <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded-lg font-bold">
+                                  Workspace Default
+                                </span>
+                              )}
+                            </td>
+                            <td className="p-4">
+                              {sched ? (
+                                <div>
+                                  <p className="font-semibold text-gray-700">Grace: {sched.gracePeriod} min</p>
+                                  <p className="text-[10px] text-gray-400 mt-0.5">Late Limit: {sched.lateMarkThreshold}</p>
+                                </div>
+                              ) : (
+                                <span className="text-gray-400">—</span>
+                              )}
+                            </td>
+                            <td className="p-4">
+                              {sched ? (
+                                <div>
+                                  <p className="font-semibold text-gray-700">Half Day: {sched.halfDayThreshold} hrs</p>
+                                  <p className="text-[10px] text-gray-400 mt-0.5">Full Day: {sched.workingHoursRequirement} hrs</p>
+                                </div>
+                              ) : (
+                                <span className="text-gray-400">—</span>
+                              )}
+                            </td>
+                            <td className="p-4 text-right">
+                              <button
+                                onClick={() => handleEditSchedule(emp)}
+                                className="px-3 py-1.5 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded-lg font-bold transition-colors cursor-pointer"
+                              >
+                                Edit Schedule
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                      {schedulesList.length === 0 && (
+                        <tr>
+                          <td colSpan={6} className="text-center p-8 text-gray-400 font-semibold">
+                            No employees found.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
           </div>
 
         </div>
@@ -1602,6 +2123,348 @@ const AttendancePage: React.FC = () => {
                   Confirm Rejection
                 </button>
               </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Check-Out Work Summary Submission Modal */}
+      <AnimatePresence>
+        {showCheckOutModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white rounded-3xl p-6 md:p-8 max-w-lg w-full shadow-2xl relative border border-gray-50 space-y-6 max-h-[90vh] overflow-y-auto custom-scrollbar"
+            >
+              <div className="flex justify-between items-center border-b border-gray-50 pb-3">
+                <div>
+                  <h3 className="text-base font-black text-gray-900">Daily Work Summary</h3>
+                  <p className="text-xs text-gray-400 mt-1">Please provide a summary of the work completed today before checking out.</p>
+                </div>
+                <button
+                  onClick={() => setShowCheckOutModal(false)}
+                  className="p-1 hover:bg-gray-50 rounded-lg text-gray-400 hover:text-gray-900 cursor-pointer"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              <form onSubmit={handleCheckOut} className="space-y-4 text-xs text-gray-700">
+                <div className="space-y-1">
+                  <label className="font-bold text-gray-600">Work Summary (Mandatory)</label>
+                  <textarea
+                    rows={3}
+                    required
+                    value={workSummary}
+                    onChange={e => setWorkSummary(e.target.value)}
+                    placeholder="Provide a detailed description of what you completed today..."
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-emerald-500 text-gray-700"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-bold text-gray-600">Today's Achievements (Optional)</label>
+                  <textarea
+                    rows={2}
+                    value={achievements}
+                    onChange={e => setAchievements(e.target.value)}
+                    placeholder="List any key successes or achievements..."
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-emerald-500 text-gray-700"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-bold text-gray-600">Pending Tasks (Optional)</label>
+                  <textarea
+                    rows={2}
+                    value={pendingTasks}
+                    onChange={e => setPendingTasks(e.target.value)}
+                    placeholder="Tasks that will carry over to the next working day..."
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-emerald-500 text-gray-700"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-bold text-gray-600">Challenges Faced (Optional)</label>
+                  <textarea
+                    rows={2}
+                    value={challenges}
+                    onChange={e => setChallenges(e.target.value)}
+                    placeholder="Mention roadblocks, dependency issues, or challenges..."
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-emerald-500 text-gray-700"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-bold text-gray-600">Additional Notes (Optional)</label>
+                  <textarea
+                    rows={2}
+                    value={additionalNotes}
+                    onChange={e => setAdditionalNotes(e.target.value)}
+                    placeholder="Any other comments or feedback..."
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-emerald-500 text-gray-700"
+                  />
+                </div>
+
+                <div className="flex gap-2 justify-end text-xs pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowCheckOutModal(false)}
+                    className="px-4 py-2.5 bg-gray-50 text-gray-500 font-bold rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={checkoutSubmitting}
+                    className="px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-lg transition-colors cursor-pointer disabled:opacity-50"
+                  >
+                    {checkoutSubmitting ? 'Checking Out...' : 'Submit & Check Out'}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* View Work Summary Modal */}
+      <AnimatePresence>
+        {showSummaryViewModal && selectedRecordForSummary && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white rounded-3xl p-6 md:p-8 max-w-lg w-full shadow-2xl relative border border-gray-50 space-y-5 max-h-[90vh] overflow-y-auto custom-scrollbar"
+            >
+              <div className="flex justify-between items-center border-b border-gray-50 pb-3">
+                <div>
+                  <h3 className="text-base font-black text-gray-900">Work Summary Details</h3>
+                  <p className="text-xs text-gray-400 mt-1">
+                    Submitted by {selectedRecordForSummary.user?.name || 'Employee'} on{' '}
+                    {new Date(selectedRecordForSummary.date).toLocaleDateString()}
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    setShowSummaryViewModal(false);
+                    setSelectedRecordForSummary(null);
+                  }}
+                  className="p-1 hover:bg-gray-50 rounded-lg text-gray-400 hover:text-gray-900 cursor-pointer"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              <div className="space-y-4 text-xs text-gray-700">
+                <div className="p-3 bg-gray-50 rounded-xl space-y-1">
+                  <h4 className="font-bold text-gray-500 uppercase tracking-widest text-[9px]">Work Summary</h4>
+                  <p className="whitespace-pre-wrap text-gray-800 font-semibold">{selectedRecordForSummary.workSummary || '—'}</p>
+                </div>
+
+                <div className="p-3 bg-gray-50 rounded-xl space-y-1">
+                  <h4 className="font-bold text-gray-500 uppercase tracking-widest text-[9px]">Today's Achievements</h4>
+                  <p className="whitespace-pre-wrap text-gray-800">{selectedRecordForSummary.achievements || '—'}</p>
+                </div>
+
+                <div className="p-3 bg-gray-50 rounded-xl space-y-1">
+                  <h4 className="font-bold text-gray-500 uppercase tracking-widest text-[9px]">Pending Tasks</h4>
+                  <p className="whitespace-pre-wrap text-gray-800">{selectedRecordForSummary.pendingTasks || '—'}</p>
+                </div>
+
+                <div className="p-3 bg-gray-50 rounded-xl space-y-1">
+                  <h4 className="font-bold text-gray-500 uppercase tracking-widest text-[9px]">Challenges Faced</h4>
+                  <p className="whitespace-pre-wrap text-gray-800">{selectedRecordForSummary.challenges || '—'}</p>
+                </div>
+
+                <div className="p-3 bg-gray-50 rounded-xl space-y-1">
+                  <h4 className="font-bold text-gray-500 uppercase tracking-widest text-[9px]">Additional Notes</h4>
+                  <p className="whitespace-pre-wrap text-gray-800">{selectedRecordForSummary.additionalNotes || '—'}</p>
+                </div>
+
+                <div className="pt-2 flex justify-end">
+                  <button
+                    onClick={() => {
+                      setShowSummaryViewModal(false);
+                      setSelectedRecordForSummary(null);
+                    }}
+                    className="px-5 py-2 bg-gray-900 text-white font-bold rounded-lg hover:bg-gray-800 transition-colors cursor-pointer"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Clarification Request Modal */}
+      <AnimatePresence>
+        {showClarificationModal && clarificationRecordId && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white rounded-3xl p-6 md:p-8 max-w-md w-full shadow-2xl relative border border-gray-50 space-y-4"
+            >
+              <div>
+                <h3 className="text-base font-black text-gray-900">Request Clarification</h3>
+                <p className="text-xs text-gray-400 mt-1">Specify what explanation or addition is required. The employee will be prompted to edit and resubmit.</p>
+              </div>
+
+              <textarea
+                rows={3}
+                required
+                value={clarificationReason}
+                onChange={e => setClarificationReason(e.target.value)}
+                placeholder="Details of clarification request..."
+                className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-emerald-500 text-gray-700"
+              />
+
+              <div className="flex gap-2 justify-end text-xs">
+                <button
+                  onClick={() => {
+                    setShowClarificationModal(false);
+                    setClarificationRecordId(null);
+                    setClarificationReason('');
+                  }}
+                  className="px-4 py-2 bg-gray-50 text-gray-500 font-bold rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={submitClarification}
+                  className="px-4 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-colors cursor-pointer"
+                >
+                  Send Request
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Edit Custom Schedule Modal */}
+      <AnimatePresence>
+        {showScheduleModal && selectedUserForSchedule && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white rounded-3xl p-6 md:p-8 max-w-lg w-full shadow-2xl relative border border-gray-50 space-y-6"
+            >
+              <div className="flex justify-between items-center border-b border-gray-50 pb-3">
+                <div>
+                  <h3 className="text-base font-black text-gray-900">Set Timing Schedule</h3>
+                  <p className="text-xs text-gray-400 mt-1">Configure custom attendance timing constraints for {selectedUserForSchedule.name}.</p>
+                </div>
+                <button
+                  onClick={() => {
+                    setShowScheduleModal(false);
+                    setSelectedUserForSchedule(null);
+                  }}
+                  className="p-1 hover:bg-gray-50 rounded-lg text-gray-400 hover:text-gray-900 cursor-pointer"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              <form onSubmit={handleScheduleSubmit} className="space-y-4 text-xs text-gray-700">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="font-bold text-gray-600">Check-In Time (HH:MM)</label>
+                    <input
+                      type="text"
+                      required
+                      value={scheduleForm.checkInTime}
+                      onChange={e => setScheduleForm({ ...scheduleForm, checkInTime: e.target.value })}
+                      placeholder="e.g. 09:00"
+                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-emerald-500"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="font-bold text-gray-600">Check-Out Time (HH:MM)</label>
+                    <input
+                      type="text"
+                      required
+                      value={scheduleForm.checkOutTime}
+                      onChange={e => setScheduleForm({ ...scheduleForm, checkOutTime: e.target.value })}
+                      placeholder="e.g. 18:00"
+                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-emerald-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="font-bold text-gray-600">Grace Period (Minutes)</label>
+                    <input
+                      type="number"
+                      required
+                      min={0}
+                      value={scheduleForm.gracePeriod}
+                      onChange={e => setScheduleForm({ ...scheduleForm, gracePeriod: parseInt(e.target.value, 10) || 0 })}
+                      placeholder="e.g. 15"
+                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-emerald-500"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="font-bold text-gray-600">Late Mark Threshold (HH:MM)</label>
+                    <input
+                      type="text"
+                      required
+                      value={scheduleForm.lateMarkThreshold}
+                      onChange={e => setScheduleForm({ ...scheduleForm, lateMarkThreshold: e.target.value })}
+                      placeholder="e.g. 09:45"
+                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-emerald-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="font-bold text-gray-600">Half Day Threshold (Hours)</label>
+                    <input
+                      type="number"
+                      step="0.5"
+                      required
+                      min={1}
+                      max={12}
+                      value={scheduleForm.halfDayThreshold}
+                      onChange={e => setScheduleForm({ ...scheduleForm, halfDayThreshold: parseFloat(e.target.value) || 4.0 })}
+                      placeholder="e.g. 4.0"
+                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-emerald-500"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="font-bold text-gray-600">Full Day Required (Hours)</label>
+                    <input
+                      type="number"
+                      step="0.5"
+                      required
+                      min={1}
+                      max={24}
+                      value={scheduleForm.workingHoursRequirement}
+                      onChange={e => setScheduleForm({ ...scheduleForm, workingHoursRequirement: parseFloat(e.target.value) || 8.0 })}
+                      placeholder="e.g. 8.0"
+                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-emerald-500"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-md cursor-pointer"
+                >
+                  Save Schedule
+                </button>
+              </form>
             </motion.div>
           </div>
         )}
