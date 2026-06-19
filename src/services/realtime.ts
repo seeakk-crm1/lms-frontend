@@ -84,7 +84,9 @@ const isLikelySocketAuthError = (msg: string): boolean => {
 };
 
 const applyFreshTokenToSocket = (s: Socket, token: string): void => {
-  s.auth = { token };
+  if (typeof s.auth === 'object') {
+    s.auth = { token };
+  }
 };
 
 const scheduleSocketReconnect = (s: Socket, delayMs = 400): void => {
@@ -162,6 +164,7 @@ const attachCoreSocketHandlers = (s: Socket, baseUrl: string): void => {
     authRecoveryInFlight = true;
     try {
       const newToken = await refreshAccessToken();
+      consecutiveSocketAuthRecoveries = 0;
       applyFreshTokenToSocket(s, newToken);
       s.connect();
     } catch (e) {
