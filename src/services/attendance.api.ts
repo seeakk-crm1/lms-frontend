@@ -23,6 +23,17 @@ export const markAttendance = async (data: {
   return response.data;
 };
 
+export const checkOutAttendance = async (data: {
+  checkOutTime?: string | null;
+  date?: string;
+  dailySummary: string;
+  notes?: string | null;
+  attachmentUrl?: string | null;
+}) => {
+  const response = await api.post('/attendance/check-out', data);
+  return response.data;
+};
+
 export const getHistory = async (filters: any) => {
   const response = await api.get('/attendance/history', { params: filters });
   return response.data;
@@ -50,6 +61,19 @@ export const getSettings = async () => {
 
 export const updateSettings = async (data: any) => {
   const response = await api.put('/attendance/settings', data);
+  return response.data;
+};
+
+export const getAttendanceUserSettings = async () => {
+  const response = await api.get('/attendance/user-settings');
+  return response.data;
+};
+
+export const updateAttendanceUserSetting = async (
+  userId: string,
+  data: { expectedCheckInTime: string; expectedCheckOutTime: string },
+) => {
+  const response = await api.put(`/attendance/user-settings/${userId}`, data);
   return response.data;
 };
 
@@ -103,7 +127,6 @@ export const deleteOfficeLocation = async (id: string) => {
   return response.data;
 };
 
-/** Backward-compatible aliases */
 export const getNetworks = getOfficeLocations;
 export const createNetwork = createOfficeLocation;
 export const updateNetwork = updateOfficeLocation;

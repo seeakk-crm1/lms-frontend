@@ -12,7 +12,6 @@ interface Props {
 
 const MandatoryAttendanceGate: React.FC<Props> = ({ children }) => {
   const enabled = useAuthenticatedWorkflowEnabled();
-
   const [status, setStatus] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -44,10 +43,10 @@ const MandatoryAttendanceGate: React.FC<Props> = ({ children }) => {
 
   const blocked = Boolean(
     enabled &&
-    status &&
-    !status.isHoliday &&
-    !status.isWeeklyOff &&
-    (status.requiresMandatoryPopup || status.isLocked),
+      status &&
+      !status.isHoliday &&
+      !status.isWeeklyOff &&
+      (status.requiresMandatoryPopup || status.requiresMandatoryCheckoutPopup || status.isLocked),
   );
 
   useMandatoryNavigationLock(blocked);
@@ -86,13 +85,7 @@ const MandatoryAttendanceGate: React.FC<Props> = ({ children }) => {
 
   if (blocked) {
     const showLoader = loading;
-    const modal =
-      !loading && status ? (
-        <MandatoryAttendanceModal
-          status={status}
-          onSuccess={() => void loadStatus()}
-        />
-      ) : null;
+    const modal = !loading && status ? <MandatoryAttendanceModal status={status} onSuccess={() => void loadStatus()} /> : null;
 
     return (
       <>
@@ -100,7 +93,7 @@ const MandatoryAttendanceGate: React.FC<Props> = ({ children }) => {
           {showLoader ? (
             <div className="flex flex-col items-center gap-3 text-white">
               <div className="h-12 w-12 animate-spin rounded-full border-4 border-white/20 border-t-emerald-400" />
-              <p className="text-sm font-bold tracking-wide">Checking attendance requirements…</p>
+              <p className="text-sm font-bold tracking-wide">Checking attendance requirements...</p>
             </div>
           ) : null}
         </div>
