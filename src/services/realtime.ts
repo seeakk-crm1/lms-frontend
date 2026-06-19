@@ -11,6 +11,7 @@ import {
   isAccessTokenExpired,
   onAccessTokenRefreshed,
   refreshAccessToken,
+  resolveValidAccessToken,
 } from './authToken';
 
 let socket: Socket | null = null;
@@ -79,14 +80,13 @@ const isLikelySocketAuthError = (msg: string): boolean => {
     lower.includes('unauthorized') ||
     lower.includes('token') ||
     lower.includes('authentication') ||
-    lower.includes('jwt')
+    lower.includes('jwt') ||
+    lower.includes('auth_error')
   );
 };
 
 const applyFreshTokenToSocket = (s: Socket, token: string): void => {
-  if (typeof s.auth === 'object') {
-    s.auth = { token };
-  }
+  s.auth = { token };
 };
 
 const scheduleSocketReconnect = (s: Socket, delayMs = 400): void => {
@@ -164,7 +164,6 @@ const attachCoreSocketHandlers = (s: Socket, baseUrl: string): void => {
     authRecoveryInFlight = true;
     try {
       const newToken = await refreshAccessToken();
-      consecutiveSocketAuthRecoveries = 0;
       applyFreshTokenToSocket(s, newToken);
       s.connect();
     } catch (e) {
@@ -264,14 +263,10 @@ export const connectRealtime = (): Socket | null => {
     auth: (cb) => {
       void (async () => {
         try {
-          let token = localStorage.getItem('accessToken') || '';
-          const rt = localStorage.getItem('refreshToken');
-          if (token && rt && isAccessTokenExpired(token)) {
-            token = await refreshAccessToken();
-          }
-          cb({ token });
+          const token = await resolveValidAccessToken();
+          cb({ token: token || '' });
         } catch {
-          cb({ token: localStorage.getItem('accessToken') || '' });
+          cb({ token: '' });
         }
       })();
     },
