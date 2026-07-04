@@ -242,7 +242,7 @@ export const MandatoryAttendanceModal: React.FC<MandatoryAttendanceModalProps> =
 
                 {needsGps && office && (
                   <div className="space-y-3 rounded-2xl border border-gray-100 bg-gray-50 p-4 text-xs">
-                    <p className="font-semibold text-gray-800">{office.officeName}{office.branch ? ` · ${office.branch}` : ''}</p>
+                    <p className="font-semibold text-gray-800">{office.officeName}{office.branch ? ` ï¿½ ${office.branch}` : ''}</p>
                     {locating ? (
                       <p className="flex items-center gap-2 text-gray-500">
                         <Loader2 className="h-3 w-3 animate-spin" /> Detecting your location...
