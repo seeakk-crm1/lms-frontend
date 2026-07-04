@@ -12,8 +12,9 @@ export const useOverdueMandatoryFollowUpsQuery = (enabled: boolean) =>
     enabled,
     staleTime: 15_000,
     refetchOnWindowFocus: true,
-    retry: (failureCount, error: unknown) => {
-      const status = (error as { response?: { status?: number } })?.response?.status;
+    retry: (failureCount, error: any) => {
+      if (!error?.response && error?.message === 'Network Error') return false;
+      const status = error?.response?.status;
       if (status === 401 || status === 403 || status === 423 || status === 503) return false;
       return failureCount < 2;
     },

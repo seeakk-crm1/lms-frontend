@@ -14,11 +14,17 @@ export { MANDATORY_FOLLOWUP_QUERY_KEY };
 export const useMandatoryFollowUpContinuationQuery = (enabled = true) =>
   useQuery({
     queryKey: MANDATORY_FOLLOWUP_QUERY_KEY,
-    queryFn: getMandatoryFollowUpContinuation,
+    queryFn: async () => {
+      console.log('Background Check Started');
+      const res = await getMandatoryFollowUpContinuation();
+      console.log('Response Received');
+      return res;
+    },
     enabled,
     staleTime: 15_000,
     refetchOnWindowFocus: true,
     retry: (failureCount, error: any) => {
+      if (!error?.response && error?.message === 'Network Error') return false;
       const status = error?.response?.status;
       if (status === 401 || status === 403 || status === 423 || status === 503) return false;
       return failureCount < 2;

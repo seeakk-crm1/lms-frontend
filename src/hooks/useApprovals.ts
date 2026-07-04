@@ -26,6 +26,7 @@ export const useApprovalsQuery = () => {
     refetchOnWindowFocus: false,
     placeholderData: (previousData) => previousData,
     retry: (failureCount, error: any) => {
+      if (!error?.response && error?.message === 'Network Error') return false;
       const status = error?.response?.status;
       if (status === 401 || status === 403 || status === 422) return false;
       return failureCount < 2;

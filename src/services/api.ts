@@ -94,8 +94,8 @@ api.interceptors.request.use(
     config.headers['x-device-id'] = deviceId as string;
 
     if (!isAuthRoute(config.url)) {
+      // Fire health check in the background, but do not wait for it to prevent blocking the dashboard
       backendReadyChain = backendReadyChain.then(() => ensureBackendReachable());
-      await backendReadyChain;
     }
 
     if (isAuthRoute(config.url)) {
@@ -130,6 +130,15 @@ api.interceptors.response.use(
     }
 
     if (isAuthRoute(originalRequest.url)) {
+      return Promise.reject(error);
+    }
+
+    if (!error.response && error.message === 'Network Error') {
+      import('react-hot-toast').then(({ toast }) => {
+        toast.error('Connection Error: Cannot reach the server. Please check your connection or CORS settings.', { id: 'cors-error' });
+      });
+      // Prevent further retries by standardizing the error for react-query if possible
+      error.isAxiosError = false; // Hack to prevent axios-specific retry logic in some libs
       return Promise.reject(error);
     }
 

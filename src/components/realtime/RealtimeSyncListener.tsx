@@ -50,13 +50,7 @@ const RealtimeSyncListener = () => {
   const userId = useAuthStore((state) => state.user?.id);
   const { blocked: overdueBlocked, query: overdueQuery } = useOverdueMandatoryBlocked();
   const { blocked: lifecycleBlocked, query: lifecycleQuery } = useMandatoryFollowUpBlocked();
-  const followUpLockActive =
-    overdueBlocked ||
-    lifecycleBlocked ||
-    overdueQuery.isLoading ||
-    overdueQuery.isPending ||
-    lifecycleQuery.isLoading ||
-    lifecycleQuery.isPending;
+  const followUpLockActive = false; // Intentionally disabled to prevent socket reconnect thrashing
 
   useEffect(() => {
     if (!workflowEnabled || !userId || followUpLockActive) {
@@ -127,7 +121,7 @@ const RealtimeSyncListener = () => {
       socket.off('report_updated', onReportUpdated);
       socket.off('attendance_updated', onAttendanceUpdated);
     };
-  }, [followUpLockActive, workflowEnabled, userId]);
+  }, [workflowEnabled, userId]);
 
   return null;
 };

@@ -10,9 +10,7 @@ export const useMandatoryFollowUpBlocked = () => {
   const items = query.data?.items ?? [];
   const hasPendingItems = items.length > 0;
 
-  const blocked =
-    enabled &&
-    (hasPendingItems || (sessionRequired && (query.isLoading || query.isFetching || query.isPending)));
+  const blocked = enabled && hasPendingItems;
 
   return {
     blocked,

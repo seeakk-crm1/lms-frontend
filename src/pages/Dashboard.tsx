@@ -73,6 +73,11 @@ const Dashboard: React.FC<DashboardProps> = ({ mode = 'operations' }) => {
         void fetchDashboardData();
     }, [fetchDashboardData, shouldFetchDashboardData]);
 
+    useEffect(() => {
+        console.log('Dashboard Render Complete');
+    }, []);
+
+    console.log('Dashboard Render Started');
     return (
         <DashboardLayout>
             <div className="flex-1 overflow-x-hidden overflow-y-auto custom-scrollbar relative">

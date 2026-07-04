@@ -124,14 +124,10 @@ function App() {
   );
 
   useEffect(() => {
-    const timer = setTimeout(() => {
+    if (!workflowEnabled) {
       setLoading(false);
-    }, 1500);
-    return () => clearTimeout(timer);
-  }, []);
-
-  useEffect(() => {
-    if (!workflowEnabled) return;
+      return;
+    }
 
     let cancelled = false;
 
@@ -154,6 +150,9 @@ function App() {
         if (status === 401 || status === 403) {
           handleSessionExpired();
         }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
       });
 
     return () => {

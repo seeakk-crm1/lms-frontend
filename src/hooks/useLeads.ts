@@ -262,13 +262,21 @@ export const useUpdateLeadMutation = () => {
       };
     },
     onSuccess: (response, variables) => {
-      queryClient.setQueriesData<ListLeadsResponse>({ queryKey: ['leads'] }, (previous) =>
-        patchLeadInListResponse(previous, response.data),
-      );
-      queryClient.setQueryData(['lead', variables.id], response.data);
+      const nextLead = response?.approvalRequired ? response?.data?.lead : response?.data;
+      if (nextLead?.id) {
+        queryClient.setQueriesData<ListLeadsResponse>({ queryKey: ['leads'] }, (previous) =>
+          patchLeadInListResponse(previous, nextLead),
+        );
+        queryClient.setQueryData(['lead', variables.id], nextLead);
+      }
       queryClient.invalidateQueries({ queryKey: ['leads'] });
       queryClient.invalidateQueries({ queryKey: ['lead', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ['lead-approvals'] });
       queryClient.invalidateQueries({ queryKey: ['followups'] });
+      if (response?.approvalRequired) {
+        toast.success(response.message || 'Approval request created successfully. Other fields updated.');
+        return;
+      }
       if (response.dynamicValuesSaved === false) {
         toast.success('Lead updated successfully. Advanced fields can be updated again if needed.');
         return;

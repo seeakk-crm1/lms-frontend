@@ -63,6 +63,7 @@ const MandatoryFollowUpContinuationModal: React.FC<Props> = ({
   const [notes, setNotes] = useState('');
 
   useEffect(() => {
+    console.log('Popup Displayed');
     setScheduledAt(minDateTime);
     setType(item.previousFollowUpType || 'CALL');
     setNotes('');

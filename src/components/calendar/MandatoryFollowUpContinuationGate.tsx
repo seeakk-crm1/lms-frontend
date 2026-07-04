@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'react-hot-toast';
 import {
   useSaveMandatoryFollowUpContinuationMutation,
 } from '../../hooks/useMandatoryFollowUpContinuation';
@@ -130,55 +131,16 @@ const MandatoryFollowUpContinuationGate: React.FC<Props> = ({ children }) => {
     );
   }
 
-  if (!query.data && (query.isLoading || query.isPending)) {
-    return (
-      <>
-        <div className="fixed inset-0 z-[9998] flex items-center justify-center bg-slate-950/70 backdrop-blur-md">
-          <div className="flex flex-col items-center gap-3 text-white">
-            <div className="h-12 w-12 animate-spin rounded-full border-4 border-white/20 border-t-emerald-400" />
-            <p className="text-sm font-bold tracking-wide">Checking mandatory follow-ups...</p>
-          </div>
-        </div>
-        {WeeklyOffScheduleModal}
-      </>
-    );
-  }
-
-  if (blocked) {
-    const showLoader = !activeItem && (query.isLoading || query.isPending);
-    const showRetry = !activeItem && query.isError;
-
-    return (
-      <>
-        <div className="fixed inset-0 z-[9998] flex items-center justify-center bg-slate-950/70 backdrop-blur-md">
-          {showLoader ? (
-            <div className="flex flex-col items-center gap-3 text-white">
-              <div className="h-12 w-12 animate-spin rounded-full border-4 border-white/20 border-t-emerald-400" />
-              <p className="text-sm font-bold tracking-wide">Checking mandatory follow-ups…</p>
-            </div>
-          ) : null}
-          {showRetry ? (
-            <div className="flex flex-col items-center gap-3 text-center text-white">
-              <p className="text-sm font-bold">Unable to verify mandatory follow-ups.</p>
-              <button
-                type="button"
-                onClick={() => void query.refetch()}
-                className="rounded-xl bg-emerald-500 px-4 py-2 text-sm font-black text-white hover:bg-emerald-600"
-              >
-                Retry
-              </button>
-            </div>
-          ) : null}
-        </div>
-        {modal && typeof document !== 'undefined' ? createPortal(modal, document.body) : modal}
-        {WeeklyOffScheduleModal}
-      </>
-    );
-  }
+  useEffect(() => {
+    if (query.isError) {
+      toast.error('Unable to verify mandatory follow-ups.');
+    }
+  }, [query.isError]);
 
   return (
     <>
       {children}
+      {blocked && modal && typeof document !== 'undefined' ? createPortal(modal, document.body) : modal}
       {WeeklyOffScheduleModal}
     </>
   );

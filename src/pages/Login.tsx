@@ -44,6 +44,7 @@ const Login = () => {
             return response.data;
         },
         onSuccess: (data) => {
+            console.log('Login Successful');
             setAuth(data.user, data.accessToken, data.refreshToken, data.session);
             toast.success(`Welcome back, ${data.user.name.split(' ')[0]}!`);
             if (!data.user.isOnboarded) {
@@ -60,6 +61,7 @@ const Login = () => {
     const handleLogin = (e: React.FormEvent) => {
         e.preventDefault();
         if (loginMutation.isPending) return;
+        console.log('Login Started');
         loginMutation.mutate({ email, password });
     };
 

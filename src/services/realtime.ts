@@ -36,10 +36,10 @@ const readStoredUserId = (): string | null => {
 const getRealtimeBaseUrl = (): string => ENV.SOCKET_URL;
 
 const maxAttempts = Number.parseInt(
-  import.meta.env.VITE_SOCKET_MAX_RECONNECT_ATTEMPTS || '25',
+  import.meta.env.VITE_SOCKET_MAX_RECONNECT_ATTEMPTS || '5',
   10,
 );
-const safeMaxAttempts = Number.isFinite(maxAttempts) && maxAttempts > 0 ? maxAttempts : 25;
+const safeMaxAttempts = Number.isFinite(maxAttempts) && maxAttempts > 0 ? maxAttempts : 5;
 
 /**
  * Long-polling only avoids broken WebSocket upgrades (common on Render: browser shows
@@ -125,10 +125,12 @@ onAccessTokenRefreshed((accessToken) => {
 const attachCoreSocketHandlers = (s: Socket, baseUrl: string): void => {
   s.on('connect', () => {
     consecutiveSocketAuthRecoveries = 0;
+    console.log('Connected');
     console.info('[Socket.io] Connected', { origin: baseUrl });
   });
 
   s.on('connect_error', async (err: Error & { message?: string }) => {
+    console.log('Socket Error');
     const msg = err?.message || String(err);
     const kind = classifySocketErrorMessage(msg);
     console.warn('[Socket.io] connect_error:', msg);
@@ -181,20 +183,18 @@ const attachCoreSocketHandlers = (s: Socket, baseUrl: string): void => {
   });
 
   s.on('disconnect', (reason) => {
+    console.log('Socket Disconnected');
     console.info('[Socket.io] disconnect:', reason);
     if (reason === 'io server disconnect') {
       console.warn('[Socket.io] Server closed the connection');
       return;
     }
-    // Stale Engine.IO session on Render — force a fresh handshake without logging out.
     if (
       reason === 'transport error' ||
       reason === 'ping timeout' ||
       reason === 'transport close'
     ) {
-      console.warn('[Socket.io] Transport dropped — opening a new session');
-      s.disconnect();
-      scheduleSocketReconnect(s);
+      console.warn('[Socket.io] Transport dropped - Socket.IO will automatically reconnect');
     }
   });
 
@@ -202,11 +202,16 @@ const attachCoreSocketHandlers = (s: Socket, baseUrl: string): void => {
     console.info('[Socket.io] Reconnected after attempts:', attemptNumber);
   });
 
+  s.on('reconnect_attempt', () => {
+    console.log('Reconnect Attempt');
+  });
+
   s.on('reconnect_error', (err: Error) => {
     console.warn('[Socket.io] reconnect_error:', err?.message || String(err));
   });
 
   s.on('reconnect_failed', () => {
+    console.log('Maximum Retries Reached');
     console.error(
       `[Socket.io] Reconnect exhausted (${safeMaxAttempts} attempts). Verify ${baseUrl}/healthz returns JSON and Vercel has VITE_SOCKET_URL or VITE_API_URL (socket origin is derived from API URL).`,
     );
@@ -254,6 +259,7 @@ export const connectRealtime = (): Socket | null => {
 
   const transports = resolveSocketTransports();
   const pollingOnly = transports.length === 1 && transports[0] === 'polling';
+  console.log('Connection Started');
   socket = io(baseUrl, {
     path: SOCKET_IO_CLIENT_PATH,
     transports,

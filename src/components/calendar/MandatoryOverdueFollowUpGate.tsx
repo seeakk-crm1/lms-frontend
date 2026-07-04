@@ -146,23 +146,9 @@ const MandatoryOverdueFollowUpGate: React.FC<Props> = ({ children }) => {
     return <>{children}</>;
   }
 
-  if (!query.data && (query.isLoading || query.isPending)) {
-    return (
-      <>
-        <div className="fixed inset-0 z-[9998] flex items-center justify-center bg-slate-950/70 backdrop-blur-md">
-          <div className="flex flex-col items-center gap-3 text-white">
-            <Loader2 className="h-10 w-10 animate-spin text-emerald-400" />
-            <p className="text-sm font-bold">Checking overdue follow-ups...</p>
-          </div>
-        </div>
-        {WeeklyOffScheduleModal}
-      </>
-    );
-  }
-
   return (
     <>
-      {blocked ? null : children}
+      {children}
 
       {blocked && !actionModalOpen ? (
         <>
@@ -170,12 +156,7 @@ const MandatoryOverdueFollowUpGate: React.FC<Props> = ({ children }) => {
           {typeof document !== 'undefined'
             ? createPortal(
                 <div className="fixed inset-0 z-[9998] flex items-center justify-center p-4">
-                  {query.isLoading ? (
-                    <div className="flex flex-col items-center gap-3 text-white">
-                      <Loader2 className="h-10 w-10 animate-spin text-emerald-400" />
-                      <p className="text-sm font-bold">Checking overdue follow-ups…</p>
-                    </div>
-                  ) : activeItem ? (
+                  {activeItem ? (
                     <div className="w-full max-w-2xl rounded-3xl border border-red-100 bg-white p-6 shadow-2xl">
                       <div className="mb-4 flex items-start gap-3">
                         <div className="rounded-2xl bg-red-50 p-3 text-red-500">

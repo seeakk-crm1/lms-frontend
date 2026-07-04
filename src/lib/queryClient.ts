@@ -10,7 +10,10 @@ export const queryClient = new QueryClient({
       staleTime: 30_000,
       gcTime: 5 * 60_000,
       refetchOnWindowFocus: true,
-      retry: 1,
+      retry: (failureCount, error: any) => {
+        if (!error?.response && error?.message === 'Network Error') return false;
+        return failureCount < 1;
+      },
     },
     mutations: {
       retry: 0,

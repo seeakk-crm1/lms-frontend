@@ -23,8 +23,10 @@ const MandatoryAttendanceGate: React.FC<Props> = ({ children }) => {
     }
 
     try {
+      console.log('Background Check Started');
       setLoading(true);
       const res = await getTodayStatus();
+      console.log('Attendance Status Received');
       if (res.success) {
         setStatus(res.data);
       }
@@ -83,26 +85,15 @@ const MandatoryAttendanceGate: React.FC<Props> = ({ children }) => {
     return <>{children}</>;
   }
 
-  if (blocked) {
-    const showLoader = loading;
-    const modal = !loading && status ? <MandatoryAttendanceModal status={status} onSuccess={() => void loadStatus()} /> : null;
+  const showLoader = blocked && loading;
+  const modal = blocked && !loading && status ? <MandatoryAttendanceModal status={status} onSuccess={() => void loadStatus()} /> : null;
 
-    return (
-      <>
-        <div className="fixed inset-0 z-[9998] flex items-center justify-center bg-slate-950/70 backdrop-blur-md">
-          {showLoader ? (
-            <div className="flex flex-col items-center gap-3 text-white">
-              <div className="h-12 w-12 animate-spin rounded-full border-4 border-white/20 border-t-emerald-400" />
-              <p className="text-sm font-bold tracking-wide">Checking attendance requirements...</p>
-            </div>
-          ) : null}
-        </div>
-        {modal && typeof document !== 'undefined' ? createPortal(modal, document.body) : modal}
-      </>
-    );
-  }
-
-  return <>{children}</>;
+  return (
+    <>
+      {children}
+      {blocked && modal && typeof document !== 'undefined' ? createPortal(modal, document.body) : modal}
+    </>
+  );
 };
 
 export default MandatoryAttendanceGate;

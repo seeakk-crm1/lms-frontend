@@ -8,8 +8,8 @@ const API_URL = ENV.API_URL;
 /** Single-flight refresh so Socket + many axios callers share one rotation. */
 let refreshPromise: Promise<string> | null = null;
 
-const MAX_REFRESH_ATTEMPTS = 2;
-const REFRESH_RETRY_DELAY_MS = 350;
+const MAX_REFRESH_ATTEMPTS = 3;
+const REFRESH_RETRY_DELAY_MS = 1000;
 
 type TokenRefreshListener = (accessToken: string) => void;
 const tokenRefreshListeners = new Set<TokenRefreshListener>();
@@ -55,8 +55,9 @@ export const isRefreshAuthFailure = (error: unknown): boolean => {
 export const isTransientRefreshFailure = (error: unknown): boolean => {
   if (!axios.isAxiosError(error)) return false;
   const status = error.response?.status;
-  if (!status) return true;
-  return status === 502 || status === 503 || status === 504;
+  // CORS or offline network errors have no status. We should not retry these.
+  if (!status) return false;
+  return status === 500 || status === 502 || status === 503 || status === 504;
 };
 
 export const onAccessTokenRefreshed = (listener: TokenRefreshListener): (() => void) => {
@@ -133,6 +134,7 @@ export const refreshAccessToken = async (): Promise<string> => {
         }
 
         try {
+          console.log('Refresh Started');
           const { data } = await axios.post<{
             accessToken: string;
             refreshToken: string;
@@ -142,6 +144,7 @@ export const refreshAccessToken = async (): Promise<string> => {
             { refreshToken: currentRefreshToken },
             { withCredentials: true },
           );
+          console.log('Refresh Success');
 
           useAuthStore.getState().setAuth(data.user, data.accessToken, data.refreshToken);
           notifyAccessTokenRefreshed(data.accessToken);
@@ -158,6 +161,14 @@ export const refreshAccessToken = async (): Promise<string> => {
       }
 
       throw lastError ?? new AuthSessionError('Refresh token request failed');
+    } catch (err: any) {
+      console.error('Refresh Failed', err);
+      if (!err.response?.status) {
+        import('react-hot-toast').then(({ toast }) => {
+          toast.error('Connection Error: Cannot reach the server. Please check your connection or CORS settings.', { id: 'cors-error' });
+        });
+      }
+      throw err;
     } finally {
       refreshPromise = null;
     }
