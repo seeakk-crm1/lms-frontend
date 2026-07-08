@@ -22,15 +22,20 @@ export const normalizeOriginUrl = (raw: string): string => raw.trim().replace(/\
 
 const defaultLocalApi = 'http://localhost:5000/api';
 
+const getOptionalEnv = (key: string): string => {
+  const value = (import.meta.env as Record<string, string | undefined>)[key];
+  return value || '';
+};
+
 /**
  * Socket.IO connects to the HTTP **origin** only, path `/socket.io` — never `/api`.
  * Priority: VITE_SOCKET_URL → VITE_BACKEND_URL → strip `/api` from VITE_API_URL
  */
 export const resolveSocketOrigin = (): string => {
-  const explicitSocket = normalizeOriginUrl(requireEnv('VITE_SOCKET_URL'));
+  const explicitSocket = normalizeOriginUrl(getOptionalEnv('VITE_SOCKET_URL'));
   if (explicitSocket) return explicitSocket;
 
-  const legacyBackend = normalizeOriginUrl(requireEnv('VITE_BACKEND_URL'));
+  const legacyBackend = normalizeOriginUrl(getOptionalEnv('VITE_BACKEND_URL'));
   if (legacyBackend) return legacyBackend;
 
   const api = normalizeOriginUrl(requireEnv('VITE_API_URL') || defaultLocalApi);
@@ -59,9 +64,9 @@ const logEnv = (): void => {
   console.info(`[ENV:${mode}] VITE_API_URL → ${ENV.API_URL}`);
   console.info(`[ENV:${mode}] Socket.IO origin → ${ENV.SOCKET_URL}`, {
     sources: {
-      VITE_SOCKET_URL: requireEnv('VITE_SOCKET_URL') ? '(set)' : '(unset)',
-      VITE_BACKEND_URL: requireEnv('VITE_BACKEND_URL') ? '(set)' : '(unset)',
-      derivedFromApi: !requireEnv('VITE_SOCKET_URL') && !requireEnv('VITE_BACKEND_URL'),
+      VITE_SOCKET_URL: getOptionalEnv('VITE_SOCKET_URL') ? '(set)' : '(unset)',
+      VITE_BACKEND_URL: getOptionalEnv('VITE_BACKEND_URL') ? '(set)' : '(unset)',
+      derivedFromApi: !getOptionalEnv('VITE_SOCKET_URL') && !getOptionalEnv('VITE_BACKEND_URL'),
     },
   });
 };
