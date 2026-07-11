@@ -14,12 +14,10 @@ import {
   getLeads,
   permanentlyDeleteLead,
   bulkDeleteLeads,
-  saveLeadDynamicValues,
   updateLead,
 } from '../services/leads.api';
 import type {
   LeadCreatePayload,
-  LeadDynamicValuePayload,
   LeadMutationResponse,
   LeadUpdatePayload,
   ListLeadsResponse,
@@ -28,11 +26,7 @@ import type {
 type LeadMutationInput = {
   id?: string;
   payload: LeadCreatePayload | LeadUpdatePayload;
-  dynamicValues?: LeadDynamicValuePayload[];
 };
-
-const toDynamicPayload = (values?: LeadDynamicValuePayload[]) =>
-  values?.filter((item) => item.value.trim().length > 0) || [];
 
 const patchLeadInListResponse = (
   previous: ListLeadsResponse | undefined,
@@ -189,26 +183,7 @@ export const useCreateLeadMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ payload, dynamicValues }: LeadMutationInput) => {
-      const response = await createLead(payload as LeadCreatePayload);
-      const lead = response.data;
-      const dynamicPayload = toDynamicPayload(dynamicValues);
-      let dynamicValuesSaved = true;
-
-      if (dynamicPayload.length > 0) {
-        try {
-          await saveLeadDynamicValues(lead.id, dynamicPayload);
-        } catch (error) {
-          dynamicValuesSaved = false;
-          console.error('Lead created but dynamic values failed to save', error);
-        }
-      }
-
-      return {
-        ...response,
-        dynamicValuesSaved,
-      };
-    },
+    mutationFn: async ({ payload }: LeadMutationInput) => createLead(payload as LeadCreatePayload),
     onSuccess: (response) => {
       queryClient
         .getQueriesData<ListLeadsResponse>({ queryKey: ['leads'] })
@@ -220,10 +195,6 @@ export const useCreateLeadMutation = () => {
         });
       queryClient.invalidateQueries({ queryKey: ['leads'] });
       queryClient.invalidateQueries({ queryKey: ['followups'] });
-      if (response.dynamicValuesSaved === false) {
-        toast.success('Lead created successfully. Advanced fields can be updated again if needed.');
-        return;
-      }
       toast.success('Lead created successfully');
     },
     onError: (error: any) => {
@@ -242,25 +213,7 @@ export const useUpdateLeadMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, payload, dynamicValues }: LeadMutationInput) => {
-      const response = await updateLead(id as string, payload as LeadUpdatePayload);
-      const dynamicPayload = toDynamicPayload(dynamicValues);
-      let dynamicValuesSaved = true;
-
-      if (dynamicPayload.length > 0) {
-        try {
-          await saveLeadDynamicValues(id as string, dynamicPayload);
-        } catch (error) {
-          dynamicValuesSaved = false;
-          console.error('Lead updated but dynamic values failed to save', error);
-        }
-      }
-
-      return {
-        ...response,
-        dynamicValuesSaved,
-      };
-    },
+    mutationFn: async ({ id, payload }: LeadMutationInput) => updateLead(id as string, payload as LeadUpdatePayload),
     onSuccess: (response, variables) => {
       const nextLead = response?.approvalRequired ? response?.data?.lead : response?.data;
       if (nextLead?.id) {
@@ -275,10 +228,6 @@ export const useUpdateLeadMutation = () => {
       queryClient.invalidateQueries({ queryKey: ['followups'] });
       if (response?.approvalRequired) {
         toast.success(response.message || 'Approval request created successfully. Other fields updated.');
-        return;
-      }
-      if (response.dynamicValuesSaved === false) {
-        toast.success('Lead updated successfully. Advanced fields can be updated again if needed.');
         return;
       }
       toast.success('Lead updated successfully');

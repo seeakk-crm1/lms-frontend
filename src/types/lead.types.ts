@@ -52,6 +52,14 @@ export interface LeadListItem {
     changedAt: string;
   }>;
   followUps?: any[];
+  dynamicValues?: Array<{
+    id: string;
+    leadId: string;
+    fieldId: string;
+    value: string;
+    createdAt: string;
+    field?: Pick<LeadDynamicField, 'id' | 'name' | 'inputType' | 'sortOrder'>;
+  }>;
 }
 
 export interface LeadPagination {
@@ -124,6 +132,7 @@ export interface LeadCreatePayload {
   reasonId?: string;
   remarks?: string;
   lobRemarks?: string;
+  dynamicValues?: LeadDynamicValuePayload[];
   skipAutoStageAssignment?: boolean;
 }
 
@@ -145,6 +154,7 @@ export interface LeadUpdatePayload {
   reasonId?: string | null;
   remarks?: string | null;
   lobRemarks?: string | null;
+  dynamicValues?: LeadDynamicValuePayload[];
 }
 
 export interface ExtendLeadSlaPayload {

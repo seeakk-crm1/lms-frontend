@@ -296,6 +296,23 @@ const LeadViewDrawer: React.FC<LeadViewDrawerProps> = ({
                     </p>
                   </section>
 
+                  {resolvedLead.dynamicValues?.length ? (
+                    <section className="rounded-2xl border border-gray-100 p-4">
+                      <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-gray-400">
+                        Advanced fields
+                      </p>
+                      <dl>
+                        {resolvedLead.dynamicValues.map((entry) => (
+                          <DetailRow
+                            key={entry.id || entry.fieldId}
+                            label={entry.field?.name || 'Field'}
+                            value={<span className="whitespace-pre-wrap">{entry.value}</span>}
+                          />
+                        ))}
+                      </dl>
+                    </section>
+                  ) : null}
+
                   <section className="rounded-2xl border border-gray-100 p-4">
                     <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.18em] text-gray-400">
                       Pipeline

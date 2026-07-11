@@ -42,6 +42,20 @@ const toInputDateTime = (value?: string | null) => {
   return localDate.toISOString().slice(0, 16);
 };
 
+const fromSavedDynamicValues = (lead: LeadListItem): Record<string, string | string[]> => {
+  const values: Record<string, string | string[]> = {};
+  for (const entry of lead.dynamicValues || []) {
+    values[entry.fieldId] =
+      entry.field?.inputType === 'CHECKBOX'
+        ? entry.value
+            .split(',')
+            .map((item) => item.trim())
+            .filter(Boolean)
+        : entry.value;
+  }
+  return values;
+};
+
 const fromLeadToForm = (lead: LeadListItem): LeadFormValues => ({
   name: lead.name || '',
   email: lead.email || '',
@@ -58,7 +72,7 @@ const fromLeadToForm = (lead: LeadListItem): LeadFormValues => ({
   reasonId: lead.lobLogs?.[0]?.reasonId || '',
   leadRemarks: lead.remarks || '',
   remarks: lead.lobLogs?.[0]?.remarks || '',
-  dynamicValues: {},
+  dynamicValues: fromSavedDynamicValues(lead),
   totalAmount: (lead as any).totalAmount || 0,
 });
 
@@ -68,8 +82,9 @@ const isLobStageOption = (option?: { label: string; isLOB?: boolean }) =>
 const buildDynamicPayload = (
   values: Record<string, string | string[]>,
   fields: LeadDynamicField[],
-) =>
-  fields
+  includeEmpty = false,
+) => {
+  const payload = fields
     .map((field) => {
       const rawValue = values[field.id];
       if (Array.isArray(rawValue)) {
@@ -84,6 +99,10 @@ const buildDynamicPayload = (
       };
     })
     .filter((item) => item.value.length > 0);
+  return includeEmpty
+    ? fields.map((field) => payload.find((item) => item.fieldId === field.id) || { fieldId: field.id, value: '' })
+    : payload;
+};
 
 const getMissingRequiredDynamicField = (
   values: Record<string, string | string[]>,
@@ -563,19 +582,23 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
     };
 
     const targetStageId = formValues.stageId;
-    const dynamicPayload = buildDynamicPayload(formValues.dynamicValues, meta?.dynamicFields || []);
+    const dynamicPayload = buildDynamicPayload(formValues.dynamicValues, meta?.dynamicFields || [], mode === 'edit');
     const stageChanged = mode === 'edit' && Boolean(targetStageId) && targetStageId !== currentStageId;
     const shouldUseStageTransitionFlow = stageChanged && Boolean(currentStageId);
+    const payloadWithDynamicValues = {
+      ...payload,
+      dynamicValues: dynamicPayload,
+    };
 
     try {
       if (mode === 'create') {
-        await createMutation.mutateAsync({ payload, dynamicValues: dynamicPayload });
+        await createMutation.mutateAsync({ payload: payloadWithDynamicValues });
         console.log('[Diagnostic] Lead created successfully');
       } else if (lead?.id) {
         await updateMutation.mutateAsync({
           id: lead.id,
           payload: {
-            ...payload,
+            ...payloadWithDynamicValues,
             email: formValues.email.trim() || null,
             phone: formValues.phone.trim() || null,
             companyName: formValues.companyName.trim() || null,
@@ -590,7 +613,6 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
             remarks: formValues.leadRemarks.trim() || null,
             lobRemarks: shouldUseStageTransitionFlow ? undefined : formValues.remarks.trim() || null,
           },
-          dynamicValues: dynamicPayload,
         });
 
         if (shouldUseStageTransitionFlow) {
