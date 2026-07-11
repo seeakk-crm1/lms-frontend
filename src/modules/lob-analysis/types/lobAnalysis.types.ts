@@ -1,4 +1,5 @@
 export interface LOBAnalysisFilters {
+  search?: string;
   dateFrom?: string;
   dateTo?: string;
   stage?: string;

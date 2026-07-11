@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { AlertTriangle, FileBarChart2, RefreshCcw } from 'lucide-react';
 import DashboardLayout from '../../components/dashboard/DashboardLayout';
@@ -21,6 +21,7 @@ const roleKey = (role: unknown) =>
     .replace(/[\s_-]+/g, '');
 
 const emptyFilters: LOBAnalysisFilters = {
+  search: '',
   dateFrom: '',
   dateTo: '',
   stage: '',
@@ -32,6 +33,7 @@ const emptyFilters: LOBAnalysisFilters = {
 const LOBAnalysisPage: React.FC = () => {
   const [draftFilters, setDraftFilters] = useState<LOBAnalysisFilters>(emptyFilters);
   const [appliedFilters, setAppliedFilters] = useState<LOBAnalysisFilters>(emptyFilters);
+  const [searchDraft, setSearchDraft] = useState('');
   const [page, setPage] = useState(1);
 
   const { user } = useAuthStore();
@@ -41,6 +43,17 @@ const LOBAnalysisPage: React.FC = () => {
   const lobAnalysis = useLOBAnalysis(appliedFilters, page, 20);
 
   const canView = ['admin', 'manager', 'superadmin'].includes(roleKey(user?.role));
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const nextSearch = searchDraft.trim();
+      setAppliedFilters((current) => ({ ...current, search: nextSearch }));
+      setDraftFilters((current) => ({ ...current, search: nextSearch }));
+      setPage(1);
+    }, 320);
+
+    return () => window.clearTimeout(timer);
+  }, [searchDraft]);
 
   const stageOptions = useMemo(
     () => (leadMeta?.stages || []).map((item) => ({ value: item.id, label: item.label })),
@@ -74,6 +87,7 @@ const LOBAnalysisPage: React.FC = () => {
 
   const appliedChips = useMemo(() => {
     const chips: string[] = [];
+    if (appliedFilters.search) chips.push(`Search: ${appliedFilters.search}`);
     if (appliedFilters.dateFrom) chips.push(`From: ${appliedFilters.dateFrom}`);
     if (appliedFilters.dateTo) chips.push(`To: ${appliedFilters.dateTo}`);
     if (appliedFilters.stage) chips.push(`Stage filtered`);
@@ -147,11 +161,16 @@ const LOBAnalysisPage: React.FC = () => {
               userOptions={userOptions}
               locationOptions={locationOptions}
               onChange={(patch) => setDraftFilters((current) => ({ ...current, ...patch }))}
+              onSearchChange={(value) => {
+                setSearchDraft(value);
+                setDraftFilters((current) => ({ ...current, search: value }));
+              }}
               onApply={() => {
-                setAppliedFilters(draftFilters);
+                setAppliedFilters({ ...draftFilters, search: searchDraft.trim() });
                 setPage(1);
               }}
               onReset={() => {
+                setSearchDraft('');
                 setDraftFilters(emptyFilters);
                 setAppliedFilters(emptyFilters);
                 setPage(1);
@@ -174,6 +193,8 @@ const LOBAnalysisPage: React.FC = () => {
                 page={page}
                 totalPages={lobAnalysis.auditPagination?.totalPages || 1}
                 total={lobAnalysis.auditPagination?.total || 0}
+                emptyTitle={appliedFilters.search ? 'No matching LOB records found' : undefined}
+                emptyDescription={appliedFilters.search ? 'Try changing your search keywords.' : undefined}
                 onPageChange={setPage}
               />
             </div>

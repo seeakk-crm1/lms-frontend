@@ -1,5 +1,5 @@
 import React from 'react';
-import { Filter, RotateCcw } from 'lucide-react';
+import { Filter, RotateCcw, Search } from 'lucide-react';
 import SearchableSelect from '../../components/SearchableSelect';
 import type { LOBAnalysisFilters } from './types/lobAnalysis.types';
 
@@ -15,6 +15,7 @@ interface LOBFiltersProps {
   userOptions: Option[];
   locationOptions: Option[];
   onChange: (patch: Partial<LOBAnalysisFilters>) => void;
+  onSearchChange: (value: string) => void;
   onApply: () => void;
   onReset: () => void;
 }
@@ -26,6 +27,7 @@ const LOBFilters: React.FC<LOBFiltersProps> = ({
   userOptions,
   locationOptions,
   onChange,
+  onSearchChange,
   onApply,
   onReset,
 }) => (
@@ -38,6 +40,20 @@ const LOBFilters: React.FC<LOBFiltersProps> = ({
       <div className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-2 text-sm font-bold text-gray-500">
         <Filter className="h-4 w-4 text-emerald-500" />
         Dynamic filters
+      </div>
+    </div>
+
+    <div className="mb-4 grid gap-4">
+      <div className="relative">
+        <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+        <input
+          type="search"
+          value={filters.search || ''}
+          onChange={(event) => onSearchChange(event.target.value)}
+          placeholder="Search name, email, phone"
+          className="w-full rounded-2xl border border-gray-200 bg-gray-50 py-3 pl-11 pr-4 text-sm font-semibold text-gray-900 outline-none transition-all placeholder:text-gray-400 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/10"
+          aria-label="Search LOB records"
+        />
       </div>
     </div>
 

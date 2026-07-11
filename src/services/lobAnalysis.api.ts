@@ -2,6 +2,7 @@ import api from './api';
 import type { LOBAuditResponse, LOBAnalysisFilters, LOBAnalysisSummary, LOBStageBreakdown } from '../modules/lob-analysis/types/lobAnalysis.types';
 
 const mapFiltersToApi = (filters: LOBAnalysisFilters) => ({
+  search: filters.search || undefined,
   date_from: filters.dateFrom || undefined,
   date_to: filters.dateTo || undefined,
   stage: filters.stage || undefined,

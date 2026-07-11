@@ -9,10 +9,21 @@ interface LOBAuditTableProps {
   page: number;
   totalPages: number;
   total: number;
+  emptyTitle?: string;
+  emptyDescription?: string;
   onPageChange: (page: number) => void;
 }
 
-const LOBAuditTable: React.FC<LOBAuditTableProps> = ({ data, loading, page, totalPages, total, onPageChange }) => (
+const LOBAuditTable: React.FC<LOBAuditTableProps> = ({
+  data,
+  loading,
+  page,
+  totalPages,
+  total,
+  emptyTitle = 'No LOB audit records found',
+  emptyDescription = 'Adjust the filters or wait for new LOB movements to appear.',
+  onPageChange,
+}) => (
   <section className="rounded-[28px] border border-white/70 bg-white/90 p-5 shadow-[0_20px_50px_-30px_rgba(15,23,42,0.25)] backdrop-blur">
     <div className="mb-5 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
       <div>
@@ -65,8 +76,8 @@ const LOBAuditTable: React.FC<LOBAuditTableProps> = ({ data, loading, page, tota
             ) : (
               <tr>
                 <td colSpan={6} className="px-5 py-16 text-center">
-                  <p className="text-lg font-black text-gray-900">No LOB audit records found</p>
-                  <p className="mt-2 text-sm font-semibold text-gray-500">Adjust the filters or wait for new LOB movements to appear.</p>
+                  <p className="text-lg font-black text-gray-900">{emptyTitle}</p>
+                  <p className="mt-2 text-sm font-semibold text-gray-500">{emptyDescription}</p>
                 </td>
               </tr>
             )}
