@@ -11,7 +11,7 @@ interface ApprovalModalProps {
   canApprove: boolean;
   canDeny: boolean;
   onClose: () => void;
-  onSubmit: (payload: { action: LeadApprovalAction; comment: string; earnedRevenue?: number }) => Promise<void> | void;
+  onSubmit: (payload: { action: LeadApprovalAction; comment: string; earnedRevenue?: number; checkNumber?: string }) => Promise<void> | void;
 }
 
 const ApprovalModal: React.FC<ApprovalModalProps> = ({
@@ -27,12 +27,16 @@ const ApprovalModal: React.FC<ApprovalModalProps> = ({
   const [touched, setTouched] = useState(false);
   const [revenueInput, setRevenueInput] = useState('');
   const [revenueTouched, setRevenueTouched] = useState(false);
+  const [checkNumberInput, setCheckNumberInput] = useState('');
+  const [checkNumberTouched, setCheckNumberTouched] = useState(false);
 
   useEffect(() => {
     setComment(approval?.comment || '');
     setTouched(false);
     setRevenueInput('');
     setRevenueTouched(false);
+    setCheckNumberInput('');
+    setCheckNumberTouched(false);
   }, [approval]);
 
   const isOpen = Boolean(approval);
@@ -44,6 +48,10 @@ const ApprovalModal: React.FC<ApprovalModalProps> = ({
   const isRevenueRequired = isPending && isClosedWonStage;
   const parsedRevenue = parseFloat(revenueInput);
   const revenueError = isRevenueRequired && revenueTouched && (!revenueInput.trim() || Number.isNaN(parsedRevenue) || parsedRevenue <= 0);
+
+  const isAdvancePayment = approval?.type === 'ADVANCE_PAYMENT';
+  const isCheckNumberRequired = isPending && isAdvancePayment;
+  const checkNumberError = isCheckNumberRequired && checkNumberTouched && !checkNumberInput.trim();
 
   if (!approval) {
     return null;
@@ -69,6 +77,12 @@ const ApprovalModal: React.FC<ApprovalModalProps> = ({
         return;
       }
     }
+    if (isCheckNumberRequired && action === 'APPROVE') {
+      setCheckNumberTouched(true);
+      if (!checkNumberInput.trim()) {
+        return;
+      }
+    }
     if (!comment.trim()) return;
 
     await onSubmit({
@@ -76,6 +90,8 @@ const ApprovalModal: React.FC<ApprovalModalProps> = ({
       comment: comment.trim(),
       earnedRevenue:
         isRevenueRequired && action === 'APPROVE' ? Math.round(parsedRevenue * 100) / 100 : undefined,
+      checkNumber:
+        isCheckNumberRequired && action === 'APPROVE' ? checkNumberInput.trim() : undefined,
     });
   };
 
@@ -99,9 +115,11 @@ const ApprovalModal: React.FC<ApprovalModalProps> = ({
                     <ShieldAlert className="h-6 w-6" />
                   </div>
                   <div>
-                    <p className="text-[11px] font-black uppercase tracking-[0.24em] text-gray-400">Lead Stage Approval</p>
+                    <p className="text-[11px] font-black uppercase tracking-[0.24em] text-gray-400">
+                      {isAdvancePayment ? 'Advance Payment Approval' : 'Lead Stage Approval'}
+                    </p>
                     <h2 id="lead-approval-modal-title" className="text-xl font-black tracking-tight text-gray-900 sm:text-2xl">
-                      Lead Stage Approval Required
+                      {isAdvancePayment ? 'Advance Payment Approval Required' : 'Lead Stage Approval Required'}
                     </h2>
                   </div>
                 </div>
@@ -137,22 +155,53 @@ const ApprovalModal: React.FC<ApprovalModalProps> = ({
                 </div>
               </div>
 
-              <div className="mt-5 grid gap-3 rounded-2xl border border-gray-100 bg-white p-4 sm:grid-cols-2 md:grid-cols-3">
-                <div>
-                  <div className="text-[11px] font-black uppercase tracking-[0.18em] text-gray-400">From Stage</div>
-                  <div className="mt-2 text-sm font-black text-gray-900">{approval.fromStage?.name || 'Unknown'}</div>
-                </div>
-                <div>
-                  <div className="text-[11px] font-black uppercase tracking-[0.18em] text-gray-400">To Stage</div>
-                  <div className="mt-2 text-sm font-black text-gray-900">{approval.toStage?.name || 'Unknown'}</div>
-                </div>
-                <div>
-                  <div className="text-[11px] font-black uppercase tracking-[0.18em] text-gray-400">Approver</div>
-                  <div className="mt-2 text-sm font-black text-gray-900">
-                    {approval.assignedTo?.displayName || approval.assignedTo?.name || 'Open queue'}
+              {!isAdvancePayment ? (
+                <div className="mt-5 grid gap-3 rounded-2xl border border-gray-100 bg-white p-4 sm:grid-cols-2 md:grid-cols-3">
+                  <div>
+                    <div className="text-[11px] font-black uppercase tracking-[0.18em] text-gray-400">From Stage</div>
+                    <div className="mt-2 text-sm font-black text-gray-900">{approval.fromStage?.name || 'Unknown'}</div>
+                  </div>
+                  <div>
+                    <div className="text-[11px] font-black uppercase tracking-[0.18em] text-gray-400">To Stage</div>
+                    <div className="mt-2 text-sm font-black text-gray-900">{approval.toStage?.name || 'Unknown'}</div>
+                  </div>
+                  <div>
+                    <div className="text-[11px] font-black uppercase tracking-[0.18em] text-gray-400">Approver</div>
+                    <div className="mt-2 text-sm font-black text-gray-900">
+                      {approval.assignedTo?.displayName || approval.assignedTo?.name || 'Open queue'}
+                    </div>
                   </div>
                 </div>
-              </div>
+              ) : (
+                <div className="mt-5 grid gap-3 rounded-2xl border border-gray-100 bg-white p-4 sm:grid-cols-2 md:grid-cols-3">
+                  <div>
+                    <div className="text-[11px] font-black uppercase tracking-[0.18em] text-gray-400">Advance Amount</div>
+                    <div className="mt-2 text-sm font-black text-gray-900">
+                      ${(approval.requestData as any)?.amount?.toFixed(2)}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-[11px] font-black uppercase tracking-[0.18em] text-gray-400">Payment Date</div>
+                    <div className="mt-2 text-sm font-black text-gray-900">
+                      {new Date((approval.requestData as any)?.paymentDate).toLocaleDateString()}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-[11px] font-black uppercase tracking-[0.18em] text-gray-400">Approver</div>
+                    <div className="mt-2 text-sm font-black text-gray-900">
+                      {approval.assignedTo?.displayName || approval.assignedTo?.name || 'Open queue'}
+                    </div>
+                  </div>
+                  {(approval.requestData as any)?.remarks && (
+                    <div className="sm:col-span-2 md:col-span-3 border-t border-gray-50 pt-2 mt-2">
+                      <div className="text-[11px] font-black uppercase tracking-[0.18em] text-gray-400">Remarks</div>
+                      <div className="mt-1 text-sm text-gray-600 font-semibold italic">
+                        "{(approval.requestData as any).remarks}"
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {stageRuleEntries.length > 0 ? (
                 <div className="mt-5 rounded-2xl border border-emerald-100 bg-emerald-50/40 p-4">
@@ -198,6 +247,17 @@ const ApprovalModal: React.FC<ApprovalModalProps> = ({
                 </div>
               ) : null}
 
+              {isAdvancePayment && (approval.requestData as any)?.proofUrl && (
+                <div className="rounded-2xl border border-gray-100 p-4">
+                  <div className="text-[11px] font-black uppercase tracking-[0.2em] text-gray-400 mb-2">Receipt Proof</div>
+                  <img
+                    src={(approval.requestData as any).proofUrl}
+                    alt="Proof"
+                    className="max-h-48 rounded-xl object-contain border border-gray-200"
+                  />
+                </div>
+              )}
+
               {isClosedWonStage && isPending ? (
                 <div>
                   <label className="mb-2 block text-[11px] font-black uppercase tracking-[0.22em] text-gray-400">
@@ -224,6 +284,32 @@ const ApprovalModal: React.FC<ApprovalModalProps> = ({
                   {revenueError ? (
                     <p className="mt-2 text-sm font-bold text-rose-500">
                       Earned revenue is mandatory and must be a strictly positive decimal.
+                    </p>
+                  ) : null}
+                </div>
+              ) : null}
+
+              {isCheckNumberRequired ? (
+                <div>
+                  <label className="mb-2 block text-[11px] font-black uppercase tracking-[0.22em] text-gray-400">
+                    Check Number <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={checkNumberInput}
+                    onChange={(event) => setCheckNumberInput(event.target.value)}
+                    onBlur={() => setCheckNumberTouched(true)}
+                    placeholder="Enter the transaction or check number (Mandatory)"
+                    className={`w-full rounded-3xl border bg-gray-50 px-4 py-4 text-sm font-semibold text-gray-900 outline-none transition-all placeholder:text-gray-400 ${
+                      checkNumberError
+                        ? 'border-rose-300 ring-2 ring-rose-100'
+                        : 'border-gray-200 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100'
+                    }`}
+                    aria-invalid={checkNumberError}
+                  />
+                  {checkNumberError ? (
+                    <p className="mt-2 text-sm font-bold text-rose-500">
+                      Check number is mandatory for approving advance payments.
                     </p>
                   ) : null}
                 </div>

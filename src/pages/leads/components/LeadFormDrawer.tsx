@@ -1,6 +1,6 @@
 import React, { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { AlertCircle, CalendarClock, Save, Sparkles, X } from 'lucide-react';
+import { AlertCircle, CalendarClock, Save, Sparkles, X, DollarSign, PlusCircle, FileText, History, Trash2, Eye } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import SearchableSelect from '../../../components/SearchableSelect';
 import { useChangeLeadStageMutation, useCreateLeadMutation, useLeadDetailQuery, useLeadMetaQuery, useUpdateLeadMutation } from '../../../hooks/useLeads';
@@ -19,6 +19,7 @@ import { useActiveLOBReasonOptions } from '../../../hooks/useActiveLOBReasonOpti
 import { useWeeklyOffScheduleGuard } from '../../../hooks/useWeeklyOffScheduleGuard';
 import WhatsAppActionButton from '../../../components/common/WhatsAppActionButton';
 import { LEAD_WHATSAPP_PERMISSIONS } from '../../../constants/whatsappPermissions';
+import { getLeadPayments, updateLeadTotalAmount, requestAdvancePayment } from '../../../services/leads.api';
 
 interface LeadFormDrawerProps {
   isOpen: boolean;
@@ -57,6 +58,7 @@ const fromLeadToForm = (lead: LeadListItem): LeadFormValues => ({
   reasonId: lead.lobLogs?.[0]?.reasonId || '',
   remarks: lead.lobLogs?.[0]?.remarks || '',
   dynamicValues: {},
+  totalAmount: (lead as any).totalAmount || 0,
 });
 
 const isLobStageOption = (option?: { label: string; isLOB?: boolean }) =>
@@ -130,6 +132,165 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
   const [lobModalOpen, setLobModalOpen] = useState(false);
   const [pendingStageId, setPendingStageId] = useState<string | null>(null);
   const [previousStageId, setPreviousStageId] = useState<string>('');
+  const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
+  const [previewModalOpen, setPreviewModalOpen] = useState(false);
+  const [localAdvances, setLocalAdvances] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (isOpen) {
+      console.log('[Diagnostic] Payment section initialized');
+      if (mode === 'create') {
+        console.log('[Diagnostic] Lead Create page loaded');
+        setLocalAdvances([]);
+      } else {
+        console.log('[Diagnostic] Lead Edit page loaded');
+      }
+    }
+  }, [isOpen, mode]);
+
+  const [paymentData, setPaymentData] = useState<any>(null);
+  const [totalAmountReasonModalOpen, setTotalAmountReasonModalOpen] = useState(false);
+  const [totalAmountReason, setTotalAmountReason] = useState('');
+  const [addAdvanceModalOpen, setAddAdvanceModalOpen] = useState(false);
+  const [advanceAmount, setAdvanceAmount] = useState('');
+  const [advancePaymentDate, setAdvancePaymentDate] = useState(new Date().toISOString().split('T')[0]);
+  const [advanceRemarks, setAdvanceRemarks] = useState('');
+  const [advanceProofUrl, setAdvanceProofUrl] = useState('');
+  const [isSubmittingTotalAmountReason, setIsSubmittingTotalAmountReason] = useState(false);
+  const [isSubmittingAdvance, setIsSubmittingAdvance] = useState(false);
+
+  useEffect(() => {
+    if (addAdvanceModalOpen) {
+      console.log('[Diagnostic] Advance popup opened');
+    }
+  }, [addAdvanceModalOpen]);
+
+  const fetchPayments = async () => {
+    if (lead?.id) {
+      try {
+        const res = await getLeadPayments(lead.id);
+        if (res.success) {
+          setPaymentData(res.data);
+          setFormValues((prev) => ({
+            ...prev,
+            totalAmount: res.data.totalAmount || 0,
+          }));
+        }
+      } catch (err) {
+        console.error('Failed to fetch payments:', err);
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (isOpen && mode === 'edit' && lead?.id) {
+      fetchPayments();
+    } else {
+      setPaymentData(null);
+    }
+  }, [isOpen, mode, lead?.id]);
+
+  const handleSaveTotalAmountReason = async () => {
+    if (!totalAmountReason.trim()) {
+      toast.error('Reason is required');
+      return;
+    }
+    if (!lead?.id) return;
+    setIsSubmittingTotalAmountReason(true);
+    try {
+      await updateLeadTotalAmount(lead.id, {
+        totalAmount: Number(formValues.totalAmount),
+        reason: totalAmountReason.trim(),
+      });
+      toast.success('Total amount updated successfully');
+      setTotalAmountReasonModalOpen(false);
+      await fetchPayments();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to update total amount');
+    } finally {
+      setIsSubmittingTotalAmountReason(false);
+    }
+  };
+
+  const handleSaveAdvancePayment = async () => {
+    console.log('[Diagnostic] Submit Request clicked');
+    if (!advanceAmount || Number(advanceAmount) <= 0) {
+      toast.error('Advance amount must be greater than zero.');
+      return;
+    }
+    if (!advancePaymentDate) {
+      toast.error('Payment date is required.');
+      return;
+    }
+
+    if (mode === 'create') {
+      const newAdv = {
+        amount: Number(advanceAmount),
+        paymentDate: new Date(advancePaymentDate).toISOString(),
+        remarks: advanceRemarks.trim(),
+        proofUrl: advanceProofUrl || null,
+        status: 'PENDING',
+        requestedBy: { name: currentUser?.displayName || currentUser?.name || 'You' },
+        createdAt: new Date().toISOString(),
+      };
+      setLocalAdvances((prev) => [...prev, newAdv]);
+      console.log('[Diagnostic] Request submitted');
+      toast.success('Advance payment added locally.');
+      console.log('[Diagnostic] Success notification displayed');
+      setAddAdvanceModalOpen(false);
+      setAdvanceAmount('');
+      setAdvanceRemarks('');
+      setAdvanceProofUrl('');
+      return;
+    }
+
+    if (!lead?.id) return;
+    setIsSubmittingAdvance(true);
+    try {
+      await requestAdvancePayment(lead.id, {
+        amount: Number(advanceAmount),
+        paymentDate: new Date(advancePaymentDate).toISOString(),
+        remarks: advanceRemarks.trim(),
+        proofUrl: advanceProofUrl || undefined,
+      });
+      console.log('[Diagnostic] Request submitted');
+      toast.success('Advance payment approval requested successfully.');
+      console.log('[Diagnostic] Success notification displayed');
+      setAddAdvanceModalOpen(false);
+      setAdvanceAmount('');
+      setAdvanceRemarks('');
+      setAdvanceProofUrl('');
+      await fetchPayments();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to request advance payment.');
+    } finally {
+      setIsSubmittingAdvance(false);
+    }
+  };
+
+  const handleProofChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 1024 * 1024) {
+      toast.error('Proof image size must be 1 MB or less.');
+      e.target.value = '';
+      return;
+    }
+
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error('Only JPG, JPEG, PNG, and WEBP formats are allowed.');
+      e.target.value = '';
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setAdvanceProofUrl(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
   const [stageRulesModalOpen, setStageRulesModalOpen] = useState(false);
   const [stageRulesForTransition, setStageRulesForTransition] = useState<StageRule[]>([]);
   const [pendingTransitionStageId, setPendingTransitionStageId] = useState<string | null>(null);
@@ -138,6 +299,9 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
   const stageIdBeforeLobRef = useRef<string>('');
   const hydratedLead = leadDetails?.id ? (leadDetails as LeadListItem) : lead;
   const currentStageId = hydratedLead?.stageId || previousStageId || '';
+  const advancePaymentsList = mode === 'edit' && paymentData
+    ? paymentData.advancePayments || []
+    : localAdvances;
 
   useEffect(() => {
     if (!meta?.dynamicFields) return;
@@ -357,6 +521,12 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
       }
     }
 
+    const hasAmountChanged = mode === 'edit' && paymentData && Number(formValues.totalAmount) !== Number(paymentData.totalAmount);
+    if (hasAmountChanged && !totalAmountReason.trim()) {
+      setTotalAmountReasonModalOpen(true);
+      return;
+    }
+
     const payload = {
       name: formValues.name.trim(),
       email: formValues.email.trim() || undefined,
@@ -374,6 +544,8 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
       followUpDescription: formValues.followUpDescription.trim() || undefined,
       reasonId: formValues.reasonId.trim() || undefined,
       remarks: formValues.remarks.trim() || undefined,
+      totalAmount: formValues.totalAmount ? Number(formValues.totalAmount) : 0,
+      ...(mode === 'create' ? { advancePayments: localAdvances } : {}),
     };
 
     const targetStageId = formValues.stageId;
@@ -384,6 +556,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
     try {
       if (mode === 'create') {
         await createMutation.mutateAsync({ payload, dynamicValues: dynamicPayload });
+        console.log('[Diagnostic] Lead created successfully');
       } else if (lead?.id) {
         await updateMutation.mutateAsync({
           id: lead.id,
@@ -714,6 +887,167 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
                       </div>
                     </section>
 
+                    <section className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
+                      <div className="mb-5 flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
+                          <DollarSign className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-black text-gray-900">Payment Information</h3>
+                          <p className="text-sm font-semibold text-gray-500">Agreed revenue terms, advance payments, and outstanding balances.</p>
+                        </div>
+                      </div>
+
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <div>
+                          <label className="mb-2 block text-sm font-black text-gray-900">Total Amount</label>
+                          <input
+                            type="number"
+                            min="0"
+                            placeholder="0.00"
+                            value={formValues.totalAmount || ''}
+                            onChange={(e) => handleFieldChange('totalAmount', e.target.value)}
+                            className={`${inputClassName} ${
+                              mode === 'edit' && paymentData && Number(formValues.totalAmount) !== Number(paymentData.totalAmount)
+                                ? 'text-red-600 font-bold border-red-300 focus:border-red-500 focus:ring-red-500/10'
+                                : ''
+                            }`}
+                          />
+                          {mode === 'edit' && paymentData?.amountHistory?.[0] && (
+                            <div className="mt-2 text-xs font-semibold text-gray-500 flex flex-col gap-1">
+                              <p>
+                                Last changed reason: <span className="text-gray-700 italic">"{paymentData.amountHistory[0].reason}"</span> (by {paymentData.amountHistory[0].changedBy?.name})
+                              </p>
+                              {paymentData.amountHistory.length > 1 && (
+                                <details className="cursor-pointer text-emerald-600 hover:text-emerald-700">
+                                  <summary className="outline-none">View Amount Change History ({paymentData.amountHistory.length})</summary>
+                                  <div className="mt-2 space-y-2 border-l-2 border-gray-100 pl-3">
+                                    {paymentData.amountHistory.map((hist: any) => (
+                                      <div key={hist.id} className="text-gray-600">
+                                        <span className="font-bold">${hist.oldAmount} &rarr; ${hist.newAmount}</span> by {hist.changedBy?.name} on {new Date(hist.createdAt).toLocaleDateString()}:
+                                        <p className="italic text-gray-500 pl-2">"{hist.reason}"</p>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </details>
+                              )}
+                            </div>
+                          )}
+                        </div>
+
+                        <div>
+                          <label className="mb-2 block text-sm font-black text-gray-900">Balance Amount (Read-only)</label>
+                          <div className="relative">
+                            <input
+                              type="text"
+                              readOnly
+                              value={
+                                mode === 'edit' && paymentData
+                                  ? `$${paymentData.balance.toFixed(2)}`
+                                  : `$${Math.max(
+                                      0,
+                                      Number(formValues.totalAmount || 0) -
+                                        localAdvances.reduce((sum, item) => sum + item.amount, 0)
+                                    ).toFixed(2)}`
+                              }
+                              className={`${inputClassName} bg-gray-100 cursor-not-allowed font-bold text-gray-700`}
+                            />
+                            {mode === 'edit' && paymentData && (
+                              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400">
+                                Approved Advances: ${paymentData.approvedSum.toFixed(2)}
+                              </span>
+                            )}
+                            {mode === 'create' && localAdvances.length > 0 && (
+                              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400">
+                                Pending Advances: ${localAdvances.reduce((sum, item) => sum + item.amount, 0).toFixed(2)}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {(mode === 'create' || (mode === 'edit' && paymentData)) && (
+                        <div className="mt-6 border-t border-gray-100 pt-6">
+                          <div className="mb-4 flex items-center justify-between">
+                            <h4 className="text-md font-black text-gray-900 flex items-center gap-2">
+                              <History className="h-4 w-4 text-gray-400" />
+                              <span>Advance Payments</span>
+                            </h4>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                console.log('[Diagnostic] Add Advance clicked');
+                                setAdvanceAmount('');
+                                setAdvanceRemarks('');
+                                setAdvanceProofUrl('');
+                                setAddAdvanceModalOpen(true);
+                              }}
+                              className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-50 px-3 py-1.5 text-xs font-black text-emerald-600 transition-colors hover:bg-emerald-100"
+                            >
+                              <PlusCircle className="h-4 w-4" />
+                              <span>Request Advance</span>
+                            </button>
+                          </div>
+
+                          {advancePaymentsList.length === 0 ? (
+                            <p className="text-xs font-bold text-gray-400 py-3 text-center bg-gray-50/50 rounded-2xl border border-dashed border-gray-200">
+                              No advance payments recorded for this lead.
+                            </p>
+                          ) : (
+                            <div className="space-y-3">
+                              {advancePaymentsList.map((adv: any, index: number) => (
+                                <div key={adv.id || `local-adv-${index}`} className="p-3 border border-gray-100 bg-gray-50/50 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
+                                  <div className="space-y-1">
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-sm font-black text-gray-900">${adv.amount.toFixed(2)}</span>
+                                      <span className={`px-2 py-0.5 rounded-lg border text-[10px] font-bold ${
+                                        adv.status === 'APPROVED'
+                                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                          : adv.status === 'REJECTED' || adv.status === 'DENIED'
+                                            ? 'bg-rose-50 text-rose-700 border-rose-200'
+                                            : 'bg-amber-50 text-amber-700 border-amber-200'
+                                      }`}>
+                                        {adv.status}
+                                      </span>
+                                    </div>
+                                    <p className="text-gray-500 font-semibold">
+                                      Requested by {adv.requestedBy?.name} on {new Date(adv.paymentDate).toLocaleDateString()}
+                                    </p>
+                                    {adv.remarks && (
+                                      <p className="text-gray-600 italic">"{adv.remarks}"</p>
+                                    )}
+                                    {adv.status === 'APPROVED' && (
+                                      <p className="text-emerald-700 font-bold">
+                                        Check Number: {adv.checkNumber || 'N/A'} (Approved by {adv.approvedBy?.name})
+                                      </p>
+                                    )}
+                                    {(adv.status === 'REJECTED' || adv.status === 'DENIED') && adv.rejectionReason && (
+                                      <p className="text-rose-700 font-bold">
+                                        Rejection Reason: {adv.rejectionReason} (Rejected by {adv.rejectedBy?.name})
+                                      </p>
+                                    )}
+                                  </div>
+                                  {adv.proofUrl && (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setPreviewImageUrl(adv.proofUrl);
+                                        setPreviewModalOpen(true);
+                                      }}
+                                      className="inline-flex items-center gap-1 text-emerald-600 hover:text-emerald-700 font-bold self-start md:self-center"
+                                    >
+                                      <Eye className="h-3.5 w-3.5" />
+                                      <span>View Receipt</span>
+                                    </button>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </section>
+
                     {meta?.dynamicFields?.length ? (
                       <section className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
                         <div className="mb-5">
@@ -819,6 +1153,150 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
         onClose={handleStageRulesClose}
         onConfirm={handleStageRulesConfirm}
       />
+
+      {/* Total Amount Change Reason Modal */}
+      {totalAmountReasonModalOpen && (
+        <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
+            <h3 className="text-lg font-black text-gray-900 mb-2">Reason for Total Amount Modification</h3>
+            <p className="text-xs font-semibold text-gray-500 mb-4">
+              You are updating the Total Amount from ${(paymentData?.totalAmount || 0).toFixed(2)} to ${Number(formValues.totalAmount).toFixed(2)}. Please provide a reason.
+            </p>
+            <textarea
+              className={inputClassName}
+              rows={3}
+              value={totalAmountReason}
+              onChange={(e) => setTotalAmountReason(e.target.value)}
+              placeholder="e.g. Added contract scope or discount applied"
+            />
+            <div className="mt-4 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setFormValues((prev) => ({
+                    ...prev,
+                    totalAmount: paymentData?.totalAmount || 0,
+                  }));
+                  setTotalAmountReason('');
+                  setTotalAmountReasonModalOpen(false);
+                }}
+                className="rounded-2xl border border-gray-200 px-4 py-2.5 text-sm font-black text-gray-500 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isSubmittingTotalAmountReason || !totalAmountReason.trim()}
+                onClick={handleSaveTotalAmountReason}
+                className="rounded-2xl bg-emerald-500 px-5 py-2.5 text-sm font-black text-white hover:bg-emerald-600 shadow-lg shadow-emerald-500/20 disabled:opacity-50"
+              >
+                {isSubmittingTotalAmountReason ? 'Saving…' : 'Submit Reason'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Advance Payment Modal */}
+      {addAdvanceModalOpen && (
+        <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
+            <h3 className="text-lg font-black text-gray-900 mb-4">Request Advance Payment</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="mb-2 block text-sm font-black text-gray-900">Amount <span className="text-red-500">*</span></label>
+                <input
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  value={advanceAmount}
+                  onChange={(e) => setAdvanceAmount(e.target.value)}
+                  className={inputClassName}
+                  placeholder="0.00"
+                />
+              </div>
+              <div>
+                <label className="mb-2 block text-sm font-black text-gray-900">Payment Date <span className="text-red-500">*</span></label>
+                <input
+                  type="date"
+                  value={advancePaymentDate}
+                  onChange={(e) => setAdvancePaymentDate(e.target.value)}
+                  className={inputClassName}
+                />
+              </div>
+              <div>
+                <label className="mb-2 block text-sm font-black text-gray-900">Remarks</label>
+                <textarea
+                  value={advanceRemarks}
+                  onChange={(e) => setAdvanceRemarks(e.target.value)}
+                  className={`${inputClassName} resize-none`}
+                  rows={2}
+                  placeholder="e.g. Check clearance details or cash reference"
+                />
+              </div>
+              <div>
+                <label className="mb-2 block text-sm font-black text-gray-900">Upload Receipt Proof (Max 1MB)</label>
+                <input
+                  type="file"
+                  accept="image/png, image/jpeg, image/jpg, image/webp"
+                  onChange={handleProofChange}
+                  className="w-full text-xs font-semibold text-gray-500 file:mr-4 file:rounded-xl file:border-0 file:bg-emerald-50 file:px-4 file:py-2 file:text-xs file:font-black file:text-emerald-700 file:transition-colors hover:file:bg-emerald-100"
+                />
+                {advanceProofUrl && (
+                  <div className="mt-2 relative inline-block">
+                    <img src={advanceProofUrl} alt="Preview" className="h-20 w-20 rounded-xl object-cover border border-gray-100" />
+                    <button
+                      type="button"
+                      onClick={() => setAdvanceProofUrl('')}
+                      className="absolute -top-1.5 -right-1.5 rounded-full bg-red-100 p-0.5 text-red-600 hover:bg-red-200"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setAddAdvanceModalOpen(false)}
+                className="rounded-2xl border border-gray-200 px-4 py-2.5 text-sm font-black text-gray-500 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isSubmittingAdvance || !advanceAmount || Number(advanceAmount) <= 0}
+                onClick={handleSaveAdvancePayment}
+                className="rounded-2xl bg-emerald-500 px-5 py-2.5 text-sm font-black text-white hover:bg-emerald-600 shadow-lg shadow-emerald-500/20 disabled:opacity-50"
+              >
+                {isSubmittingAdvance ? 'Submitting…' : 'Submit Request'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Proof Receipt Lightbox Modal */}
+      {previewModalOpen && previewImageUrl && (
+        <div className="fixed inset-0 z-[160] flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
+          <div className="relative max-w-2xl w-full rounded-3xl bg-white p-4 shadow-2xl">
+            <button
+              type="button"
+              onClick={() => {
+                setPreviewImageUrl(null);
+                setPreviewModalOpen(false);
+              }}
+              className="absolute -top-3 -right-3 rounded-full bg-white p-1 text-gray-700 shadow-lg hover:bg-gray-100"
+            >
+              <X className="h-5 w-5" />
+            </button>
+            <div className="flex justify-center max-h-[75vh] overflow-hidden rounded-2xl">
+              <img src={previewImageUrl} alt="Receipt Proof" className="max-w-full max-h-[75vh] object-contain rounded-xl" />
+            </div>
+          </div>
+        </div>
+      )}
 
       {WeeklyOffScheduleModal}
     </>

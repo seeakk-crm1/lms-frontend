@@ -63,8 +63,14 @@ const ApprovalRow: React.FC<ApprovalRowProps> = ({ approval, canAct, onReview, o
         <div className="text-xs font-semibold text-gray-400">{approval.requestedBy?.displayName || approval.requestedBy?.name || 'Unknown requester'}</div>
       </td>
 
-      <td className="px-6 py-5 text-sm font-semibold text-gray-600">{approval.fromStage?.name || 'Unknown'}</td>
-      <td className="px-6 py-5 text-sm font-semibold text-gray-600">{approval.toStage?.name || 'Unknown'}</td>
+      <td className="px-6 py-5 text-sm font-semibold text-gray-600">
+        {approval.type === 'ADVANCE_PAYMENT' ? 'Advance Request' : approval.fromStage?.name || 'Unknown'}
+      </td>
+      <td className="px-6 py-5 text-sm font-semibold text-gray-600">
+        {approval.type === 'ADVANCE_PAYMENT'
+          ? `$${(approval.requestData as any)?.amount?.toFixed(2)}`
+          : approval.toStage?.name || 'Unknown'}
+      </td>
       <td className="px-6 py-5">
         <StatusBadge status={approval.status} />
       </td>

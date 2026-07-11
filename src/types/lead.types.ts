@@ -225,6 +225,7 @@ export interface LeadApprovalActor {
 
 export interface LeadApprovalListItem {
   id: string;
+  type?: string;
   status: LeadApprovalStatus;
   comment?: string | null;
   requestData?: Record<string, unknown> | null;
@@ -271,6 +272,7 @@ export interface LeadApprovalActionPayload {
   action: LeadApprovalAction;
   comment: string;
   earnedRevenue?: number;
+  checkNumber?: string;
 }
 
 export interface LeadDynamicValuePayload {
@@ -294,6 +296,7 @@ export interface LeadFormValues {
   reasonId: string;
   remarks: string;
   dynamicValues: Record<string, string | string[]>;
+  totalAmount?: number;
 }
 
 export interface LeadDrawerState {

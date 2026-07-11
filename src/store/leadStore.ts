@@ -39,6 +39,7 @@ export const createEmptyLeadFormValues = (): LeadFormValues => ({
   reasonId: '',
   remarks: '',
   dynamicValues: {},
+  totalAmount: 0,
 });
 
 export const useLeadStore = create<LeadStoreState>((set) => ({

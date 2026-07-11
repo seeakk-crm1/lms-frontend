@@ -303,3 +303,18 @@ export const getLeadMeta = async () => {
     canAssignOtherUsers: Boolean(usersData?.meta?.canAssignOtherUsers),
   };
 };
+
+export const getLeadPayments = async (leadId: string) => {
+  const response = await api.get(`/leads/${leadId}/payments`);
+  return response.data;
+};
+
+export const updateLeadTotalAmount = async (leadId: string, payload: { totalAmount: number; reason: string }) => {
+  const response = await api.put(`/leads/${leadId}/total-amount`, payload);
+  return response.data;
+};
+
+export const requestAdvancePayment = async (leadId: string, payload: { amount: number; paymentDate: string; proofUrl?: string; remarks?: string }) => {
+  const response = await api.post(`/leads/${leadId}/advances`, payload);
+  return response.data;
+};
