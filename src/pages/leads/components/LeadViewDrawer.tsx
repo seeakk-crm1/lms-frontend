@@ -288,6 +288,15 @@ const LeadViewDrawer: React.FC<LeadViewDrawerProps> = ({
                   </section>
 
                   <section className="rounded-2xl border border-gray-100 p-4">
+                    <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-gray-400">
+                      Remarks
+                    </p>
+                    <p className="whitespace-pre-wrap rounded-xl bg-gray-50 px-3 py-2 text-sm font-semibold leading-relaxed text-gray-700">
+                      {resolvedLead.remarks?.trim() || 'No remarks available.'}
+                    </p>
+                  </section>
+
+                  <section className="rounded-2xl border border-gray-100 p-4">
                     <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.18em] text-gray-400">
                       Pipeline
                     </p>

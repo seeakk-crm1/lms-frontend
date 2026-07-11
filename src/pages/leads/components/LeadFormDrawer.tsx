@@ -56,6 +56,7 @@ const fromLeadToForm = (lead: LeadListItem): LeadFormValues => ({
   nextFollowUpType: (lead.nextFollowUpType as FollowUpType) || 'CALL',
   followUpDescription: lead.followUpDescription || '',
   reasonId: lead.lobLogs?.[0]?.reasonId || '',
+  leadRemarks: lead.remarks || '',
   remarks: lead.lobLogs?.[0]?.remarks || '',
   dynamicValues: {},
   totalAmount: (lead as any).totalAmount || 0,
@@ -117,6 +118,8 @@ const buildAllowedStageMap = (lifeCycle: any) => {
 };
 
 const getSelectOptions = (items: LeadOption[]) => items.map((item) => ({ value: item.id, label: item.label }));
+
+const containsUnsafeMarkup = (value: string): boolean => /<[^>]*>/u.test(value) || /javascript\s*:/iu.test(value);
 
 const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onClose }) => {
   const { data: meta, isLoading: metaLoading } = useLeadMetaQuery(isOpen);
@@ -506,6 +509,16 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
       if (!proceed) return;
     }
 
+    if (formValues.leadRemarks.length > 1000) {
+      toast.error('Remarks must be 1000 characters or fewer.');
+      return;
+    }
+
+    if (containsUnsafeMarkup(formValues.leadRemarks)) {
+      toast.error('Remarks cannot contain HTML or script content.');
+      return;
+    }
+
     const selectedStage = stageOptions.find((item) => item.id === formValues.stageId);
     if (isLobStageOption(selectedStage) && !formValues.reasonId.trim()) {
       setPendingStageId(formValues.stageId);
@@ -543,7 +556,8 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
       nextFollowUpType: formValues.nextFollowUpType,
       followUpDescription: formValues.followUpDescription.trim() || undefined,
       reasonId: formValues.reasonId.trim() || undefined,
-      remarks: formValues.remarks.trim() || undefined,
+      remarks: formValues.leadRemarks.trim() || undefined,
+      lobRemarks: formValues.remarks.trim() || undefined,
       totalAmount: formValues.totalAmount ? Number(formValues.totalAmount) : 0,
       ...(mode === 'create' ? { advancePayments: localAdvances } : {}),
     };
@@ -573,7 +587,8 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
             nextFollowUpAt: formValues.nextFollowUpAt ? new Date(formValues.nextFollowUpAt).toISOString() : null,
             nextFollowUpType: formValues.nextFollowUpType,
             reasonId: shouldUseStageTransitionFlow ? undefined : formValues.reasonId.trim() || null,
-            remarks: shouldUseStageTransitionFlow ? undefined : formValues.remarks.trim() || null,
+            remarks: formValues.leadRemarks.trim() || null,
+            lobRemarks: shouldUseStageTransitionFlow ? undefined : formValues.remarks.trim() || null,
           },
           dynamicValues: dynamicPayload,
         });
@@ -838,6 +853,28 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
                           </div>
                         </div>
                       </div>
+                    </section>
+
+                    <section className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
+                      <div className="mb-5 flex items-start justify-between gap-4">
+                        <div>
+                          <h3 className="text-lg font-black text-gray-900">Remarks</h3>
+                          <p className="text-sm font-semibold text-gray-500">
+                            Additional notes that do not fit into the standard lead fields.
+                          </p>
+                        </div>
+                        <span className={`text-xs font-black ${formValues.leadRemarks.length > 1000 ? 'text-red-500' : 'text-gray-400'}`}>
+                          {formValues.leadRemarks.length}/1000
+                        </span>
+                      </div>
+                      <textarea
+                        rows={5}
+                        maxLength={1000}
+                        value={formValues.leadRemarks}
+                        onChange={(event) => handleFieldChange('leadRemarks', event.target.value)}
+                        className={`${inputClassName} min-h-[140px] resize-y leading-relaxed`}
+                        placeholder="Enter any additional information or important notes about this lead..."
+                      />
                     </section>
 
                     <section className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">

@@ -37,6 +37,7 @@ export const createEmptyLeadFormValues = (): LeadFormValues => ({
   nextFollowUpType: 'CALL',
   followUpDescription: '',
   reasonId: '',
+  leadRemarks: '',
   remarks: '',
   dynamicValues: {},
   totalAmount: 0,

@@ -12,6 +12,7 @@ export interface LeadListItem {
   phone: string | null;
   companyName?: string | null;
   address?: string | null;
+  remarks?: string | null;
   expectedRevenue: number | null;
   generatedRevenue?: number | null;
   assignedToId: string | null;
@@ -122,6 +123,7 @@ export interface LeadCreatePayload {
   followUpDescription?: string;
   reasonId?: string;
   remarks?: string;
+  lobRemarks?: string;
   skipAutoStageAssignment?: boolean;
 }
 
@@ -142,6 +144,7 @@ export interface LeadUpdatePayload {
   isClosed?: boolean;
   reasonId?: string | null;
   remarks?: string | null;
+  lobRemarks?: string | null;
 }
 
 export interface ExtendLeadSlaPayload {
@@ -294,6 +297,7 @@ export interface LeadFormValues {
   nextFollowUpType: FollowUpType;
   followUpDescription: string;
   reasonId: string;
+  leadRemarks: string;
   remarks: string;
   dynamicValues: Record<string, string | string[]>;
   totalAmount?: number;
