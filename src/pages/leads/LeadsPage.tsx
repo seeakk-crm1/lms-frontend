@@ -19,6 +19,7 @@ import {
   useBulkDeleteLeadsMutation,
   useChangeLeadStageMutation,
   useExtendLeadSlaMutation,
+  useToggleLeadStarMutation,
 } from '../../hooks/useLeads';
 import { LeadListItem } from '../../types/lead.types';
 import { lazyWithChunkRecovery } from '../../utils/chunkLoadRecovery';
@@ -69,6 +70,7 @@ const LeadsPage: React.FC = () => {
   const bulkDeleteMutation = useBulkDeleteLeadsMutation();
   const changeStageMutation = useChangeLeadStageMutation();
   const extendLeadSlaMutation = useExtendLeadSlaMutation();
+  const toggleLeadStarMutation = useToggleLeadStarMutation();
 
   useEffect(() => {
     setSearchDraft(search);
@@ -118,6 +120,7 @@ const LeadsPage: React.FC = () => {
       assignedTo: undefined,
       source: undefined,
       status: undefined,
+      starred: 'ALL',
       createdFrom: undefined,
       createdTo: undefined,
     });
@@ -182,9 +185,10 @@ const LeadsPage: React.FC = () => {
       assignedTo: filters.assignedTo || undefined,
       source: filters.source || undefined,
       status: filters.status || undefined,
+      starred: filters.starred && filters.starred !== 'ALL' ? filters.starred : undefined,
       includeArchived: exportIncludeArchived,
     });
-  }, [exportMutation, exportIncludeArchived, filters.assignedTo, filters.source, filters.stage, filters.status, search]);
+  }, [exportMutation, exportIncludeArchived, filters.assignedTo, filters.source, filters.stage, filters.status, filters.starred, search]);
 
   const handleImportClick = useCallback(() => {
     navigate('/leads/import');
@@ -242,6 +246,23 @@ const LeadsPage: React.FC = () => {
   const handleViewLead = useCallback((lead: LeadListItem) => {
     setViewLead(lead);
   }, []);
+
+  const handleToggleLeadStar = useCallback(
+    (lead: LeadListItem) => {
+      const previousStarred = Boolean(lead.isStarred);
+      const nextStarred = !previousStarred;
+      setViewLead((current) => (current?.id === lead.id ? { ...current, isStarred: nextStarred } : current));
+      toggleLeadStarMutation.mutate(
+        { id: lead.id, starred: nextStarred },
+        {
+          onError: () => {
+            setViewLead((current) => (current?.id === lead.id ? { ...current, isStarred: previousStarred } : current));
+          },
+        },
+      );
+    },
+    [toggleLeadStarMutation],
+  );
 
   const handleCloseViewLead = useCallback(() => {
     setViewLead(null);
@@ -494,6 +515,7 @@ const LeadsPage: React.FC = () => {
                     assignedTo: undefined,
                     source: undefined,
                     status: undefined,
+                    starred: 'ALL',
                     createdFrom: undefined,
                     createdTo: undefined,
                   });
@@ -515,6 +537,7 @@ const LeadsPage: React.FC = () => {
               onPageChange={(value: number) => setPagination({ page: value })}
               onLimitChange={(value: number) => setPagination({ limit: value, page: 1 })}
               onView={handleViewLead}
+              onToggleStar={handleToggleLeadStar}
               onEdit={openEditDrawer}
               onDelete={handleDelete}
             />
@@ -533,6 +556,7 @@ const LeadsPage: React.FC = () => {
             lead={viewLead}
             onClose={handleCloseViewLead}
             onEdit={handleEditFromView}
+            onToggleStar={handleToggleLeadStar}
           />
         </Suspense>
 

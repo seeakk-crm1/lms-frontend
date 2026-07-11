@@ -1,7 +1,7 @@
 import React, { memo, useMemo } from 'react';
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
-import { Archive, ChevronLeft, ChevronRight, Pencil } from 'lucide-react';
+import { Archive, ChevronLeft, ChevronRight, Pencil, Star } from 'lucide-react';
 import type { LeadListItem } from '../../../types/lead.types';
 import FollowUpBadge from './FollowUpBadge';
 import { stageBadgeStyle } from '../../../utils/leadStageColor';
@@ -22,6 +22,7 @@ interface LeadsTableProps {
   onPageChange: (page: number) => void;
   onLimitChange: (limit: number) => void;
   onView: (lead: LeadListItem) => void;
+  onToggleStar: (lead: LeadListItem) => void;
   onEdit: (lead: LeadListItem) => void;
   onDelete: (lead: LeadListItem) => void;
 }
@@ -42,6 +43,7 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
   onPageChange,
   onLimitChange,
   onView,
+  onToggleStar,
   onEdit,
   onDelete,
 }) => {
@@ -150,7 +152,23 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
                   )}
                   <td className="px-6 py-5">
                     <div className="max-w-[220px]">
-                      <div className="truncate text-sm font-black text-gray-900">{lead.name}</div>
+                      <div className="flex min-w-0 items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            onToggleStar(lead);
+                          }}
+                          className={`shrink-0 rounded-lg p-1 transition-all hover:bg-amber-50 ${
+                            lead.isStarred ? 'text-amber-500' : 'text-gray-300 hover:text-amber-500'
+                          }`}
+                          aria-label={lead.isStarred ? `Unstar ${lead.name}` : `Star ${lead.name}`}
+                          title={lead.isStarred ? 'Unstar lead' : 'Star lead'}
+                        >
+                          <Star className={`h-4 w-4 ${lead.isStarred ? 'fill-current' : ''}`} />
+                        </button>
+                        <div className="truncate text-sm font-black text-gray-900">{lead.name}</div>
+                      </div>
                       <div className="mt-1 space-y-0.5">
                         {lead.email ? (
                           <a 

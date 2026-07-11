@@ -38,6 +38,7 @@ export interface LeadListItem {
   deletedAt: string | null;
   createdAt: string;
   updatedAt: string;
+  isStarred?: boolean;
   assignedTo: (Pick<User, 'id' | 'email' | 'name' | 'username'> & { displayName?: string }) | null;
   stage: Pick<LeadStage, 'id' | 'name' | 'color' | 'isLOB' | 'isClosed'> | null;
   lifecycle: Pick<LeadLifeCycle, 'id' | 'name' | 'isDefault'> | null;
@@ -76,6 +77,7 @@ export interface LeadFilters {
   assignedTo?: string;
   source?: string;
   status?: 'OPEN' | 'CLOSED' | 'LOB' | 'ACTIVE' | 'ARCHIVED';
+  starred?: 'ALL' | 'STARRED';
   createdFrom?: string;
   createdTo?: string;
 }

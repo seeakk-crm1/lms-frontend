@@ -1,5 +1,5 @@
 import React, { memo } from 'react';
-import { CalendarRange, Search, SlidersHorizontal, UserRound } from 'lucide-react';
+import { CalendarRange, Search, SlidersHorizontal, Star, UserRound } from 'lucide-react';
 import SearchableSelect from '../../../components/SearchableSelect';
 import type { LeadFilters as LeadFiltersState, LeadMetaOptions } from '../../../types/lead.types';
 
@@ -20,6 +20,11 @@ const statusOptions = [
   { value: 'ARCHIVED', label: 'Archived' },
 ];
 
+const starredOptions = [
+  { value: 'ALL', label: 'All Leads' },
+  { value: 'STARRED', label: 'Starred Leads' },
+];
+
 const LeadFilters: React.FC<LeadFiltersProps> = ({
   search,
   filters,
@@ -34,7 +39,7 @@ const LeadFilters: React.FC<LeadFiltersProps> = ({
       <h3 className="text-sm font-black uppercase tracking-[0.24em] text-gray-900">Filter Leads</h3>
     </div>
 
-    <div className="grid gap-4 xl:grid-cols-[1.3fr_repeat(5,minmax(0,1fr))]">
+    <div className="grid gap-4 xl:grid-cols-[1.3fr_repeat(7,minmax(0,1fr))]">
       <div className="relative">
         <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
         <input
@@ -83,6 +88,18 @@ const LeadFilters: React.FC<LeadFiltersProps> = ({
         }
       />
 
+      <SearchableSelect
+        name="starred"
+        value={filters.starred || 'ALL'}
+        options={starredOptions}
+        placeholder="Starred Leads"
+        onChange={(event) =>
+          onFilterChange({
+            starred: (event.target.value || 'ALL') as LeadFiltersState['starred'],
+          })
+        }
+      />
+
       <div className="relative">
         <CalendarRange className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
         <input
@@ -108,6 +125,7 @@ const LeadFilters: React.FC<LeadFiltersProps> = ({
 
     <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
       <p className="text-xs font-semibold text-gray-500">
+        <Star className="mr-1 inline h-3.5 w-3.5 fill-amber-400 text-amber-400" />
         Use filters to refine the pipeline view, then export the same dataset to CSV.
       </p>
       <button

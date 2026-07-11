@@ -8,6 +8,7 @@ import {
   MapPin,
   Pencil,
   Phone,
+  Star,
   Tag,
   X,
 } from 'lucide-react';
@@ -25,6 +26,7 @@ interface LeadViewDrawerProps {
   initialTab?: 'overview' | 'history';
   onClose: () => void;
   onEdit?: (lead: LeadListItem) => void;
+  onToggleStar?: (lead: LeadListItem) => void;
 }
 
 const tabs = [
@@ -51,6 +53,7 @@ const LeadViewDrawer: React.FC<LeadViewDrawerProps> = ({
   initialTab = 'overview',
   onClose,
   onEdit,
+  onToggleStar,
 }) => {
   const [activeTab, setActiveTab] = useState<'overview' | 'history'>(initialTab);
   const { data, isLoading } = useLeadDetailQuery(lead?.id, isOpen);
@@ -182,14 +185,29 @@ const LeadViewDrawer: React.FC<LeadViewDrawerProps> = ({
                     </span>
                   ) : null}
                 </div>
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700"
-                  aria-label="Close"
-                >
-                  <X className="h-5 w-5" />
-                </button>
+                <div className="flex shrink-0 items-center gap-1">
+                  {resolvedLead ? (
+                    <button
+                      type="button"
+                      onClick={() => onToggleStar?.(resolvedLead)}
+                      className={`rounded-lg p-1.5 transition-colors hover:bg-amber-50 ${
+                        resolvedLead.isStarred ? 'text-amber-500' : 'text-gray-400 hover:text-amber-500'
+                      }`}
+                      aria-label={resolvedLead.isStarred ? `Unstar ${resolvedLead.name}` : `Star ${resolvedLead.name}`}
+                      title={resolvedLead.isStarred ? 'Unstar lead' : 'Star lead'}
+                    >
+                      <Star className={`h-5 w-5 ${resolvedLead.isStarred ? 'fill-current' : ''}`} />
+                    </button>
+                  ) : null}
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700"
+                    aria-label="Close"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
               </div>
 
               <div className="mt-4 flex gap-1 rounded-xl bg-gray-50 p-1">

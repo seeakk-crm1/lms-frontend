@@ -14,6 +14,7 @@ import {
   getLeads,
   permanentlyDeleteLead,
   bulkDeleteLeads,
+  toggleLeadStar,
   updateLead,
 } from '../services/leads.api';
 import type {
@@ -74,7 +75,7 @@ const queryLooksUnfiltered = (queryKey: readonly unknown[]) => {
   if (page !== 1) return false;
   if (!filters || typeof filters !== 'object' || Array.isArray(filters)) return true;
 
-  return Object.values(filters).every((value) => value === undefined || value === '');
+  return Object.values(filters).every((value) => value === undefined || value === '' || value === 'ALL');
 };
 
 const removeLeadFromListResponse = (
@@ -96,6 +97,23 @@ const removeLeadFromListResponse = (
   };
 };
 
+const patchLeadStarInListResponse = (
+  previous: ListLeadsResponse | undefined,
+  leadId: string,
+  isStarred: boolean,
+  starredOnly: boolean,
+): ListLeadsResponse | undefined => {
+  if (!previous) return previous;
+  if (starredOnly && !isStarred) {
+    return removeLeadFromListResponse(previous, leadId);
+  }
+
+  return {
+    ...previous,
+    leads: previous.leads.map((lead) => (lead.id === leadId ? { ...lead, isStarred } : lead)),
+  };
+};
+
 export const useLeadsQuery = () => {
   const { filters, search, pagination } = useLeadStore();
 
@@ -110,6 +128,7 @@ export const useLeadsQuery = () => {
         assignedTo: filters.assignedTo || undefined,
         source: filters.source || undefined,
         status: filters.status || undefined,
+        starred: filters.starred && filters.starred !== 'ALL' ? filters.starred : undefined,
         createdFrom: filters.createdFrom || undefined,
         createdTo: filters.createdTo || undefined,
       }, signal),
@@ -121,6 +140,50 @@ export const useLeadsQuery = () => {
       const status = error?.response?.status;
       if (status === 401 || status === 403 || status === 429) return false;
       return failureCount < 2;
+    },
+  });
+};
+
+export const useToggleLeadStarMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, starred }: { id: string; starred: boolean }) => toggleLeadStar(id, starred),
+    onMutate: async ({ id, starred }) => {
+      await queryClient.cancelQueries({ queryKey: ['leads'] });
+      queryClient
+        .getQueriesData<ListLeadsResponse>({ queryKey: ['leads'] })
+        .forEach(([queryKey]) => {
+          const filters = Array.isArray(queryKey) ? queryKey[2] : null;
+          const starredOnly =
+            Boolean(filters && typeof filters === 'object' && !Array.isArray(filters) && (filters as any).starred === 'STARRED');
+          queryClient.setQueryData<ListLeadsResponse>(queryKey, (previous) =>
+            patchLeadStarInListResponse(previous, id, starred, starredOnly),
+          );
+        });
+      queryClient.setQueryData<LeadMutationResponse['data']>(['lead', id], (previous) =>
+        previous ? { ...previous, isStarred: starred } : previous,
+      );
+    },
+    onSuccess: (response, variables) => {
+      const isStarred = Boolean(response?.data?.isStarred ?? variables.starred);
+      queryClient
+        .getQueriesData<ListLeadsResponse>({ queryKey: ['leads'] })
+        .forEach(([queryKey]) => {
+          const filters = Array.isArray(queryKey) ? queryKey[2] : null;
+          const starredOnly =
+            Boolean(filters && typeof filters === 'object' && !Array.isArray(filters) && (filters as any).starred === 'STARRED');
+          queryClient.setQueryData<ListLeadsResponse>(queryKey, (previous) =>
+            patchLeadStarInListResponse(previous, variables.id, isStarred, starredOnly),
+          );
+        });
+      queryClient.setQueryData<LeadMutationResponse['data']>(['lead', variables.id], (previous) =>
+        previous ? { ...previous, isStarred } : previous,
+      );
+    },
+    onError: (error: any) => {
+      queryClient.invalidateQueries({ queryKey: ['leads'] });
+      toast.error(error?.response?.data?.message || 'Failed to update lead star');
     },
   });
 };

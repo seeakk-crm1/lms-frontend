@@ -68,6 +68,11 @@ export const updateLead = async (id: string, payload: LeadUpdatePayload) => {
   return response.data;
 };
 
+export const toggleLeadStar = async (id: string, starred: boolean) => {
+  const response = await api.patch(`/leads/${id}/star`, { starred });
+  return response.data;
+};
+
 export const deleteLead = async (id: string) => {
   const response = await api.delete(`/leads/${id}`);
   return response.data;
