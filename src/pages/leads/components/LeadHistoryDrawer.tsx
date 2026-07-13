@@ -53,28 +53,82 @@ const LeadHistoryDrawer: React.FC<LeadHistoryDrawerProps> = ({ isOpen, leadId, o
   };
 
   const filteredEvents = events.filter(event => {
-    const matchesSearch = (event.title || '').toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          (event.description || '').toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesFilter = filterType === 'ALL' || event.eventType === filterType;
+    let matchesSearch = (event.title || '').toLowerCase().includes(searchQuery.toLowerCase()) || 
+                        (event.description || '').toLowerCase().includes(searchQuery.toLowerCase());
+    
+    if (searchQuery && event.changes) {
+      const changesMatch = event.changes.some(c => 
+        String(c.fieldKey).toLowerCase().includes(searchQuery.toLowerCase()) ||
+        String(c.oldValue || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        String(c.newValue || '').toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      if (changesMatch) matchesSearch = true;
+    }
+
+    let matchesFilter = filterType === 'ALL';
+    if (!matchesFilter) {
+      if (filterType === 'Remarks') {
+        matchesFilter = event.eventType === 'FIELD_UPDATE' && event.changes?.some(c => c.fieldKey === 'remarks') || false;
+      } else if (filterType === 'Assignment Changes') {
+        matchesFilter = event.eventType === 'FIELD_UPDATE' && event.changes?.some(c => c.fieldKey === 'assignedToId') || false;
+      } else if (filterType === 'Follow-up Changes') {
+        matchesFilter = event.eventType === 'FIELD_UPDATE' && event.changes?.some(c => c.fieldKey === 'nextFollowUpAt') || false;
+      } else if (filterType === 'Dynamic Fields') {
+        // dynamic fields use uuid for fieldKey
+        matchesFilter = event.eventType === 'FIELD_UPDATE' && event.changes?.some(c => c.fieldKey.length > 20) || false;
+      } else if (filterType === 'PAYMENT') {
+        matchesFilter = ['PAYMENT', 'PAYMENT_APPROVAL', 'PAYMENT_REJECTION', 'AMOUNT_CHANGE'].includes(event.eventType);
+      } else {
+        matchesFilter = event.eventType === filterType;
+      }
+    }
     return matchesSearch && matchesFilter;
   });
 
   const handleExportCSV = () => {
     if (events.length === 0) return;
     
-    const headers = ['Date', 'Event Type', 'Title', 'Description', 'User'];
-    const csvContent = [
-      headers.join(','),
-      ...events.map(e => {
-        return [
-          `"${new Date(e.timestamp).toLocaleString()}"`,
-          `"${e.eventType}"`,
-          `"${e.title.replace(/"/g, '""')}"`,
-          `"${e.description.replace(/"/g, '""')}"`,
-          `"${e.user?.name || 'System'}"`
-        ].join(',');
-      })
-    ].join('\n');
+    const headers = ['Date', 'Time', 'Field', 'Previous Value', 'New Value', 'Changed By', 'Reason', 'Event Type'];
+    
+    const rows: string[] = [];
+    rows.push(headers.join(','));
+
+    events.forEach(e => {
+      const dt = new Date(e.timestamp);
+      const dateStr = dt.toLocaleDateString();
+      const timeStr = dt.toLocaleTimeString();
+      const userStr = e.user?.name || 'System';
+      const eventTypeStr = e.eventType;
+      const reasonStr = (e.reason || e.description || '').replace(/"/g, '""');
+
+      if (e.changes && e.changes.length > 0) {
+        e.changes.forEach(change => {
+          const fieldStr = String(change.fieldKey).replace(/"/g, '""');
+          const oldStr = String(change.oldValue || 'None').replace(/"/g, '""');
+          const newStr = String(change.newValue || 'None').replace(/"/g, '""');
+          rows.push(`"${dateStr}","${timeStr}","${fieldStr}","${oldStr}","${newStr}","${userStr}","${reasonStr}","${eventTypeStr}"`);
+        });
+      } else {
+        // Handle events without explicit field changes (e.g., generic ACTIVITY)
+        let fieldStr = '';
+        let oldStr = '';
+        let newStr = '';
+        
+        if (e.eventType === 'STAGE_CHANGE') {
+          fieldStr = 'Stage';
+          oldStr = e.metadata?.fromStageId || 'None'; // Could be mapped to name if available
+          newStr = e.metadata?.toStageId || 'None';
+        } else if (e.eventType === 'AMOUNT_CHANGE') {
+          fieldStr = 'Total Amount';
+          oldStr = e.metadata?.oldAmount || '0';
+          newStr = e.metadata?.newAmount || '0';
+        }
+        
+        rows.push(`"${dateStr}","${timeStr}","${fieldStr}","${oldStr}","${newStr}","${userStr}","${reasonStr}","${eventTypeStr}"`);
+      }
+    });
+
+    const csvContent = rows.join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
@@ -125,10 +179,13 @@ const LeadHistoryDrawer: React.FC<LeadHistoryDrawerProps> = ({ isOpen, leadId, o
             className="py-2 pl-3 pr-8 border border-gray-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
           >
             <option value="ALL">All Events</option>
+            <option value="FIELD_UPDATE">Field Updates</option>
             <option value="STAGE_CHANGE">Stage Changes</option>
-            <option value="PAYMENT">Payments</option>
-            <option value="AMOUNT_CHANGE">Amount Changes</option>
-            <option value="ACTIVITY">Activities</option>
+            <option value="PAYMENT">Payment Changes</option>
+            <option value="Follow-up Changes">Follow-up Changes</option>
+            <option value="Assignment Changes">Assignment Changes</option>
+            <option value="Remarks">Remarks</option>
+            <option value="Dynamic Fields">Dynamic Fields</option>
             <option value="AUDIT">Audit Logs</option>
           </select>
           <button
@@ -174,6 +231,27 @@ const LeadHistoryDrawer: React.FC<LeadHistoryDrawerProps> = ({ isOpen, leadId, o
                     </div>
                     
                     <p className="text-sm text-gray-600 mb-3">{event.description}</p>
+                    
+                    {event.changes && event.changes.length > 0 && (
+                      <div className="bg-gray-50 border border-gray-100 rounded-lg p-3 mb-3 space-y-2">
+                        {event.changes.map((change, idx) => (
+                          <div key={idx} className="text-sm flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                            <span className="font-medium text-gray-700 min-w-[120px]">
+                              {String(change.fieldKey).replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}:
+                            </span>
+                            <div className="flex items-center flex-1 gap-2 flex-wrap">
+                              <span className="bg-red-50 text-red-700 px-2 py-0.5 rounded text-xs truncate max-w-[200px]" title={String(change.oldValue || 'None')}>
+                                {String(change.oldValue || 'None')}
+                              </span>
+                              <span className="text-gray-400">→</span>
+                              <span className="bg-green-50 text-green-700 px-2 py-0.5 rounded text-xs truncate max-w-[200px]" title={String(change.newValue || 'None')}>
+                                {String(change.newValue || 'None')}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                     
                     <div className="flex items-center justify-between pt-3 border-t border-gray-50">
                       <div className="flex items-center text-xs text-gray-500">
