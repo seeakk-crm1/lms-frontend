@@ -15,24 +15,24 @@ interface OrganisationNodeProps {
 }
 
 const nodeTheme = (nodeType: OrganisationChartNode['nodeType']) => {
-  if (nodeType === 'TOP') {
+  if (nodeType === 'WORKSPACE') {
     return {
-      card: 'bg-red-50 border-red-200',
-      badge: 'bg-red-100 text-red-700',
-      avatar: 'from-red-500 to-rose-500',
+      card: 'bg-purple-50 border-purple-200',
+      badge: 'bg-purple-100 text-purple-700',
+      avatar: 'from-purple-500 to-indigo-500',
     };
   }
-  if (nodeType === 'MANAGER') {
+  if (nodeType === 'DEPARTMENT') {
     return {
-      card: 'bg-green-50 border-green-200',
-      badge: 'bg-green-100 text-green-700',
-      avatar: 'from-emerald-500 to-green-500',
+      card: 'bg-indigo-50 border-indigo-200',
+      badge: 'bg-indigo-100 text-indigo-700',
+      avatar: 'from-indigo-500 to-blue-500',
     };
   }
   return {
-    card: 'bg-blue-50 border-blue-200',
-    badge: 'bg-blue-100 text-blue-700',
-    avatar: 'from-blue-500 to-cyan-500',
+    card: 'bg-emerald-50 border-emerald-200',
+    badge: 'bg-emerald-100 text-emerald-700',
+    avatar: 'from-emerald-500 to-teal-500',
   };
 };
 
@@ -80,13 +80,13 @@ const OrganisationNode: React.FC<OrganisationNodeProps> = ({
         animate={{ opacity: 1, y: 0 }}
         whileHover={{ scale: 1.02 }}
         transition={{ duration: 0.2 }}
-        className={`w-full rounded-2xl border p-4 shadow-sm transition-all cursor-pointer ${
+        className={`w-[260px] rounded-2xl border p-4 shadow-sm transition-all cursor-pointer ${
           theme.card
         } ${isSelected ? 'ring-2 ring-emerald-400 shadow-lg' : 'hover:shadow-md'} ${
           isOnPath ? 'ring-1 ring-emerald-300/80' : ''
         }`}
         onClick={() => onSelect(node.id)}
-        title={`${node.name}${node.role ? ` • ${node.role}` : ''}${node.department ? ` • ${node.department}` : ''}`}
+        title={node.name}
         role="treeitem"
         aria-expanded={hasChildren ? isExpanded : undefined}
         aria-label={`Organisation node ${node.name}`}
@@ -117,7 +117,7 @@ const OrganisationNode: React.FC<OrganisationNodeProps> = ({
               <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide ${theme.badge}`}>
                 {node.nodeType}
               </span>
-              {!node.isActive && (
+              {node.nodeType === 'USER' && !node.isActive && (
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-gray-200 text-gray-600">
                   Inactive
                 </span>
@@ -141,20 +141,32 @@ const OrganisationNode: React.FC<OrganisationNodeProps> = ({
         </div>
 
         <div className="mt-3 space-y-1.5">
-          <p className="text-xs font-semibold text-gray-700 flex items-center gap-1.5">
-            <Shield className="w-3.5 h-3.5 text-gray-500" />
-            {highlightText(node.role || 'No Role', searchQuery)}
-          </p>
-          <p className="text-xs font-semibold text-gray-700 flex items-center gap-1.5">
-            <Building2 className="w-3.5 h-3.5 text-gray-500" />
-            {highlightText(node.department || 'No Department', searchQuery)}
-          </p>
-          <p className="text-xs font-semibold text-gray-600 flex items-center gap-1.5 truncate">
-            <Mail className="w-3.5 h-3.5 text-gray-500" />
-            <span className="truncate">{node.email}</span>
-          </p>
+          {node.nodeType === 'USER' && (
+            <>
+              <p className="text-xs font-semibold text-gray-700 flex items-center gap-1.5">
+                <Shield className="w-3.5 h-3.5 text-gray-500 shrink-0" />
+                <span className="truncate">{highlightText(node.role || 'No Role', searchQuery)}</span>
+              </p>
+              <p className="text-xs font-semibold text-gray-700 flex items-center gap-1.5">
+                <Building2 className="w-3.5 h-3.5 text-gray-500 shrink-0" />
+                <span className="truncate">{highlightText(node.department || 'No Department', searchQuery)}</span>
+              </p>
+              <p className="text-xs font-semibold text-gray-600 flex items-center gap-1.5">
+                <Mail className="w-3.5 h-3.5 text-gray-500 shrink-0" />
+                <span className="truncate">{node.email}</span>
+              </p>
+            </>
+          )}
+          
+          {(node.memberCount ?? 0) > 0 && (
+            <div className="pt-1 mt-1 border-t border-black/5 flex items-center justify-between text-[11px] font-bold text-gray-600">
+              <span>Team: {node.memberCount}</span>
+              <span className="text-emerald-600">Active: {node.activeCount}</span>
+            </div>
+          )}
+
           {isMatched && (
-            <p className="text-[10px] font-bold text-emerald-700 uppercase tracking-widest">Search Match</p>
+            <p className="text-[10px] font-bold text-emerald-700 uppercase tracking-widest mt-1">Search Match</p>
           )}
         </div>
       </motion.div>

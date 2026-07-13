@@ -6,6 +6,7 @@ import OrganisationTree from './OrganisationTree';
 import { useOrganisationChartQuery } from './useOrganisationChartQuery';
 import { useOrganisationChartStore } from './organisationChart.store';
 import { OrganisationChartNode } from './types';
+import UserSidePanel from './UserSidePanel';
 
 const collectNodeIds = (roots: OrganisationChartNode[]): string[] => {
   const ids: string[] = [];
@@ -140,6 +141,16 @@ const OrganisationChartPage: React.FC = () => {
               </label>
             </div>
 
+            <div className="flex flex-wrap items-center gap-4">
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-bold shadow-sm hover:bg-gray-50"
+              >
+                Print / PDF
+              </button>
+            </div>
+
             {isLoading || isFetching ? (
               <TreeSkeleton />
             ) : isError ? (
@@ -175,6 +186,8 @@ const OrganisationChartPage: React.FC = () => {
             )}
           </div>
         </div>
+
+        <UserSidePanel />
     </DashboardLayout>
   );
 };

@@ -1,11 +1,19 @@
 import { create } from 'zustand';
 
+interface OrganisationChartFilters {
+  department: string;
+  role: string;
+  status: string;
+}
+
 interface OrganisationChartState {
   expandedNodes: Record<string, boolean>;
   searchQuery: string;
+  filters: OrganisationChartFilters;
   selectedNode: string | null;
   toggleNode: (id: string) => void;
   setSearch: (query: string) => void;
+  setFilters: (filters: Partial<OrganisationChartFilters>) => void;
   setSelectedNode: (id: string | null) => void;
   expandAll: (nodeIds: string[]) => void;
   collapseAll: () => void;
@@ -15,6 +23,11 @@ interface OrganisationChartState {
 export const useOrganisationChartStore = create<OrganisationChartState>((set) => ({
   expandedNodes: {},
   searchQuery: '',
+  filters: {
+    department: '',
+    role: '',
+    status: '',
+  },
   selectedNode: null,
   toggleNode: (id) =>
     set((state) => ({
@@ -24,6 +37,7 @@ export const useOrganisationChartStore = create<OrganisationChartState>((set) =>
       },
     })),
   setSearch: (searchQuery) => set({ searchQuery }),
+  setFilters: (filters) => set((state) => ({ filters: { ...state.filters, ...filters } })),
   setSelectedNode: (selectedNode) => set({ selectedNode }),
   expandAll: (nodeIds) =>
     set(() => ({

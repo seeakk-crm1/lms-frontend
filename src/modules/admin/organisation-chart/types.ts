@@ -1,17 +1,24 @@
-export type OrganisationNodeType = 'TOP' | 'MANAGER' | 'STAFF';
+export type OrganisationNodeType = 'WORKSPACE' | 'DEPARTMENT' | 'USER';
 
 export interface OrganisationChartNode {
   id: string;
   name: string;
-  email: string;
-  role: string | null;
-  department: string | null;
-  reportingTo: string | null;
   nodeType: OrganisationNodeType;
+  email?: string;
+  role?: string | null;
+  department?: string | null;
+  reportingTo?: string | null;
   depth: number;
-  isActive: boolean;
-  isOrphan: boolean;
+  isActive?: boolean;
+  isOrphan?: boolean;
   children: OrganisationChartNode[];
+  
+  avatarUrl?: string | null;
+  employeeId?: string | null;
+  status?: string | null;
+  phone?: string | null;
+  memberCount?: number;
+  activeCount?: number;
 }
 
 export interface OrganisationChartMeta {

@@ -14,6 +14,7 @@ type FlatNode = {
   role: string | null;
   department: string | null;
   parentId: string | null;
+  isActive: boolean;
 };
 
 const flattenNodes = (roots: OrganisationChartNode[]): FlatNode[] => {
@@ -29,9 +30,10 @@ const flattenNodes = (roots: OrganisationChartNode[]): FlatNode[] => {
     output.push({
       id: next.node.id,
       name: next.node.name,
-      role: next.node.role,
-      department: next.node.department,
+      role: next.node.role || null,
+      department: next.node.department || null,
       parentId: next.parentId,
+      isActive: next.node.isActive ?? true,
     });
     next.node.children.forEach((child) => queue.push({ node: child, parentId: next.node.id }));
   }
@@ -43,6 +45,7 @@ const OrganisationTree: React.FC<OrganisationTreeProps> = ({ roots }) => {
   const {
     expandedNodes,
     searchQuery,
+    filters,
     selectedNode,
     toggleNode,
     setSelectedNode,
@@ -59,16 +62,35 @@ const OrganisationTree: React.FC<OrganisationTreeProps> = ({ roots }) => {
 
   const matchedIds = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
-    if (!query) return new Set<string>();
+    const hasSearch = !!query;
+    const hasFilters = !!(filters.department || filters.role || filters.status);
+
+    if (!hasSearch && !hasFilters) return new Set<string>();
+
     return new Set(
       flat
         .filter((node) => {
-          const hay = `${node.name} ${node.role || ''} ${node.department || ''}`.toLowerCase();
-          return hay.includes(query);
+          let matches = true;
+
+          if (hasFilters) {
+            if (filters.department && node.department !== filters.department) matches = false;
+            if (filters.role && node.role !== filters.role) matches = false;
+            if (filters.status) {
+              const expectedStatus = filters.status === 'active';
+              if (node.isActive !== expectedStatus) matches = false;
+            }
+          }
+
+          if (matches && hasSearch) {
+            const hay = `${node.name} ${node.role || ''} ${node.department || ''}`.toLowerCase();
+            if (!hay.includes(query)) matches = false;
+          }
+
+          return matches;
         })
         .map((node) => node.id),
     );
-  }, [flat, searchQuery]);
+  }, [flat, searchQuery, filters]);
 
   const pathIds = useMemo(() => {
     if (matchedIds.size === 0) return new Set<string>();
