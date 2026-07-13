@@ -69,8 +69,13 @@ const Dashboard: React.FC<DashboardProps> = ({ mode = 'operations' }) => {
     const hasAnyDashboardSection = [canSeeMetrics, canSeeGrowth, canQuickAddLead, canSeeActivity, canSeeLOB, canSeeCalendar, canSeeRevenue].some(Boolean);
     const shouldFetchDashboardData = [canSeeMetrics, canSeeGrowth, canSeeActivity, canSeeLOB, canSeeCalendar].some(Boolean);
 
+    const hasFetched = React.useRef(false);
+
     useEffect(() => {
         if (!shouldFetchDashboardData) return;
+        if (hasFetched.current) return;
+        hasFetched.current = true;
+        
         void fetchDashboardData();
     }, [fetchDashboardData, shouldFetchDashboardData]);
 
