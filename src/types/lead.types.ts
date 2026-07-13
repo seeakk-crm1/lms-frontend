@@ -3,6 +3,7 @@ import type { LeadDynamicField } from '../modules/admin/lead-dynamics/types';
 import type { LeadLifeCycle } from './admin/lead-life-cycle/leadLifeCycle.types';
 import type { LeadSource } from './leadSource.types';
 import type { LeadStage } from './leadStage.types';
+import type { Product, LeadProductSelection } from './product.types';
 import type { User } from './user.types';
 
 export interface LeadListItem {
@@ -53,6 +54,17 @@ export interface LeadListItem {
     changedAt: string;
   }>;
   followUps?: any[];
+  products?: Array<{
+    id: string;
+    productId: string | null;
+    productName: string;
+    productCode?: string | null;
+    unitPrice: number;
+    quantity: number;
+    lineTotal: number;
+    createdAt: string;
+    updatedAt: string;
+  }>;
   dynamicValues?: Array<{
     id: string;
     leadId: string;
@@ -108,6 +120,7 @@ export interface ListLeadsResponse {
   success: boolean;
   message: string;
   leads: LeadListItem[];
+  expectedRevenue?: number;
   pagination: LeadPagination;
 }
 
@@ -135,6 +148,7 @@ export interface LeadCreatePayload {
   remarks?: string;
   lobRemarks?: string;
   dynamicValues?: LeadDynamicValuePayload[];
+  products?: LeadProductSelection[];
   skipAutoStageAssignment?: boolean;
 }
 
@@ -157,6 +171,7 @@ export interface LeadUpdatePayload {
   remarks?: string | null;
   lobRemarks?: string | null;
   dynamicValues?: LeadDynamicValuePayload[];
+  products?: LeadProductSelection[];
 }
 
 export interface ExtendLeadSlaPayload {
@@ -312,6 +327,7 @@ export interface LeadFormValues {
   leadRemarks: string;
   remarks: string;
   dynamicValues: Record<string, string | string[]>;
+  products: LeadProductSelection[];
   totalAmount?: number;
 }
 
@@ -332,6 +348,7 @@ export interface LeadMetaOptions {
   stages: Array<LeadOption & { color?: string; isLOB?: boolean; isClosed?: boolean }>;
   lifeCycles: Array<LeadOption & { isDefault?: boolean; transitions?: LeadLifeCycle['transitions'] }>;
   lobReasons: LeadOption[];
+  products: Product[];
   dynamicFields: LeadDynamicField[];
   canAssignOtherUsers: boolean;
 }

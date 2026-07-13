@@ -40,6 +40,7 @@ export const createEmptyLeadFormValues = (): LeadFormValues => ({
   leadRemarks: '',
   remarks: '',
   dynamicValues: {},
+  products: [],
   totalAmount: 0,
 });
 

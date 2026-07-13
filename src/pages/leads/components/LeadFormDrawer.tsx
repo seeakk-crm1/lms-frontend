@@ -75,6 +75,10 @@ const fromLeadToForm = (lead: LeadListItem): LeadFormValues => ({
   leadRemarks: lead.remarks || '',
   remarks: lead.lobLogs?.[0]?.remarks || '',
   dynamicValues: fromSavedDynamicValues(lead),
+  products: (lead.products || []).map((item) => ({
+    productId: item.productId || '',
+    quantity: item.quantity || 1,
+  })).filter((item) => item.productId),
   totalAmount: (lead as any).totalAmount || 0,
 });
 
@@ -104,6 +108,17 @@ const buildDynamicPayload = (
   return includeEmpty
     ? fields.map((field) => payload.find((item) => item.fieldId === field.id) || { fieldId: field.id, value: '' })
     : payload;
+};
+
+const calculateProductTotal = (
+  selections: LeadFormValues['products'],
+  products: Array<{ id: string; unitPrice: number }>,
+) => {
+  const productById = new Map(products.map((product) => [product.id, product]));
+  return selections.reduce((sum, item) => {
+    const product = productById.get(item.productId);
+    return sum + Number(product?.unitPrice || 0) * Math.max(1, Number(item.quantity || 1));
+  }, 0);
 };
 
 const getMissingRequiredDynamicField = (
@@ -142,6 +157,59 @@ const getSelectOptions = (items: LeadOption[]) => items.map((item) => ({ value: 
 
 const containsUnsafeMarkup = (value: string): boolean => /<[^>]*>/u.test(value) || /javascript\s*:/iu.test(value);
 
+type ValidationErrorItem = { field: string; message: string };
+type ValidationErrorMap = Record<string, string>;
+
+const compactObject = <T extends Record<string, any>>(value: T): Partial<T> =>
+  Object.fromEntries(
+    Object.entries(value).filter(([, entry]) => {
+      if (entry === undefined) return false;
+      if (typeof entry === 'number' && !Number.isFinite(entry)) return false;
+      if (Array.isArray(entry) && entry.length === 0) return false;
+      return true;
+    }),
+  ) as Partial<T>;
+
+const optionalTrimmed = (value?: string | null) => {
+  const trimmed = (value || '').trim();
+  return trimmed || undefined;
+};
+
+const nullableTrimmed = (value?: string | null) => {
+  const trimmed = (value || '').trim();
+  return trimmed || null;
+};
+
+const toIsoOrUndefined = (value?: string | null) => {
+  const raw = (value || '').trim();
+  if (!raw) return undefined;
+  const date = new Date(raw);
+  return Number.isNaN(date.getTime()) ? undefined : date.toISOString();
+};
+
+const toIsoOrNull = (value?: string | null) => {
+  const iso = toIsoOrUndefined(value);
+  return iso || null;
+};
+
+const buildValidationMap = (errors?: ValidationErrorItem[] | Record<string, string[] | string>): ValidationErrorMap => {
+  if (!errors) return {};
+  if (Array.isArray(errors)) {
+    return errors.reduce<ValidationErrorMap>((acc, item) => {
+      if (item?.field && item?.message) acc[item.field] = item.message;
+      return acc;
+    }, {});
+  }
+  return Object.entries(errors).reduce<ValidationErrorMap>((acc, [field, messages]) => {
+    const first = Array.isArray(messages) ? messages[0] : messages;
+    if (first) acc[field] = first;
+    return acc;
+  }, {});
+};
+
+const getValidationMessage = (errors: ValidationErrorMap, ...fields: string[]) =>
+  fields.map((field) => errors[field]).find(Boolean) || '';
+
 const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onClose }) => {
   const { data: meta, isLoading: metaLoading } = useLeadMetaQuery(isOpen);
   const { data: leadDetails, isLoading: leadLoading } = useLeadDetailQuery(lead?.id, isOpen && mode === 'edit');
@@ -163,6 +231,15 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
   const [previewModalOpen, setPreviewModalOpen] = useState(false);
   const [localAdvances, setLocalAdvances] = useState<any[]>([]);
+  const [validationErrors, setValidationErrors] = useState<ValidationErrorMap>({});
+
+  const ErrorText = ({ field }: { field: string | string[] }) => {
+    const message = Array.isArray(field)
+      ? getValidationMessage(validationErrors, ...field)
+      : validationErrors[field];
+    if (!message) return null;
+    return <p className="mt-1 text-xs font-bold text-red-600">{message}</p>;
+  };
 
   useEffect(() => {
     if (isOpen) {
@@ -353,6 +430,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
 
   useEffect(() => {
     if (!isOpen) {
+      setValidationErrors({});
       setStageRulesModalOpen(false);
       setStageRulesForTransition([]);
       setPendingTransitionStageId(null);
@@ -362,6 +440,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
     }
 
     if (mode === 'edit' && hydratedLead && !isBusy) {
+      setValidationErrors({});
       setFormValues(fromLeadToForm(hydratedLead));
       setPreviousStageId(hydratedLead.stageId || '');
       return;
@@ -371,6 +450,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
       ...createEmptyLeadFormValues(),
       assignedToId: currentUser?.id || '',
     });
+    setValidationErrors({});
     setPreviousStageId('');
   }, [hydratedLead, isOpen, mode]);
 
@@ -378,6 +458,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
   const dynamicFields = (meta?.dynamicFields as LeadDynamicField[]) || [];
   const { options: lobReasonOptions } = useActiveLOBReasonOptions(isOpen, meta?.lobReasons || []);
   const canAssignOtherUsers = Boolean(meta?.canAssignOtherUsers);
+  const productOptions = meta?.products || [];
 
   const isBusy =
     metaLoading ||
@@ -394,7 +475,75 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
 
   const disabledStageIds = useMemo(() => new Set<string>(), []);
 
+  useEffect(() => {
+    if (!isOpen || formValues.products.length === 0) return;
+    const total = calculateProductTotal(formValues.products, productOptions);
+    setFormValues((current) => (
+      Number(current.totalAmount || 0) === total ? current : { ...current, totalAmount: total }
+    ));
+  }, [formValues.products, isOpen, productOptions]);
+
+  const handleAddProductRow = () => {
+    setValidationErrors((current) => {
+      const next = { ...current };
+      delete next.products;
+      return next;
+    });
+    setFormValues((current) => ({
+      ...current,
+      products: [...current.products, { productId: '', quantity: 1 }],
+    }));
+  };
+
+  const handleProductRowChange = (index: number, field: 'productId' | 'quantity', value: string | number) => {
+    setValidationErrors((current) => {
+      const next = { ...current };
+      delete next.products;
+      delete next[`products.${index}.${field}`];
+      return next;
+    });
+    setFormValues((current) => {
+      const products = current.products.map((item, itemIndex) =>
+        itemIndex === index
+          ? {
+              ...item,
+              [field]: field === 'quantity' ? Math.max(1, Number(value) || 1) : String(value),
+            }
+          : item,
+      );
+      return {
+        ...current,
+        products,
+        totalAmount: calculateProductTotal(products, productOptions),
+      };
+    });
+  };
+
+  const handleRemoveProductRow = (index: number) => {
+    setValidationErrors((current) => {
+      const next = { ...current };
+      delete next.products;
+      delete next[`products.${index}.productId`];
+      delete next[`products.${index}.quantity`];
+      return next;
+    });
+    setFormValues((current) => {
+      const products = current.products.filter((_, itemIndex) => itemIndex !== index);
+      return {
+        ...current,
+        products,
+        totalAmount: products.length ? calculateProductTotal(products, productOptions) : current.totalAmount,
+      };
+    });
+  };
+
   const handleFieldChange = (field: keyof LeadFormValues, value: any) => {
+    setValidationErrors((current) => {
+      if (!current[field]) return current;
+      const next = { ...current };
+      delete next[field];
+      return next;
+    });
     if (field === 'stageId') {
       const nextStage = stageOptions.find((item) => item.id === value);
       if (isLobStageOption(nextStage)) {
@@ -465,6 +614,14 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
   };
 
   const handleDynamicFieldChange = (fieldId: string, value: string | string[]) => {
+    setValidationErrors((current) => {
+      const next = { ...current };
+      delete next.dynamicValues;
+      Object.keys(next).forEach((key) => {
+        if (key.startsWith('dynamicValues.')) delete next[key];
+      });
+      return next;
+    });
     setFormValues((current) => ({
       ...current,
       dynamicValues: {
@@ -542,6 +699,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+    setValidationErrors({});
 
     if (!formValues.name.trim()) {
       toast.error('Lead name is required');
@@ -590,36 +748,58 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
       return;
     }
 
-    const payload = {
+    const totalAmount = Number(formValues.totalAmount || 0);
+    const safeProducts = formValues.products
+      .filter((item) => item.productId && productOptions.some((product) => product.id === item.productId))
+      .map((item) => ({
+        productId: item.productId,
+        quantity: Math.max(1, Math.trunc(Number(item.quantity) || 1)),
+      }));
+    const safeAdvances = localAdvances
+      .map((item) => {
+        const amount = Number(item.amount);
+        const paymentDate = toIsoOrUndefined(item.paymentDate);
+        if (!Number.isFinite(amount) || amount <= 0 || !paymentDate) return null;
+        return compactObject({
+          amount,
+          paymentDate,
+          remarks: optionalTrimmed(item.remarks),
+          proofUrl: optionalTrimmed(item.proofUrl),
+        });
+      })
+      .filter(Boolean);
+
+    const payload = compactObject({
       name: formValues.name.trim(),
-      email: formValues.email.trim() || undefined,
-      phone: formValues.phone.trim() || undefined,
-      companyName: formValues.companyName.trim() || undefined,
-      address: formValues.address.trim() || undefined,
+      email: optionalTrimmed(formValues.email),
+      phone: optionalTrimmed(formValues.phone),
+      companyName: optionalTrimmed(formValues.companyName),
+      address: optionalTrimmed(formValues.address),
       assignedToId: canAssignOtherUsers
-        ? formValues.assignedToId || undefined
-        : currentUser?.id || undefined,
-      stageId: formValues.stageId || undefined,
-      lifecycleId: formValues.lifecycleId || undefined,
-      sourceId: formValues.sourceId || undefined,
-      nextFollowUpAt: formValues.nextFollowUpAt ? new Date(formValues.nextFollowUpAt).toISOString() : undefined,
+        ? optionalTrimmed(formValues.assignedToId)
+        : currentUser?.id,
+      stageId: optionalTrimmed(formValues.stageId),
+      lifecycleId: optionalTrimmed(formValues.lifecycleId),
+      sourceId: optionalTrimmed(formValues.sourceId),
+      nextFollowUpAt: toIsoOrUndefined(formValues.nextFollowUpAt),
       nextFollowUpType: formValues.nextFollowUpType,
-      followUpDescription: formValues.followUpDescription.trim() || undefined,
-      reasonId: formValues.reasonId.trim() || undefined,
-      remarks: formValues.leadRemarks.trim() || undefined,
-      lobRemarks: formValues.remarks.trim() || undefined,
-      totalAmount: formValues.totalAmount ? Number(formValues.totalAmount) : 0,
-      ...(mode === 'create' ? { advancePayments: localAdvances } : {}),
-    };
+      followUpDescription: optionalTrimmed(formValues.followUpDescription),
+      reasonId: optionalTrimmed(formValues.reasonId),
+      remarks: optionalTrimmed(formValues.leadRemarks),
+      lobRemarks: optionalTrimmed(formValues.remarks),
+      totalAmount: Number.isFinite(totalAmount) ? totalAmount : 0,
+      products: safeProducts,
+      ...(mode === 'create' ? { advancePayments: safeAdvances } : {}),
+    });
 
     const targetStageId = formValues.stageId;
     const dynamicPayload = buildDynamicPayload(formValues.dynamicValues, meta?.dynamicFields || [], mode === 'edit');
     const stageChanged = mode === 'edit' && Boolean(targetStageId) && targetStageId !== currentStageId;
     const shouldUseStageTransitionFlow = stageChanged && Boolean(currentStageId);
-    const payloadWithDynamicValues = {
+    const payloadWithDynamicValues = compactObject({
       ...payload,
       dynamicValues: dynamicPayload,
-    };
+    });
 
     try {
       if (mode === 'create') {
@@ -630,19 +810,19 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
           id: lead.id,
           payload: {
             ...payloadWithDynamicValues,
-            email: formValues.email.trim() || null,
-            phone: formValues.phone.trim() || null,
-            companyName: formValues.companyName.trim() || null,
-            address: formValues.address.trim() || null,
-            assignedToId: canAssignOtherUsers ? formValues.assignedToId || null : undefined,
+            email: nullableTrimmed(formValues.email),
+            phone: nullableTrimmed(formValues.phone),
+            companyName: nullableTrimmed(formValues.companyName),
+            address: nullableTrimmed(formValues.address),
+            assignedToId: canAssignOtherUsers ? nullableTrimmed(formValues.assignedToId) : undefined,
             stageId: shouldUseStageTransitionFlow ? undefined : targetStageId || null,
             lifecycleId: formValues.lifecycleId || null,
             sourceId: formValues.sourceId || null,
-            nextFollowUpAt: formValues.nextFollowUpAt ? new Date(formValues.nextFollowUpAt).toISOString() : null,
+            nextFollowUpAt: toIsoOrNull(formValues.nextFollowUpAt),
             nextFollowUpType: formValues.nextFollowUpType,
             reasonId: shouldUseStageTransitionFlow ? undefined : formValues.reasonId.trim() || null,
-            remarks: formValues.leadRemarks.trim() || null,
-            lobRemarks: shouldUseStageTransitionFlow ? undefined : formValues.remarks.trim() || null,
+            remarks: nullableTrimmed(formValues.leadRemarks),
+            lobRemarks: shouldUseStageTransitionFlow ? undefined : nullableTrimmed(formValues.remarks),
           },
         });
 
@@ -685,8 +865,17 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
       }
 
       onClose();
-    } catch {
-      // handled by mutation hooks
+    } catch (error: any) {
+      const status = error?.response?.status;
+      const responseErrors = error?.response?.data?.errors;
+      if (status === 422) {
+        const nextErrors = buildValidationMap(responseErrors);
+        setValidationErrors(nextErrors);
+        const firstMessage = Object.values(nextErrors)[0];
+        if (firstMessage) {
+          toast.error(firstMessage);
+        }
+      }
     }
   };
 
@@ -764,6 +953,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
                             placeholder="Enter lead or account name"
                             required
                           />
+                          <ErrorText field="name" />
                         </div>
 
                         <div>
@@ -795,6 +985,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
                             className={inputClassName}
                             placeholder="9876543210"
                           />
+                          <ErrorText field="phone" />
                         </div>
 
                         <div>
@@ -816,6 +1007,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
                             className={inputClassName}
                             placeholder="lead@company.com"
                           />
+                          <ErrorText field="email" />
                         </div>
 
                         <div>
@@ -827,6 +1019,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
                             className={inputClassName}
                             placeholder="Acme Pvt Ltd"
                           />
+                          <ErrorText field="companyName" />
                         </div>
 
                         <div className="md:col-span-2">
@@ -838,6 +1031,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
                             className={`${inputClassName} resize-none`}
                             placeholder="Street, city, state, PIN"
                           />
+                          <ErrorText field="address" />
                         </div>
 
                         <div>
@@ -859,6 +1053,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
                                  : 'Unassigned')}
                             </div>
                           )}
+                          <ErrorText field="assignedToId" />
                         </div>
 
                         <div>
@@ -870,6 +1065,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
                             placeholder="Select source"
                             onChange={(event) => handleFieldChange('sourceId', event.target.value)}
                           />
+                          <ErrorText field="sourceId" />
                         </div>
 
                         <div>
@@ -883,6 +1079,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
                             clearLabel="No lifecycle"
                             onChange={(event) => handleFieldChange('lifecycleId', event.target.value)}
                           />
+                          <ErrorText field="lifecycleId" />
                         </div>
 
                         <div className="md:col-span-2">
@@ -903,6 +1100,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
                                 Invalid stage transitions are labeled as locked based on the selected life cycle.
                               </p>
                             ) : null}
+                            <ErrorText field="stageId" />
                           </div>
                         </div>
                       </div>
@@ -965,6 +1163,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
                           className={`${inputClassName} ${mode === 'edit' ? 'min-h-[80px]' : 'min-h-[140px]'} resize-y leading-relaxed`}
                           placeholder={mode === 'edit' ? 'Enter a new remark...' : 'Enter any additional information or important notes about this lead...'}
                         />
+                        <ErrorText field={['remarks', 'leadRemarks']} />
                       </div>
                     </section>
 
@@ -988,6 +1187,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
                             onChange={(event) => handleFieldChange('nextFollowUpAt', event.target.value)}
                             className={inputClassName}
                           />
+                          <ErrorText field="nextFollowUpAt" />
                           <label className="mb-2 mt-4 block text-sm font-black text-gray-900">Follow-up Type</label>
                           <select
                             value={formValues.nextFollowUpType}
@@ -1001,6 +1201,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
                               </option>
                             ))}
                           </select>
+                          <ErrorText field="nextFollowUpType" />
                         </div>
                         <div className="md:col-span-1">
                           <label className="mb-2 block text-sm font-black text-gray-900">Follow-up Note</label>
@@ -1011,8 +1212,96 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
                             className={`${inputClassName} resize-none`}
                             placeholder="Describe the next customer action, context, or talking point"
                           />
+                          <ErrorText field="followUpDescription" />
                         </div>
                       </div>
+                    </section>
+
+                    <section className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
+                      <div className="mb-5 flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600">
+                            <PlusCircle className="h-5 w-5" />
+                          </div>
+                          <div>
+                            <h3 className="text-lg font-black text-gray-900">Product Selection</h3>
+                            <p className="text-sm font-semibold text-gray-500">Selected products calculate the total amount automatically.</p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleAddProductRow}
+                          className="inline-flex items-center justify-center gap-2 rounded-2xl border border-indigo-100 bg-indigo-50 px-4 py-2 text-sm font-black text-indigo-700 transition hover:bg-indigo-100"
+                        >
+                          <PlusCircle className="h-4 w-4" />
+                          <span>Add Product</span>
+                        </button>
+                      </div>
+
+                      {formValues.products.length === 0 ? (
+                        <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 px-4 py-6 text-center text-sm font-bold text-gray-500">
+                          No products selected for this lead.
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          {formValues.products.map((item, index) => {
+                            const selectedProduct = productOptions.find((product) => product.id === item.productId);
+                            const unitPrice = Number(selectedProduct?.unitPrice || 0);
+                            const quantity = Math.max(1, Number(item.quantity || 1));
+                            const lineTotal = unitPrice * quantity;
+
+                            return (
+                              <div key={`${item.productId || 'product'}-${index}`} className="grid gap-3 rounded-2xl border border-gray-100 bg-gray-50 p-3 md:grid-cols-[1.7fr_110px_130px_130px_44px]">
+                                <select
+                                  value={item.productId}
+                                  onChange={(event) => handleProductRowChange(index, 'productId', event.target.value)}
+                                  className={inputClassName}
+                                >
+                                  <option value="">Select product</option>
+                                  {productOptions.map((product) => (
+                                    <option key={product.id} value={product.id}>
+                                      {product.name} - {Number(product.unitPrice || 0).toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}
+                                    </option>
+                                  ))}
+                                </select>
+                                <input
+                                  type="number"
+                                  min="1"
+                                  value={quantity}
+                                  onChange={(event) => handleProductRowChange(index, 'quantity', event.target.value)}
+                                  className={inputClassName}
+                                  aria-label="Product quantity"
+                                />
+                                <input
+                                  type="text"
+                                  readOnly
+                                  value={unitPrice.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}
+                                  className={`${inputClassName} bg-white text-gray-500`}
+                                  aria-label="Unit price"
+                                />
+                                <input
+                                  type="text"
+                                  readOnly
+                                  value={lineTotal.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}
+                                  className={`${inputClassName} bg-white font-black`}
+                                  aria-label="Line total"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveProductRow(index)}
+                                  className="flex h-12 w-12 items-center justify-center rounded-2xl border border-gray-200 bg-white text-gray-400 transition hover:border-rose-200 hover:text-rose-600"
+                                  title="Remove product"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                                <div className="md:col-span-5">
+                                  <ErrorText field={[`products.${index}.productId`, `products.${index}.quantity`, 'products']} />
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
                     </section>
 
                     <section className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
@@ -1041,6 +1330,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
                                 : ''
                             }`}
                           />
+                          <ErrorText field="totalAmount" />
                           {mode === 'edit' && paymentData?.amountHistory?.[0] && (
                             <div className="mt-2 text-xs font-semibold text-gray-500 flex flex-col gap-1">
                               <p>
@@ -1202,6 +1492,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
                             />
                           ))}
                         </div>
+                        <ErrorText field={['dynamicValues', 'dynamicValues.0.fieldId', 'dynamicValues.0.value']} />
                       </section>
                     ) : null}
 
@@ -1221,6 +1512,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
                               placeholder={lobReasonOptions.length ? 'Select LOB reason' : 'No active LOB reasons'}
                               name="reasonId"
                             />
+                            <ErrorText field="reasonId" />
                           </div>
                           <div>
                             <label className="mb-2 block text-sm font-black text-gray-900">Remarks <span className="text-xs font-semibold text-gray-400">(Optional)</span></label>
@@ -1231,6 +1523,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
                               className={`${inputClassName} resize-none`}
                               placeholder="Explain the loss context"
                             />
+                            <ErrorText field="lobRemarks" />
                           </div>
                         </div>
                       </section>

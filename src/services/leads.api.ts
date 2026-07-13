@@ -3,6 +3,7 @@ import { getLifeCycles } from './admin/lead-life-cycle/leadLifeCycleService';
 import { getActiveLOBReasons } from './lobReasons.api';
 import { getActiveLeadSources } from './leadSource.api';
 import { getLeadStages } from './leadStage.api';
+import { getActiveProducts } from './products.api';
 import type { FollowUpType } from '../types/followup.types';
 import type {
   LeadApprovalActionPayload,
@@ -276,13 +277,14 @@ const mapLOBReasonOptions = (reasons: Array<{ id: string; name: string; status: 
     }));
 
 export const getLeadMeta = async () => {
-  const [usersResult, sourcesResult, stagesResult, lifeCyclesResult, dynamicFieldsResult, lobReasonsResult] = await Promise.allSettled([
+  const [usersResult, sourcesResult, stagesResult, lifeCyclesResult, dynamicFieldsResult, lobReasonsResult, productsResult] = await Promise.allSettled([
     getLeadAssignees(),
     getActiveLeadSources(),
     getLeadStages({ page: 1, limit: 100, search: '', status: 'ACTIVE' }),
     getLifeCycles({ page: 1, limit: 100 }),
     getActiveLeadDynamicFields(),
     getActiveLOBReasons(),
+    getActiveProducts(),
   ]);
 
   const usersData = getSettledValue(usersResult, { data: [] } as any);
@@ -293,6 +295,7 @@ export const getLeadMeta = async () => {
   } as any);
   const dynamicFields = getSettledValue(dynamicFieldsResult, [] as any);
   const lobReasonsData = getSettledValue(lobReasonsResult, { data: [] } as any);
+  const productsData = getSettledValue(productsResult, { data: [] } as any);
 
   if (lobReasonsResult.status === 'rejected') {
     const reason = lobReasonsResult.reason as { response?: { status?: number; data?: { message?: string } } };
@@ -309,6 +312,7 @@ export const getLeadMeta = async () => {
     stages: mapStageOptions(stagesData?.data || []),
     lifeCycles: mapLifeCycleOptions(lifeCyclesData?.data?.lifeCycles || []),
     lobReasons: mapLOBReasonOptions(lobReasonsData?.data || []),
+    products: productsData?.data || [],
     dynamicFields,
     canAssignOtherUsers: Boolean(usersData?.meta?.canAssignOtherUsers),
   };

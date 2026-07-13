@@ -1,10 +1,10 @@
 import React from 'react';
 import { motion, Variants } from 'framer-motion';
-import { TrendingUp, Users, Target, CheckCircle2, LucideIcon } from 'lucide-react';
+import { TrendingUp, Users, Target, CheckCircle2, IndianRupee, LucideIcon } from 'lucide-react';
 import useDashboardStore from '../../store/useDashboardStore';
 
 const iconMap: Record<string, LucideIcon> = {
-    Target, Users, CheckCircle2, TrendingUp
+    Target, Users, CheckCircle2, TrendingUp, IndianRupee
 };
 
 const container = {

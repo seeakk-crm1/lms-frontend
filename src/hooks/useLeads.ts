@@ -282,6 +282,7 @@ export const useCreateLeadMutation = () => {
     onError: (error: any) => {
       const status = error?.response?.status;
       const message = error?.response?.data?.message;
+      if (status === 422) return;
       if (status === 409) {
         toast.error(message || 'A lead with the same contact details already exists.');
         return;
@@ -318,6 +319,7 @@ export const useUpdateLeadMutation = () => {
     onError: (error: any) => {
       const status = error?.response?.status;
       const message = error?.response?.data?.message;
+      if (status === 422) return;
       if (status === 409) {
         toast.error(message || 'Request could not be completed due to a conflicting lead update.');
         return;

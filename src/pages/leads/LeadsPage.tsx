@@ -169,6 +169,7 @@ const LeadsPage: React.FC = () => {
   }, [leads, location.pathname, location.state, navigate, openEditDrawer]);
 
   const totalLeads = data?.pagination?.total || 0;
+  const expectedRevenue = data?.expectedRevenue || 0;
   const dueTodayCount = useMemo(
     () =>
       leads.filter((lead) => {
@@ -321,8 +322,13 @@ const LeadsPage: React.FC = () => {
       { label: 'Total Leads', value: totalLeads, accent: 'from-emerald-500 to-emerald-600' },
       { label: 'Open Pipeline', value: openLeadCount, accent: 'from-blue-500 to-blue-600' },
       { label: 'Due Today', value: dueTodayCount, accent: 'from-amber-500 to-orange-500' },
+      {
+        label: 'Expected Revenue',
+        value: expectedRevenue.toLocaleString('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }),
+        accent: 'from-violet-500 to-fuchsia-600',
+      },
     ],
-    [dueTodayCount, openLeadCount, totalLeads],
+    [dueTodayCount, expectedRevenue, openLeadCount, totalLeads],
   );
 
   const tableLoading = isLoading || isFetching;
@@ -484,7 +490,7 @@ const LeadsPage: React.FC = () => {
               </motion.div>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-4">
               {stats.map((stat, index) => (
                 <motion.div
                   key={stat.label}

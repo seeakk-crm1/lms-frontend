@@ -35,6 +35,7 @@ import UnlockStaffPage from './pages/admin/UnlockStaffPage';
 import AdminRolesPage from './pages/AdminRolesPage';
 import AdminDepartmentsPage from './pages/AdminDepartmentsPage';
 import LeadSourceListPage from './pages/LeadSourceListPage';
+import ProductListPage from './pages/ProductListPage';
 import LeadStagesListPage from './pages/LeadStagesListPage';
 import StageRulesListPage from './pages/StageRulesListPage';
 import OrganisationChartPage from './modules/admin/organisation-chart/OrganisationChartPage';
@@ -286,6 +287,11 @@ function App() {
         <Route path="/admin/lead-source" element={
           <PermissionRoute permissions={['LEAD_SOURCES_VIEW', 'SYSTEM_CONFIG']}>
             <LeadSourceListPage />
+          </PermissionRoute>
+        } />
+        <Route path="/admin/products" element={
+          <PermissionRoute permissions={['PRODUCTS_VIEW', 'SYSTEM_CONFIG']}>
+            <ProductListPage />
           </PermissionRoute>
         } />
 
