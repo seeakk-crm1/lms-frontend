@@ -74,6 +74,8 @@ const createInitialDashboardSlice = (): Omit<DashboardState, 'reset' | 'fetchDas
     error: null,
 });
 
+let isFetchingAPI = false;
+
 const useDashboardStore = create<DashboardState>((set) => ({
     ...createInitialDashboardSlice(),
 
@@ -84,10 +86,11 @@ const useDashboardStore = create<DashboardState>((set) => ({
         const requestedRange = range ?? state.selectedRange;
         const hasExistingData = state.kpiData.length > 0;
 
-        // Prevent parallel fetches if we are already loading the same range
-        if ((state.isLoading || state.isRefreshing) && requestedRange === state.selectedRange) {
+        if (isFetchingAPI && requestedRange === state.selectedRange) {
             return;
         }
+
+        isFetchingAPI = true;
 
         set({
             isLoading: hasExistingData ? false : true,
@@ -123,6 +126,8 @@ const useDashboardStore = create<DashboardState>((set) => ({
                 isLoading: false,
                 isRefreshing: false,
             });
+        } finally {
+            isFetchingAPI = false;
         }
     }
 }));
