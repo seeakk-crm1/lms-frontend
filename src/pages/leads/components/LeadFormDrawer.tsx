@@ -1637,16 +1637,17 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
       {lobExitModalOpen && (
         <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
-            <h3 className="text-lg font-black text-gray-900 mb-2">Reason for Moving Out of LOB</h3>
+            <h3 className="text-lg font-black text-gray-900 mb-2">Return From LOB</h3>
             <p className="text-xs font-semibold text-gray-500 mb-4">
-              This lead is currently in an LOB stage. Please provide a mandatory reason for moving it to a regular pipeline stage. This will be saved as a remark.
+              Please enter the reason for returning this lead from LOB.
             </p>
+            <label className="mb-2 block text-sm font-black text-gray-900">LOB Return Remark <span className="text-red-500">*</span></label>
             <textarea
               className={inputClassName}
               rows={4}
               value={lobExitReason}
               onChange={(e) => setLobExitReason(e.target.value)}
-              placeholder="e.g. Client has revived interest, moving back to active pipeline..."
+              placeholder="e.g. Customer became interested after follow-up."
             />
             <div className="mt-4 flex justify-end gap-3">
               <button
@@ -1681,7 +1682,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
                 }}
                 className="rounded-2xl bg-emerald-500 px-5 py-2.5 text-sm font-black text-white hover:bg-emerald-600 shadow-lg shadow-emerald-500/20 disabled:opacity-50"
               >
-                Confirm & Move
+                Save & Continue
               </button>
             </div>
           </div>
