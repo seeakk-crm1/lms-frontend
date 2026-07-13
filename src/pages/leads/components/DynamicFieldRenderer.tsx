@@ -2,17 +2,20 @@ import React, { memo, useMemo } from 'react';
 import { CalendarDays, FileUp, ListChecks } from 'lucide-react';
 import SearchableSelect from '../../../components/SearchableSelect';
 import type { LeadDynamicField } from '../../../modules/admin/lead-dynamics/types';
+import { FieldEditBadge } from './FieldEditBadge';
+import { LeadFieldEditsResponse } from './useLeadFieldEdits';
 
 interface DynamicFieldRendererProps {
   field: LeadDynamicField;
   value: string | string[];
   onChange: (fieldId: string, value: string | string[]) => void;
+  fieldEdits?: LeadFieldEditsResponse;
 }
 
 const baseInputClassName =
   'w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-semibold text-gray-900 outline-none transition-all placeholder:text-gray-400 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/10';
 
-const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({ field, value, onChange }) => {
+const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({ field, value, onChange, fieldEdits }) => {
   const isArrayValue = Array.isArray(value);
   const normalizedValue = isArrayValue ? '' : value || '';
   const checkboxValue = isArrayValue ? value : [];
@@ -26,17 +29,24 @@ const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({ field, valu
     [field.options],
   );
 
+  const summary = fieldEdits?.summaries.find(s => s.fieldKey === field.id);
+  const histories = fieldEdits?.histories.filter(h => h.fieldKey === field.id) || [];
+  const hasHighlight = summary && summary.editCount > 0;
+
   const label = (
-    <label className="mb-2 flex items-center gap-2 text-sm font-black text-gray-900">
+    <label className="mb-2 flex items-center text-sm font-black text-gray-900">
       <span>{field.name}</span>
-      {field.isRequired ? <span className="text-[10px] uppercase tracking-widest text-rose-500">Required</span> : null}
+      {field.isRequired ? <span className="text-[10px] uppercase tracking-widest text-rose-500 ml-2">Required</span> : null}
+      <FieldEditBadge summary={summary} histories={histories} fieldName={field.name} />
     </label>
   );
+
+  const wrapperClass = hasHighlight ? "relative rounded-2xl ring-2 ring-red-400 bg-red-50/20 p-3 -mx-3 -mt-3 transition-all" : "";
 
   switch (field.inputType) {
     case 'TEXTAREA':
       return (
-        <div>
+        <div className={wrapperClass}>
           {label}
           <textarea
             rows={4}
@@ -50,7 +60,7 @@ const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({ field, valu
 
     case 'NUMBER':
       return (
-        <div>
+        <div className={wrapperClass}>
           {label}
           <input
             type="number"
@@ -66,7 +76,7 @@ const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({ field, valu
 
     case 'DATE':
       return (
-        <div>
+        <div className={wrapperClass}>
           {label}
           <div className="relative">
             <CalendarDays className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
@@ -79,27 +89,10 @@ const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({ field, valu
           </div>
         </div>
       );
-
-    case 'DATETIME':
-      return (
-        <div>
-          {label}
-          <div className="relative">
-            <CalendarDays className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-            <input
-              type="datetime-local"
-              value={normalizedValue}
-              onChange={(event) => onChange(field.id, event.target.value)}
-              className={baseInputClassName}
-            />
-          </div>
-        </div>
-      );
-
     case 'SELECT':
     case 'RADIO':
       return (
-        <div>
+        <div className={wrapperClass}>
           {label}
           <SearchableSelect
             name={field.id}
@@ -113,7 +106,7 @@ const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({ field, valu
 
     case 'CHECKBOX':
       return (
-        <div>
+        <div className={wrapperClass}>
           {label}
           <div className="rounded-2xl border border-gray-200 bg-gray-50 p-3">
             <div className="mb-3 flex items-center gap-2 text-xs font-black uppercase tracking-widest text-gray-400">
@@ -154,7 +147,7 @@ const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({ field, valu
 
     case 'FILE':
       return (
-        <div>
+        <div className={wrapperClass}>
           {label}
           <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-4">
             <div className="mb-3 flex items-center gap-2 text-sm font-black text-gray-700">
@@ -178,7 +171,7 @@ const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({ field, valu
     case 'TEXT':
     default:
       return (
-        <div>
+        <div className={wrapperClass}>
           {label}
           <input
             type="text"

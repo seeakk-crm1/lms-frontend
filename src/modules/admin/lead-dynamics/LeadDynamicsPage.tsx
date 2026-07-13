@@ -12,8 +12,10 @@ import {
 } from './useLeadDynamicsMutation';
 import { useLeadDynamicsQuery } from './useLeadDynamicsQuery';
 import type { LeadDynamicField, LeadDynamicsFormValues } from './types';
+import FieldHighlightConfigTab from './FieldHighlightConfigTab';
 
 const LeadDynamicsPage: React.FC = () => {
+  const [activeTab, setActiveTab] = useState<'fields' | 'highlights'>('fields');
   const [searchDraft, setSearchDraft] = useState('');
 
   const {
@@ -136,7 +138,32 @@ const LeadDynamicsPage: React.FC = () => {
               </motion.button>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+            <div className="flex border-b border-gray-200 mb-6">
+              <button
+                onClick={() => setActiveTab('fields')}
+                className={`py-3 px-6 font-semibold text-sm border-b-2 transition-colors ${
+                  activeTab === 'fields'
+                    ? 'border-emerald-500 text-emerald-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Form Fields
+              </button>
+              <button
+                onClick={() => setActiveTab('highlights')}
+                className={`py-3 px-6 font-semibold text-sm border-b-2 transition-colors ${
+                  activeTab === 'highlights'
+                    ? 'border-emerald-500 text-emerald-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Re-Edit Highlights
+              </button>
+            </div>
+
+            {activeTab === 'fields' ? (
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
               {stats.map((stat, index) => (
                 <motion.div
                   key={stat.label}
@@ -179,6 +206,10 @@ const LeadDynamicsPage: React.FC = () => {
               onEdit={openEditModal}
               onDelete={(item) => setDeleteCandidate(item)}
             />
+            </>
+          ) : (
+            <FieldHighlightConfigTab />
+          )}
           </div>
         </div>
 

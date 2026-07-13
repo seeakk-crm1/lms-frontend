@@ -10,6 +10,8 @@ import type { FollowUpType } from '../../../types/followup.types';
 import { FOLLOW_UP_TYPE_OPTIONS } from '../../../modules/followups/followUpTypeUi';
 import type { LeadFormValues, LeadListItem, LeadOption } from '../../../types/lead.types';
 import DynamicFieldRenderer from './DynamicFieldRenderer';
+import { useLeadFieldEdits } from './useLeadFieldEdits';
+import { FieldEditBadge } from './FieldEditBadge';
 import LOBModal from './LOBModal';
 import StageRulesTransitionModal, { StageRuleValueEntry } from './StageRulesTransitionModal';
 import { getLeadTransitionStageRules, getStageRules } from '../../../services/stageRule.api';
@@ -143,6 +145,7 @@ const containsUnsafeMarkup = (value: string): boolean => /<[^>]*>/u.test(value) 
 const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onClose }) => {
   const { data: meta, isLoading: metaLoading } = useLeadMetaQuery(isOpen);
   const { data: leadDetails, isLoading: leadLoading } = useLeadDetailQuery(lead?.id, isOpen && mode === 'edit');
+  const { data: fieldEdits } = useLeadFieldEdits(isOpen && mode === 'edit' ? lead?.id : undefined);
   const setDynamicFields = useLeadStore((state) => state.setDynamicFields);
   const createMutation = useCreateLeadMutation();
   const updateMutation = useUpdateLeadMutation();
@@ -169,6 +172,18 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
       }
     }
   }, [isOpen, mode]);
+
+  const FieldLabel = ({ fieldKey, label, required = false, className = "mb-2 block text-sm font-black text-gray-900" }: { fieldKey: string, label: string, required?: boolean, className?: string }) => {
+    const summary = fieldEdits?.summaries.find(s => s.fieldKey === fieldKey);
+    const histories = fieldEdits?.histories.filter(h => h.fieldKey === fieldKey) || [];
+    return (
+      <label className={`${className} flex items-center`}>
+        {label} {required && <span className="text-red-500 ml-1">*</span>}
+        <FieldEditBadge summary={summary} histories={histories} fieldName={label} />
+      </label>
+    );
+  };
+
 
   const [paymentData, setPaymentData] = useState<any>(null);
   const [totalAmountReasonModalOpen, setTotalAmountReasonModalOpen] = useState(false);
@@ -724,7 +739,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
 
                       <div className="grid gap-4 md:grid-cols-2">
                         <div className="md:col-span-2">
-                          <label className="mb-2 block text-sm font-black text-gray-900">Lead Name <span className="text-red-500">*</span></label>
+                          <FieldLabel fieldKey="name" label="Lead Name" required />
                           <input
                             type="text"
                             value={formValues.name}
@@ -737,7 +752,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
 
                         <div>
                           <div className="mb-2 flex items-center justify-between">
-                            <label className="block text-sm font-black text-gray-900">Mobile</label>
+                            <FieldLabel fieldKey="phone" label="Mobile" className="block text-sm font-black text-gray-900" />
                             {formValues.phone ? (
                               <WhatsAppActionButton
                                 phone={formValues.phone}
@@ -768,7 +783,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
 
                         <div>
                           <div className="mb-2 flex items-center justify-between">
-                            <label className="block text-sm font-black text-gray-900">Email</label>
+                            <FieldLabel fieldKey="email" label="Email" className="block text-sm font-black text-gray-900" />
                             {formValues.email && (
                               <a 
                                 href={`mailto:${formValues.email}`}
@@ -788,7 +803,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
                         </div>
 
                         <div>
-                          <label className="mb-2 block text-sm font-black text-gray-900">Company Name</label>
+                          <FieldLabel fieldKey="companyName" label="Company Name" />
                           <input
                             type="text"
                             value={formValues.companyName}
@@ -799,7 +814,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
                         </div>
 
                         <div className="md:col-span-2">
-                          <label className="mb-2 block text-sm font-black text-gray-900">Address</label>
+                          <FieldLabel fieldKey="address" label="Address" />
                           <textarea
                             rows={3}
                             value={formValues.address}
@@ -810,7 +825,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
                         </div>
 
                         <div>
-                          <label className="mb-2 block text-sm font-black text-gray-900">Assigned To</label>
+                          <FieldLabel fieldKey="assignedToId" label="Assigned To" />
                           {canAssignOtherUsers ? (
                             <SearchableSelect
                               name="assignedToId"
@@ -831,7 +846,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
                         </div>
 
                         <div>
-                          <label className="mb-2 block text-sm font-black text-gray-900">Source</label>
+                          <FieldLabel fieldKey="sourceId" label="Source" />
                           <SearchableSelect
                             name="sourceId"
                             value={formValues.sourceId}
@@ -842,7 +857,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
                         </div>
 
                         <div>
-                          <label className="mb-2 block text-sm font-black text-gray-900">Lead Life Cycle</label>
+                          <FieldLabel fieldKey="lifecycleId" label="Lead Life Cycle" />
                           <SearchableSelect
                             name="lifecycleId"
                             value={formValues.lifecycleId}
@@ -855,7 +870,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
                         </div>
 
                         <div className="md:col-span-2">
-                          <label className="mb-2 block text-sm font-black text-gray-900">Stage</label>
+                          <FieldLabel fieldKey="stageId" label="Stage" />
                           <div className="space-y-2">
                             <SearchableSelect
                               name="stageId"
@@ -880,7 +895,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
                     <section className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
                       <div className="mb-5 flex items-start justify-between gap-4">
                         <div>
-                          <h3 className="text-lg font-black text-gray-900">Remarks</h3>
+                          <FieldLabel fieldKey="remarks" label="Remarks" className="text-lg font-black text-gray-900" />
                           <p className="text-sm font-semibold text-gray-500">
                             Additional notes that do not fit into the standard lead fields.
                           </p>
@@ -912,7 +927,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
 
                       <div className="grid gap-4 md:grid-cols-2">
                         <div>
-                          <label className="mb-2 block text-sm font-black text-gray-900">Next Follow-up</label>
+                          <FieldLabel fieldKey="nextFollowUpAt" label="Next Follow-up" />
                           <input
                             type="datetime-local"
                             value={formValues.nextFollowUpAt}
@@ -959,7 +974,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
 
                       <div className="grid gap-4 md:grid-cols-2">
                         <div>
-                          <label className="mb-2 block text-sm font-black text-gray-900">Total Amount</label>
+                          <FieldLabel fieldKey="totalAmount" label="Total Amount" />
                           <input
                             type="number"
                             min="0"
@@ -1129,6 +1144,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
                               field={field}
                               value={formValues.dynamicValues[field.id] || (field.inputType === 'CHECKBOX' ? [] : '')}
                               onChange={handleDynamicFieldChange}
+                              fieldEdits={fieldEdits}
                             />
                           ))}
                         </div>
