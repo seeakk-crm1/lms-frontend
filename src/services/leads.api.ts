@@ -63,6 +63,11 @@ export const getLeadById = async (id: string) => {
   return response.data;
 };
 
+export const getLeadRemarks = async (id: string) => {
+  const response = await api.get(`/leads/${id}/remarks`);
+  return response.data;
+};
+
 export const updateLead = async (id: string, payload: LeadUpdatePayload) => {
   const response = await api.put(`/leads/${id}`, payload);
   return response.data;

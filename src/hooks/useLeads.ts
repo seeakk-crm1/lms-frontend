@@ -10,6 +10,7 @@ import {
   exportLeads,
   getActiveLeadDynamicFields,
   getLeadById,
+  getLeadRemarks,
   getLeadMeta,
   getLeads,
   permanentlyDeleteLead,
@@ -206,6 +207,24 @@ export const useLeadDetailQuery = (leadId?: string, enabled = true) =>
     },
   });
 
+export const useLeadRemarksQuery = (leadId?: string, enabled = true) =>
+  useQuery<{ data: Array<{ id: string, text: string, createdAt: string, createdBy: { name: string, profilePicture: string | null } }> }, Error>({
+    queryKey: ['lead-remarks', leadId],
+    queryFn: async () => {
+      const response = await getLeadRemarks(leadId as string);
+      return response;
+    },
+    enabled: Boolean(leadId && enabled),
+    staleTime: 60_000,
+    gcTime: 300_000,
+    refetchOnWindowFocus: false,
+    retry: (failureCount, error: any) => {
+      const status = error?.response?.status;
+      if (status === 401 || status === 403 || status === 404) return false;
+      return failureCount < 2;
+    },
+  });
+
 export const useLeadMetaQuery = (enabled = true) => {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
 
@@ -289,6 +308,7 @@ export const useUpdateLeadMutation = () => {
       queryClient.invalidateQueries({ queryKey: ['lead', variables.id] });
       queryClient.invalidateQueries({ queryKey: ['lead-approvals'] });
       queryClient.invalidateQueries({ queryKey: ['followups'] });
+      queryClient.invalidateQueries({ queryKey: ['lead-remarks', variables.id] });
       if (response?.approvalRequired) {
         toast.success(response.message || 'Approval request created successfully. Other fields updated.');
         return;

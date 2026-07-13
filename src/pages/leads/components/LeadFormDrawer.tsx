@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { AlertCircle, CalendarClock, Save, Sparkles, X, DollarSign, PlusCircle, FileText, History, Trash2, Eye } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import SearchableSelect from '../../../components/SearchableSelect';
-import { useChangeLeadStageMutation, useCreateLeadMutation, useLeadDetailQuery, useLeadMetaQuery, useUpdateLeadMutation } from '../../../hooks/useLeads';
+import { useChangeLeadStageMutation, useCreateLeadMutation, useLeadDetailQuery, useLeadMetaQuery, useUpdateLeadMutation, useLeadRemarksQuery } from '../../../hooks/useLeads';
 import type { LeadDynamicField } from '../../../modules/admin/lead-dynamics/types';
 import { useLeadStore, createEmptyLeadFormValues } from '../../../store/leadStore';
 import type { FollowUpType } from '../../../types/followup.types';
@@ -145,6 +145,7 @@ const containsUnsafeMarkup = (value: string): boolean => /<[^>]*>/u.test(value) 
 const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onClose }) => {
   const { data: meta, isLoading: metaLoading } = useLeadMetaQuery(isOpen);
   const { data: leadDetails, isLoading: leadLoading } = useLeadDetailQuery(lead?.id, isOpen && mode === 'edit');
+  const { data: remarksData, isLoading: remarksLoading } = useLeadRemarksQuery(lead?.id, isOpen && mode === 'edit');
   const { data: fieldEdits } = useLeadFieldEdits(isOpen && mode === 'edit' ? lead?.id : undefined);
   const setDynamicFields = useLeadStore((state) => state.setDynamicFields);
   const createMutation = useCreateLeadMutation();
@@ -155,6 +156,8 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
 
   const [formValues, setFormValues] = useState<LeadFormValues>(createEmptyLeadFormValues());
   const [lobModalOpen, setLobModalOpen] = useState(false);
+  const [lobExitModalOpen, setLobExitModalOpen] = useState(false);
+  const [lobExitReason, setLobExitReason] = useState('');
   const [pendingStageId, setPendingStageId] = useState<string | null>(null);
   const [previousStageId, setPreviousStageId] = useState<string>('');
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
@@ -336,6 +339,9 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
   const stageIdBeforeLobRef = useRef<string>('');
   const hydratedLead = leadDetails?.id ? (leadDetails as LeadListItem) : lead;
   const currentStageId = hydratedLead?.stageId || previousStageId || '';
+  const stageOptions = meta?.stages || [];
+  const currentStage = stageOptions.find((s: LeadOption) => s.id === currentStageId);
+  const currentStageIsLob = isLobStageOption(currentStage);
   const advancePaymentsList = mode === 'edit' && paymentData
     ? paymentData.advancePayments || []
     : localAdvances;
@@ -368,7 +374,6 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
     setPreviousStageId('');
   }, [hydratedLead, isOpen, mode]);
 
-  const stageOptions = meta?.stages || [];
   const lifeCycleOptions = meta?.lifeCycles || [];
   const dynamicFields = (meta?.dynamicFields as LeadDynamicField[]) || [];
   const { options: lobReasonOptions } = useActiveLOBReasonOptions(isOpen, meta?.lobReasons || []);
@@ -401,6 +406,17 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
         };
         setPendingStageId(value);
         setLobModalOpen(true);
+        return;
+      }
+
+      if (currentStageIsLob && !isLobStageOption(nextStage)) {
+        revertFormBeforeRulesRef.current = {
+          stageId: formValues.stageId,
+          reasonId: formValues.reasonId,
+          remarks: formValues.remarks,
+        };
+        setPendingStageId(value);
+        setLobExitModalOpen(true);
         return;
       }
 
@@ -895,23 +911,61 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
                     <section className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
                       <div className="mb-5 flex items-start justify-between gap-4">
                         <div>
-                          <FieldLabel fieldKey="remarks" label="Remarks" className="text-lg font-black text-gray-900" />
+                          <FieldLabel fieldKey="remarks" label="Remarks History" className="text-lg font-black text-gray-900" />
                           <p className="text-sm font-semibold text-gray-500">
-                            Additional notes that do not fit into the standard lead fields.
+                            {mode === 'edit' ? 'Timeline of notes and system events for this lead.' : 'Initial notes about this lead.'}
                           </p>
                         </div>
-                        <span className={`text-xs font-black ${formValues.leadRemarks.length > 1000 ? 'text-red-500' : 'text-gray-400'}`}>
-                          {formValues.leadRemarks.length}/1000
-                        </span>
                       </div>
-                      <textarea
-                        rows={5}
-                        maxLength={1000}
-                        value={formValues.leadRemarks}
-                        onChange={(event) => handleFieldChange('leadRemarks', event.target.value)}
-                        className={`${inputClassName} min-h-[140px] resize-y leading-relaxed`}
-                        placeholder="Enter any additional information or important notes about this lead..."
-                      />
+
+                      {mode === 'edit' && (
+                        <div className="mb-4 max-h-[300px] overflow-y-auto rounded-xl border border-gray-100 bg-gray-50 p-4">
+                          {remarksLoading ? (
+                            <p className="text-sm text-gray-500">Loading remarks...</p>
+                          ) : remarksData?.data?.length ? (
+                            <div className="space-y-4">
+                              {remarksData.data.map((remark) => (
+                                <div key={remark.id} className="flex gap-3">
+                                  <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-700">
+                                    {remark.createdBy?.name?.charAt(0)?.toUpperCase() || '?'}
+                                  </div>
+                                  <div className="flex-1 rounded-xl bg-white p-3 shadow-sm">
+                                    <div className="mb-1 flex items-center justify-between text-xs text-gray-500">
+                                      <span className="font-semibold">{remark.createdBy?.name || 'System'}</span>
+                                      <span>
+                                        {new Date(remark.createdAt).toLocaleDateString()} at{' '}
+                                        {new Date(remark.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                      </span>
+                                    </div>
+                                    <p className="whitespace-pre-wrap text-sm text-gray-800">{remark.text}</p>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-sm text-gray-500">No remarks yet.</p>
+                          )}
+                        </div>
+                      )}
+
+                      <div>
+                        <div className="mb-2 flex items-center justify-between">
+                          <label className="text-sm font-bold text-gray-700">
+                            {mode === 'edit' ? 'Add New Remark' : 'Remarks'}
+                          </label>
+                          <span className={`text-xs font-black ${formValues.leadRemarks.length > 1000 ? 'text-red-500' : 'text-gray-400'}`}>
+                            {formValues.leadRemarks.length}/1000
+                          </span>
+                        </div>
+                        <textarea
+                          rows={mode === 'edit' ? 3 : 5}
+                          maxLength={1000}
+                          value={formValues.leadRemarks}
+                          onChange={(event) => handleFieldChange('leadRemarks', event.target.value)}
+                          className={`${inputClassName} ${mode === 'edit' ? 'min-h-[80px]' : 'min-h-[140px]'} resize-y leading-relaxed`}
+                          placeholder={mode === 'edit' ? 'Enter a new remark...' : 'Enter any additional information or important notes about this lead...'}
+                        />
+                      </div>
                     </section>
 
                     <section className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
@@ -1220,6 +1274,61 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
         onClose={handleLobClose}
         onConfirm={handleLobConfirm}
       />
+
+      {/* LOB Exit Reason Modal */}
+      {lobExitModalOpen && (
+        <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
+            <h3 className="text-lg font-black text-gray-900 mb-2">Reason for Moving Out of LOB</h3>
+            <p className="text-xs font-semibold text-gray-500 mb-4">
+              This lead is currently in an LOB stage. Please provide a mandatory reason for moving it to a regular pipeline stage. This will be saved as a remark.
+            </p>
+            <textarea
+              className={inputClassName}
+              rows={4}
+              value={lobExitReason}
+              onChange={(e) => setLobExitReason(e.target.value)}
+              placeholder="e.g. Client has revived interest, moving back to active pipeline..."
+            />
+            <div className="mt-4 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  if (revertFormBeforeRulesRef.current) {
+                    setFormValues((prev) => ({ ...prev, ...revertFormBeforeRulesRef.current }));
+                    revertFormBeforeRulesRef.current = null;
+                  }
+                  setLobExitReason('');
+                  setLobExitModalOpen(false);
+                  setPendingStageId(null);
+                }}
+                className="rounded-2xl border border-gray-200 px-4 py-2.5 text-sm font-black text-gray-500 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={!lobExitReason.trim()}
+                onClick={() => {
+                  if (!pendingStageId || !lobExitReason.trim()) return;
+                  setFormValues((prev) => ({
+                    ...prev,
+                    stageId: pendingStageId,
+                    leadRemarks: lobExitReason.trim(),
+                  }));
+                  setLobExitReason('');
+                  setLobExitModalOpen(false);
+                  setPendingStageId(null);
+                  revertFormBeforeRulesRef.current = null;
+                }}
+                className="rounded-2xl bg-emerald-500 px-5 py-2.5 text-sm font-black text-white hover:bg-emerald-600 shadow-lg shadow-emerald-500/20 disabled:opacity-50"
+              >
+                Confirm & Move
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <StageRulesTransitionModal
         isOpen={stageRulesModalOpen}
