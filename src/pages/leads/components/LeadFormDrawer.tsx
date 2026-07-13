@@ -440,6 +440,9 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
     }
 
     if (mode === 'edit' && hydratedLead && !isBusy) {
+      if (revertFormBeforeRulesRef.current || pendingStageId || pendingTransitionStageId) {
+        return;
+      }
       setValidationErrors({});
       setFormValues(fromLeadToForm(hydratedLead));
       setPreviousStageId(hydratedLead.stageId || '');
@@ -459,6 +462,11 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
   const { options: lobReasonOptions } = useActiveLOBReasonOptions(isOpen, meta?.lobReasons || []);
   const canAssignOtherUsers = Boolean(meta?.canAssignOtherUsers);
   const productOptions = meta?.products || [];
+  const allRemarks = remarksData?.data || [];
+  const lobReturnRemarks = allRemarks.filter((remark: any) => remark.remarkType === 'LOB_RETURN');
+  const generalRemarks = allRemarks.filter((remark: any) => remark.remarkType !== 'LOB_RETURN');
+  const selectedFormStage = stageOptions.find((item) => item.id === formValues.stageId);
+  const showLobContext = Boolean(isLobStageOption(selectedFormStage) && (formValues.reasonId || formValues.remarks));
 
   const isBusy =
     metaLoading ||
@@ -750,7 +758,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
 
     const totalAmount = Number(formValues.totalAmount || 0);
     const safeProducts = formValues.products
-      .filter((item) => item.productId && productOptions.some((product) => product.id === item.productId))
+      .filter((item) => item.productId && productOptions.some((product: any) => product.id === item.productId))
       .map((item) => ({
         productId: item.productId,
         quantity: Math.max(1, Math.trunc(Number(item.quantity) || 1)),
@@ -793,6 +801,11 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
     });
 
     const targetStageId = formValues.stageId;
+    const selectedTargetStage = stageOptions.find((item) => item.id === targetStageId);
+    const isMovingOutOfLob = currentStageIsLob && Boolean(selectedTargetStage) && !isLobStageOption(selectedTargetStage);
+    const stageTransitionRemarks = isMovingOutOfLob
+      ? formValues.leadRemarks.trim()
+      : formValues.remarks.trim();
     const dynamicPayload = buildDynamicPayload(formValues.dynamicValues, meta?.dynamicFields || [], mode === 'edit');
     const stageChanged = mode === 'edit' && Boolean(targetStageId) && targetStageId !== currentStageId;
     const shouldUseStageTransitionFlow = stageChanged && Boolean(currentStageId);
@@ -821,7 +834,10 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
             nextFollowUpAt: toIsoOrNull(formValues.nextFollowUpAt),
             nextFollowUpType: formValues.nextFollowUpType,
             reasonId: shouldUseStageTransitionFlow ? undefined : formValues.reasonId.trim() || null,
-            remarks: nullableTrimmed(formValues.leadRemarks),
+            remarks:
+              isMovingOutOfLob && shouldUseStageTransitionFlow
+                ? undefined
+                : nullableTrimmed(formValues.leadRemarks),
             lobRemarks: shouldUseStageTransitionFlow ? undefined : nullableTrimmed(formValues.remarks),
           },
         });
@@ -851,8 +867,8 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
             id: lead.id,
             payload: {
               stageId: targetStageId,
-              reasonId: formValues.reasonId.trim() || undefined,
-              remarks: formValues.remarks.trim() || undefined,
+              reasonId: isMovingOutOfLob ? undefined : formValues.reasonId.trim() || undefined,
+              remarks: stageTransitionRemarks || undefined,
               nextFollowUpAt: formValues.nextFollowUpAt
                 ? new Date(formValues.nextFollowUpAt).toISOString()
                 : undefined,
@@ -869,12 +885,20 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
       const status = error?.response?.status;
       const responseErrors = error?.response?.data?.errors;
       if (status === 422) {
-        const nextErrors = buildValidationMap(responseErrors);
-        setValidationErrors(nextErrors);
-        const firstMessage = Object.values(nextErrors)[0];
-        if (firstMessage) {
-          toast.error(firstMessage);
+        if (responseErrors) {
+          const nextErrors = buildValidationMap(responseErrors);
+          setValidationErrors(nextErrors);
+          const firstMessage = Object.values(nextErrors)[0];
+          if (firstMessage) {
+            toast.error(firstMessage);
+          }
+        } else if (error?.response?.data?.message) {
+          toast.error(error.response.data.message);
+        } else {
+          toast.error('Validation failed.');
         }
+      } else {
+        toast.error(error?.response?.data?.message || 'Could not save lead.');
       }
     }
   };
@@ -1120,25 +1144,66 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
                         <div className="mb-4 max-h-[300px] overflow-y-auto rounded-xl border border-gray-100 bg-gray-50 p-4">
                           {remarksLoading ? (
                             <p className="text-sm text-gray-500">Loading remarks...</p>
-                          ) : remarksData?.data?.length ? (
-                            <div className="space-y-4">
-                              {remarksData.data.map((remark) => (
-                                <div key={remark.id} className="flex gap-3">
-                                  <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-700">
-                                    {remark.createdBy?.name?.charAt(0)?.toUpperCase() || '?'}
+                          ) : allRemarks.length ? (
+                            <div className="space-y-5">
+                              {lobReturnRemarks.length > 0 ? (
+                                <div>
+                                  <div className="mb-3 text-[11px] font-black uppercase tracking-[0.18em] text-rose-500">
+                                    LOB Return Reasons
                                   </div>
-                                  <div className="flex-1 rounded-xl bg-white p-3 shadow-sm">
-                                    <div className="mb-1 flex items-center justify-between text-xs text-gray-500">
-                                      <span className="font-semibold">{remark.createdBy?.name || 'System'}</span>
-                                      <span>
-                                        {new Date(remark.createdAt).toLocaleDateString()} at{' '}
-                                        {new Date(remark.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                      </span>
-                                    </div>
-                                    <p className="whitespace-pre-wrap text-sm text-gray-800">{remark.text}</p>
+                                  <div className="space-y-3">
+                                    {lobReturnRemarks.map((remark: any) => (
+                                      <div key={remark.id} className="flex gap-3">
+                                        <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-rose-100 text-xs font-bold text-rose-700">
+                                          {remark.createdBy?.name?.charAt(0)?.toUpperCase() || '?'}
+                                        </div>
+                                        <div className="flex-1 rounded-xl border border-rose-100 bg-white p-3 shadow-sm">
+                                          <div className="mb-1 flex items-center justify-between text-xs text-gray-500">
+                                            <span className="font-semibold">{remark.createdBy?.name || 'System'}</span>
+                                            <span>
+                                              {new Date(remark.createdAt).toLocaleDateString()} at{' '}
+                                              {new Date(remark.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                            </span>
+                                          </div>
+                                          {remark.lobReturnStage ? (
+                                            <p className="mb-2 text-xs font-bold text-rose-600">
+                                              {remark.lobReturnStage.fromStageName || 'LOB'} to {remark.lobReturnStage.toStageName || 'Pipeline'}
+                                            </p>
+                                          ) : null}
+                                          <p className="whitespace-pre-wrap text-sm text-gray-800">{remark.text}</p>
+                                        </div>
+                                      </div>
+                                    ))}
                                   </div>
                                 </div>
-                              ))}
+                              ) : null}
+
+                              {generalRemarks.length > 0 ? (
+                                <div>
+                                  <div className="mb-3 text-[11px] font-black uppercase tracking-[0.18em] text-gray-400">
+                                    Remarks
+                                  </div>
+                                  <div className="space-y-3">
+                                    {generalRemarks.map((remark: any) => (
+                                      <div key={remark.id} className="flex gap-3">
+                                        <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-700">
+                                          {remark.createdBy?.name?.charAt(0)?.toUpperCase() || '?'}
+                                        </div>
+                                        <div className="flex-1 rounded-xl bg-white p-3 shadow-sm">
+                                          <div className="mb-1 flex items-center justify-between text-xs text-gray-500">
+                                            <span className="font-semibold">{remark.createdBy?.name || 'System'}</span>
+                                            <span>
+                                              {new Date(remark.createdAt).toLocaleDateString()} at{' '}
+                                              {new Date(remark.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                            </span>
+                                          </div>
+                                          <p className="whitespace-pre-wrap text-sm text-gray-800">{remark.text}</p>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              ) : null}
                             </div>
                           ) : (
                             <p className="text-sm text-gray-500">No remarks yet.</p>
@@ -1245,7 +1310,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
                       ) : (
                         <div className="space-y-3">
                           {formValues.products.map((item, index) => {
-                            const selectedProduct = productOptions.find((product) => product.id === item.productId);
+                            const selectedProduct = productOptions.find((product: any) => product.id === item.productId);
                             const unitPrice = Number(selectedProduct?.unitPrice || 0);
                             const quantity = Math.max(1, Number(item.quantity || 1));
                             const lineTotal = unitPrice * quantity;
@@ -1258,7 +1323,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
                                   className={inputClassName}
                                 >
                                   <option value="">Select product</option>
-                                  {productOptions.map((product) => (
+                                  {productOptions.map((product: any) => (
                                     <option key={product.id} value={product.id}>
                                       {product.name} - {Number(product.unitPrice || 0).toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}
                                     </option>
@@ -1496,7 +1561,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
                       </section>
                     ) : null}
 
-                    {formValues.reasonId || formValues.remarks ? (
+                    {showLobContext ? (
                       <section className="rounded-3xl border border-rose-100 bg-rose-50/70 p-5">
                         <h3 className="text-lg font-black text-gray-900">LOB Context</h3>
                         <p className="mt-1 text-sm font-semibold text-gray-500">
