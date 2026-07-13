@@ -1,5 +1,6 @@
-import React, { memo, useMemo } from 'react';
+import React, { memo, useMemo, useState } from 'react';
 import { format } from 'date-fns';
+import { formatCurrency } from '../../../utils/currency';
 import { motion } from 'framer-motion';
 import { Archive, ChevronLeft, ChevronRight, Pencil, Star, History } from 'lucide-react';
 import type { LeadListItem } from '../../../types/lead.types';
@@ -62,7 +63,18 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
   const rangeStart = total === 0 ? 0 : (page - 1) * limit + 1;
   const rangeEnd = total === 0 ? 0 : Math.min(page * limit, total);
   
-  const pageIds = items.map((l) => l.id);
+  const [sortAmountDirection, setSortAmountDirection] = useState<'asc' | 'desc' | null>(null);
+
+  const sortedItems = useMemo(() => {
+    if (!sortAmountDirection) return items;
+    return [...items].sort((a, b) => {
+      const amtA = a.totalAmount || 0;
+      const amtB = b.totalAmount || 0;
+      return sortAmountDirection === 'asc' ? amtA - amtB : amtB - amtA;
+    });
+  }, [items, sortAmountDirection]);
+
+  const pageIds = sortedItems.map((l) => l.id);
   const safeSelectedIds = selectedIds || [];
   const allSelected = pageIds.length > 0 && pageIds.every((id) => safeSelectedIds.includes(id));
 
@@ -87,12 +99,24 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
                   />
                 </motion.th>
               )}
-              {['Lead Name', 'Next Follow-Up', 'Assigned To', 'Stage', 'Lead Life Cycle', 'Source', 'Created Date', 'Actions'].map((heading) => (
+              {['Lead Name', 'Next Follow-Up', 'Assigned To', 'Stage', 'Lead Life Cycle', 'Total Amount', 'Source', 'Created Date', 'Actions'].map((heading) => (
                 <th
                   key={heading}
-                  className="px-6 py-4 text-[11px] font-black uppercase tracking-[0.22em] text-gray-400"
+                  className={`px-6 py-4 text-[11px] font-black uppercase tracking-[0.22em] text-gray-400 ${heading === 'Total Amount' ? 'cursor-pointer hover:text-emerald-500 transition-colors select-none' : ''}`}
+                  onClick={() => {
+                    if (heading === 'Total Amount') {
+                      setSortAmountDirection(prev => prev === 'asc' ? 'desc' : prev === 'desc' ? null : 'asc');
+                    }
+                  }}
                 >
-                  {heading}
+                  <div className="flex items-center gap-1.5">
+                    {heading}
+                    {heading === 'Total Amount' && (
+                      <span className="text-[10px] opacity-70">
+                        {sortAmountDirection === 'asc' ? '↑' : sortAmountDirection === 'desc' ? '↓' : '↕'}
+                      </span>
+                    )}
+                  </div>
                 </th>
               ))}
             </tr>
@@ -106,16 +130,16 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
                       <div className="h-4 w-4 rounded bg-gray-200" />
                     </td>
                   )}
-                  {Array.from({ length: 8 }).map((__, cellIndex) => (
+                  {Array.from({ length: 9 }).map((__, cellIndex) => (
                     <td key={`cell-${cellIndex}`} className="px-6 py-5">
                       <div className="h-5 rounded-xl shimmer-bg" />
                     </td>
                   ))}
                 </tr>
               ))
-            ) : items.length === 0 ? (
+            ) : sortedItems.length === 0 ? (
               <tr>
-                <td colSpan={isSelectionMode ? 9 : 8} className="px-6 py-20 text-center">
+                <td colSpan={isSelectionMode ? 10 : 9} className="px-6 py-20 text-center">
                   <div className="mx-auto max-w-sm">
                     <h3 className="text-lg font-black text-gray-900">No leads match the current filters</h3>
                     <p className="mt-2 text-sm font-semibold text-gray-500">
@@ -223,6 +247,11 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
                   </td>
                   <td className="px-6 py-5 text-sm font-semibold text-gray-600">
                     {lead.lifecycle?.name || 'No lifecycle'}
+                  </td>
+                  <td className="px-6 py-5">
+                    <div className="text-sm font-black text-gray-900">
+                      {formatCurrency(lead.totalAmount || 0)}
+                    </div>
                   </td>
                   <td className="px-6 py-5 text-sm font-semibold text-gray-600">
                     {lead.source?.name || 'Unknown'}

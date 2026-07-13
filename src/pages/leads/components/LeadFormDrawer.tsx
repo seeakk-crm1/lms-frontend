@@ -554,7 +554,10 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
     });
     if (field === 'stageId') {
       const nextStage = stageOptions.find((item) => item.id === value);
-      if (isLobStageOption(nextStage)) {
+      const prevStage = stageOptions.find((item) => item.id === formValues.stageId);
+      
+      const isEnteringLob = !isLobStageOption(prevStage) && isLobStageOption(nextStage);
+      if (isEnteringLob) {
         stageIdBeforeLobRef.current = formValues.stageId;
         revertFormBeforeRulesRef.current = {
           stageId: formValues.stageId,
@@ -736,7 +739,14 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
     }
 
     const selectedStage = stageOptions.find((item) => item.id === formValues.stageId);
-    if (isLobStageOption(selectedStage) && !formValues.reasonId.trim()) {
+    
+    const prevStageId = mode === 'edit' ? lead?.stageId : null;
+    const prevStage = stageOptions.find((item) => item.id === prevStageId);
+    const prevStageIsLob = mode === 'edit' ? isLobStageOption(prevStage) : false;
+    const newStageIsLob = isLobStageOption(selectedStage);
+    const isNewLobTransition = prevStageId !== formValues.stageId && !prevStageIsLob && newStageIsLob;
+
+    if (isNewLobTransition && !formValues.reasonId.trim()) {
       setPendingStageId(formValues.stageId);
       setLobModalOpen(true);
       return;
