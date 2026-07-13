@@ -26,6 +26,7 @@ import { lazyWithChunkRecovery } from '../../utils/chunkLoadRecovery';
 
 const LeadFormDrawer = lazyWithChunkRecovery(() => import('./components/LeadFormDrawer'));
 const LeadViewDrawer = lazyWithChunkRecovery(() => import('./components/LeadViewDrawer'));
+const LeadHistoryDrawer = lazyWithChunkRecovery(() => import('./components/LeadHistoryDrawer'));
 
 const LeadsPage: React.FC = () => {
   const location = useLocation();
@@ -45,6 +46,7 @@ const LeadsPage: React.FC = () => {
   const [dismissedSlaLeadIds, setDismissedSlaLeadIds] = useState<string[]>([]);
   const [slaModalLead, setSlaModalLead] = useState<LeadListItem | null>(null);
   const [viewLead, setViewLead] = useState<LeadListItem | null>(null);
+  const [historyLeadId, setHistoryLeadId] = useState<string | null>(null);
 
   const {
     leads,
@@ -539,6 +541,7 @@ const LeadsPage: React.FC = () => {
               onView={handleViewLead}
               onToggleStar={handleToggleLeadStar}
               onEdit={openEditDrawer}
+              onHistory={(lead) => setHistoryLeadId(lead.id)}
               onDelete={handleDelete}
             />
           </div>
@@ -557,6 +560,11 @@ const LeadsPage: React.FC = () => {
             onClose={handleCloseViewLead}
             onEdit={handleEditFromView}
             onToggleStar={handleToggleLeadStar}
+          />
+          <LeadHistoryDrawer
+            isOpen={!!historyLeadId}
+            leadId={historyLeadId}
+            onClose={() => setHistoryLeadId(null)}
           />
         </Suspense>
 

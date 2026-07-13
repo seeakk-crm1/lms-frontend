@@ -5,7 +5,8 @@ import { BriefcaseBusiness } from 'lucide-react';
 import useDashboardStore from '../../store/useDashboardStore';
 
 const LOBAnalysisWidget: React.FC = () => {
-    const { lobData, isLoading } = useDashboardStore();
+    const lobData = useDashboardStore((state) => state.lobData);
+    const isLoading = useDashboardStore((state) => state.isLoading);
 
     if (isLoading) {
         return (

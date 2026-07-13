@@ -4,7 +4,11 @@ import { motion } from 'framer-motion';
 import useDashboardStore from '../../store/useDashboardStore';
 
 const LeadGrowthChart: React.FC = () => {
-    const { leadGrowthData, isLoading, isRefreshing, selectedRange, fetchDashboardData } = useDashboardStore();
+    const leadGrowthData = useDashboardStore((state) => state.leadGrowthData);
+    const isLoading = useDashboardStore((state) => state.isLoading);
+    const isRefreshing = useDashboardStore((state) => state.isRefreshing);
+    const selectedRange = useDashboardStore((state) => state.selectedRange);
+    const fetchDashboardData = useDashboardStore((state) => state.fetchDashboardData);
 
     const filters = [
         { label: '7 Days', value: '7d' as const },

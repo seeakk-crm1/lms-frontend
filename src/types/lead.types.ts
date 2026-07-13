@@ -335,3 +335,18 @@ export interface LeadMetaOptions {
   dynamicFields: LeadDynamicField[];
   canAssignOtherUsers: boolean;
 }
+
+export type TimelineEventType = 'AUDIT' | 'ACTIVITY' | 'STAGE_CHANGE' | 'AMOUNT_CHANGE' | 'PAYMENT' | 'PAYMENT_APPROVAL' | 'PAYMENT_REJECTION' | 'LOB';
+
+export interface TimelineEvent {
+  id: string;
+  eventType: TimelineEventType;
+  title: string;
+  description: string;
+  timestamp: string;
+  user?: {
+    name?: string | null;
+    email?: string | null;
+  } | null;
+  metadata?: any;
+}

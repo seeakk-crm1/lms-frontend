@@ -19,7 +19,8 @@ interface DashboardProps {
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ mode = 'operations' }) => {
-    const { fetchDashboardData, error } = useDashboardStore();
+    const fetchDashboardData = useDashboardStore((state) => state.fetchDashboardData);
+    const error = useDashboardStore((state) => state.error);
     const user = useAuthStore((state) => state.user);
 
     const canSeeMetrics = hasAnyPermission(user?.permissions || [], [

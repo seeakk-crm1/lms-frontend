@@ -1,7 +1,7 @@
 import React, { memo, useMemo } from 'react';
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
-import { Archive, ChevronLeft, ChevronRight, Pencil, Star } from 'lucide-react';
+import { Archive, ChevronLeft, ChevronRight, Pencil, Star, History } from 'lucide-react';
 import type { LeadListItem } from '../../../types/lead.types';
 import FollowUpBadge from './FollowUpBadge';
 import { stageBadgeStyle } from '../../../utils/leadStageColor';
@@ -24,6 +24,7 @@ interface LeadsTableProps {
   onView: (lead: LeadListItem) => void;
   onToggleStar: (lead: LeadListItem) => void;
   onEdit: (lead: LeadListItem) => void;
+  onHistory: (lead: LeadListItem) => void;
   onDelete: (lead: LeadListItem) => void;
 }
 
@@ -45,6 +46,7 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
   onView,
   onToggleStar,
   onEdit,
+  onHistory,
   onDelete,
 }) => {
   const pageNumbers = useMemo(() => {
@@ -255,6 +257,14 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
                             aria-label={`Edit ${lead.name}`}
                           >
                             <Pencil className="h-4 w-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => onHistory(lead)}
+                            className="rounded-2xl bg-indigo-50 p-2 text-indigo-600 transition-all hover:bg-indigo-100"
+                            aria-label={`History for ${lead.name}`}
+                          >
+                            <History className="h-4 w-4" />
                           </button>
                           <button
                             type="button"

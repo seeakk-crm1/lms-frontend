@@ -4,7 +4,8 @@ import { Zap, CornerDownRight, CheckCircle2 } from 'lucide-react';
 import useDashboardStore from '../../store/useDashboardStore';
 
 const RecentActivityWidget: React.FC = () => {
-    const { activities, isLoading } = useDashboardStore();
+    const activities = useDashboardStore((state) => state.activities);
+    const isLoading = useDashboardStore((state) => state.isLoading);
 
     if (isLoading) {
         return (

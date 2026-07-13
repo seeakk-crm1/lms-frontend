@@ -29,7 +29,8 @@ const itemVariants: Variants = {
 };
 
 const KPICards: React.FC = () => {
-    const { kpiData, isLoading } = useDashboardStore();
+    const kpiData = useDashboardStore((state) => state.kpiData);
+    const isLoading = useDashboardStore((state) => state.isLoading);
 
     // Skeletons
     if (isLoading) {

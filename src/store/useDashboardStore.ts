@@ -80,8 +80,14 @@ const useDashboardStore = create<DashboardState>((set) => ({
     reset: () => set(() => ({ ...createInitialDashboardSlice(), error: null })),
 
     fetchDashboardData: async (range) => {
-        const requestedRange = range ?? useDashboardStore.getState().selectedRange;
-        const hasExistingData = useDashboardStore.getState().kpiData.length > 0;
+        const state = useDashboardStore.getState();
+        const requestedRange = range ?? state.selectedRange;
+        const hasExistingData = state.kpiData.length > 0;
+
+        // Prevent parallel fetches if we are already loading the same range
+        if ((state.isLoading || state.isRefreshing) && requestedRange === state.selectedRange) {
+            return;
+        }
 
         set({
             isLoading: hasExistingData ? false : true,

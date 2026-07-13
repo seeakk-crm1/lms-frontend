@@ -4,7 +4,9 @@ import { Calendar, Clock, Video, Phone } from 'lucide-react';
 import useDashboardStore from '../../store/useDashboardStore';
 
 const CalendarWidget: React.FC = () => {
-    const { meetings, isLoading, scheduleDateLabel } = useDashboardStore();
+    const meetings = useDashboardStore((state) => state.meetings);
+    const isLoading = useDashboardStore((state) => state.isLoading);
+    const scheduleDateLabel = useDashboardStore((state) => state.scheduleDateLabel);
 
     if (isLoading) {
         return (
