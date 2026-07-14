@@ -1,6 +1,7 @@
 import React from 'react';
 import { Filter, RotateCcw, Search } from 'lucide-react';
 import SearchableSelect from '../../components/SearchableSelect';
+import OfficeFilterSelect from '../../components/OfficeFilterSelect';
 import type { LOBAnalysisFilters } from './types/lobAnalysis.types';
 
 interface Option {
@@ -14,6 +15,7 @@ interface LOBFiltersProps {
   reasonOptions: Option[];
   userOptions: Option[];
   locationOptions: Option[];
+  showOfficeFilter?: boolean;
   onChange: (patch: Partial<LOBAnalysisFilters>) => void;
   onSearchChange: (value: string) => void;
   onApply: () => void;
@@ -26,6 +28,7 @@ const LOBFilters: React.FC<LOBFiltersProps> = ({
   reasonOptions,
   userOptions,
   locationOptions,
+  showOfficeFilter = false,
   onChange,
   onSearchChange,
   onApply,
@@ -112,7 +115,7 @@ const LOBFilters: React.FC<LOBFiltersProps> = ({
       </div>
 
       <div className="space-y-2">
-        <span className="text-xs font-black uppercase tracking-[0.18em] text-gray-400">Region / Office</span>
+        <span className="text-xs font-black uppercase tracking-[0.18em] text-gray-400">Region</span>
         <SearchableSelect
           options={[{ value: '', label: 'All Locations' }, ...locationOptions]}
           value={filters.locationId || ''}
@@ -121,6 +124,16 @@ const LOBFilters: React.FC<LOBFiltersProps> = ({
           name="locationId"
         />
       </div>
+
+      {showOfficeFilter ? (
+        <div className="space-y-2">
+          <span className="text-xs font-black uppercase tracking-[0.18em] text-gray-400">Office Location</span>
+          <OfficeFilterSelect
+            value={filters.officeId || ''}
+            onChange={(officeId) => onChange({ officeId })}
+          />
+        </div>
+      ) : null}
     </div>
 
     <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:justify-end">

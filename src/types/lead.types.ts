@@ -91,6 +91,7 @@ export interface LeadFilters {
   stage?: string;
   assignedTo?: string;
   source?: string;
+  officeId?: string;
   status?: 'OPEN' | 'CLOSED' | 'LOB' | 'ACTIVE' | 'ARCHIVED';
   starred?: 'ALL' | 'STARRED';
   createdFrom?: string;
@@ -102,6 +103,7 @@ export type LeadClosureType = 'WON' | 'LOST' | 'CANCELLED';
 export interface ClosedLeadFilters {
   assignedTo?: string;
   source?: string;
+  officeId?: string;
   closureType?: LeadClosureType;
   dateFrom?: string;
   dateTo?: string;

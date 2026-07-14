@@ -34,6 +34,7 @@ export const useClosedLeadsQuery = () => {
         search: search || undefined,
         assignedTo: filters.assignedTo || undefined,
         source: filters.source || undefined,
+        officeId: filters.officeId || undefined,
         closureType: filters.closureType || undefined,
         dateFrom: filters.dateFrom || undefined,
         dateTo: filters.dateTo || undefined,

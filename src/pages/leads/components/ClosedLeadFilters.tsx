@@ -1,6 +1,7 @@
 import React, { memo } from 'react';
 import { CalendarRange, DollarSign, Search, SlidersHorizontal } from 'lucide-react';
 import SearchableSelect from '../../../components/SearchableSelect';
+import OfficeFilterSelect from '../../../components/OfficeFilterSelect';
 import type { ClosedLeadFilters as ClosedLeadFiltersState, LeadMetaOptions } from '../../../types/lead.types';
 
 interface ClosedLeadFiltersProps {
@@ -10,6 +11,7 @@ interface ClosedLeadFiltersProps {
   onSearchChange: (value: string) => void;
   onFilterChange: (filters: Partial<ClosedLeadFiltersState>) => void;
   onReset: () => void;
+  showOfficeFilter?: boolean;
 }
 
 const closureTypeOptions = [
@@ -28,6 +30,7 @@ const ClosedLeadFilters: React.FC<ClosedLeadFiltersProps> = ({
   onSearchChange,
   onFilterChange,
   onReset,
+  showOfficeFilter = false,
 }) => (
   <div className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
     <div className="mb-5 flex items-center gap-2">
@@ -35,7 +38,7 @@ const ClosedLeadFilters: React.FC<ClosedLeadFiltersProps> = ({
       <h3 className="text-sm font-black uppercase tracking-[0.24em] text-gray-900">Filter Closed Leads</h3>
     </div>
 
-    <div className="grid gap-4 xl:grid-cols-[1.2fr_repeat(6,minmax(0,1fr))]">
+    <div className={showOfficeFilter ? 'grid gap-4 xl:grid-cols-[1.2fr_repeat(7,minmax(0,1fr))]' : 'grid gap-4 xl:grid-cols-[1.2fr_repeat(6,minmax(0,1fr))]'}>
       <div className="relative">
         <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
         <input
@@ -63,6 +66,13 @@ const ClosedLeadFilters: React.FC<ClosedLeadFiltersProps> = ({
         placeholder="Source"
         onChange={(event) => onFilterChange({ source: event.target.value || undefined })}
       />
+
+      {showOfficeFilter ? (
+        <OfficeFilterSelect
+          value={filters.officeId || ''}
+          onChange={(officeId) => onFilterChange({ officeId })}
+        />
+      ) : null}
 
       <SearchableSelect
         name="closureType"

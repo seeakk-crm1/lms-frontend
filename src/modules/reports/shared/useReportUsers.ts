@@ -29,8 +29,9 @@ export const resolveFilteredUserIds = (
   if (filters.departmentId) {
     filtered = filtered.filter((user) => user.department?.id === filters.departmentId || user.departmentId === filters.departmentId);
   }
-  if (filters.branchId) {
-    filtered = filtered.filter((user) => user.office?.id === filters.branchId || user.officeId === filters.branchId);
+  const officeId = filters.officeId || filters.branchId;
+  if (officeId) {
+    filtered = filtered.filter((user) => user.office?.id === officeId || user.officeId === officeId);
   }
   if (filters.supervisorId) {
     filtered = filtered.filter((user) => user.supervisorId === filters.supervisorId);
@@ -48,7 +49,6 @@ export const resolveFilteredUserIds = (
     if (
       filters.role ||
       filters.departmentId ||
-      filters.branchId ||
       filters.supervisorId
     ) {
       return filtered.map((user) => user.id);
@@ -65,6 +65,7 @@ export const buildApiFilters = (filters: ReportFilterState, users: any[] = []) =
   const userIds = resolveFilteredUserIds(users, filters);
   return {
     ...filters,
+    officeId: filters.officeId || filters.branchId || undefined,
     userId: userIds?.length === 1 ? userIds[0] : userIds,
     page: filters.page || 1,
     limit: filters.limit || 20,

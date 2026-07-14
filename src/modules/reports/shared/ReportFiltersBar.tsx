@@ -5,6 +5,9 @@ import { useLeadMetaQuery } from '../../../hooks/useLeads';
 import MultiSearchableSelect from '../../../components/MultiSearchableSelect';
 import type { ReportFilterState } from './reportFilterDefaults';
 import { useReportMetaOptions } from './useReportUsers';
+import OfficeFilterSelect from '../../../components/OfficeFilterSelect';
+import useAuthStore from '../../../store/useAuthStore';
+import { canUseOfficeFilter } from '../../../utils/officeFilterAccess';
 
 interface ReportFiltersBarProps {
   filters: ReportFilterState;
@@ -14,6 +17,8 @@ interface ReportFiltersBarProps {
 const ReportFiltersBar: React.FC<ReportFiltersBarProps> = ({ filters, setFilters }) => {
   const { userOptions, roleOptions, departmentOptions, branchOptions, supervisorOptions } = useReportMetaOptions();
   const { data: leadMeta } = useLeadMetaQuery();
+  const currentUser = useAuthStore((state) => state.user);
+  const showOfficeFilter = canUseOfficeFilter(currentUser);
 
   const stageOptions = useMemo(
     () => (leadMeta?.stages || []).map((item) => ({ value: item.id, label: item.label })),
@@ -143,14 +148,21 @@ const ReportFiltersBar: React.FC<ReportFiltersBarProps> = ({ filters, setFilters
           {supervisorOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
         </select>
 
-        <select
-          className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs text-gray-600 outline-none focus:ring-2 focus:ring-emerald-500"
-          value={filters.branchId || ''}
-          onChange={(e) => setFilters((prev) => ({ ...prev, branchId: e.target.value || undefined, page: 1 }))}
-        >
-          <option value="">All Branches</option>
-          {branchOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-        </select>
+        {showOfficeFilter ? (
+          <OfficeFilterSelect
+            value={filters.officeId || filters.branchId || ''}
+            onChange={(officeId) => setFilters((prev) => ({ ...prev, officeId, branchId: undefined, page: 1 }))}
+          />
+        ) : (
+          <select
+            className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs text-gray-600 outline-none focus:ring-2 focus:ring-emerald-500"
+            value={filters.branchId || ''}
+            onChange={(e) => setFilters((prev) => ({ ...prev, branchId: e.target.value || undefined, page: 1 }))}
+          >
+            <option value="">All Branches</option>
+            {branchOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+          </select>
+        )}
 
         <select
           className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs text-gray-600 outline-none focus:ring-2 focus:ring-emerald-500"

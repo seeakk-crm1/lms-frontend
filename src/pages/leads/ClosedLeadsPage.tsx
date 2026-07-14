@@ -11,6 +11,7 @@ import ClosedLeadFilters from './components/ClosedLeadFilters';
 import ClosedLeadsTable from './components/ClosedLeadsTable';
 import RevenueEditModal from './components/RevenueEditModal';
 import { lazyWithChunkRecovery } from '../../utils/chunkLoadRecovery';
+import { canUseOfficeFilter } from '../../utils/officeFilterAccess';
 
 const LeadViewDrawer = lazyWithChunkRecovery(() => import('./components/LeadViewDrawer'));
 
@@ -131,6 +132,7 @@ const ClosedLeadsPage: React.FC = () => {
   const roleKey = normalizeRole(user?.role);
   const canEditRevenue = ['admin', 'superadmin'].includes(roleKey);
   const canReopen = ['admin', 'manager', 'superadmin'].includes(roleKey);
+  const showOfficeFilter = canUseOfficeFilter(user);
 
   const totalClosed = data?.pagination?.total || 0;
   const wonRevenue = useMemo(
@@ -144,13 +146,14 @@ const ClosedLeadsPage: React.FC = () => {
       search: search || undefined,
       assignedTo: filters.assignedTo || undefined,
       source: filters.source || undefined,
+      officeId: showOfficeFilter ? filters.officeId || undefined : undefined,
       closureType: filters.closureType || undefined,
       dateFrom: filters.dateFrom || undefined,
       dateTo: filters.dateTo || undefined,
       minRevenue: filters.minRevenue ? Number(filters.minRevenue) : undefined,
       maxRevenue: filters.maxRevenue ? Number(filters.maxRevenue) : undefined,
     });
-  }, [exportMutation, filters, search]);
+  }, [exportMutation, filters, search, showOfficeFilter]);
 
   const handleView = useCallback(
     (lead: LeadListItem, tab: 'overview' | 'history' = 'overview') => {
@@ -267,13 +270,15 @@ const ClosedLeadsPage: React.FC = () => {
                 filters={filters}
                 meta={meta}
                 onSearchChange={setSearchDraft}
-                onFilterChange={setFilters}
+                onFilterChange={(patch) => setFilters(showOfficeFilter ? patch : { ...patch, officeId: undefined })}
+                showOfficeFilter={showOfficeFilter}
                 onReset={() => {
                   setSearchDraft('');
                   setSearch('');
                   setFilters({
                     assignedTo: undefined,
                     source: undefined,
+                    officeId: undefined,
                     closureType: undefined,
                     dateFrom: undefined,
                     dateTo: undefined,

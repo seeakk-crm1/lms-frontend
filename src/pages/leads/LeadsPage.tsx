@@ -23,6 +23,8 @@ import {
 } from '../../hooks/useLeads';
 import { LeadListItem } from '../../types/lead.types';
 import { lazyWithChunkRecovery } from '../../utils/chunkLoadRecovery';
+import useAuthStore from '../../store/useAuthStore';
+import { canUseOfficeFilter } from '../../utils/officeFilterAccess';
 
 const LeadFormDrawer = lazyWithChunkRecovery(() => import('./components/LeadFormDrawer'));
 const LeadViewDrawer = lazyWithChunkRecovery(() => import('./components/LeadViewDrawer'));
@@ -47,6 +49,8 @@ const LeadsPage: React.FC = () => {
   const [slaModalLead, setSlaModalLead] = useState<LeadListItem | null>(null);
   const [viewLead, setViewLead] = useState<LeadListItem | null>(null);
   const [historyLeadId, setHistoryLeadId] = useState<string | null>(null);
+  const currentUser = useAuthStore((state) => state.user);
+  const showOfficeFilter = canUseOfficeFilter(currentUser);
 
   const {
     leads,
@@ -187,11 +191,12 @@ const LeadsPage: React.FC = () => {
       stage: filters.stage || undefined,
       assignedTo: filters.assignedTo || undefined,
       source: filters.source || undefined,
+      officeId: showOfficeFilter ? filters.officeId || undefined : undefined,
       status: filters.status || undefined,
       starred: filters.starred && filters.starred !== 'ALL' ? filters.starred : undefined,
       includeArchived: exportIncludeArchived,
     });
-  }, [exportMutation, exportIncludeArchived, filters.assignedTo, filters.source, filters.stage, filters.status, filters.starred, search]);
+  }, [exportMutation, exportIncludeArchived, filters.assignedTo, filters.officeId, filters.source, filters.stage, filters.status, filters.starred, search, showOfficeFilter]);
 
   const handleImportClick = useCallback(() => {
     navigate('/leads/import');
@@ -511,10 +516,11 @@ const LeadsPage: React.FC = () => {
             {showFilters ? (
               <LeadFilters
                 search={searchDraft}
-                filters={filters}
+                filters={showOfficeFilter ? filters : { ...filters, officeId: undefined }}
                 meta={meta}
                 onSearchChange={setSearchDraft}
-                onFilterChange={setFilters}
+                onFilterChange={(patch) => setFilters(showOfficeFilter ? patch : { ...patch, officeId: undefined })}
+                showOfficeFilter={showOfficeFilter}
                 onReset={() => {
                   setSearchDraft('');
                   setSearch('');
@@ -522,6 +528,7 @@ const LeadsPage: React.FC = () => {
                     stage: undefined,
                     assignedTo: undefined,
                     source: undefined,
+                    officeId: undefined,
                     status: undefined,
                     starred: 'ALL',
                     createdFrom: undefined,

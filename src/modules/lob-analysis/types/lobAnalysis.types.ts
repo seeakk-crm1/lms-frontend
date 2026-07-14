@@ -6,6 +6,7 @@ export interface LOBAnalysisFilters {
   reasonId?: string;
   userId?: string;
   locationId?: string;
+  officeId?: string;
 }
 
 export interface LOBSummaryStageItem {

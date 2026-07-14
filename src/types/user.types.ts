@@ -49,6 +49,7 @@ export interface UserFilters {
   role?: string;
   department?: string;
   office?: string;
+  officeId?: string;
   isActive?: boolean;
 }
 

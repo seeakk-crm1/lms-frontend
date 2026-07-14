@@ -128,6 +128,7 @@ export const useLeadsQuery = () => {
         stage: filters.stage || undefined,
         assignedTo: filters.assignedTo || undefined,
         source: filters.source || undefined,
+        officeId: filters.officeId || undefined,
         status: filters.status || undefined,
         starred: filters.starred && filters.starred !== 'ALL' ? filters.starred : undefined,
         createdFrom: filters.createdFrom || undefined,

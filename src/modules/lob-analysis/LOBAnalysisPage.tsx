@@ -3,9 +3,9 @@ import { motion } from 'framer-motion';
 import { AlertTriangle, FileBarChart2, RefreshCcw } from 'lucide-react';
 import DashboardLayout from '../../components/dashboard/DashboardLayout';
 import { useLeadMetaQuery } from '../../hooks/useLeads';
-import { useOfficesQuery } from '../../hooks/admin/office/useOfficeQuery';
 import { Country } from 'country-state-city';
 import useAuthStore from '../../store/useAuthStore';
+import { canUseOfficeFilter } from '../../utils/officeFilterAccess';
 import LOBFilters from './LOBFilters';
 import LOBKPIStats from './LOBKPIStats';
 import LOBReasonsList from './LOBReasonsList';
@@ -28,6 +28,7 @@ const emptyFilters: LOBAnalysisFilters = {
   reasonId: '',
   userId: '',
   locationId: '',
+  officeId: '',
 };
 
 const LOBAnalysisPage: React.FC = () => {
@@ -38,10 +39,10 @@ const LOBAnalysisPage: React.FC = () => {
 
   const { user } = useAuthStore();
   const { data: leadMeta } = useLeadMetaQuery();
-  const officesQuery = useOfficesQuery();
   const lobAnalysis = useLOBAnalysis(appliedFilters, page, 20);
 
   const canView = ['admin', 'manager', 'superadmin'].includes(roleKey(user?.role));
+  const showOfficeFilter = canUseOfficeFilter(user);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -70,19 +71,11 @@ const LOBAnalysisPage: React.FC = () => {
   );
 
   const locationOptions = useMemo(() => {
-    const countryOptions = Country.getAllCountries().map((country) => ({
+    return Country.getAllCountries().map((country) => ({
       value: country.isoCode,
       label: `Country: ${country.name}`,
     }));
-    const officeOptions = ((officesQuery.data?.data?.offices || []) as Array<{ id?: string; name?: string; isActive?: boolean }>)
-      .filter((office) => office?.id && office?.isActive !== false)
-      .map((office) => ({
-        value: office.id as string,
-        label: `Office: ${office.name || office.id}`,
-      }));
-
-    return [...countryOptions, ...officeOptions];
-  }, [officesQuery.data]);
+  }, []);
 
   const appliedChips = useMemo(() => {
     const chips: string[] = [];
@@ -93,6 +86,7 @@ const LOBAnalysisPage: React.FC = () => {
     if (appliedFilters.reasonId) chips.push(`Reason filtered`);
     if (appliedFilters.userId) chips.push(`User filtered`);
     if (appliedFilters.locationId) chips.push(`Location filtered`);
+    if (appliedFilters.officeId) chips.push(`Office filtered`);
     return chips;
   }, [appliedFilters]);
 
@@ -159,6 +153,7 @@ const LOBAnalysisPage: React.FC = () => {
               reasonOptions={reasonOptions}
               userOptions={userOptions}
               locationOptions={locationOptions}
+              showOfficeFilter={showOfficeFilter}
               onChange={(patch) => setDraftFilters((current) => ({ ...current, ...patch }))}
               onSearchChange={(value) => {
                 setSearchDraft(value);

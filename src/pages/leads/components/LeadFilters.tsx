@@ -1,6 +1,7 @@
 import React, { memo } from 'react';
 import { CalendarRange, Search, SlidersHorizontal, Star, UserRound } from 'lucide-react';
 import SearchableSelect from '../../../components/SearchableSelect';
+import OfficeFilterSelect from '../../../components/OfficeFilterSelect';
 import type { LeadFilters as LeadFiltersState, LeadMetaOptions } from '../../../types/lead.types';
 
 interface LeadFiltersProps {
@@ -10,6 +11,7 @@ interface LeadFiltersProps {
   onSearchChange: (value: string) => void;
   onFilterChange: (filters: Partial<LeadFiltersState>) => void;
   onReset: () => void;
+  showOfficeFilter?: boolean;
 }
 
 const statusOptions = [
@@ -32,6 +34,7 @@ const LeadFilters: React.FC<LeadFiltersProps> = ({
   onSearchChange,
   onFilterChange,
   onReset,
+  showOfficeFilter = false,
 }) => (
   <div className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
     <div className="mb-5 flex items-center gap-2">
@@ -39,7 +42,7 @@ const LeadFilters: React.FC<LeadFiltersProps> = ({
       <h3 className="text-sm font-black uppercase tracking-[0.24em] text-gray-900">Filter Leads</h3>
     </div>
 
-    <div className="grid gap-4 xl:grid-cols-[1.3fr_repeat(7,minmax(0,1fr))]">
+    <div className={showOfficeFilter ? 'grid gap-4 xl:grid-cols-[1.3fr_repeat(8,minmax(0,1fr))]' : 'grid gap-4 xl:grid-cols-[1.3fr_repeat(7,minmax(0,1fr))]'}>
       <div className="relative">
         <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
         <input
@@ -75,6 +78,13 @@ const LeadFilters: React.FC<LeadFiltersProps> = ({
         placeholder="Source"
         onChange={(event) => onFilterChange({ source: event.target.value || undefined })}
       />
+
+      {showOfficeFilter ? (
+        <OfficeFilterSelect
+          value={filters.officeId || ''}
+          onChange={(officeId) => onFilterChange({ officeId })}
+        />
+      ) : null}
 
       <SearchableSelect
         name="status"

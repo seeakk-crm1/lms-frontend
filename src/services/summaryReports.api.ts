@@ -12,6 +12,7 @@ export interface SummaryFilters {
   leadSource?: string;
   leadStage?: string;
   branchId?: string;
+  officeId?: string;
   departmentId?: string;
   page?: number;
   limit?: number;

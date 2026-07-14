@@ -33,10 +33,15 @@ import { getInviteActionState, getUserActivationStatus } from '../../utils/invit
 import DeleteUserModal from './DeleteUserModal';
 import WhatsAppActionButton from '../common/WhatsAppActionButton';
 import { USER_WHATSAPP_PERMISSIONS } from '../../constants/whatsappPermissions';
+import OfficeFilterSelect from '../OfficeFilterSelect';
+import useAuthStore from '../../store/useAuthStore';
+import { canUseOfficeFilter } from '../../utils/officeFilterAccess';
 
 const UsersTable: React.FC = () => {
   const { search, setSearch, filters, setFilters, page, setPage, openCreateModal } = useUsersStore();
   const { data: usersData, isLoading } = useUsersQuery();
+  const currentUser = useAuthStore((state) => state.user);
+  const showOfficeFilter = canUseOfficeFilter(currentUser);
   
   const updateStatus = useUpdateStatusMutation();
   const unlockUser = useUnlockUserMutation();
@@ -250,7 +255,7 @@ const UsersTable: React.FC = () => {
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
       {/* Search and Filters Header */}
-      <div className="p-4 border-b border-gray-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="p-4 border-b border-gray-50 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="relative group flex-1 max-w-full sm:max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-emerald-500 transition-colors" />
           <input
@@ -262,7 +267,16 @@ const UsersTable: React.FC = () => {
           />
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          {showOfficeFilter ? (
+            <div className="w-full sm:w-80">
+              <OfficeFilterSelect
+                value={filters.officeId || ''}
+                onChange={(officeId) => setFilters({ ...filters, officeId })}
+              />
+            </div>
+          ) : null}
+
           <div className="flex bg-gray-50 p-1 rounded-xl border border-gray-50 flex-1 sm:flex-none overflow-x-auto">
             <button
               onClick={() => setFilters({ ...filters, isActive: undefined })}

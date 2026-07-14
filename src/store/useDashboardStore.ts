@@ -48,6 +48,7 @@ interface DashboardState {
     isLoading: boolean;
     isRefreshing: boolean;
     selectedRange: DashboardRange;
+    selectedOfficeId?: string;
     scheduleDateLabel: string;
     kpiData: KPIData[];
     leadGrowthData: LeadGrowthData[];
@@ -57,13 +58,15 @@ interface DashboardState {
     meetings: Meeting[];
     error: string | null;
     reset: () => void;
-    fetchDashboardData: (range?: DashboardRange) => Promise<void>;
+    setSelectedOfficeId: (officeId?: string) => void;
+    fetchDashboardData: (range?: DashboardRange, officeId?: string) => Promise<void>;
 }
 
-const createInitialDashboardSlice = (): Omit<DashboardState, 'reset' | 'fetchDashboardData'> => ({
+const createInitialDashboardSlice = (): Omit<DashboardState, 'reset' | 'setSelectedOfficeId' | 'fetchDashboardData'> => ({
     isLoading: true,
     isRefreshing: false,
     selectedRange: '7d',
+    selectedOfficeId: undefined,
     scheduleDateLabel: '',
     kpiData: [],
     leadGrowthData: [],
@@ -80,13 +83,15 @@ const useDashboardStore = create<DashboardState>((set) => ({
     ...createInitialDashboardSlice(),
 
     reset: () => set(() => ({ ...createInitialDashboardSlice(), error: null })),
+    setSelectedOfficeId: (officeId) => set({ selectedOfficeId: officeId }),
 
-    fetchDashboardData: async (range) => {
+    fetchDashboardData: async (range, officeId) => {
         const state = useDashboardStore.getState();
         const requestedRange = range ?? state.selectedRange;
+        const requestedOfficeId = officeId !== undefined ? officeId : state.selectedOfficeId;
         const hasExistingData = state.kpiData.length > 0;
 
-        if (isFetchingAPI && requestedRange === state.selectedRange) {
+        if (isFetchingAPI && requestedRange === state.selectedRange && requestedOfficeId === state.selectedOfficeId) {
             return;
         }
 
@@ -97,10 +102,11 @@ const useDashboardStore = create<DashboardState>((set) => ({
             isRefreshing: hasExistingData,
             error: null,
             selectedRange: requestedRange,
+            selectedOfficeId: requestedOfficeId,
         });
 
         try {
-            const response = await getDashboardSummary(requestedRange);
+            const response = await getDashboardSummary(requestedRange, requestedOfficeId);
             const dashboard = response.data;
 
             set({

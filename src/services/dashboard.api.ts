@@ -47,10 +47,11 @@ export interface DashboardSummaryResponse {
   };
 }
 
-export const getDashboardSummary = async (range: DashboardRange): Promise<DashboardSummaryResponse> => {
+export const getDashboardSummary = async (range: DashboardRange, officeId?: string): Promise<DashboardSummaryResponse> => {
   const response = await api.get('/dashboard/summary', {
     params: {
       range,
+      officeId,
     },
   });
 
@@ -63,6 +64,7 @@ export interface RevenueAnalyticsFilters {
   userId?: string;
   stageId?: string;
   supervisorId?: string;
+  officeId?: string;
 }
 
 export interface RevenueAnalyticsResponse {

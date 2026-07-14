@@ -9,6 +9,7 @@ const mapFiltersToApi = (filters: LOBAnalysisFilters) => ({
   reason_id: filters.reasonId || undefined,
   user_id: filters.userId || undefined,
   location_id: filters.locationId || undefined,
+  officeId: filters.officeId || undefined,
 });
 
 export const getLOBAnalysisSummary = async (filters: LOBAnalysisFilters): Promise<{ success: boolean; data: LOBAnalysisSummary }> => {

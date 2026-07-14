@@ -13,6 +13,8 @@ import useAuthStore from '../store/useAuthStore';
 import RevenueAnalytics from '../components/dashboard/RevenueAnalytics';
 import FollowUpCapacityWidget from '../components/dashboard/FollowUpCapacityWidget';
 import { hasAnyPermission, hasPermission } from '../utils/permission.util';
+import OfficeFilterSelect from '../components/OfficeFilterSelect';
+import { canUseOfficeFilter } from '../utils/officeFilterAccess';
 
 interface DashboardProps {
     mode?: 'admin' | 'operations';
@@ -20,6 +22,8 @@ interface DashboardProps {
 
 const Dashboard: React.FC<DashboardProps> = ({ mode = 'operations' }) => {
     const fetchDashboardData = useDashboardStore((state) => state.fetchDashboardData);
+    const selectedOfficeId = useDashboardStore((state) => state.selectedOfficeId);
+    const setSelectedOfficeId = useDashboardStore((state) => state.setSelectedOfficeId);
     const error = useDashboardStore((state) => state.error);
     const user = useAuthStore((state) => state.user);
 
@@ -76,8 +80,8 @@ const Dashboard: React.FC<DashboardProps> = ({ mode = 'operations' }) => {
         if (hasFetched.current) return;
         hasFetched.current = true;
         
-        void fetchDashboardData();
-    }, [fetchDashboardData, shouldFetchDashboardData]);
+        void fetchDashboardData(undefined, selectedOfficeId);
+    }, [fetchDashboardData, selectedOfficeId, shouldFetchDashboardData]);
 
     useEffect(() => {
         console.log('Dashboard Render Complete');
@@ -97,6 +101,24 @@ const Dashboard: React.FC<DashboardProps> = ({ mode = 'operations' }) => {
                                 {error}
                             </div>
                         )}
+
+                        {hasAnyDashboardSection && canUseOfficeFilter(user) ? (
+                            <div className="flex flex-col gap-3 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm md:flex-row md:items-center md:justify-between">
+                                <div>
+                                    <p className="text-xs font-black uppercase tracking-[0.22em] text-emerald-500">Office Filter</p>
+                                    <p className="mt-1 text-sm font-semibold text-gray-500">Dashboard metrics refresh for users assigned to the selected reporting office.</p>
+                                </div>
+                                <div className="w-full md:w-96">
+                                    <OfficeFilterSelect
+                                        value={selectedOfficeId || ''}
+                                        onChange={(officeId) => {
+                                            setSelectedOfficeId(officeId);
+                                            void fetchDashboardData(undefined, officeId);
+                                        }}
+                                    />
+                                </div>
+                            </div>
+                        ) : null}
 
                         {!hasAnyDashboardSection ? (
                             <div className="rounded-[28px] border border-slate-200 bg-white px-6 py-10 shadow-[0_20px_60px_-30px_rgba(15,23,42,0.18)]">
