@@ -47,8 +47,8 @@ export interface OfficePagination {
 export interface OfficeFormValues {
   name: string;
   address?: string;
-  country: string;
-  state: string;
+  country?: string;
+  state?: string;
   district?: string;
   city?: string;
   isActive: boolean;
