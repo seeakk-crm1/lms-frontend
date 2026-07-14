@@ -12,6 +12,7 @@ import { LEAD_WHATSAPP_PERMISSIONS } from '../../../constants/whatsappPermission
 interface LeadsTableProps {
   items: LeadListItem[];
   isLoading: boolean;
+  isError?: boolean;
   page: number;
   limit: number;
   total: number;
@@ -34,6 +35,7 @@ const emptyCell = 'text-gray-300';
 const LeadsTable: React.FC<LeadsTableProps> = ({
   items,
   isLoading,
+  isError = false,
   page,
   limit,
   total,
@@ -166,6 +168,17 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
                   ))}
                 </tr>
               ))
+            ) : isError ? (
+              <tr>
+                <td colSpan={isSelectionMode ? 12 : 11} className="px-6 py-20 text-center">
+                  <div className="mx-auto max-w-sm">
+                    <h3 className="text-lg font-black text-gray-900">Unable to load leads.</h3>
+                    <p className="mt-2 text-sm font-semibold text-gray-500">
+                      Please refresh the page or try again in a moment.
+                    </p>
+                  </div>
+                </td>
+              </tr>
             ) : sortedItems.length === 0 ? (
               <tr>
                 <td colSpan={isSelectionMode ? 12 : 11} className="px-6 py-20 text-center">

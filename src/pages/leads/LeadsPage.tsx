@@ -64,7 +64,7 @@ const LeadsPage: React.FC = () => {
     closeDrawer,
   } = useLeadStore();
 
-  const { data, isLoading, isFetching } = useLeadsQuery();
+  const { data, isLoading, isFetching, isError } = useLeadsQuery();
   const { data: meta } = useLeadMetaQuery();
   const exportMutation = useExportLeads();
   const deleteMutation = useDeleteLeadMutation();
@@ -534,6 +534,7 @@ const LeadsPage: React.FC = () => {
             <LeadsTable
               items={leads}
               isLoading={tableLoading}
+              isError={isError}
               page={pagination.page}
               limit={pagination.limit}
               total={pagination.total}
