@@ -64,15 +64,32 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
   const rangeEnd = total === 0 ? 0 : Math.min(page * limit, total);
   
   const [sortAmountDirection, setSortAmountDirection] = useState<'asc' | 'desc' | null>(null);
+  const [sortAdvanceAmountDirection, setSortAdvanceAmountDirection] = useState<'asc' | 'desc' | null>(null);
+  const [sortRemarkDirection, setSortRemarkDirection] = useState<'asc' | 'desc' | null>(null);
 
   const sortedItems = useMemo(() => {
-    if (!sortAmountDirection) return items;
-    return [...items].sort((a, b) => {
-      const amtA = a.totalAmount || 0;
-      const amtB = b.totalAmount || 0;
-      return sortAmountDirection === 'asc' ? amtA - amtB : amtB - amtA;
-    });
-  }, [items, sortAmountDirection]);
+    let result = [...items];
+    if (sortAmountDirection) {
+      result.sort((a, b) => {
+        const amtA = a.totalAmount || 0;
+        const amtB = b.totalAmount || 0;
+        return sortAmountDirection === 'asc' ? amtA - amtB : amtB - amtA;
+      });
+    } else if (sortAdvanceAmountDirection) {
+      result.sort((a, b) => {
+        const amtA = a.advanceAmount || 0;
+        const amtB = b.advanceAmount || 0;
+        return sortAdvanceAmountDirection === 'asc' ? amtA - amtB : amtB - amtA;
+      });
+    } else if (sortRemarkDirection) {
+      result.sort((a, b) => {
+        const remA = a.lastRemark || '';
+        const remB = b.lastRemark || '';
+        return sortRemarkDirection === 'asc' ? remA.localeCompare(remB) : remB.localeCompare(remA);
+      });
+    }
+    return result;
+  }, [items, sortAmountDirection, sortAdvanceAmountDirection, sortRemarkDirection]);
 
   const pageIds = sortedItems.map((l) => l.id);
   const safeSelectedIds = selectedIds || [];
@@ -99,21 +116,33 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
                   />
                 </motion.th>
               )}
-              {['Lead Name', 'Next Follow-Up', 'Assigned To', 'Stage', 'Lead Life Cycle', 'Total Amount', 'Source', 'Created Date', 'Actions'].map((heading) => (
+              {['Lead Name', 'Next Follow-Up', 'Assigned To', 'Stage', 'Lead Life Cycle', 'Total Amount', 'Advance Amount', 'Last Remark', 'Source', 'Created Date', 'Actions'].map((heading) => (
                 <th
                   key={heading}
-                  className={`px-6 py-4 text-[11px] font-black uppercase tracking-[0.22em] text-gray-400 ${heading === 'Total Amount' ? 'cursor-pointer hover:text-emerald-500 transition-colors select-none' : ''}`}
+                  className={`px-6 py-4 text-[11px] font-black uppercase tracking-[0.22em] text-gray-400 ${['Total Amount', 'Advance Amount', 'Last Remark'].includes(heading) ? 'cursor-pointer hover:text-emerald-500 transition-colors select-none' : ''}`}
                   onClick={() => {
                     if (heading === 'Total Amount') {
                       setSortAmountDirection(prev => prev === 'asc' ? 'desc' : prev === 'desc' ? null : 'asc');
+                      setSortAdvanceAmountDirection(null);
+                      setSortRemarkDirection(null);
+                    } else if (heading === 'Advance Amount') {
+                      setSortAdvanceAmountDirection(prev => prev === 'asc' ? 'desc' : prev === 'desc' ? null : 'asc');
+                      setSortAmountDirection(null);
+                      setSortRemarkDirection(null);
+                    } else if (heading === 'Last Remark') {
+                      setSortRemarkDirection(prev => prev === 'asc' ? 'desc' : prev === 'desc' ? null : 'asc');
+                      setSortAmountDirection(null);
+                      setSortAdvanceAmountDirection(null);
                     }
                   }}
                 >
                   <div className="flex items-center gap-1.5">
                     {heading}
-                    {heading === 'Total Amount' && (
+                    {['Total Amount', 'Advance Amount', 'Last Remark'].includes(heading) && (
                       <span className="text-[10px] opacity-70">
-                        {sortAmountDirection === 'asc' ? '↑' : sortAmountDirection === 'desc' ? '↓' : '↕'}
+                        {heading === 'Total Amount' ? (sortAmountDirection === 'asc' ? '↑' : sortAmountDirection === 'desc' ? '↓' : '↕') : ''}
+                        {heading === 'Advance Amount' ? (sortAdvanceAmountDirection === 'asc' ? '↑' : sortAdvanceAmountDirection === 'desc' ? '↓' : '↕') : ''}
+                        {heading === 'Last Remark' ? (sortRemarkDirection === 'asc' ? '↑' : sortRemarkDirection === 'desc' ? '↓' : '↕') : ''}
                       </span>
                     )}
                   </div>
@@ -130,7 +159,7 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
                       <div className="h-4 w-4 rounded bg-gray-200" />
                     </td>
                   )}
-                  {Array.from({ length: 9 }).map((__, cellIndex) => (
+                  {Array.from({ length: 11 }).map((__, cellIndex) => (
                     <td key={`cell-${cellIndex}`} className="px-6 py-5">
                       <div className="h-5 rounded-xl shimmer-bg" />
                     </td>
@@ -139,7 +168,7 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
               ))
             ) : sortedItems.length === 0 ? (
               <tr>
-                <td colSpan={isSelectionMode ? 10 : 9} className="px-6 py-20 text-center">
+                <td colSpan={isSelectionMode ? 12 : 11} className="px-6 py-20 text-center">
                   <div className="mx-auto max-w-sm">
                     <h3 className="text-lg font-black text-gray-900">No leads match the current filters</h3>
                     <p className="mt-2 text-sm font-semibold text-gray-500">
@@ -251,6 +280,16 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
                   <td className="px-6 py-5">
                     <div className="text-sm font-black text-gray-900">
                       {formatCurrency(lead.totalAmount || 0)}
+                    </div>
+                  </td>
+                  <td className="px-6 py-5">
+                    <div className="text-sm font-black text-gray-900 text-right">
+                      {formatCurrency(lead.advanceAmount || 0)}
+                    </div>
+                  </td>
+                  <td className="px-6 py-5">
+                    <div className="text-sm font-semibold text-gray-600 max-w-[200px] truncate" title={lead.lastRemark || 'No Remarks'}>
+                      {lead.lastRemark || '—'}
                     </div>
                   </td>
                   <td className="px-6 py-5 text-sm font-semibold text-gray-600">

@@ -73,6 +73,8 @@ export interface LeadListItem {
     createdAt: string;
     field?: Pick<LeadDynamicField, 'id' | 'name' | 'inputType' | 'sortOrder'>;
   }>;
+  advanceAmount?: number;
+  lastRemark?: string | null;
 }
 
 export interface LeadPagination {
