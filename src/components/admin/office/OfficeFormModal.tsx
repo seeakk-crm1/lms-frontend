@@ -13,8 +13,8 @@ import type {
 const schema = z.object({
   name: z.string().trim().min(1, 'Office name is required').max(100, 'Office name too long'),
   address: z.string().optional(),
-  country: z.string().trim().min(1, 'Country is required'),
-  state: z.string().trim().min(1, 'State is required'),
+  country: z.string().trim().optional(),
+  state: z.string().trim().optional(),
   district: z.string().trim().optional(),
   city: z.string().trim().optional(),
   isActive: z.boolean(),

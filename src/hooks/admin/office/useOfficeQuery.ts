@@ -17,7 +17,14 @@ import type {
 const getErrorMessage = (error: any, fallback: string): string => {
   if (error?.code === 'ERR_NETWORK') return 'Cannot connect to backend. Please ensure API server is running on port 5000.';
   if (error?.response?.status === 401) return 'Unauthorized. Please login again.';
-  return error?.response?.data?.message || fallback;
+  
+  const data = error?.response?.data;
+  if (data?.errors && typeof data.errors === 'object') {
+    const firstError = Object.values(data.errors).flat()[0];
+    if (firstError) return firstError as string;
+  }
+  
+  return data?.message || fallback;
 };
 
 const patchOfficeList = (
