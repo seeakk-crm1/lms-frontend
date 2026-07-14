@@ -11,9 +11,10 @@ interface GetOfficesParams {
   limit: number;
   search?: string;
   status?: 'ACTIVE' | 'INACTIVE';
-  countryId?: string;
-  stateId?: string;
-  districtId?: string;
+  country?: string;
+  state?: string;
+  district?: string;
+  city?: string;
 }
 
 export const getOffices = async (params: GetOfficesParams): Promise<ListOfficesApiResponse> => {

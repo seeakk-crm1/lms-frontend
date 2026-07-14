@@ -72,10 +72,30 @@ const OfficeFormModal: React.FC<Props> = ({
 
   const selectedCountryCode = watch('country');
   const selectedStateCode = watch('state');
+  const selectedCity = watch('city');
 
   const countries = useMemo(() => Country.getAllCountries(), []);
-  const states = useMemo(() => selectedCountryCode ? State.getStatesOfCountry(selectedCountryCode) : [], [selectedCountryCode]);
-  const cities = useMemo(() => selectedCountryCode && selectedStateCode ? City.getCitiesOfState(selectedCountryCode, selectedStateCode) : [], [selectedCountryCode, selectedStateCode]);
+  const states = useMemo(
+    () => (selectedCountryCode ? State.getStatesOfCountry(selectedCountryCode) : []),
+    [selectedCountryCode],
+  );
+  const cities = useMemo(
+    () =>
+      selectedCountryCode && selectedStateCode
+        ? City.getCitiesOfState(selectedCountryCode, selectedStateCode)
+        : [],
+    [selectedCountryCode, selectedStateCode],
+  );
+
+  // When editing, the saved city may not appear in the dropdown until state is loaded.
+  // Add it as a fallback option so the value is always visible on the select.
+  const cityOptions = useMemo(() => {
+    const list = cities.map((c) => c.name);
+    if (selectedCity && selectedCity.trim() !== '' && !list.includes(selectedCity)) {
+      return [selectedCity, ...list];
+    }
+    return list;
+  }, [cities, selectedCity]);
 
   const handleCountryChange = (value: string) => {
     setValue('country', value, { shouldValidate: true, shouldDirty: true });
@@ -168,67 +188,89 @@ const OfficeFormModal: React.FC<Props> = ({
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                {/* Country */}
                 <div>
                   <label className="text-[10px] uppercase tracking-widest text-gray-400 font-black">Country</label>
-                  <motion.select
-                    value={selectedCountryCode}
-                    onChange={(event) => handleCountryChange(event.target.value)}
-                    initial={{ opacity: 0.9 }}
-                    animate={{ opacity: 1 }}
-                    className={`w-full mt-1 px-3 py-2.5 rounded-xl border bg-gray-50 text-base sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500/20 ${
-                      errors.country ? 'border-red-200' : 'border-gray-200'
-                    }`}
-                  >
-                    <option value="">Select country</option>
-                    {countries.map((item) => (
-                      <option key={item.isoCode} value={item.isoCode}>
-                        {item.name}
-                      </option>
-                    ))}
-                  </motion.select>
+                  <Controller
+                    control={control}
+                    name="country"
+                    render={({ field }) => (
+                      <motion.select
+                        value={field.value || ''}
+                        onChange={(e) => handleCountryChange(e.target.value)}
+                        initial={{ opacity: 0.9 }}
+                        animate={{ opacity: 1 }}
+                        className={`w-full mt-1 px-3 py-2.5 rounded-xl border bg-gray-50 text-base sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500/20 ${
+                          errors.country ? 'border-red-200' : 'border-gray-200'
+                        }`}
+                      >
+                        <option value="">Select country</option>
+                        {countries.map((item) => (
+                          <option key={item.isoCode} value={item.isoCode}>
+                            {item.name}
+                          </option>
+                        ))}
+                      </motion.select>
+                    )}
+                  />
                   {errors.country ? <p className="text-[11px] text-red-600 font-bold mt-1">{errors.country.message}</p> : null}
                 </div>
 
+                {/* State */}
                 <div>
                   <label className="text-[10px] uppercase tracking-widest text-gray-400 font-black">State</label>
-                  <motion.select
-                    value={selectedStateCode}
-                    onChange={(event) => handleStateChange(event.target.value)}
-                    initial={{ opacity: 0.9 }}
-                    animate={{ opacity: 1 }}
-                    disabled={!selectedCountryCode}
-                    className={`w-full mt-1 px-3 py-2.5 rounded-xl border bg-gray-50 text-base sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500/20 disabled:opacity-60 ${
-                      errors.state ? 'border-red-200' : 'border-gray-200'
-                    }`}
-                  >
-                    <option value="">Select state</option>
-                    {states.map((item) => (
-                      <option key={item.isoCode} value={item.isoCode}>
-                        {item.name}
-                      </option>
-                    ))}
-                  </motion.select>
+                  <Controller
+                    control={control}
+                    name="state"
+                    render={({ field }) => (
+                      <motion.select
+                        value={field.value || ''}
+                        onChange={(e) => handleStateChange(e.target.value)}
+                        initial={{ opacity: 0.9 }}
+                        animate={{ opacity: 1 }}
+                        disabled={!selectedCountryCode}
+                        className={`w-full mt-1 px-3 py-2.5 rounded-xl border bg-gray-50 text-base sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500/20 disabled:opacity-60 ${
+                          errors.state ? 'border-red-200' : 'border-gray-200'
+                        }`}
+                      >
+                        <option value="">Select state</option>
+                        {states.map((item) => (
+                          <option key={item.isoCode} value={item.isoCode}>
+                            {item.name}
+                          </option>
+                        ))}
+                      </motion.select>
+                    )}
+                  />
                   {errors.state ? <p className="text-[11px] text-red-600 font-bold mt-1">{errors.state.message}</p> : null}
                 </div>
 
+                {/* City */}
                 <div>
                   <label className="text-[10px] uppercase tracking-widest text-gray-400 font-black">City</label>
-                  <motion.select
-                    {...register('city')}
-                    initial={{ opacity: 0.9 }}
-                    animate={{ opacity: 1 }}
-                    disabled={!selectedStateCode}
-                    className={`w-full mt-1 px-3 py-2.5 rounded-xl border bg-gray-50 text-base sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500/20 disabled:opacity-60 ${
-                      errors.city ? 'border-red-200' : 'border-gray-200'
-                    }`}
-                  >
-                    <option value="">Select city</option>
-                    {cities.map((item) => (
-                      <option key={item.name} value={item.name}>
-                        {item.name}
-                      </option>
-                    ))}
-                  </motion.select>
+                  <Controller
+                    control={control}
+                    name="city"
+                    render={({ field }) => (
+                      <motion.select
+                        value={field.value || ''}
+                        onChange={(e) => field.onChange(e.target.value)}
+                        initial={{ opacity: 0.9 }}
+                        animate={{ opacity: 1 }}
+                        disabled={!selectedStateCode}
+                        className={`w-full mt-1 px-3 py-2.5 rounded-xl border bg-gray-50 text-base sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500/20 disabled:opacity-60 ${
+                          errors.city ? 'border-red-200' : 'border-gray-200'
+                        }`}
+                      >
+                        <option value="">Select city</option>
+                        {cityOptions.map((name) => (
+                          <option key={name} value={name}>
+                            {name}
+                          </option>
+                        ))}
+                      </motion.select>
+                    )}
+                  />
                   {errors.city ? <p className="text-[11px] text-red-600 font-bold mt-1">{errors.city.message}</p> : null}
                 </div>
               </div>
