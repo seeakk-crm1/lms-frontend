@@ -449,7 +449,7 @@ const RevenueAnalytics: React.FC = () => {
                   axisLine={false}
                   tickLine={false}
                   tick={{ fill: '#9ca3af', fontSize: 10, fontWeight: 700 }}
-                  tickFormatter={(val) => `$${val}`}
+                  tickFormatter={(val) => `${val}`}
                 />
                 <Tooltip
                   formatter={(val: any) => [formatCurrency(Number(val || 0)), 'Revenue'] as [any, any]}

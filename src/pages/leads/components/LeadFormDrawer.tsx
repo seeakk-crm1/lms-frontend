@@ -1,6 +1,6 @@
 import React, { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { AlertCircle, CalendarClock, Save, Sparkles, X, DollarSign, PlusCircle, FileText, History, Trash2, Eye } from 'lucide-react';
+import { AlertCircle, CalendarClock, Save, Sparkles, X, Banknote, PlusCircle, FileText, History, Trash2, Eye } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import SearchableSelect from '../../../components/SearchableSelect';
 import { useChangeLeadStageMutation, useCreateLeadMutation, useLeadDetailQuery, useLeadMetaQuery, useUpdateLeadMutation, useLeadRemarksQuery } from '../../../hooks/useLeads';
@@ -288,10 +288,6 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
         const res = await getLeadPayments(lead.id);
         if (res.success) {
           setPaymentData(res.data);
-          setFormValues((prev) => ({
-            ...prev,
-            totalAmount: res.data.totalAmount || 0,
-          }));
         }
       } catch (err) {
         console.error('Failed to fetch payments:', err);
@@ -1382,7 +1378,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
                     <section className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
                       <div className="mb-5 flex items-center gap-3">
                         <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
-                          <DollarSign className="h-5 w-5" />
+                          <Banknote className="h-5 w-5" />
                         </div>
                         <div>
                           <h3 className="text-lg font-black text-gray-900">Payment Information</h3>
@@ -1417,7 +1413,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
                                   <div className="mt-2 space-y-2 border-l-2 border-gray-100 pl-3">
                                     {paymentData.amountHistory.map((hist: any) => (
                                       <div key={hist.id} className="text-gray-600">
-                                        <span className="font-bold">${hist.oldAmount} &rarr; ${hist.newAmount}</span> by {hist.changedBy?.name} on {new Date(hist.createdAt).toLocaleDateString()}:
+                                        <span className="font-bold">{hist.oldAmount} &rarr; {hist.newAmount}</span> by {hist.changedBy?.name} on {new Date(hist.createdAt).toLocaleDateString()}:
                                         <p className="italic text-gray-500 pl-2">"{hist.reason}"</p>
                                       </div>
                                     ))}
@@ -1434,25 +1430,17 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
                             <input
                               type="text"
                               readOnly
-                              value={
-                                mode === 'edit' && paymentData
-                                  ? `$${paymentData.balance.toFixed(2)}`
-                                  : `$${Math.max(
-                                      0,
-                                      Number(formValues.totalAmount || 0) -
-                                        localAdvances.reduce((sum, item) => sum + item.amount, 0)
-                                    ).toFixed(2)}`
-                              }
+                              value={Math.max(0, Number(formValues.totalAmount || 0) - (paymentData?.approvedSum || 0)).toFixed(2)}
                               className={`${inputClassName} bg-gray-100 cursor-not-allowed font-bold text-gray-700`}
                             />
                             {mode === 'edit' && paymentData && (
                               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400">
-                                Approved Advances: ${paymentData.approvedSum.toFixed(2)}
+                                Approved Advances: {paymentData.approvedSum.toFixed(2)}
                               </span>
                             )}
                             {mode === 'create' && localAdvances.length > 0 && (
                               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400">
-                                Pending Advances: ${localAdvances.reduce((sum, item) => sum + item.amount, 0).toFixed(2)}
+                                Pending Advances: {localAdvances.reduce((sum, item) => sum + item.amount, 0).toFixed(2)}
                               </span>
                             )}
                           </div>
@@ -1492,7 +1480,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
                                 <div key={adv.id || `local-adv-${index}`} className="p-3 border border-gray-100 bg-gray-50/50 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
                                   <div className="space-y-1">
                                     <div className="flex items-center gap-2">
-                                      <span className="text-sm font-black text-gray-900">${adv.amount.toFixed(2)}</span>
+                                      <span className="text-sm font-black text-gray-900">{adv.amount.toFixed(2)}</span>
                                       <span className={`px-2 py-0.5 rounded-lg border text-[10px] font-bold ${
                                         adv.status === 'APPROVED'
                                           ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
@@ -1713,7 +1701,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
           <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
             <h3 className="text-lg font-black text-gray-900 mb-2">Reason for Total Amount Modification</h3>
             <p className="text-xs font-semibold text-gray-500 mb-4">
-              You are updating the Total Amount from ${(paymentData?.totalAmount || 0).toFixed(2)} to ${Number(formValues.totalAmount).toFixed(2)}. Please provide a reason.
+              You are updating the Total Amount from {(paymentData?.totalAmount || 0).toFixed(2)} to {Number(formValues.totalAmount).toFixed(2)}. Please provide a reason.
             </p>
             <textarea
               className={inputClassName}

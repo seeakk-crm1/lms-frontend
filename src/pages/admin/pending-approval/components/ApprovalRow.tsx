@@ -68,7 +68,7 @@ const ApprovalRow: React.FC<ApprovalRowProps> = ({ approval, canAct, onReview, o
       </td>
       <td className="px-6 py-5 text-sm font-semibold text-gray-600">
         {approval.type === 'ADVANCE_PAYMENT'
-          ? `$${(approval.requestData as any)?.amount?.toFixed(2)}`
+          ? `Advance Request: ${(approval.requestData as any)?.amount?.toFixed(2)}`
           : approval.toStage?.name || 'Unknown'}
       </td>
       <td className="px-6 py-5">
