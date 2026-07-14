@@ -50,7 +50,7 @@ const LOBAnalysisWidget: React.FC = () => {
                         No LOB movement recorded yet.
                     </div>
                 ) : (
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height={220} minWidth={0}>
                     <BarChart data={lobData} margin={{ top: 0, right: 0, left: -25, bottom: 0 }} barSize={32}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
                         <XAxis

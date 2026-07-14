@@ -66,7 +66,7 @@ const LeadGrowthChart: React.FC = () => {
                         No lead activity available for this range yet.
                     </div>
                 ) : (
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height={260} minWidth={0}>
                     <AreaChart data={leadGrowthData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
                         <defs>
                             <linearGradient id="colorLeads" x1="0" y1="0" x2="0" y2="1">
