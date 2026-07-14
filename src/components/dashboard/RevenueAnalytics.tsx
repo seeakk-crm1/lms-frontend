@@ -413,7 +413,7 @@ const RevenueAnalytics: React.FC<RevenueAnalyticsProps> = ({ dashboardFilters })
         initial={{ opacity: 0, scale: 0.98 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.4 }}
-        className="bg-white rounded-[32px] shadow-sm border border-gray-100 p-6 sm:p-8 flex flex-col relative overflow-hidden h-[420px]"
+        className="bg-white rounded-[32px] shadow-sm border border-gray-100 p-6 sm:p-8 flex min-w-0 flex-col relative overflow-hidden h-[420px]"
       >
         <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 pb-4 border-b border-gray-50 z-10 gap-4">
           <div>
@@ -437,13 +437,13 @@ const RevenueAnalytics: React.FC<RevenueAnalyticsProps> = ({ dashboardFilters })
           </div>
         </div>
 
-        <div className="flex-1 w-full min-h-[260px] relative z-10">
+        <div className="h-[260px] min-w-0 w-full relative z-10">
           {chartData.length === 0 ? (
             <div className="h-full flex items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-gray-50/60 text-xs font-black text-gray-400 uppercase tracking-widest">
               No revenue events recorded for this view
             </div>
           ) : (
-            <ResponsiveContainer width="100%" height={260}>
+            <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={chartData} margin={{ top: 0, right: 0, left: -10, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">

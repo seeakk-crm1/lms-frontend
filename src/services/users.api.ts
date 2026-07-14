@@ -1,5 +1,6 @@
 import api from './api';
 import { User, TargetSetting, TargetType } from '../types/user.types';
+import type { Office } from '../types/admin/office/office.types';
 
 export const getUsers = async (params: any) => {
   const { data } = await api.get('/admin/users', { params });
@@ -67,20 +68,31 @@ export const unlockUser = async (userId: string) => {
   return data;
 };
 
-// Meta Data (Locations & Offices)
-export const getLocationTree = async () => {
-  const { data } = await api.get('/admin/users/meta/locations/tree');
-  return data.data;
-};
-
-export const getAllLocations = async () => {
-  const { data } = await api.get('/admin/users/meta/locations/all');
-  return data.data;
-};
+const officeToLocationOption = (office: Office) => ({
+  id: office.id,
+  name: office.name,
+  type: 'OFFICE' as const,
+  parentId: null,
+  countryId: null,
+  workspaceId: office.workspaceId,
+});
 
 export const getOffices = async () => {
   const { data } = await api.get('/admin/users/meta/offices');
   return data.data;
+};
+
+// Legacy hook compatibility: the Locations module was removed; use Office Locations metadata.
+export const getLocationTree = async () => {
+  const data = await getOffices();
+  const tree = (data?.offices || []).filter((office: Office) => office.isActive !== false).map(officeToLocationOption);
+  return { tree };
+};
+
+export const getAllLocations = async () => {
+  const data = await getOffices();
+  const locations = (data?.offices || []).filter((office: Office) => office.isActive !== false).map(officeToLocationOption);
+  return { locations };
 };
 
 export const getRoles = async () => {

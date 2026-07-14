@@ -13,7 +13,7 @@ export const useUsersQuery = () => {
     refetchOnWindowFocus: false,
     retry: (failureCount, error: any) => {
       const status = error?.response?.status;
-      if (status === 401 || status === 403 || status === 429) return false;
+      if (status === 401 || status === 403 || status === 404 || status === 429) return false;
       return failureCount < 2;
     },
   });
@@ -35,7 +35,7 @@ export const useTargetTypesQuery = () => {
     refetchOnWindowFocus: false,
     retry: (failureCount, error: any) => {
       const status = error?.response?.status;
-      if (status === 401 || status === 403 || status === 429) return false;
+      if (status === 401 || status === 403 || status === 404 || status === 429) return false;
       return failureCount < 2;
     },
   });

@@ -46,8 +46,8 @@ const safeMaxAttempts = Number.isFinite(maxAttempts) && maxAttempts > 0 ? maxAtt
  * `WebSocket connection to wss://…/socket.io/… failed` even when the app still "works" via polling).
  *
  * - `VITE_SOCKET_TRANSPORTS=polling` — force polling everywhere.
- * - `VITE_SOCKET_TRANSPORTS=websocket` — allow upgrade (default for non-Render hosts below).
- * - Hostname `*.onrender.com` — default to polling-only unless explicitly set to websocket.
+ * - `VITE_SOCKET_TRANSPORTS=websocket` — allow direct WebSocket only after the production proxy is verified.
+ * - Default is polling-only to avoid repeated failed WebSocket upgrade handshakes behind reverse proxies.
  */
 const resolveSocketTransports = (): ('polling' | 'websocket')[] => {
   const v = String(import.meta.env.VITE_SOCKET_TRANSPORTS || '')
@@ -56,7 +56,7 @@ const resolveSocketTransports = (): ('polling' | 'websocket')[] => {
   if (v === 'polling' || v === 'poll' || v === 'long-polling') return ['polling'];
   if (v === 'websocket' || v === 'ws') return ['websocket'];
 
-  return ['websocket', 'polling'];
+  return ['polling'];
 };
 
 /**

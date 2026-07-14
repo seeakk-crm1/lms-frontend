@@ -49,6 +49,15 @@ export const toggleStatus = async (
 };
 
 export const getAllLocations = async (): Promise<LocationOption[]> => {
-  const response = await api.get('/admin/users/meta/locations/all');
-  return response.data?.data?.locations || [];
+  const response = await api.get('/admin/users/meta/offices');
+  return (response.data?.data?.offices || [])
+    .filter((office: any) => office?.isActive !== false)
+    .map((office: any) => ({
+      id: office.id,
+      name: office.name,
+      type: 'OFFICE',
+      parentId: null,
+      countryId: null,
+      workspaceId: office.workspaceId,
+    }));
 };
