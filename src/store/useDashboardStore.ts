@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import axios from 'axios';
-import { getDashboardSummary, type DashboardRange } from '../services/dashboard.api';
+import { getDashboardSummary, type DashboardRange, type DashboardSummaryFilters } from '../services/dashboard.api';
 
 export interface KPIData {
     title: string;
@@ -48,6 +48,7 @@ interface DashboardState {
     isLoading: boolean;
     isRefreshing: boolean;
     selectedRange: DashboardRange;
+    filters: DashboardSummaryFilters;
     selectedOfficeId?: string;
     scheduleDateLabel: string;
     kpiData: KPIData[];
@@ -59,13 +60,19 @@ interface DashboardState {
     error: string | null;
     reset: () => void;
     setSelectedOfficeId: (officeId?: string) => void;
-    fetchDashboardData: (range?: DashboardRange, officeId?: string) => Promise<void>;
+    setFilters: (filters: Partial<DashboardSummaryFilters>) => void;
+    fetchDashboardData: (filters?: Partial<DashboardSummaryFilters>) => Promise<void>;
 }
 
-const createInitialDashboardSlice = (): Omit<DashboardState, 'reset' | 'setSelectedOfficeId' | 'fetchDashboardData'> => ({
+const initialFilters: DashboardSummaryFilters = {
+    range: '7d',
+};
+
+const createInitialDashboardSlice = (): Omit<DashboardState, 'reset' | 'setSelectedOfficeId' | 'setFilters' | 'fetchDashboardData'> => ({
     isLoading: true,
     isRefreshing: false,
     selectedRange: '7d',
+    filters: initialFilters,
     selectedOfficeId: undefined,
     scheduleDateLabel: '',
     kpiData: [],
@@ -83,15 +90,30 @@ const useDashboardStore = create<DashboardState>((set) => ({
     ...createInitialDashboardSlice(),
 
     reset: () => set(() => ({ ...createInitialDashboardSlice(), error: null })),
-    setSelectedOfficeId: (officeId) => set({ selectedOfficeId: officeId }),
+    setSelectedOfficeId: (officeId) => set((state) => ({
+        selectedOfficeId: officeId,
+        filters: { ...state.filters, officeId },
+    })),
+    setFilters: (patch) => set((state) => {
+        const nextFilters = { ...state.filters, ...patch };
+        return {
+            filters: nextFilters,
+            selectedRange: nextFilters.range,
+            selectedOfficeId: nextFilters.officeId,
+        };
+    }),
 
-    fetchDashboardData: async (range, officeId) => {
+    fetchDashboardData: async (patch) => {
         const state = useDashboardStore.getState();
-        const requestedRange = range ?? state.selectedRange;
-        const requestedOfficeId = officeId !== undefined ? officeId : state.selectedOfficeId;
+        const requestedFilters = {
+            ...state.filters,
+            ...(patch || {}),
+        };
+        const requestedRange = requestedFilters.range;
+        const requestedOfficeId = requestedFilters.officeId;
         const hasExistingData = state.kpiData.length > 0;
 
-        if (isFetchingAPI && requestedRange === state.selectedRange && requestedOfficeId === state.selectedOfficeId) {
+        if (isFetchingAPI && JSON.stringify(requestedFilters) === JSON.stringify(state.filters)) {
             return;
         }
 
@@ -103,10 +125,11 @@ const useDashboardStore = create<DashboardState>((set) => ({
             error: null,
             selectedRange: requestedRange,
             selectedOfficeId: requestedOfficeId,
+            filters: requestedFilters,
         });
 
         try {
-            const response = await getDashboardSummary(requestedRange, requestedOfficeId);
+            const response = await getDashboardSummary(requestedFilters);
             const dashboard = response.data;
 
             set({

@@ -9,6 +9,7 @@ import { connectRealtime } from '../../services/realtime';
 import useAuthStore from '../../store/useAuthStore';
 import { DEFAULT_STAGE_COLOR } from '../../utils/leadStageColor';
 import { LEAD_STAGE_UPDATED_EVENT, type LeadStageColorPatch } from '../../utils/syncLeadStageColor';
+import type { DashboardSummaryFilters } from '../../services/dashboard.api';
 
 const formatCurrency = (val: number) => {
   return new Intl.NumberFormat('en-US', {
@@ -19,7 +20,11 @@ const formatCurrency = (val: number) => {
   }).format(val);
 };
 
-const RevenueAnalytics: React.FC = () => {
+type RevenueAnalyticsProps = {
+  dashboardFilters?: DashboardSummaryFilters;
+};
+
+const RevenueAnalytics: React.FC<RevenueAnalyticsProps> = ({ dashboardFilters }) => {
   const user = useAuthStore((state) => state.user);
   const userPermissions = user?.permissions || [];
   
@@ -93,7 +98,16 @@ const RevenueAnalytics: React.FC = () => {
 
     setError(null);
     try {
-      const res = await getRevenueAnalytics(filters);
+      const res = await getRevenueAnalytics({
+        ...filters,
+        officeId: dashboardFilters?.officeId || filters.officeId,
+        userId: dashboardFilters?.userId || filters.userId,
+        stageId: dashboardFilters?.stageId || filters.stageId,
+        sourceId: dashboardFilters?.sourceId || filters.sourceId,
+        status: dashboardFilters?.status || filters.status,
+        dateFrom: dashboardFilters?.dateFrom || filters.dateFrom,
+        dateTo: dashboardFilters?.dateTo || filters.dateTo,
+      });
       if (res.success && res.data) {
         setData(res.data);
       } else {
@@ -105,7 +119,7 @@ const RevenueAnalytics: React.FC = () => {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [filters]);
+  }, [dashboardFilters, filters]);
 
   useEffect(() => {
     void fetchMetadata();

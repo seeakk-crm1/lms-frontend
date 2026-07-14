@@ -50,7 +50,7 @@ const LeadGrowthChart: React.FC = () => {
                     {filters.map(({ label, value }) => (
                         <button
                             key={value}
-                            onClick={() => void fetchDashboardData(value)}
+                            onClick={() => void fetchDashboardData({ range: value })}
                             disabled={isRefreshing}
                             className={`px-4 py-1.5 text-xs font-bold transition-all rounded-lg relative disabled:cursor-wait ${selectedRange === value ? 'text-gray-900 bg-white shadow-sm' : 'text-gray-400 hover:text-gray-700'
                                 }`}

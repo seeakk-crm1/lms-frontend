@@ -2,6 +2,19 @@ import api from './api';
 
 export type DashboardRange = '7d' | '30d' | '12m';
 
+export type DashboardStatusFilter = 'ACTIVE' | 'OPEN' | 'CLOSED' | 'LOB' | 'ARCHIVED';
+
+export interface DashboardSummaryFilters {
+  range: DashboardRange;
+  officeId?: string;
+  userId?: string;
+  stageId?: string;
+  sourceId?: string;
+  status?: DashboardStatusFilter;
+  dateFrom?: string;
+  dateTo?: string;
+}
+
 export interface DashboardSummaryResponse {
   success: boolean;
   data: {
@@ -47,12 +60,9 @@ export interface DashboardSummaryResponse {
   };
 }
 
-export const getDashboardSummary = async (range: DashboardRange, officeId?: string): Promise<DashboardSummaryResponse> => {
+export const getDashboardSummary = async (filters: DashboardSummaryFilters): Promise<DashboardSummaryResponse> => {
   const response = await api.get('/dashboard/summary', {
-    params: {
-      range,
-      officeId,
-    },
+    params: filters,
   });
 
   return response.data;
@@ -63,6 +73,8 @@ export interface RevenueAnalyticsFilters {
   dateTo?: string;
   userId?: string;
   stageId?: string;
+  sourceId?: string;
+  status?: DashboardStatusFilter;
   supervisorId?: string;
   officeId?: string;
 }

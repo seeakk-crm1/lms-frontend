@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import DashboardLayout from '../components/dashboard/DashboardLayout';
 import KPICards from '../components/dashboard/KPICards';
@@ -15,6 +15,10 @@ import FollowUpCapacityWidget from '../components/dashboard/FollowUpCapacityWidg
 import { hasAnyPermission, hasPermission } from '../utils/permission.util';
 import OfficeFilterSelect from '../components/OfficeFilterSelect';
 import { canUseOfficeFilter } from '../utils/officeFilterAccess';
+import SearchableSelect, { type Option } from '../components/SearchableSelect';
+import { getLeadMeta } from '../services/leads.api';
+import { getUsers } from '../services/users.api';
+import type { DashboardSummaryFilters, DashboardStatusFilter } from '../services/dashboard.api';
 
 interface DashboardProps {
     mode?: 'admin' | 'operations';
@@ -22,10 +26,16 @@ interface DashboardProps {
 
 const Dashboard: React.FC<DashboardProps> = ({ mode = 'operations' }) => {
     const fetchDashboardData = useDashboardStore((state) => state.fetchDashboardData);
+    const dashboardFilters = useDashboardStore((state) => state.filters);
     const selectedOfficeId = useDashboardStore((state) => state.selectedOfficeId);
-    const setSelectedOfficeId = useDashboardStore((state) => state.setSelectedOfficeId);
     const error = useDashboardStore((state) => state.error);
     const user = useAuthStore((state) => state.user);
+    const [filterMeta, setFilterMeta] = useState<{
+        stages: Option[];
+        sources: Option[];
+    }>({ stages: [], sources: [] });
+    const [userOptions, setUserOptions] = useState<Option[]>([]);
+    const [isLoadingUsers, setIsLoadingUsers] = useState(false);
 
     const canSeeMetrics = hasAnyPermission(user?.permissions || [], [
         'LEADS_VIEW_ALL',
@@ -72,6 +82,18 @@ const Dashboard: React.FC<DashboardProps> = ({ mode = 'operations' }) => {
     ]);
     const hasAnyDashboardSection = [canSeeMetrics, canSeeGrowth, canQuickAddLead, canSeeActivity, canSeeLOB, canSeeCalendar, canSeeRevenue].some(Boolean);
     const shouldFetchDashboardData = [canSeeMetrics, canSeeGrowth, canSeeActivity, canSeeLOB, canSeeCalendar].some(Boolean);
+    const showOfficeFilter = canUseOfficeFilter(user);
+    const showUserFilter = showOfficeFilter;
+    const statusOptions = useMemo<Option[]>(
+        () => [
+            { value: 'ACTIVE', label: 'Active' },
+            { value: 'OPEN', label: 'Open' },
+            { value: 'CLOSED', label: 'Closed' },
+            { value: 'LOB', label: 'LOB' },
+            { value: 'ARCHIVED', label: 'Archived' },
+        ],
+        [],
+    );
 
     const hasFetched = React.useRef(false);
 
@@ -80,8 +102,65 @@ const Dashboard: React.FC<DashboardProps> = ({ mode = 'operations' }) => {
         if (hasFetched.current) return;
         hasFetched.current = true;
         
-        void fetchDashboardData(undefined, selectedOfficeId);
-    }, [fetchDashboardData, selectedOfficeId, shouldFetchDashboardData]);
+        void fetchDashboardData();
+    }, [fetchDashboardData, shouldFetchDashboardData]);
+
+    useEffect(() => {
+        let mounted = true;
+        void getLeadMeta()
+            .then((meta) => {
+                if (!mounted) return;
+                setFilterMeta({
+                    stages: (meta.stages || []).map((item: any) => ({ value: item.id, label: item.label })),
+                    sources: (meta.sources || []).map((item: any) => ({ value: item.id, label: item.label })),
+                });
+            })
+            .catch(() => {
+                if (mounted) setFilterMeta({ stages: [], sources: [] });
+            });
+        return () => {
+            mounted = false;
+        };
+    }, []);
+
+    useEffect(() => {
+        if (!showUserFilter) return;
+        let mounted = true;
+        setIsLoadingUsers(true);
+        void getUsers({
+            page: 1,
+            limit: 500,
+            isActive: true,
+            officeId: selectedOfficeId || undefined,
+        })
+            .then((payload) => {
+                if (!mounted) return;
+                const users = payload?.users || [];
+                const options = users
+                    .filter((item: any) => item?.isActive !== false)
+                    .map((item: any) => ({
+                        value: item.id,
+                        label: item.name || item.username || item.email,
+                    }));
+                setUserOptions(options);
+                if (dashboardFilters.userId && !options.some((option) => option.value === dashboardFilters.userId)) {
+                    void fetchDashboardData({ userId: undefined });
+                }
+            })
+            .catch(() => {
+                if (mounted) setUserOptions([]);
+            })
+            .finally(() => {
+                if (mounted) setIsLoadingUsers(false);
+            });
+        return () => {
+            mounted = false;
+        };
+    }, [dashboardFilters.userId, fetchDashboardData, selectedOfficeId, showUserFilter]);
+
+    const applyDashboardFilters = (patch: Partial<DashboardSummaryFilters>) => {
+        void fetchDashboardData(patch);
+    };
 
     useEffect(() => {
         console.log('Dashboard Render Complete');
@@ -102,19 +181,72 @@ const Dashboard: React.FC<DashboardProps> = ({ mode = 'operations' }) => {
                             </div>
                         )}
 
-                        {hasAnyDashboardSection && canUseOfficeFilter(user) ? (
-                            <div className="flex flex-col gap-3 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm md:flex-row md:items-center md:justify-between">
-                                <div>
-                                    <p className="text-xs font-black uppercase tracking-[0.22em] text-emerald-500">Office Filter</p>
-                                    <p className="mt-1 text-sm font-semibold text-gray-500">Dashboard metrics refresh for users assigned to the selected reporting office.</p>
+                        {hasAnyDashboardSection ? (
+                            <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+                                <div className="mb-4">
+                                    <p className="text-xs font-black uppercase tracking-[0.22em] text-emerald-500">Dashboard Filters</p>
+                                    <p className="mt-1 text-sm font-semibold text-gray-500">Metrics refresh for every selected reporting filter.</p>
                                 </div>
-                                <div className="w-full md:w-96">
+                                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-7">
+                                    {showOfficeFilter ? (
                                     <OfficeFilterSelect
                                         value={selectedOfficeId || ''}
                                         onChange={(officeId) => {
-                                            setSelectedOfficeId(officeId);
-                                            void fetchDashboardData(undefined, officeId);
+                                            applyDashboardFilters({ officeId, userId: undefined });
                                         }}
+                                    />
+                                    ) : null}
+                                    {showUserFilter ? (
+                                        <SearchableSelect
+                                            name="dashboardUserId"
+                                            value={dashboardFilters.userId || ''}
+                                            options={userOptions}
+                                            placeholder={isLoadingUsers ? 'Loading users...' : 'User'}
+                                            allowClear
+                                            clearLabel="All Users"
+                                            onChange={(event) => applyDashboardFilters({ userId: event.target.value || undefined })}
+                                        />
+                                    ) : null}
+                                    <SearchableSelect
+                                        name="dashboardStageId"
+                                        value={dashboardFilters.stageId || ''}
+                                        options={filterMeta.stages}
+                                        placeholder="Lead Stage"
+                                        allowClear
+                                        clearLabel="All Stages"
+                                        onChange={(event) => applyDashboardFilters({ stageId: event.target.value || undefined })}
+                                    />
+                                    <SearchableSelect
+                                        name="dashboardSourceId"
+                                        value={dashboardFilters.sourceId || ''}
+                                        options={filterMeta.sources}
+                                        placeholder="Lead Source"
+                                        allowClear
+                                        clearLabel="All Sources"
+                                        onChange={(event) => applyDashboardFilters({ sourceId: event.target.value || undefined })}
+                                    />
+                                    <SearchableSelect
+                                        name="dashboardStatus"
+                                        value={dashboardFilters.status || ''}
+                                        options={statusOptions}
+                                        placeholder="Status"
+                                        allowClear
+                                        clearLabel="All Status"
+                                        onChange={(event) => applyDashboardFilters({ status: (event.target.value || undefined) as DashboardStatusFilter | undefined })}
+                                    />
+                                    <input
+                                        type="date"
+                                        value={dashboardFilters.dateFrom || ''}
+                                        onChange={(event) => applyDashboardFilters({ dateFrom: event.target.value || undefined })}
+                                        className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-semibold text-gray-900 outline-none transition-all focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/10"
+                                        aria-label="Dashboard date from"
+                                    />
+                                    <input
+                                        type="date"
+                                        value={dashboardFilters.dateTo || ''}
+                                        onChange={(event) => applyDashboardFilters({ dateTo: event.target.value || undefined })}
+                                        className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-semibold text-gray-900 outline-none transition-all focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/10"
+                                        aria-label="Dashboard date to"
                                     />
                                 </div>
                             </div>
@@ -150,7 +282,7 @@ const Dashboard: React.FC<DashboardProps> = ({ mode = 'operations' }) => {
                                         <p className="text-xs font-semibold text-gray-400 mt-1">Real-time workspace closing values and revenue trends</p>
                                     </div>
                                 </div>
-                                <RevenueAnalytics />
+                                <RevenueAnalytics dashboardFilters={dashboardFilters} />
                             </div>
                         )}
 
