@@ -1,6 +1,7 @@
 import React, { memo, useMemo, useState } from 'react';
 import { format } from 'date-fns';
 import { formatCurrency } from '../../../utils/currency';
+import { formatPhoneWithFlag } from '../../../utils/phoneUtils';
 
 import { motion } from 'framer-motion';
 import { Archive, ChevronLeft, ChevronRight, Pencil, Star, History } from 'lucide-react';
@@ -257,7 +258,7 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
                         )}
                         <div className="flex items-center gap-1 min-w-0">
                           <div className={`truncate text-xs font-semibold ${lead.phone ? 'text-gray-500' : emptyCell}`}>
-                            {lead.phone || 'No phone'}
+                            {lead.phone ? formatPhoneWithFlag(lead.phone) : 'No phone'}
                           </div>
                           <WhatsAppActionButton
                             phone={lead.phone}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { X, User as UserIcon, Mail, Phone, Lock, Eye, EyeOff, KeyRound, Check, Shield } from 'lucide-react';
@@ -8,12 +8,23 @@ import { toast } from 'react-hot-toast';
 import useAuthStore from '../../store/useAuthStore';
 import api from '../../services/api';
 import { getPrimaryRoleName } from '../../utils/permissions';
+import PhoneInput from '../common/PhoneInput';
+import { validatePhoneStr } from '../../utils/phoneUtils';
 
 const schema = z
   .object({
     name: z.string().trim().min(2, 'Name must be at least 2 characters'),
     username: z.string().trim().min(3, 'Username must be at least 3 characters').optional().or(z.literal('')),
-    phone: z.string().trim().optional().or(z.literal('')),
+    phone: z.string().trim().superRefine((val, ctx) => {
+      if (!val) return;
+      const res = validatePhoneStr(val);
+      if (!res.isValid) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: res.message || 'Invalid phone number.',
+        });
+      }
+    }).optional().or(z.literal('')),
     password: z.string().optional().or(z.literal('')),
     confirmPassword: z.string().optional().or(z.literal('')),
   })
@@ -326,17 +337,17 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({ open, onClose, init
                                 <label className="text-[11px] font-black uppercase tracking-[0.22em] text-gray-400">
                                   Phone number
                                 </label>
-                                <div className="group flex items-center gap-3 rounded-2xl border border-gray-200 bg-gray-50/70 px-4 py-3 transition-all focus-within:border-emerald-300 focus-within:bg-white focus-within:shadow-[0_0_0_4px_rgba(16,185,129,0.08)]">
-                                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white text-gray-400 ring-1 ring-gray-200">
-                                    <Phone className="h-4 w-4" />
-                                  </div>
-                                  <input
-                                    {...register('phone')}
-                                    type="tel"
-                                    placeholder="+1 (555) 000-0000"
-                                    className="w-full border-0 bg-transparent p-0 text-sm font-semibold text-gray-900 outline-none placeholder:text-gray-400"
-                                  />
-                                </div>
+                                <Controller
+                                  name="phone"
+                                  control={control}
+                                  render={({ field }) => (
+                                    <PhoneInput
+                                      value={field.value || ''}
+                                      onChange={field.onChange}
+                                      error={Boolean(errors.phone)}
+                                    />
+                                  )}
+                                />
                                 {errors.phone ? (
                                   <p className="text-[11px] font-semibold text-rose-500">{errors.phone.message}</p>
                                 ) : null}

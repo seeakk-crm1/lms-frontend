@@ -6,6 +6,7 @@ import { useAdvancedCalendarDetailsQuery } from '../../hooks/useFollowUps';
 import FollowUpCard from './FollowUpCard';
 import WhatsAppActionButton from '../common/WhatsAppActionButton';
 import { LEAD_WHATSAPP_PERMISSIONS } from '../../constants/whatsappPermissions';
+import { formatPhoneWithFlag } from '../../utils/phoneUtils';
 import {
   isFollowUpCalendarDetailType,
   type CalendarOverdueStatus,
@@ -263,7 +264,7 @@ const CalendarDetailsModal: React.FC<CalendarDetailsModalProps> = ({
                         </dl>
                         <div className="mt-2 flex flex-wrap items-center gap-2 text-xs font-semibold text-gray-500">
                           {item.email && <span>{item.email}</span>}
-                          {item.phone && <span>{item.phone}</span>}
+                          {item.phone && <span>{formatPhoneWithFlag(item.phone)}</span>}
                           <WhatsAppActionButton
                             phone={item.phone}
                             variant="inline"

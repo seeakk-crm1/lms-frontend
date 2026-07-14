@@ -18,6 +18,7 @@ import {
   TrendingUp,
 } from 'lucide-react';
 import DashboardLayout from '../../components/dashboard/DashboardLayout';
+import { formatPhoneWithFlag } from '../../utils/phoneUtils';
 import { toast } from 'react-hot-toast';
 import { useLeadMetaQuery } from '../../hooks/useLeads';
 import { useActiveExtensionReasonsQuery } from '../../modules/followup-extension-reasons/hooks/useFollowUpExtensionReasons';
@@ -1067,8 +1068,8 @@ const FollowUpSettingsPage: React.FC = () => {
                                           <span className="block font-bold text-gray-900">{item.leadName}</span>
                                           <span className="text-xs text-gray-400">
                                             {item.leadPhone && item.leadEmail
-                                              ? `${item.leadPhone} · ${item.leadEmail}`
-                                              : item.leadPhone || item.leadEmail || 'No contact'}
+                                              ? `${formatPhoneWithFlag(item.leadPhone)} · ${item.leadEmail}`
+                                              : item.leadPhone ? formatPhoneWithFlag(item.leadPhone) : item.leadEmail || 'No contact'}
                                           </span>
                                         </td>
                                         <td className="px-4 py-2.5 text-xs">{item.userName || 'Unassigned'}</td>
@@ -1148,8 +1149,8 @@ const FollowUpSettingsPage: React.FC = () => {
                                         <span className="block font-bold text-gray-900">{item.leadName}</span>
                                         <span className="text-xs text-gray-400">
                                           {item.leadPhone && item.leadEmail
-                                            ? `${item.leadPhone} · ${item.leadEmail}`
-                                            : item.leadPhone || item.leadEmail || 'No contact'}
+                                            ? `${formatPhoneWithFlag(item.leadPhone)} · ${item.leadEmail}`
+                                            : item.leadPhone ? formatPhoneWithFlag(item.leadPhone) : item.leadEmail || 'No contact'}
                                         </span>
                                       </td>
                                       <td className="px-4 py-2.5 text-xs">{item.userName || 'Unassigned'}</td>

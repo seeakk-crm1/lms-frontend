@@ -20,6 +20,7 @@ import { stageBadgeStyle } from '../../../utils/leadStageColor';
 import WhatsAppActionButton from '../../../components/common/WhatsAppActionButton';
 import { LEAD_WHATSAPP_PERMISSIONS } from '../../../constants/whatsappPermissions';
 import LeadAvatar from './LeadAvatar';
+import { formatPhoneWithFlag } from '../../../utils/phoneUtils';
 
 interface LeadViewDrawerProps {
   isOpen: boolean;
@@ -257,7 +258,7 @@ const LeadViewDrawer: React.FC<LeadViewDrawerProps> = ({
                       </div>
                       <div className="flex items-center gap-2.5">
                         <Phone className="h-4 w-4 shrink-0 text-gray-400" />
-                        <span className="font-medium">{resolvedLead.phone || 'No phone'}</span>
+                        <span className="font-medium">{resolvedLead.phone ? formatPhoneWithFlag(resolvedLead.phone) : 'No phone'}</span>
                         <WhatsAppActionButton
                           phone={resolvedLead.phone}
                           variant="compact"

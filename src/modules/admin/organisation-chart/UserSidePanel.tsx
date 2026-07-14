@@ -4,6 +4,7 @@ import { X, Mail, Phone, Shield, Building2, User, Clock, Users, Briefcase } from
 import { useQuery } from '@tanstack/react-query';
 import api from '../../../services/api';
 import { useOrganisationChartStore } from './organisationChart.store';
+import { formatPhoneWithFlag } from '../../../utils/phoneUtils';
 
 interface UserDetails {
   id: string;
@@ -119,7 +120,7 @@ const UserSidePanel: React.FC = () => {
                     {user.phone && (
                       <div className="flex items-center gap-3 text-sm font-semibold text-gray-600">
                         <Phone className="w-4 h-4 text-gray-400" />
-                        <a href={`tel:${user.phone}`} className="hover:text-emerald-600">{user.phone}</a>
+                        <a href={`tel:${user.phone}`} className="hover:text-emerald-600">{formatPhoneWithFlag(user.phone)}</a>
                       </div>
                     )}
                   </div>

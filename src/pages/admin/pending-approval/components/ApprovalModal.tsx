@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { CheckCircle2, Clock3, History, ShieldAlert, X } from 'lucide-react';
 import type { LeadApprovalAction, LeadApprovalListItem } from '../../../../types/lead.types';
 import StatusBadge from './StatusBadge';
+import { formatPhoneWithFlag } from '../../../../utils/phoneUtils';
 
 interface ApprovalModalProps {
   approval: LeadApprovalListItem | null;
@@ -140,7 +141,7 @@ const ApprovalModal: React.FC<ApprovalModalProps> = ({
                   <div className="text-[11px] font-black uppercase tracking-[0.2em] text-gray-400">Lead</div>
                   <div className="mt-2 text-lg font-black text-gray-900">{approval.lead?.name || 'Unknown lead'}</div>
                   <div className="mt-1 text-sm font-semibold text-gray-500">
-                    {approval.lead?.email || approval.lead?.phone || 'No contact details'}
+                    {approval.lead?.email || (approval.lead?.phone ? formatPhoneWithFlag(approval.lead.phone) : 'No contact details')}
                   </div>
                 </div>
 

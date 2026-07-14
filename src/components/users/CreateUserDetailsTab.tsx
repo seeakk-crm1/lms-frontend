@@ -1,7 +1,8 @@
 import React from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
-import { DEFAULT_PHONE_COUNTRY, getPhoneFlag, PHONE_COUNTRIES, type PhoneCountry } from '../../constants/phoneCountries';
 import type { UserFormData } from './CreateUserModal.types';
+import PhoneInput from '../common/PhoneInput';
+import { validatePhoneStr } from '../../utils/phoneUtils';
 
 interface AddressLevelOption {
   id: string;
@@ -140,68 +141,27 @@ const CreateUserDetailsTab: React.FC<CreateUserDetailsTabProps> = ({
             name="phone"
             control={control}
             rules={{
-              validate: (value) => getPhoneValidationMessage(value, selectedPhoneCountry),
+              validate: (value) => {
+                if (!value) return true;
+                const res = validatePhoneStr(value);
+                return res.isValid ? true : (res.message || 'Invalid phone number');
+              }
             }}
-            render={({ field }) => {
-              const displayValue = formatPhoneInputValue(field.value || '', selectedPhoneCountry);
-              const validationState = getPhoneValidationMessage(field.value || '', selectedPhoneCountry);
-              const hasPhoneValue = Boolean((field.value || '').trim());
-              const isPhoneValid = hasPhoneValue && validationState === true;
-
-              return (
-                <div className="space-y-1.5">
-                  <div className={`flex min-w-0 flex-col sm:flex-row rounded-xl ${Boolean(errors.phone) ? 'ring-2 ring-rose-500/10' : ''}`}>
-                    <select
-                      value={selectedPhoneCountry.iso}
-                      onChange={(event) => {
-                        const nextCountry =
-                          PHONE_COUNTRIES.find((country) => country.iso === event.target.value) || DEFAULT_PHONE_COUNTRY;
-                        const currentDigits = normalizePhoneDigitsForCountry(field.value || '', selectedPhoneCountry);
-                        setSelectedPhoneCountry(nextCountry);
-                        field.onChange(toE164PhoneNumber(currentDigits, nextCountry));
-                      }}
-                      className={`w-full shrink-0 rounded-t-xl sm:w-[128px] sm:rounded-l-xl sm:rounded-tr-none border-b-0 sm:border-b sm:border-r-0 px-3 py-2.5 text-sm font-semibold outline-none transition-all ${
-                        errors.phone
-                          ? 'border border-rose-300 bg-rose-50 text-rose-900'
-                          : 'border border-gray-100 bg-gray-50 text-gray-900'
-                      }`}
-                      aria-label="Phone country code"
-                    >
-                      {PHONE_COUNTRIES.map((country) => (
-                        <option key={country.iso} value={country.iso}>
-                          {getPhoneFlag(country.iso)} {country.dialCode}
-                        </option>
-                      ))}
-                    </select>
-                    <input
-                      value={displayValue}
-                      onChange={(event) => {
-                        const nextDigits = normalizePhoneDigitsForCountry(event.target.value, selectedPhoneCountry);
-                        field.onChange(toE164PhoneNumber(nextDigits, selectedPhoneCountry));
-                      }}
-                      onBlur={field.onBlur}
-                      name={field.name}
-                      ref={field.ref}
-                      inputMode="tel"
-                      autoComplete="tel"
-                      className={`${getFieldClassName(Boolean(errors.phone))} w-full rounded-b-xl sm:rounded-r-xl sm:rounded-bl-none border-t-0 sm:border-t sm:border-l-0 min-w-0 flex-1`}
-                      placeholder={`Enter phone number (${selectedPhoneCountry.placeholder})`}
-                      aria-invalid={Boolean(errors.phone)}
-                    />
-                  </div>
-                  {!errors.phone ? (
-                    <p className={`text-[11px] font-semibold ${isPhoneValid ? 'text-emerald-600' : 'text-gray-400'}`}>
-                      {hasPhoneValue
-                        ? isPhoneValid
-                          ? `Saved as ${field.value}`
-                          : `We’ll save this as ${selectedPhoneCountry.dialCode}… once it’s complete.`
-                        : 'Optional. If entered, it will be stored in international format.'}
-                    </p>
-                  ) : null}
-                  {renderFieldError(errors.phone?.message)}
-                </div>
-              );
-            }}
+            render={({ field }) => (
+              <div className="space-y-1.5">
+                <PhoneInput
+                  value={field.value || ''}
+                  onChange={field.onChange}
+                  error={Boolean(errors.phone)}
+                />
+                {!errors.phone ? (
+                  <p className="text-[11px] font-semibold text-gray-400">
+                    Optional. If entered, it will be stored in international format.
+                  </p>
+                ) : null}
+                {renderFieldError(errors.phone?.message as string)}
+              </div>
+            )}
           />
         </div>
       </div>

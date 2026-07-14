@@ -6,6 +6,7 @@ import { formatFollowUpTypeLabel } from '../../modules/followups/followUpTypeUi'
 import type { FollowUp } from '../../types/followup.types';
 import WhatsAppActionButton from '../common/WhatsAppActionButton';
 import { LEAD_WHATSAPP_PERMISSIONS } from '../../constants/whatsappPermissions';
+import { formatPhoneWithFlag } from '../../utils/phoneUtils';
 
 interface Props {
   isOpen: boolean;
@@ -56,7 +57,7 @@ const FollowUpActionModal: React.FC<Props> = ({ isOpen, followUp, onClose, onOpe
                 <p className="mt-1 text-sm font-black text-gray-900">{followUp.lead?.name || followUp.leadId}</p>
                 <div className="mt-1 flex flex-wrap items-center gap-2">
                   <p className="text-xs font-semibold text-gray-600">
-                    {followUp.lead?.email || followUp.lead?.phone || 'No contact info'}
+                    {followUp.lead?.email || (followUp.lead?.phone ? formatPhoneWithFlag(followUp.lead.phone) : 'No contact info')}
                   </p>
                   <WhatsAppActionButton
                     phone={followUp.lead?.phone}

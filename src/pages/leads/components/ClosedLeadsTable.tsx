@@ -6,6 +6,7 @@ import WhatsAppActionButton from '../../../components/common/WhatsAppActionButto
 import { LEAD_WHATSAPP_PERMISSIONS } from '../../../constants/whatsappPermissions';
 import type { LeadListItem } from '../../../types/lead.types';
 import { stageBadgeStyle } from '../../../utils/leadStageColor';
+import { formatPhoneWithFlag } from '../../../utils/phoneUtils';
 
 interface ClosedLeadsTableProps {
   items: LeadListItem[];
@@ -171,7 +172,7 @@ const ClosedLeadsTable: React.FC<ClosedLeadsTableProps> = ({
                       <div className="mt-1 space-y-0.5">
                         <div className="truncate text-xs font-semibold text-gray-500">{lead.email || 'No email'}</div>
                         <div className="flex items-center gap-1 min-w-0">
-                          <div className="truncate text-xs font-semibold text-gray-500">{lead.phone || 'No phone'}</div>
+                          <div className="truncate text-xs font-semibold text-gray-500">{lead.phone ? formatPhoneWithFlag(lead.phone) : 'No phone'}</div>
                           <WhatsAppActionButton
                             phone={lead.phone}
                             variant="inline"

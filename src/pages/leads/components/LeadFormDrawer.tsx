@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { AlertCircle, CalendarClock, Save, Sparkles, X, Banknote, PlusCircle, FileText, History, Trash2, Eye, UploadCloud } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import SearchableSelect from '../../../components/SearchableSelect';
+import PhoneInput from '../../../components/common/PhoneInput';
 import { useChangeLeadStageMutation, useCreateLeadMutation, useLeadDetailQuery, useLeadMetaQuery, useUpdateLeadMutation, useLeadRemarksQuery } from '../../../hooks/useLeads';
 import type { LeadDynamicField } from '../../../modules/admin/lead-dynamics/types';
 import { useLeadStore, createEmptyLeadFormValues } from '../../../store/leadStore';
@@ -1195,12 +1196,10 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
                               />
                             ) : null}
                           </div>
-                          <input
-                            type="text"
+                          <PhoneInput
                             value={formValues.phone}
-                            onChange={(event) => handleFieldChange('phone', event.target.value)}
-                            className={inputClassName}
-                            placeholder="9876543210"
+                            onChange={(val) => handleFieldChange('phone', val)}
+                            error={Boolean(validationErrors.phone)}
                           />
                           <ErrorText field="phone" />
                         </div>

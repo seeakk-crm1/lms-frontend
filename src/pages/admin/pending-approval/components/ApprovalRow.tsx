@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { CheckCircle2, History } from 'lucide-react';
 import type { LeadApprovalListItem } from '../../../../types/lead.types';
 import StatusBadge from './StatusBadge';
+import { formatPhoneWithFlag } from '../../../../utils/phoneUtils';
 
 interface ApprovalRowProps {
   approval: LeadApprovalListItem;
@@ -51,7 +52,7 @@ const ApprovalRow: React.FC<ApprovalRowProps> = ({ approval, canAct, onReview, o
         <div className="max-w-[220px]">
           <div className="truncate text-sm font-black text-gray-900">{approval.lead?.name || 'Unknown lead'}</div>
           <div className="mt-1 text-xs font-semibold text-gray-500">
-            {approval.lead?.email || approval.lead?.phone || 'No contact details'}
+            {approval.lead?.email || (approval.lead?.phone ? formatPhoneWithFlag(approval.lead.phone) : 'No contact details')}
           </div>
         </div>
       </td>
