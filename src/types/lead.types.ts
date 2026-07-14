@@ -14,6 +14,10 @@ export interface LeadListItem {
   companyName?: string | null;
   address?: string | null;
   remarks?: string | null;
+  profileImageUrl?: string | null;
+  profileImageThumbnail?: string | null;
+  profileImageUploadedAt?: string | null;
+  profileImageUploadedById?: string | null;
   expectedRevenue: number | null;
   totalAmount?: number | null;
   generatedRevenue?: number | null;

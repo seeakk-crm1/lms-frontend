@@ -74,6 +74,20 @@ export const updateLead = async (id: string, payload: LeadUpdatePayload) => {
   return response.data;
 };
 
+export const uploadLeadProfileImage = async (id: string, file: File) => {
+  const formData = new FormData();
+  formData.append('image', file);
+  const response = await api.post(`/leads/${id}/profile-image`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return response.data;
+};
+
+export const removeLeadProfileImage = async (id: string) => {
+  const response = await api.delete(`/leads/${id}/profile-image`);
+  return response.data;
+};
+
 export const toggleLeadStar = async (id: string, starred: boolean) => {
   const response = await api.patch(`/leads/${id}/star`, { starred });
   return response.data;

@@ -1,6 +1,7 @@
 import React, { memo, useEffect, useMemo, useRef, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { AnimatePresence, motion } from 'framer-motion';
-import { AlertCircle, CalendarClock, Save, Sparkles, X, Banknote, PlusCircle, FileText, History, Trash2, Eye } from 'lucide-react';
+import { AlertCircle, CalendarClock, Save, Sparkles, X, Banknote, PlusCircle, FileText, History, Trash2, Eye, UploadCloud } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import SearchableSelect from '../../../components/SearchableSelect';
 import { useChangeLeadStageMutation, useCreateLeadMutation, useLeadDetailQuery, useLeadMetaQuery, useUpdateLeadMutation, useLeadRemarksQuery } from '../../../hooks/useLeads';
@@ -21,7 +22,9 @@ import { useActiveLOBReasonOptions } from '../../../hooks/useActiveLOBReasonOpti
 import { useWeeklyOffScheduleGuard } from '../../../hooks/useWeeklyOffScheduleGuard';
 import WhatsAppActionButton from '../../../components/common/WhatsAppActionButton';
 import { LEAD_WHATSAPP_PERMISSIONS } from '../../../constants/whatsappPermissions';
-import { getLeadPayments, updateLeadTotalAmount, requestAdvancePayment } from '../../../services/leads.api';
+import { getLeadPayments, updateLeadTotalAmount, requestAdvancePayment, uploadLeadProfileImage, removeLeadProfileImage } from '../../../services/leads.api';
+import LeadAvatar from './LeadAvatar';
+import type { ListLeadsResponse } from '../../../types/lead.types';
 
 interface LeadFormDrawerProps {
   isOpen: boolean;
@@ -211,6 +214,7 @@ const getValidationMessage = (errors: ValidationErrorMap, ...fields: string[]) =
   fields.map((field) => errors[field]).find(Boolean) || '';
 
 const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onClose }) => {
+  const queryClient = useQueryClient();
   const { data: meta, isLoading: metaLoading } = useLeadMetaQuery(isOpen);
   const { data: leadDetails, isLoading: leadLoading } = useLeadDetailQuery(lead?.id, isOpen && mode === 'edit');
   const { data: remarksData, isLoading: remarksLoading } = useLeadRemarksQuery(lead?.id, isOpen && mode === 'edit');
@@ -230,8 +234,12 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
   const [previousStageId, setPreviousStageId] = useState<string>('');
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
   const [previewModalOpen, setPreviewModalOpen] = useState(false);
+  const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
+  const [profileImagePreviewUrl, setProfileImagePreviewUrl] = useState<string | null>(null);
+  const [isProfileImageSaving, setIsProfileImageSaving] = useState(false);
   const [localAdvances, setLocalAdvances] = useState<any[]>([]);
   const [validationErrors, setValidationErrors] = useState<ValidationErrorMap>({});
+  const profileImageInputRef = useRef<HTMLInputElement | null>(null);
 
   const ErrorText = ({ field }: { field: string | string[] }) => {
     const message = Array.isArray(field)
@@ -419,6 +427,90 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
     ? paymentData.advancePayments || []
     : localAdvances;
 
+  const patchLeadProfileImageCaches = (nextLead: LeadListItem) => {
+    queryClient.setQueryData(['lead', nextLead.id], nextLead);
+    queryClient.setQueriesData<ListLeadsResponse>({ queryKey: ['leads'] }, (previous) =>
+      previous
+        ? {
+            ...previous,
+            leads: previous.leads.map((item) => (item.id === nextLead.id ? { ...item, ...nextLead } : item)),
+          }
+        : previous,
+    );
+    queryClient.invalidateQueries({ queryKey: ['lead', nextLead.id] });
+    queryClient.invalidateQueries({ queryKey: ['leads'] });
+  };
+
+  const clearSelectedProfileImage = () => {
+    if (profileImagePreviewUrl) URL.revokeObjectURL(profileImagePreviewUrl);
+    setProfileImagePreviewUrl(null);
+    setProfileImageFile(null);
+    if (profileImageInputRef.current) {
+      profileImageInputRef.current.value = '';
+    }
+  };
+
+  const validateProfileImageFile = (file: File): boolean => {
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error('Only JPG, JPEG, PNG, and WEBP formats are allowed.');
+      return false;
+    }
+    if (file.size > 20 * 1024 * 1024) {
+      toast.error('Profile image must be 20 MB or less.');
+      return false;
+    }
+    return true;
+  };
+
+  const handleProfileImageChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (!validateProfileImageFile(file)) {
+      event.target.value = '';
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(file);
+    if (profileImagePreviewUrl) URL.revokeObjectURL(profileImagePreviewUrl);
+    setProfileImagePreviewUrl(objectUrl);
+    setProfileImageFile(file);
+
+    if (mode !== 'edit' || !lead?.id) {
+      return;
+    }
+
+    setIsProfileImageSaving(true);
+    try {
+      const response = await uploadLeadProfileImage(lead.id, file);
+      if (response?.data) patchLeadProfileImageCaches(response.data);
+      clearSelectedProfileImage();
+      toast.success('Profile image updated.');
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || 'Could not save profile image.');
+    } finally {
+      setIsProfileImageSaving(false);
+    }
+  };
+
+  const handleRemoveProfileImage = async () => {
+    if (mode !== 'edit' || !lead?.id) {
+      clearSelectedProfileImage();
+      return;
+    }
+    setIsProfileImageSaving(true);
+    try {
+      const response = await removeLeadProfileImage(lead.id);
+      if (response?.data) patchLeadProfileImageCaches(response.data);
+      clearSelectedProfileImage();
+      toast.success('Profile image removed.');
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || 'Could not remove profile image.');
+    } finally {
+      setIsProfileImageSaving(false);
+    }
+  };
+
   useEffect(() => {
     if (!meta?.dynamicFields) return;
     setDynamicFields(meta.dynamicFields);
@@ -426,6 +518,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
 
   useEffect(() => {
     if (!isOpen) {
+      clearSelectedProfileImage();
       setValidationErrors({});
       setStageRulesModalOpen(false);
       setStageRulesForTransition([]);
@@ -822,7 +915,13 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
 
     try {
       if (mode === 'create') {
-        await createMutation.mutateAsync({ payload: payloadWithDynamicValues });
+        const response = await createMutation.mutateAsync({ payload: payloadWithDynamicValues });
+        const createdLeadId = response?.data?.id;
+        if (createdLeadId && profileImageFile) {
+          const imageResponse = await uploadLeadProfileImage(createdLeadId, profileImageFile);
+          if (imageResponse?.data) patchLeadProfileImageCaches(imageResponse.data);
+          clearSelectedProfileImage();
+        }
         console.log('[Diagnostic] Lead created successfully');
       } else if (lead?.id) {
         await updateMutation.mutateAsync({
@@ -964,6 +1063,53 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
                   </div>
                 ) : (
                   <form className="space-y-6" onSubmit={handleSubmit}>
+                    <section className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
+                      <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
+                        <LeadAvatar
+                          name={formValues.name || hydratedLead?.name || 'Lead'}
+                          imageUrl={hydratedLead?.profileImageUrl || hydratedLead?.profileImageThumbnail}
+                          localPreviewUrl={profileImagePreviewUrl}
+                          className="h-28 w-28"
+                          textClassName="text-4xl"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <h3 className="text-lg font-black text-gray-900">Profile Image</h3>
+                          <p className="mt-1 text-sm font-semibold text-gray-500">
+                            JPG, PNG, or WEBP up to 20 MB. Images are optimized automatically.
+                          </p>
+                          <div className="mt-4 flex flex-wrap gap-2">
+                            <input
+                              ref={profileImageInputRef}
+                              type="file"
+                              accept="image/jpeg,image/jpg,image/png,image/webp"
+                              className="hidden"
+                              onChange={handleProfileImageChange}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => profileImageInputRef.current?.click()}
+                              disabled={isProfileImageSaving || isBusy}
+                              className="inline-flex items-center gap-2 rounded-2xl bg-emerald-500 px-4 py-2 text-xs font-black uppercase tracking-wider text-white shadow-lg shadow-emerald-500/20 transition-all hover:bg-emerald-600 disabled:cursor-wait disabled:opacity-60"
+                            >
+                              <UploadCloud className="h-4 w-4" />
+                              {hydratedLead?.profileImageUrl || profileImageFile ? 'Change Image' : 'Upload'}
+                            </button>
+                            {(hydratedLead?.profileImageUrl || profileImageFile) && (
+                              <button
+                                type="button"
+                                onClick={handleRemoveProfileImage}
+                                disabled={isProfileImageSaving || isBusy}
+                                className="inline-flex items-center gap-2 rounded-2xl border border-rose-100 bg-rose-50 px-4 py-2 text-xs font-black uppercase tracking-wider text-rose-600 transition-all hover:bg-rose-100 disabled:cursor-wait disabled:opacity-60"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                                Remove Image
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </section>
+
                     <section className="rounded-3xl border border-gray-100 bg-gray-50/70 p-5">
                       <div className="mb-5">
                         <h3 className="text-lg font-black text-gray-900">General</h3>

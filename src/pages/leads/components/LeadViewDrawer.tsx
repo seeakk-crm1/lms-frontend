@@ -19,6 +19,7 @@ import FollowUpBadge from './FollowUpBadge';
 import { stageBadgeStyle } from '../../../utils/leadStageColor';
 import WhatsAppActionButton from '../../../components/common/WhatsAppActionButton';
 import { LEAD_WHATSAPP_PERMISSIONS } from '../../../constants/whatsappPermissions';
+import LeadAvatar from './LeadAvatar';
 
 interface LeadViewDrawerProps {
   isOpen: boolean;
@@ -169,21 +170,29 @@ const LeadViewDrawer: React.FC<LeadViewDrawerProps> = ({
           >
             <div className="border-b border-gray-100 px-5 py-4">
               <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0 flex-1">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-600">
-                    {isClosedLead ? 'Closed lead' : 'Lead details'}
-                  </p>
-                  <h2 id="lead-view-title" className="mt-1 truncate text-xl font-bold text-gray-900">
-                    {resolvedLead?.name || '—'}
-                  </h2>
-                  {resolvedLead?.stage?.name ? (
-                    <span
-                      className="mt-2 inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide"
-                      style={stageBadgeStyle(resolvedLead.stage.color)}
-                    >
-                      {resolvedLead.stage.name}
-                    </span>
-                  ) : null}
+                <div className="flex min-w-0 flex-1 items-center gap-3">
+                  <LeadAvatar
+                    name={resolvedLead?.name}
+                    imageUrl={resolvedLead?.profileImageThumbnail || resolvedLead?.profileImageUrl}
+                    className="h-14 w-14"
+                    textClassName="text-lg"
+                  />
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-600">
+                      {isClosedLead ? 'Closed lead' : 'Lead details'}
+                    </p>
+                    <h2 id="lead-view-title" className="mt-1 truncate text-xl font-bold text-gray-900">
+                      {resolvedLead?.name || '—'}
+                    </h2>
+                    {resolvedLead?.stage?.name ? (
+                      <span
+                        className="mt-2 inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide"
+                        style={stageBadgeStyle(resolvedLead.stage.color)}
+                      >
+                        {resolvedLead.stage.name}
+                      </span>
+                    ) : null}
+                  </div>
                 </div>
                 <div className="flex shrink-0 items-center gap-1">
                   {resolvedLead ? (
