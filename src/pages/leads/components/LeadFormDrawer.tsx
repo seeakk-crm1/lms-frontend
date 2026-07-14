@@ -838,17 +838,17 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
             companyName: nullableTrimmed(formValues.companyName),
             address: nullableTrimmed(formValues.address),
             assignedToId: canAssignOtherUsers ? nullableTrimmed(formValues.assignedToId) : undefined,
-            stageId: shouldUseStageTransitionFlow ? undefined : targetStageId || null,
+            stageId: stageChanged ? (shouldUseStageTransitionFlow ? undefined : targetStageId || null) : undefined,
             lifecycleId: formValues.lifecycleId || null,
             sourceId: formValues.sourceId || null,
             nextFollowUpAt: toIsoOrNull(formValues.nextFollowUpAt),
             nextFollowUpType: formValues.nextFollowUpType,
-            reasonId: shouldUseStageTransitionFlow ? undefined : formValues.reasonId.trim() || null,
+            reasonId: stageChanged ? (shouldUseStageTransitionFlow ? undefined : formValues.reasonId.trim() || null) : undefined,
             remarks:
               isMovingOutOfLob && shouldUseStageTransitionFlow
                 ? undefined
                 : nullableTrimmed(formValues.leadRemarks),
-            lobRemarks: shouldUseStageTransitionFlow ? undefined : nullableTrimmed(formValues.remarks),
+            lobRemarks: stageChanged ? (shouldUseStageTransitionFlow ? undefined : nullableTrimmed(formValues.remarks)) : undefined,
           },
         });
 
