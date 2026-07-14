@@ -15,6 +15,7 @@ export interface LeadListItem {
   address?: string | null;
   remarks?: string | null;
   expectedRevenue: number | null;
+  totalAmount?: number | null;
   generatedRevenue?: number | null;
   assignedToId: string | null;
   stageId: string | null;

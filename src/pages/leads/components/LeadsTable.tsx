@@ -1,6 +1,7 @@
 import React, { memo, useMemo, useState } from 'react';
 import { format } from 'date-fns';
 import { formatCurrency } from '../../../utils/currency';
+
 import { motion } from 'framer-motion';
 import { Archive, ChevronLeft, ChevronRight, Pencil, Star, History } from 'lucide-react';
 import type { LeadListItem } from '../../../types/lead.types';
@@ -73,8 +74,8 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
     let result = [...items];
     if (sortAmountDirection) {
       result.sort((a, b) => {
-        const amtA = a.totalAmount || 0;
-        const amtB = b.totalAmount || 0;
+        const amtA = (a as any).totalAmount || 0;
+        const amtB = (b as any).totalAmount || 0;
         return sortAmountDirection === 'asc' ? amtA - amtB : amtB - amtA;
       });
     } else if (sortAdvanceAmountDirection) {
@@ -292,7 +293,7 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
                   </td>
                   <td className="px-6 py-5">
                     <div className="text-sm font-black text-gray-900">
-                      {formatCurrency(lead.totalAmount || 0)}
+                      {formatCurrency((lead as any).totalAmount || 0)}
                     </div>
                   </td>
                   <td className="px-6 py-5">
