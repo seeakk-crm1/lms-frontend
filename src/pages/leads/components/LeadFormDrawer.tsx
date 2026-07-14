@@ -88,6 +88,15 @@ const fromLeadToForm = (lead: LeadListItem): LeadFormValues => ({
 const isLobStageOption = (option?: { label: string; isLOB?: boolean }) =>
   Boolean(option?.isLOB || normalizeStageName(option?.label) === 'lob');
 
+const PROFILE_IMAGE_STORAGE_NOT_READY = 'LEAD_PROFILE_IMAGE_STORAGE_NOT_READY';
+const PROFILE_IMAGE_UNAVAILABLE_MESSAGE =
+  'Profile image uploads are temporarily unavailable. You can still save the lead details.';
+
+const isProfileImageStorageNotReadyError = (error: any): boolean =>
+  error?.response?.status === 503 &&
+  (error?.response?.data?.errorCode === PROFILE_IMAGE_STORAGE_NOT_READY ||
+    String(error?.response?.data?.message || '').toLowerCase().includes('profile image uploads are temporarily unavailable'));
+
 const buildDynamicPayload = (
   values: Record<string, string | string[]>,
   fields: LeadDynamicField[],
@@ -237,6 +246,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
   const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
   const [profileImagePreviewUrl, setProfileImagePreviewUrl] = useState<string | null>(null);
   const [isProfileImageSaving, setIsProfileImageSaving] = useState(false);
+  const [profileImageStorageUnavailable, setProfileImageStorageUnavailable] = useState(false);
   const [localAdvances, setLocalAdvances] = useState<any[]>([]);
   const [validationErrors, setValidationErrors] = useState<ValidationErrorMap>({});
   const profileImageInputRef = useRef<HTMLInputElement | null>(null);
@@ -463,9 +473,21 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
     return true;
   };
 
+  const handleProfileImageStorageError = (error: any): boolean => {
+    if (!isProfileImageStorageNotReadyError(error)) return false;
+    setProfileImageStorageUnavailable(true);
+    toast.error(PROFILE_IMAGE_UNAVAILABLE_MESSAGE);
+    return true;
+  };
+
   const handleProfileImageChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+    if (profileImageStorageUnavailable) {
+      event.target.value = '';
+      toast.error(PROFILE_IMAGE_UNAVAILABLE_MESSAGE);
+      return;
+    }
     if (!validateProfileImageFile(file)) {
       event.target.value = '';
       return;
@@ -487,7 +509,11 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
       clearSelectedProfileImage();
       toast.success('Profile image updated.');
     } catch (error: any) {
-      toast.error(error?.response?.data?.message || 'Could not save profile image.');
+      if (handleProfileImageStorageError(error)) {
+        clearSelectedProfileImage();
+      } else {
+        toast.error(error?.response?.data?.message || 'Could not save profile image.');
+      }
     } finally {
       setIsProfileImageSaving(false);
     }
@@ -505,7 +531,9 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
       clearSelectedProfileImage();
       toast.success('Profile image removed.');
     } catch (error: any) {
-      toast.error(error?.response?.data?.message || 'Could not remove profile image.');
+      if (!handleProfileImageStorageError(error)) {
+        toast.error(error?.response?.data?.message || 'Could not remove profile image.');
+      }
     } finally {
       setIsProfileImageSaving(false);
     }
@@ -524,6 +552,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
       setStageRulesForTransition([]);
       setPendingTransitionStageId(null);
       setStageRuleSubmitPayload([]);
+      setProfileImageStorageUnavailable(false);
       revertFormBeforeRulesRef.current = null;
       return;
     }
@@ -917,10 +946,16 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
       if (mode === 'create') {
         const response = await createMutation.mutateAsync({ payload: payloadWithDynamicValues });
         const createdLeadId = response?.data?.id;
-        if (createdLeadId && profileImageFile) {
-          const imageResponse = await uploadLeadProfileImage(createdLeadId, profileImageFile);
-          if (imageResponse?.data) patchLeadProfileImageCaches(imageResponse.data);
-          clearSelectedProfileImage();
+        if (createdLeadId && profileImageFile && !profileImageStorageUnavailable) {
+          try {
+            const imageResponse = await uploadLeadProfileImage(createdLeadId, profileImageFile);
+            if (imageResponse?.data) patchLeadProfileImageCaches(imageResponse.data);
+            clearSelectedProfileImage();
+          } catch (error: any) {
+            if (!handleProfileImageStorageError(error)) {
+              toast.error(error?.response?.data?.message || 'Lead saved, but the profile image could not be uploaded.');
+            }
+          }
         }
         console.log('[Diagnostic] Lead created successfully');
       } else if (lead?.id) {
@@ -1077,6 +1112,12 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
                           <p className="mt-1 text-sm font-semibold text-gray-500">
                             JPG, PNG, or WEBP up to 20 MB. Images are optimized automatically.
                           </p>
+                          {profileImageStorageUnavailable && (
+                            <p className="mt-3 flex items-start gap-2 rounded-2xl border border-amber-100 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-700">
+                              <AlertCircle className="mt-0.5 h-4 w-4 flex-none" />
+                              Profile image uploads are temporarily unavailable. Lead details can still be saved.
+                            </p>
+                          )}
                           <div className="mt-4 flex flex-wrap gap-2">
                             <input
                               ref={profileImageInputRef}
@@ -1088,7 +1129,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
                             <button
                               type="button"
                               onClick={() => profileImageInputRef.current?.click()}
-                              disabled={isProfileImageSaving || isBusy}
+                              disabled={profileImageStorageUnavailable || isProfileImageSaving || isBusy}
                               className="inline-flex items-center gap-2 rounded-2xl bg-emerald-500 px-4 py-2 text-xs font-black uppercase tracking-wider text-white shadow-lg shadow-emerald-500/20 transition-all hover:bg-emerald-600 disabled:cursor-wait disabled:opacity-60"
                             >
                               <UploadCloud className="h-4 w-4" />
@@ -1098,7 +1139,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
                               <button
                                 type="button"
                                 onClick={handleRemoveProfileImage}
-                                disabled={isProfileImageSaving || isBusy}
+                                disabled={profileImageStorageUnavailable || isProfileImageSaving || isBusy}
                                 className="inline-flex items-center gap-2 rounded-2xl border border-rose-100 bg-rose-50 px-4 py-2 text-xs font-black uppercase tracking-wider text-rose-600 transition-all hover:bg-rose-100 disabled:cursor-wait disabled:opacity-60"
                               >
                                 <Trash2 className="h-4 w-4" />
