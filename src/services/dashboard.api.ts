@@ -24,6 +24,7 @@ export interface DashboardSummaryResponse {
       growth: string;
       trend: 'up' | 'down';
       iconName: string;
+      format?: 'number' | 'currency';
     }>;
     leadGrowth: Array<{
       name: string;
@@ -57,6 +58,7 @@ export interface DashboardSummaryResponse {
     scheduleDateLabel: string;
     range: DashboardRange;
     pendingApprovals: number;
+    expectedRevenue: number;
   };
 }
 

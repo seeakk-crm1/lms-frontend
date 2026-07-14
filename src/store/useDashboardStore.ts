@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import axios from 'axios';
 import { getDashboardSummary, type DashboardRange, type DashboardSummaryFilters } from '../services/dashboard.api';
+import { formatCurrency } from '../utils/currency';
 
 export interface KPIData {
     title: string;
@@ -8,6 +9,7 @@ export interface KPIData {
     growth: string;
     trend: 'up' | 'down';
     iconName: string;
+    format?: 'number' | 'currency';
 }
 
 export interface LeadGrowthData {
@@ -85,6 +87,7 @@ const createInitialDashboardSlice = (): Omit<DashboardState, 'reset' | 'setSelec
 });
 
 let isFetchingAPI = false;
+let dashboardRequestSequence = 0;
 
 const useDashboardStore = create<DashboardState>((set) => ({
     ...createInitialDashboardSlice(),
@@ -112,6 +115,8 @@ const useDashboardStore = create<DashboardState>((set) => ({
         const requestedRange = requestedFilters.range;
         const requestedOfficeId = requestedFilters.officeId;
         const hasExistingData = state.kpiData.length > 0;
+        const requestId = dashboardRequestSequence + 1;
+        dashboardRequestSequence = requestId;
 
         if (isFetchingAPI && JSON.stringify(requestedFilters) === JSON.stringify(state.filters)) {
             return;
@@ -120,16 +125,18 @@ const useDashboardStore = create<DashboardState>((set) => ({
         isFetchingAPI = true;
 
         set({
-            isLoading: hasExistingData ? false : true,
+            isLoading: true,
             isRefreshing: hasExistingData,
             error: null,
             selectedRange: requestedRange,
             selectedOfficeId: requestedOfficeId,
             filters: requestedFilters,
+            kpiData: [],
         });
 
         try {
             const response = await getDashboardSummary(requestedFilters);
+            if (requestId !== dashboardRequestSequence) return;
             const dashboard = response.data;
 
             set({
@@ -138,7 +145,9 @@ const useDashboardStore = create<DashboardState>((set) => ({
                 scheduleDateLabel: dashboard.scheduleDateLabel,
                 kpiData: dashboard.kpis.map((kpi) => ({
                     ...kpi,
-                    value: new Intl.NumberFormat('en-US').format(kpi.value),
+                    value: kpi.format === 'currency'
+                        ? formatCurrency(kpi.value)
+                        : new Intl.NumberFormat('en-US').format(kpi.value),
                 })),
                 leadGrowthData: dashboard.leadGrowth,
                 pipelineData: dashboard.pipeline,
@@ -147,6 +156,7 @@ const useDashboardStore = create<DashboardState>((set) => ({
                 meetings: dashboard.meetings,
             });
         } catch (error) {
+            if (requestId !== dashboardRequestSequence) return;
             const message = axios.isAxiosError(error)
                 ? (error.response?.data?.message || error.response?.data?.error || error.message)
                 : "Failed to load dashboard data";
