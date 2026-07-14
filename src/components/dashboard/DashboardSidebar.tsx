@@ -46,7 +46,8 @@ const sidebarMenus: SidebarSection[] = [
                     { label: 'Roles', path: '/admin/roles', requiredPermissions: ['ROLES_VIEW'] },
                     { label: 'Departments', path: '/admin/departments', requiredPermissions: ['DEPARTMENTS_VIEW'] },
                     { label: 'Organization Chart', path: '/admin/organisation-chart', requiredPermissions: ['USERS_VIEW', 'DEPARTMENTS_VIEW'] },
-                    { label: 'Roster Sheet', path: '/admin/roster', requiredPermissions: ['USERS_VIEW', 'SYSTEM_CONFIG'] }
+                    { label: 'Roster Sheet', path: '/admin/roster', requiredPermissions: ['USERS_VIEW', 'SYSTEM_CONFIG'] },
+                    { label: 'Offices', path: '/admin/offices', requiredPermissions: ['SYSTEM_CONFIG'] }
                 ]
             },
             {
@@ -58,7 +59,6 @@ const sidebarMenus: SidebarSection[] = [
                     { label: 'Stage Rules', path: '/admin/stage-rules', requiredPermissions: ['LEAD_STAGE_RULES_VIEW', 'SYSTEM_CONFIG'] },
                     { label: 'Target Cycles', path: '/admin/target-cycles', requiredPermissions: ['TARGET_CYCLES_VIEW', 'SYSTEM_CONFIG'] },
                     { label: 'Lead Dynamic Forms', path: '/admin/lead-dynamics', requiredPermissions: ['LEAD_DYNAMICS_VIEW', 'SYSTEM_CONFIG'] },
-                    { label: 'Office Locations', path: '/admin/offices', requiredPermissions: ['SYSTEM_CONFIG'] },
                     { label: 'Lead Life Cycle', path: '/admin/lead-life-cycles', requiredPermissions: ['SYSTEM_CONFIG'] },
                     { label: 'Calendar', path: '/calendar', requiredPermissions: ['LEADS_VIEW_ALL', 'LEADS_VIEW_OWN', 'LEADS_VIEW_TEAM', 'SYSTEM_CONFIG'] },
                     { label: 'Holiday List', path: '/admin/holidays', requiredPermissions: ['SYSTEM_CONFIG'] },

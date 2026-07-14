@@ -4,44 +4,19 @@ import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Building2, Loader2, Save, X } from 'lucide-react';
+import { Country, State, City } from 'country-state-city';
 import type {
-  LocationOption,
   Office,
   OfficeFormValues,
 } from '../../../types/admin/office/office.types';
 
-const toTitle = (value: string) =>
-  value
-    .replace(/_/g, ' ')
-    .toLowerCase()
-    .replace(/\b\w/g, (char) => char.toUpperCase());
-
-const getPathFromLocation = (
-  countryId: string,
-  selectedId: string,
-  locationById: Map<string, LocationOption>,
-): string[] => {
-  if (!countryId || !selectedId) return [];
-  const path: string[] = [];
-  let cursor: string | null | undefined = selectedId;
-
-  while (cursor) {
-    const location = locationById.get(cursor);
-    if (!location) break;
-    if (location.type !== 'COUNTRY') path.unshift(location.id);
-    if (location.parentId === countryId) break;
-    cursor = location.parentId;
-  }
-
-  return path;
-};
-
 const schema = z.object({
   name: z.string().trim().min(1, 'Office name is required').max(100, 'Office name too long'),
   address: z.string().optional(),
-  countryId: z.string().trim().min(1, 'Country is required'),
-  stateId: z.string().trim().min(1, 'Level 1 location is required'),
-  districtId: z.string().trim().min(1, 'Deepest location is required'),
+  country: z.string().trim().min(1, 'Country is required'),
+  state: z.string().trim().min(1, 'State is required'),
+  district: z.string().trim().optional(),
+  city: z.string().trim().optional(),
   isActive: z.boolean(),
 });
 
@@ -49,7 +24,6 @@ interface Props {
   isOpen: boolean;
   office: Office | null;
   isSubmitting: boolean;
-  locations: LocationOption[];
   onClose: () => void;
   onSubmit: (payload: OfficeFormValues) => Promise<void> | void;
 }
@@ -58,7 +32,6 @@ const OfficeFormModal: React.FC<Props> = ({
   isOpen,
   office,
   isSubmitting,
-  locations,
   onClose,
   onSubmit,
 }) => {
@@ -76,9 +49,10 @@ const OfficeFormModal: React.FC<Props> = ({
     defaultValues: {
       name: '',
       address: '',
-      countryId: '',
-      stateId: '',
-      districtId: '',
+      country: '',
+      state: '',
+      district: '',
+      city: '',
       isActive: true,
     },
   });
@@ -88,76 +62,30 @@ const OfficeFormModal: React.FC<Props> = ({
     reset({
       name: office?.name || '',
       address: office?.address || '',
-      countryId: office?.countryId || '',
-      stateId: office?.stateId || '',
-      districtId: office?.districtId || '',
+      country: office?.country || '',
+      state: office?.state || '',
+      district: office?.district || '',
+      city: office?.city || '',
       isActive: office?.isActive ?? true,
     });
   }, [isOpen, office, reset]);
 
-  const countryId = watch('countryId');
-  const stateId = watch('stateId');
-  const districtId = watch('districtId');
+  const selectedCountryCode = watch('country');
+  const selectedStateCode = watch('state');
 
-  const locationById = useMemo(
-    () => new Map(locations.map((item) => [item.id, item])),
-    [locations],
-  );
-
-  const countries = useMemo(
-    () => locations.filter((item) => item.type === 'COUNTRY'),
-    [locations],
-  );
-
-  const selectedPath = useMemo(() => {
-    if (!countryId) return [];
-    const fromDeepest = getPathFromLocation(countryId, districtId, locationById);
-    if (fromDeepest.length > 0) return fromDeepest;
-    return getPathFromLocation(countryId, stateId, locationById);
-  }, [countryId, districtId, stateId, locationById]);
-
-  const levelConfigs = useMemo(() => {
-    if (!countryId) return [];
-
-    const configs: Array<{ key: string; label: string; options: LocationOption[]; value: string }> = [];
-    let parentId = countryId;
-    let index = 0;
-
-    while (parentId) {
-      const options = locations.filter((item) => item.parentId === parentId);
-      if (options.length === 0) break;
-      const value = selectedPath[index] || '';
-
-      configs.push({
-        key: `${parentId}-${index}`,
-        label: options[0]?.level?.levelName || toTitle(options[0]?.type || `Level ${index + 1}`),
-        options,
-        value,
-      });
-
-      if (!value) break;
-      parentId = value;
-      index += 1;
-    }
-
-    return configs;
-  }, [countryId, locations, selectedPath]);
+  const countries = useMemo(() => Country.getAllCountries(), []);
+  const states = useMemo(() => selectedCountryCode ? State.getStatesOfCountry(selectedCountryCode) : [], [selectedCountryCode]);
+  const cities = useMemo(() => selectedCountryCode && selectedStateCode ? City.getCitiesOfState(selectedCountryCode, selectedStateCode) : [], [selectedCountryCode, selectedStateCode]);
 
   const handleCountryChange = (value: string) => {
-    setValue('countryId', value, { shouldValidate: true, shouldDirty: true });
-    setValue('stateId', '', { shouldValidate: true, shouldDirty: true });
-    setValue('districtId', '', { shouldValidate: true, shouldDirty: true });
+    setValue('country', value, { shouldValidate: true, shouldDirty: true });
+    setValue('state', '', { shouldValidate: true, shouldDirty: true });
+    setValue('city', '', { shouldValidate: true, shouldDirty: true });
   };
 
-  const handleLevelChange = (index: number, value: string) => {
-    const nextPath = selectedPath.slice(0, index);
-    if (value) nextPath.push(value);
-
-    setValue('stateId', nextPath[0] || '', { shouldValidate: true, shouldDirty: true });
-    setValue('districtId', nextPath.length > 0 ? nextPath[nextPath.length - 1] : '', {
-      shouldValidate: true,
-      shouldDirty: true,
-    });
+  const handleStateChange = (value: string) => {
+    setValue('state', value, { shouldValidate: true, shouldDirty: true });
+    setValue('city', '', { shouldValidate: true, shouldDirty: true });
   };
 
   return (
@@ -207,9 +135,10 @@ const OfficeFormModal: React.FC<Props> = ({
                 await onSubmit({
                   name: values.name.trim(),
                   address: values.address?.trim(),
-                  countryId: values.countryId,
-                  stateId: values.stateId,
-                  districtId: values.districtId,
+                  country: values.country,
+                  state: values.state,
+                  district: values.district,
+                  city: values.city,
                   isActive: values.isActive,
                 });
               })}
@@ -238,58 +167,70 @@ const OfficeFormModal: React.FC<Props> = ({
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 <div>
                   <label className="text-[10px] uppercase tracking-widest text-gray-400 font-black">Country</label>
                   <motion.select
-                    key={`country-${countryId}`}
-                    value={countryId}
+                    value={selectedCountryCode}
                     onChange={(event) => handleCountryChange(event.target.value)}
                     initial={{ opacity: 0.9 }}
                     animate={{ opacity: 1 }}
                     className={`w-full mt-1 px-3 py-2.5 rounded-xl border bg-gray-50 text-base sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500/20 ${
-                      errors.countryId ? 'border-red-200' : 'border-gray-200'
+                      errors.country ? 'border-red-200' : 'border-gray-200'
                     }`}
                   >
                     <option value="">Select country</option>
                     {countries.map((item) => (
-                      <option key={item.id} value={item.id}>
+                      <option key={item.isoCode} value={item.isoCode}>
                         {item.name}
                       </option>
                     ))}
                   </motion.select>
-                  {errors.countryId ? <p className="text-[11px] text-red-600 font-bold mt-1">{errors.countryId.message}</p> : null}
+                  {errors.country ? <p className="text-[11px] text-red-600 font-bold mt-1">{errors.country.message}</p> : null}
                 </div>
-              </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                {levelConfigs.map((level, index) => {
-                  const fieldError = index === 0 ? errors.stateId : index === levelConfigs.length - 1 ? errors.districtId : undefined;
-                  return (
-                    <div key={level.key}>
-                      <label className="text-[10px] uppercase tracking-widest text-gray-400 font-black">{level.label}</label>
-                      <motion.select
-                        key={`level-select-${level.key}`}
-                        value={level.value}
-                        onChange={(event) => handleLevelChange(index, event.target.value)}
-                        initial={{ opacity: 0.9 }}
-                        animate={{ opacity: 1 }}
-                        disabled={!countryId || (index > 0 && !selectedPath[index - 1])}
-                        className={`w-full mt-1 px-3 py-2.5 rounded-xl border bg-gray-50 text-base sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500/20 disabled:opacity-60 ${
-                          fieldError ? 'border-red-200' : 'border-gray-200'
-                        }`}
-                      >
-                        <option value="">{`Select ${level.label.toLowerCase()}`}</option>
-                        {level.options.map((item) => (
-                          <option key={item.id} value={item.id}>
-                            {item.name}
-                          </option>
-                        ))}
-                      </motion.select>
-                      {fieldError ? <p className="text-[11px] text-red-600 font-bold mt-1">{fieldError.message}</p> : null}
-                    </div>
-                  );
-                })}
+                <div>
+                  <label className="text-[10px] uppercase tracking-widest text-gray-400 font-black">State</label>
+                  <motion.select
+                    value={selectedStateCode}
+                    onChange={(event) => handleStateChange(event.target.value)}
+                    initial={{ opacity: 0.9 }}
+                    animate={{ opacity: 1 }}
+                    disabled={!selectedCountryCode}
+                    className={`w-full mt-1 px-3 py-2.5 rounded-xl border bg-gray-50 text-base sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500/20 disabled:opacity-60 ${
+                      errors.state ? 'border-red-200' : 'border-gray-200'
+                    }`}
+                  >
+                    <option value="">Select state</option>
+                    {states.map((item) => (
+                      <option key={item.isoCode} value={item.isoCode}>
+                        {item.name}
+                      </option>
+                    ))}
+                  </motion.select>
+                  {errors.state ? <p className="text-[11px] text-red-600 font-bold mt-1">{errors.state.message}</p> : null}
+                </div>
+
+                <div>
+                  <label className="text-[10px] uppercase tracking-widest text-gray-400 font-black">City</label>
+                  <motion.select
+                    {...register('city')}
+                    initial={{ opacity: 0.9 }}
+                    animate={{ opacity: 1 }}
+                    disabled={!selectedStateCode}
+                    className={`w-full mt-1 px-3 py-2.5 rounded-xl border bg-gray-50 text-base sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500/20 disabled:opacity-60 ${
+                      errors.city ? 'border-red-200' : 'border-gray-200'
+                    }`}
+                  >
+                    <option value="">Select city</option>
+                    {cities.map((item) => (
+                      <option key={item.name} value={item.name}>
+                        {item.name}
+                      </option>
+                    ))}
+                  </motion.select>
+                  {errors.city ? <p className="text-[11px] text-red-600 font-bold mt-1">{errors.city.message}</p> : null}
+                </div>
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -325,9 +266,6 @@ const OfficeFormModal: React.FC<Props> = ({
                   </div>
                 </div>
               </div>
-
-              <input type="hidden" {...register('stateId')} />
-              <input type="hidden" {...register('districtId')} />
 
               <div className="pt-1 flex flex-col sm:flex-row gap-3 sticky bottom-0 bg-white pb-1">
                 <button

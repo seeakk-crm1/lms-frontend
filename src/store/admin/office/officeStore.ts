@@ -23,9 +23,10 @@ export const useOfficeStore = create<OfficeStoreState>((set) => ({
   offices: [],
   filters: {
     status: 'ALL',
-    countryId: undefined,
-    stateId: undefined,
-    districtId: undefined,
+    country: undefined,
+    state: undefined,
+    district: undefined,
+    city: undefined,
   },
   search: '',
   pagination: {

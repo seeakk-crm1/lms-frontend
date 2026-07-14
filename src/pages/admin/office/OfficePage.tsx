@@ -7,7 +7,6 @@ import OfficeTable from '../../../components/admin/office/OfficeTable';
 import {
   useCreateOfficeMutation,
   useDeleteOfficeMutation,
-  useLocationsQuery,
   useOfficesQuery,
   useToggleOfficeStatusMutation,
   useUpdateOfficeMutation,
@@ -35,7 +34,6 @@ const OfficePage: React.FC = () => {
   } = useOfficeStore();
 
   const officesQuery = useOfficesQuery();
-  const locationsQuery = useLocationsQuery();
   const createMutation = useCreateOfficeMutation();
   const updateMutation = useUpdateOfficeMutation();
   const deleteMutation = useDeleteOfficeMutation();
@@ -192,23 +190,24 @@ const OfficePage: React.FC = () => {
 
             <OfficeTable
               offices={offices}
-              locations={locationsQuery.data || []}
               isLoading={officesQuery.isLoading || officesQuery.isFetching}
-              search={searchDraft}
+              search={search}
               status={filters.status}
-              countryId={filters.countryId}
-              stateId={filters.stateId}
-              districtId={filters.districtId}
+              country={filters.country}
+              state={filters.state}
+              district={filters.district}
+              city={filters.city}
               page={pagination.page}
               limit={pagination.limit}
               total={total}
               totalPages={officesQuery.data?.data.pagination?.totalPages || 1}
-              onSearchChange={setSearchDraft}
-              onStatusChange={(value) => setFilters({ status: value })}
-              onCountryChange={(value) => setFilters({ countryId: value })}
-              onStateChange={(value) => setFilters({ stateId: value })}
-              onDistrictChange={(value) => setFilters({ districtId: value })}
-              onPageChange={(value) => setPagination({ page: value })}
+              onSearchChange={setSearch}
+              onStatusChange={(status) => setFilters({ status })}
+              onCountryChange={(country) => setFilters({ country, state: undefined, district: undefined, city: undefined })}
+              onStateChange={(state) => setFilters({ state, district: undefined, city: undefined })}
+              onDistrictChange={(district) => setFilters({ district, city: undefined })}
+              onCityChange={(city) => setFilters({ city })}
+              onPageChange={(page) => setPagination({ page })}
               onEdit={openEdit}
               onToggleStatus={handleToggleStatus}
               onDelete={setDeleteCandidate}
@@ -217,14 +216,13 @@ const OfficePage: React.FC = () => {
           </div>
         </div>
 
-      <OfficeFormModal
-        isOpen={isModalOpen}
-        office={selectedOffice}
-        isSubmitting={isSubmitting}
-        locations={locationsQuery.data || []}
-        onClose={closeModal}
-        onSubmit={handleSubmit}
-      />
+          <OfficeFormModal
+            isOpen={isModalOpen}
+            office={selectedOffice}
+            isSubmitting={createMutation.isPending || updateMutation.isPending}
+            onClose={closeModal}
+            onSubmit={handleSubmit}
+          />
 
       <AnimatePresence>
         {deleteCandidate ? (

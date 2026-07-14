@@ -53,7 +53,6 @@ import LeadImportPage from './pages/leads/import/LeadImportPage';
 import BulkAssignPage from './pages/leads/BulkAssignPage';
 import FollowUpSettingsPage from './pages/leads/FollowUpSettingsPage';
 import PendingApprovalPage from './pages/admin/PendingApprovalPage';
-import LocationsPage from './modules/locations/LocationsPage';
 import LOBAnalysisPage from './modules/lob-analysis/LOBAnalysisPage';
 import ActivityReportsPage from './modules/reports/pages/ActivityReportsPage';
 import ManagementSummaryPage from './modules/reports/pages/ManagementSummaryPage';
@@ -457,11 +456,6 @@ function App() {
           </PendingApprovalRoute>
         } />
 
-        <Route path="/locations" element={
-          <PermissionRoute permissions={['LOCATION_VIEW', 'LOCATION_MANAGE', 'SYSTEM_CONFIG']}>
-            <LocationsPage />
-          </PermissionRoute>
-        } />
 
         <Route path="/attendance" element={
           <PermissionRoute permissions={['view_attendance', 'mark_attendance']}>

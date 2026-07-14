@@ -4,9 +4,10 @@ export interface Office {
   id: string;
   name: string;
   address?: string | null;
-  countryId?: string | null;
-  stateId?: string | null;
-  districtId?: string | null;
+  country?: string | null;
+  state?: string | null;
+  district?: string | null;
+  city?: string | null;
   isActive: boolean;
   createdBy?: string | null;
   workspaceId: string;
@@ -30,9 +31,10 @@ export interface LocationOption {
 
 export interface OfficeFilters {
   status: OfficeFilterStatus;
-  countryId?: string;
-  stateId?: string;
-  districtId?: string;
+  country?: string;
+  state?: string;
+  district?: string;
+  city?: string;
 }
 
 export interface OfficePagination {
@@ -45,9 +47,10 @@ export interface OfficePagination {
 export interface OfficeFormValues {
   name: string;
   address?: string;
-  countryId: string;
-  stateId: string;
-  districtId: string;
+  country: string;
+  state: string;
+  district?: string;
+  city?: string;
   isActive: boolean;
 }
 

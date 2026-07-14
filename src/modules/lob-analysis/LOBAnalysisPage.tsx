@@ -4,7 +4,7 @@ import { AlertTriangle, FileBarChart2, RefreshCcw } from 'lucide-react';
 import DashboardLayout from '../../components/dashboard/DashboardLayout';
 import { useLeadMetaQuery } from '../../hooks/useLeads';
 import { useOfficesQuery } from '../../hooks/admin/office/useOfficeQuery';
-import { useCountriesQuery } from '../locations/hooks/useLocations';
+import { Country } from 'country-state-city';
 import useAuthStore from '../../store/useAuthStore';
 import LOBFilters from './LOBFilters';
 import LOBKPIStats from './LOBKPIStats';
@@ -38,7 +38,6 @@ const LOBAnalysisPage: React.FC = () => {
 
   const { user } = useAuthStore();
   const { data: leadMeta } = useLeadMetaQuery();
-  const countriesQuery = useCountriesQuery({ page: 1, limit: 100, isActive: true });
   const officesQuery = useOfficesQuery();
   const lobAnalysis = useLOBAnalysis(appliedFilters, page, 20);
 
@@ -71,8 +70,8 @@ const LOBAnalysisPage: React.FC = () => {
   );
 
   const locationOptions = useMemo(() => {
-    const countryOptions = (countriesQuery.data?.data || []).map((country) => ({
-      value: country.id,
+    const countryOptions = Country.getAllCountries().map((country) => ({
+      value: country.isoCode,
       label: `Country: ${country.name}`,
     }));
     const officeOptions = ((officesQuery.data?.data?.offices || []) as Array<{ id?: string; name?: string; isActive?: boolean }>)
@@ -83,7 +82,7 @@ const LOBAnalysisPage: React.FC = () => {
       }));
 
     return [...countryOptions, ...officeOptions];
-  }, [countriesQuery.data, officesQuery.data]);
+  }, [officesQuery.data]);
 
   const appliedChips = useMemo(() => {
     const chips: string[] = [];

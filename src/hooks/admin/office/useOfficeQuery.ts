@@ -3,7 +3,6 @@ import { toast } from 'react-hot-toast';
 import {
   createOffice,
   deleteOffice,
-  getAllLocations,
   getOffices,
   toggleStatus,
   updateOffice,
@@ -46,9 +45,10 @@ export const useOfficesQuery = () => {
         limit: pagination.limit,
         search: search || undefined,
         status: filters.status === 'ALL' ? undefined : filters.status,
-        countryId: filters.countryId || undefined,
-        stateId: filters.stateId || undefined,
-        districtId: filters.districtId || undefined,
+        country: filters.country || undefined,
+        state: filters.state || undefined,
+        district: filters.district || undefined,
+        city: filters.city || undefined,
       }),
     staleTime: 60_000,
     gcTime: 300_000,
@@ -62,14 +62,6 @@ export const useOfficesQuery = () => {
   });
 };
 
-export const useLocationsQuery = () =>
-  useQuery({
-    queryKey: ['locations', 'all'],
-    queryFn: getAllLocations,
-    staleTime: 5 * 60_000,
-    gcTime: 10 * 60_000,
-    refetchOnWindowFocus: false,
-  });
 
 export const useCreateOfficeMutation = () => {
   const queryClient = useQueryClient();
@@ -86,9 +78,10 @@ export const useCreateOfficeMutation = () => {
             id: `temp-${Date.now()}`,
             name: payload.name,
             address: payload.address || null,
-            countryId: payload.countryId,
-            stateId: payload.stateId,
-            districtId: payload.districtId,
+            country: payload.country,
+            state: payload.state,
+            district: payload.district,
+            city: payload.city,
             isActive: payload.isActive,
             createdBy: 'You',
             workspaceId: '',
