@@ -8,6 +8,7 @@ import {
   deleteLead,
   extendLeadSla,
   exportLeads,
+  exportLeadsXlsx,
   getActiveLeadDynamicFields,
   getLeadById,
   getLeadRemarks,
@@ -491,5 +492,45 @@ export const useExportLeads = () =>
     },
     onError: (error: any) => {
       toast.error(error?.response?.data?.message || 'Failed to export leads');
+    },
+  });
+
+export const useExportLeadsXlsx = () =>
+  useMutation({
+    mutationFn: async (params: Record<string, unknown>) => {
+      const response = await exportLeadsXlsx(params);
+      
+      let filename = '';
+      const disposition = response.headers['content-disposition'];
+      if (disposition && disposition.indexOf('attachment') !== -1) {
+        const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+        const matches = filenameRegex.exec(disposition);
+        if (matches != null && matches[1]) {
+          filename = matches[1].replace(/['"]/g, '');
+        }
+      }
+      
+      if (!filename) {
+        const isFiltered = Object.keys(params).some(k => k !== 'includeArchived' && params[k] !== undefined);
+        const prefix = isFiltered ? 'Leads_Filtered_' : 'Leads_';
+        filename = `${prefix}${new Date().toISOString().slice(0, 10)}.xlsx`;
+      }
+
+      const blob = new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      return true;
+    },
+    onSuccess: () => {
+      toast.success('Lead export generated successfully.');
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || 'Unable to generate the XLSX export. Please try again.');
     },
   });

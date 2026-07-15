@@ -175,6 +175,14 @@ export const exportLeads = async (params: Record<string, unknown>) => {
   return response;
 };
 
+export const exportLeadsXlsx = async (params: Record<string, unknown>) => {
+  const response = await api.get('/leads/export-xlsx', {
+    params,
+    responseType: 'blob',
+  });
+  return response;
+};
+
 export const bulkDeleteLeads = async (ids: string[], permanent: boolean = false) => {
   const response = await api.delete('/leads/bulk', {
     data: { ids, permanent },

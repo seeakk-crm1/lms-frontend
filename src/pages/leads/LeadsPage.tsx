@@ -1,4 +1,4 @@
-import React, { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
+import React, { memo, useCallback, useEffect, useMemo, useRef, useState, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import { Download, Filter, Plus, TrendingUp, Upload } from 'lucide-react';
 import { toast } from 'react-hot-toast';
@@ -14,6 +14,7 @@ import {
   useLeadsQuery,
   useLeadMetaQuery,
   useExportLeads,
+  useExportLeadsXlsx,
   useDeleteLeadMutation,
   usePermanentDeleteLeadMutation,
   useBulkDeleteLeadsMutation,
@@ -36,6 +37,18 @@ const LeadsPage: React.FC = () => {
   const [showFilters, setShowFilters] = useState(true);
   const [searchDraft, setSearchDraft] = useState('');
   const [exportIncludeArchived, setExportIncludeArchived] = useState(false);
+  const [isExportOpen, setIsExportOpen] = useState(false);
+  const exportMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(event.target as Node)) {
+        setIsExportOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
   const [deleteModal, setDeleteModal] = useState<{ 
     isOpen: boolean; 
     lead: LeadListItem | null;
@@ -71,6 +84,7 @@ const LeadsPage: React.FC = () => {
   const { data, isLoading, isFetching, isError } = useLeadsQuery();
   const { data: meta } = useLeadMetaQuery();
   const exportMutation = useExportLeads();
+  const exportXlsxMutation = useExportLeadsXlsx();
   const deleteMutation = useDeleteLeadMutation();
   const permanentDeleteMutation = usePermanentDeleteLeadMutation();
   const bulkDeleteMutation = useBulkDeleteLeadsMutation();
@@ -185,7 +199,7 @@ const LeadsPage: React.FC = () => {
 
   const openLeadCount = useMemo(() => leads.filter((lead) => !lead.isClosed && !lead.isLOB).length, [leads]);
 
-  const handleExport = useCallback(() => {
+  const handleExportCsv = useCallback(() => {
     exportMutation.mutate({
       search: search || undefined,
       stage: filters.stage || undefined,
@@ -197,6 +211,19 @@ const LeadsPage: React.FC = () => {
       includeArchived: exportIncludeArchived,
     });
   }, [exportMutation, exportIncludeArchived, filters.assignedTo, filters.officeId, filters.source, filters.stage, filters.status, filters.starred, search, showOfficeFilter]);
+
+  const handleExportXlsx = useCallback(() => {
+    exportXlsxMutation.mutate({
+      search: search || undefined,
+      stage: filters.stage || undefined,
+      assignedTo: filters.assignedTo || undefined,
+      source: filters.source || undefined,
+      officeId: showOfficeFilter ? filters.officeId || undefined : undefined,
+      status: filters.status || undefined,
+      starred: filters.starred && filters.starred !== 'ALL' ? filters.starred : undefined,
+      includeArchived: exportIncludeArchived,
+    });
+  }, [exportXlsxMutation, exportIncludeArchived, filters.assignedTo, filters.officeId, filters.source, filters.stage, filters.status, filters.starred, search, showOfficeFilter]);
 
   const handleImportClick = useCallback(() => {
     navigate('/leads/import');
@@ -459,16 +486,57 @@ const LeadsPage: React.FC = () => {
                     />
                     <span>Include archived leads in export</span>
                   </label>
-                  <button
-                    type="button"
-                    onClick={handleExport}
-                    disabled={exportMutation.isPending}
-                    title="Exports every lead that matches your current filters (all pages), not only the visible table."
-                    className="inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-black text-gray-700 shadow-sm transition-all hover:border-emerald-200 hover:text-emerald-600 disabled:cursor-not-allowed disabled:opacity-70 sm:ml-auto"
-                  >
-                    <Download className="h-4 w-4" />
-                    <span>{exportMutation.isPending ? 'Exporting…' : 'Export to Excel'}</span>
-                  </button>
+                  <div className="relative sm:ml-auto" ref={exportMenuRef}>
+                    <button
+                      type="button"
+                      onClick={() => setIsExportOpen(!isExportOpen)}
+                      disabled={exportMutation.isPending || exportXlsxMutation.isPending}
+                      title="Exports every lead that matches your current filters (all pages), not only the visible table."
+                      className="inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-black text-gray-700 shadow-sm transition-all hover:border-emerald-200 hover:text-emerald-600 disabled:cursor-not-allowed disabled:opacity-70"
+                    >
+                      <Download className="h-4 w-4" />
+                      <span>
+                        {exportMutation.isPending || exportXlsxMutation.isPending
+                          ? 'Exporting…'
+                          : 'Export'}
+                      </span>
+                    </button>
+
+                    <AnimatePresence>
+                      {isExportOpen && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -5 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -5 }}
+                          transition={{ duration: 0.15 }}
+                          className="absolute right-0 z-50 mt-2 w-56 origin-top-right rounded-2xl border border-gray-100 bg-white p-1.5 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] focus:outline-none"
+                        >
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsExportOpen(false);
+                              handleExportXlsx();
+                            }}
+                            disabled={exportMutation.isPending || exportXlsxMutation.isPending}
+                            className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm font-bold text-gray-700 hover:bg-emerald-50 hover:text-emerald-600 transition-colors disabled:opacity-50"
+                          >
+                            <span>Excel Workbook (.xlsx)</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsExportOpen(false);
+                              handleExportCsv();
+                            }}
+                            disabled={exportMutation.isPending || exportXlsxMutation.isPending}
+                            className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm font-bold text-gray-700 hover:bg-emerald-50 hover:text-emerald-600 transition-colors disabled:opacity-50"
+                          >
+                            <span>CSV (.csv)</span>
+                          </button>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
                 </div>
 
                 <button
