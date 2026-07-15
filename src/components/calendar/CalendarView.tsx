@@ -60,6 +60,7 @@ const CalendarView: React.FC<Props> = ({
     type: string;
     stageId?: string;
     title: string;
+    expectedCount?: number;
     overdueExtendedOnly?: boolean;
   }>({ isOpen: false, date: '', type: '', title: '' });
 
@@ -89,9 +90,10 @@ const CalendarView: React.FC<Props> = ({
     type: string,
     title: string,
     stageId?: string,
+    expectedCount?: number,
     overdueExtendedOnly?: boolean,
   ) => {
-    setDetailsModal({ isOpen: true, date, type, stageId, title, overdueExtendedOnly });
+    setDetailsModal({ isOpen: true, date, type, stageId, title, expectedCount, overdueExtendedOnly });
   };
 
   if (view !== 'month') {
@@ -161,7 +163,7 @@ const CalendarView: React.FC<Props> = ({
                                   'STAGE_FOLLOWUPS',
                                   `${calendarStageLabel(sf)} Follow-Up - ${sf.count}`,
                                   sf.stageId,
-                                  isOverdueChip,
+                                  sf.count,
                                 )
                               }
                               className="flex w-full items-center justify-between rounded-lg border px-2 py-1 text-left transition-colors"
@@ -190,7 +192,7 @@ const CalendarView: React.FC<Props> = ({
                           <button
                             key={`lead-create-${st.stageId}`}
                             onClick={() =>
-                              openDetails(key, 'LEAD_STAGE_CREATED', `${calendarStageLabel(st)} Created - ${st.count}`, st.stageId)
+                              openDetails(key, 'LEAD_STAGE_CREATED', `${calendarStageLabel(st)} Created - ${st.count}`, st.stageId, st.count)
                             }
                             className="flex w-full items-center justify-between rounded-lg border px-2 py-1 text-left transition-colors"
                             style={{ borderColor: `${st.color}40`, backgroundColor: `${st.color}15` }}
@@ -211,7 +213,7 @@ const CalendarView: React.FC<Props> = ({
                           <button
                             key={`trans-${st.stageId}`}
                             onClick={() =>
-                              openDetails(key, 'STAGE_CREATED', `${calendarStageLabel(st)} Created - ${st.count}`, st.stageId)
+                              openDetails(key, 'STAGE_CREATED', `${calendarStageLabel(st)} Created - ${st.count}`, st.stageId, st.count)
                             }
                             className="flex w-full items-center justify-between rounded-lg border px-2 py-1 text-left transition-colors"
                             style={{ borderColor: `${st.color}40`, backgroundColor: `${st.color}15` }}
@@ -243,6 +245,7 @@ const CalendarView: React.FC<Props> = ({
         type={detailsModal.type}
         stageId={detailsModal.stageId}
         title={detailsModal.title}
+        expectedCount={detailsModal.expectedCount}
         overdueExtendedOnly={detailsModal.overdueExtendedOnly}
         onClose={() => setDetailsModal({ ...detailsModal, isOpen: false })}
         onOpenFollowUp={onOpenFollowUp}

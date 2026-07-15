@@ -40,6 +40,7 @@ interface CalendarDetailsModalProps {
   type: string;
   stageId?: string;
   title: string;
+  expectedCount?: number;
   overdueExtendedOnly?: boolean;
   onClose: () => void;
   onOpenFollowUp?: (followUp: FollowUp) => void;
@@ -53,6 +54,7 @@ const CalendarDetailsModal: React.FC<CalendarDetailsModalProps> = ({
   type,
   stageId,
   title,
+  expectedCount,
   overdueExtendedOnly,
   onClose,
   onOpenFollowUp,
@@ -63,7 +65,7 @@ const CalendarDetailsModal: React.FC<CalendarDetailsModalProps> = ({
     date,
     type,
     stageId,
-    limit: 100,
+    limit: Math.max(100, expectedCount || 0),
     overdueExtendedOnly,
   });
 
