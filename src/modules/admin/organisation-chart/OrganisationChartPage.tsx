@@ -1,24 +1,11 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { ChevronDownSquare, ChevronUpSquare, GitBranch, Search, Users } from 'lucide-react';
+import { ChevronDownSquare, ChevronUpSquare, Filter, GitBranch, RotateCcw, Search, Users } from 'lucide-react';
 import DashboardLayout from '../../../components/dashboard/DashboardLayout';
-import OrganisationTree from './OrganisationTree';
-import { useOrganisationChartQuery } from './useOrganisationChartQuery';
+import OrganisationTree, { OrganisationTreeContext } from './OrganisationTree';
+import { useOrganisationChartQuery, useOrganisationUserDirectoryQuery } from './useOrganisationChartQuery';
 import { useOrganisationChartStore } from './organisationChart.store';
-import { OrganisationChartNode } from './types';
 import UserSidePanel from './UserSidePanel';
-
-const collectNodeIds = (roots: OrganisationChartNode[]): string[] => {
-  const ids: string[] = [];
-  const queue = [...roots];
-  while (queue.length > 0) {
-    const next = queue.shift();
-    if (!next) break;
-    ids.push(next.id);
-    next.children.forEach((child) => queue.push(child));
-  }
-  return ids;
-};
 
 const TreeSkeleton: React.FC = () => (
   <div className="rounded-3xl border border-gray-200 bg-white p-6 md:p-8 shadow-sm">
@@ -48,21 +35,61 @@ const TreeSkeleton: React.FC = () => (
 
 const OrganisationChartPage: React.FC = () => {
   const [includeInactive, setIncludeInactive] = useState(false);
+  const [treeContext, setTreeContext] = useState<OrganisationTreeContext>({
+    nodeIds: [],
+    departments: [],
+    roles: [],
+    offices: [],
+    visibleCount: 0,
+    totalCount: 0,
+    rootCount: 0,
+  });
 
-  const { searchQuery, setSearch, expandAll, collapseAll } = useOrganisationChartStore();
+  const { searchQuery, filters, setSearch, setFilters, expandAll, collapseAll } = useOrganisationChartStore();
   const { data, isLoading, isFetching, isError, error, refetch } = useOrganisationChartQuery(includeInactive);
+  const { data: userDirectory, isFetching: isDirectoryFetching } = useOrganisationUserDirectoryQuery(includeInactive);
 
   const roots = data?.data || [];
   const meta = data?.meta;
-  const allNodeIds = useMemo(() => collectNodeIds(roots), [roots]);
+  const hasActiveFilters = Boolean(searchQuery.trim() || filters.department || filters.role || filters.office || filters.status);
 
   const handleExpandAll = useCallback(() => {
-    expandAll(allNodeIds);
-  }, [allNodeIds, expandAll]);
+    expandAll(treeContext.nodeIds);
+  }, [expandAll, treeContext.nodeIds]);
 
   const handleCollapseAll = useCallback(() => {
-    collapseAll();
-  }, [collapseAll]);
+    collapseAll(treeContext.nodeIds);
+  }, [collapseAll, treeContext.nodeIds]);
+
+  const handleTreeReady = useCallback((context: OrganisationTreeContext) => {
+    setTreeContext((previous) => {
+      if (
+        previous.visibleCount === context.visibleCount &&
+        previous.totalCount === context.totalCount &&
+        previous.rootCount === context.rootCount &&
+        previous.nodeIds.join('|') === context.nodeIds.join('|') &&
+        previous.departments.join('|') === context.departments.join('|') &&
+        previous.roles.join('|') === context.roles.join('|') &&
+        previous.offices.join('|') === context.offices.join('|')
+      ) {
+        return previous;
+      }
+      return context;
+    });
+  }, []);
+
+  const resetFilters = useCallback(() => {
+    setSearch('');
+    setFilters({ department: '', role: '', office: '', status: '' });
+  }, [setFilters, setSearch]);
+
+  const statusOptions = useMemo(
+    () => [
+      { value: 'active', label: 'Active' },
+      { value: 'inactive', label: 'Inactive' },
+    ],
+    [],
+  );
 
   return (
     <DashboardLayout>
@@ -87,7 +114,7 @@ const OrganisationChartPage: React.FC = () => {
                   <input
                     value={searchQuery}
                     onChange={(event) => setSearch(event.target.value)}
-                    placeholder="Search name, role, department"
+                    placeholder="Search name, employee ID, department, role, designation"
                     className="w-full sm:w-72 pl-9 pr-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
                     aria-label="Search organisation chart"
                   />
@@ -95,6 +122,7 @@ const OrganisationChartPage: React.FC = () => {
 
                 <button
                   onClick={handleExpandAll}
+                  disabled={treeContext.nodeIds.length === 0}
                   className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-gray-200 text-sm font-bold hover:bg-gray-50"
                   aria-label="Expand all nodes"
                 >
@@ -103,6 +131,7 @@ const OrganisationChartPage: React.FC = () => {
                 </button>
                 <button
                   onClick={handleCollapseAll}
+                  disabled={treeContext.nodeIds.length === 0}
                   className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-gray-200 text-sm font-bold hover:bg-gray-50"
                   aria-label="Collapse all nodes"
                 >
@@ -118,12 +147,12 @@ const OrganisationChartPage: React.FC = () => {
                 <p className="text-2xl font-black mt-1">{meta?.totalUsers ?? 0}</p>
               </div>
               <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
-                <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Root Nodes</p>
-                <p className="text-2xl font-black mt-1">{meta?.rootCount ?? 0}</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Root Users</p>
+                <p className="text-2xl font-black mt-1">{treeContext.rootCount || 0}</p>
               </div>
               <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
-                <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Orphans</p>
-                <p className="text-2xl font-black mt-1">{meta?.orphanCount ?? 0}</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Visible Users</p>
+                <p className="text-2xl font-black mt-1">{treeContext.visibleCount || 0}</p>
               </div>
               <label className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm flex items-center justify-between gap-3 cursor-pointer">
                 <div>
@@ -139,6 +168,75 @@ const OrganisationChartPage: React.FC = () => {
                   <span className={`block h-5 w-5 rounded-full bg-white transition ${includeInactive ? 'translate-x-5' : 'translate-x-0'}`} />
                 </button>
               </label>
+            </div>
+
+            <div className="rounded-3xl border border-gray-200 bg-white p-4 shadow-sm">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <div>
+                  <p className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.22em] text-emerald-600">
+                    <Filter className="h-4 w-4" />
+                    Tree Filters
+                  </p>
+                  <p className="mt-1 text-sm font-semibold text-gray-500">Filters affect only the displayed tree.</p>
+                </div>
+                {hasActiveFilters ? (
+                  <button
+                    type="button"
+                    onClick={resetFilters}
+                    className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-black uppercase tracking-wider text-gray-600 hover:bg-gray-50"
+                  >
+                    <RotateCcw className="h-3.5 w-3.5" />
+                    Reset
+                  </button>
+                ) : null}
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <select
+                  value={filters.department}
+                  onChange={(event) => setFilters({ department: event.target.value })}
+                  className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-700 outline-none focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/10"
+                  aria-label="Filter by department"
+                >
+                  <option value="">All Departments</option>
+                  {treeContext.departments.map((department) => (
+                    <option key={department} value={department}>{department}</option>
+                  ))}
+                </select>
+                <select
+                  value={filters.role}
+                  onChange={(event) => setFilters({ role: event.target.value })}
+                  className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-700 outline-none focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/10"
+                  aria-label="Filter by role"
+                >
+                  <option value="">All Roles</option>
+                  {treeContext.roles.map((role) => (
+                    <option key={role} value={role}>{role}</option>
+                  ))}
+                </select>
+                <select
+                  value={filters.office}
+                  onChange={(event) => setFilters({ office: event.target.value })}
+                  className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-700 outline-none focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/10"
+                  aria-label="Filter by reporting office"
+                >
+                  <option value="">All Reporting Offices</option>
+                  {treeContext.offices.map((office) => (
+                    <option key={office} value={office}>{office}</option>
+                  ))}
+                </select>
+                <select
+                  value={filters.status}
+                  onChange={(event) => setFilters({ status: event.target.value })}
+                  className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-700 outline-none focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/10"
+                  aria-label="Filter by status"
+                >
+                  <option value="">All Statuses</option>
+                  {statusOptions.map((status) => (
+                    <option key={status.value} value={status.value}>{status.label}</option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             <div className="flex flex-wrap items-center gap-4">
@@ -167,13 +265,15 @@ const OrganisationChartPage: React.FC = () => {
             ) : (
               <div className="rounded-3xl border border-gray-200 bg-white p-4 md:p-6 shadow-sm">
                 <div className="flex items-center justify-between mb-4">
-                  <p className="text-xs font-black uppercase tracking-widest text-gray-400">Hierarchy Tree</p>
+                  <p className="text-xs font-black uppercase tracking-widest text-gray-400">
+                    Supervisor Hierarchy {isDirectoryFetching ? '· syncing details' : ''}
+                  </p>
                   <span className="text-xs font-bold text-gray-500 inline-flex items-center gap-1">
                     <GitBranch className="w-3.5 h-3.5" />
                     Read only
                   </span>
                 </div>
-                <OrganisationTree roots={roots} />
+                <OrganisationTree roots={roots} directory={userDirectory} onTreeReady={handleTreeReady} />
               </div>
             )}
 
@@ -193,4 +293,3 @@ const OrganisationChartPage: React.FC = () => {
 };
 
 export default OrganisationChartPage;
-

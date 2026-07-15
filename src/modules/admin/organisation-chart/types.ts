@@ -7,6 +7,9 @@ export interface OrganisationChartNode {
   email?: string;
   role?: string | null;
   department?: string | null;
+  designation?: string | null;
+  office?: string | null;
+  supervisorName?: string | null;
   reportingTo?: string | null;
   depth: number;
   isActive?: boolean;
@@ -19,6 +22,14 @@ export interface OrganisationChartNode {
   phone?: string | null;
   memberCount?: number;
   activeCount?: number;
+}
+
+export interface OrganisationUserDirectoryEntry {
+  id: string;
+  employeeId?: string | null;
+  designation?: string | null;
+  office?: string | null;
+  avatarUrl?: string | null;
 }
 
 export interface OrganisationChartMeta {
@@ -34,4 +45,3 @@ export interface OrganisationChartApiResponse {
   data: OrganisationChartNode[];
   meta: OrganisationChartMeta;
 }
-

@@ -3,6 +3,7 @@ import { create } from 'zustand';
 interface OrganisationChartFilters {
   department: string;
   role: string;
+  office: string;
   status: string;
 }
 
@@ -16,7 +17,7 @@ interface OrganisationChartState {
   setFilters: (filters: Partial<OrganisationChartFilters>) => void;
   setSelectedNode: (id: string | null) => void;
   expandAll: (nodeIds: string[]) => void;
-  collapseAll: () => void;
+  collapseAll: (nodeIds?: string[]) => void;
   expandNodes: (nodeIds: string[]) => void;
 }
 
@@ -26,6 +27,7 @@ export const useOrganisationChartStore = create<OrganisationChartState>((set) =>
   filters: {
     department: '',
     role: '',
+    office: '',
     status: '',
   },
   selectedNode: null,
@@ -46,7 +48,15 @@ export const useOrganisationChartStore = create<OrganisationChartState>((set) =>
         return acc;
       }, {}),
     })),
-  collapseAll: () => set({ expandedNodes: {} }),
+  collapseAll: (nodeIds) =>
+    set(() => ({
+      expandedNodes: nodeIds
+        ? nodeIds.reduce<Record<string, boolean>>((acc, id) => {
+            acc[id] = false;
+            return acc;
+          }, {})
+        : {},
+    })),
   expandNodes: (nodeIds) =>
     set((state) => {
       const next = { ...state.expandedNodes };
@@ -56,4 +66,3 @@ export const useOrganisationChartStore = create<OrganisationChartState>((set) =>
       return { expandedNodes: next };
     }),
 }));
-
