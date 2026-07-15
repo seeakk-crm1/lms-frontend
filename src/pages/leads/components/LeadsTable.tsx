@@ -1,7 +1,7 @@
 import React, { memo, useMemo, useState } from 'react';
 import { format } from 'date-fns';
-import { formatCurrency } from '../../../utils/currency';
-import { formatPhoneWithFlag } from '../../../utils/phoneUtils';
+import { formatCurrency } from '@/utils/currency';
+import { formatPhoneWithFlag } from '@/utils/phoneUtils';
 
 import { motion } from 'framer-motion';
 import { Archive, ChevronLeft, ChevronRight, Pencil, Star, History } from 'lucide-react';
