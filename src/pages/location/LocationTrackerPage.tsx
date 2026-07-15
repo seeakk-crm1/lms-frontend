@@ -12,9 +12,11 @@ import {
   Play,
   RefreshCw,
   Route,
+  Search,
   Users,
 } from 'lucide-react';
 import DashboardLayout from '../../components/dashboard/DashboardLayout';
+import LocationMap from './components/LocationMap';
 import { connectRealtime } from '../../services/realtime';
 import {
   exportLocationRoute,
@@ -46,11 +48,7 @@ const updatedAgo = (value?: string | null) => {
   return `Last seen ${format(new Date(value), 'hh:mm a')}`;
 };
 
-const mapUrl = (lat?: number | null, lng?: number | null) => {
-  const latitude = lat ?? 20.5937;
-  const longitude = lng ?? 78.9629;
-  return `https://www.openstreetmap.org/export/embed.html?bbox=${longitude - 0.02}%2C${latitude - 0.02}%2C${longitude + 0.02}%2C${latitude + 0.02}&layer=mapnik&marker=${latitude}%2C${longitude}`;
-};
+// mapUrl removed
 
 const LocationTrackerPage: React.FC = () => {
   const [users, setUsers] = useState<LiveLocationUser[]>([]);
@@ -64,14 +62,33 @@ const LocationTrackerPage: React.FC = () => {
   const [replaySpeed, setReplaySpeed] = useState(1);
   const replayTimerRef = useRef<number | null>(null);
 
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedOffice, setSelectedOffice] = useState('All');
+  
+  const offices = useMemo(() => {
+    const set = new Set<string>();
+    users.forEach((u) => { if (u.user.office) set.add(u.user.office); });
+    return ['All', ...Array.from(set)].sort();
+  }, [users]);
+
+  const filteredUsers = useMemo(() => {
+    return users.filter((u) => {
+      const matchName = (u.user.name || '').toLowerCase().includes(searchQuery.toLowerCase()) || 
+                        (u.user.email || '').toLowerCase().includes(searchQuery.toLowerCase());
+      const matchOffice = selectedOffice === 'All' || u.user.office === selectedOffice;
+      return matchName && matchOffice;
+    });
+  }, [users, searchQuery, selectedOffice]);
+
   const selectedUser = useMemo(
-    () => users.find((item) => item.user.id === selectedUserId) || users[0] || null,
-    [selectedUserId, users],
+    () => users.find((item) => item.user.id === selectedUserId) || filteredUsers[0] || null,
+    [selectedUserId, users, filteredUsers],
   );
 
   const selectedRoutePoint = routeData?.points?.[replayIndex] || routeData?.points?.[routeData.points.length - 1];
   const mapLatitude = selectedRoutePoint?.latitude ?? selectedUser?.latitude;
   const mapLongitude = selectedRoutePoint?.longitude ?? selectedUser?.longitude;
+  const mapAccuracy = selectedRoutePoint?.accuracy ?? selectedUser?.accuracy;
 
   const loadLive = async () => {
     const data = await getLiveLocations();
@@ -89,7 +106,8 @@ const LocationTrackerPage: React.FC = () => {
       });
 
     const socket = connectRealtime();
-    const onLocationUpdate = () => {
+    const onLocationUpdate = (data?: any) => {
+      // Optimistic UI update or full reload if needed. The backend emit includes { point, userId }
       void loadLive();
     };
     socket?.on('location_updated', onLocationUpdate);
@@ -188,17 +206,40 @@ const LocationTrackerPage: React.FC = () => {
 
           <div className="grid gap-5 xl:grid-cols-[340px_1fr]">
             <aside className="rounded-2xl border border-gray-100 bg-white p-3 shadow-sm">
-              <div className="mb-3 flex items-center justify-between px-2">
-                <p className="text-xs font-black uppercase tracking-widest text-gray-400">Live Users</p>
-                <span className="rounded-full bg-gray-100 px-2 py-1 text-[10px] font-black text-gray-500">{users.length}</span>
+              <div className="mb-3 space-y-3">
+                <div className="flex items-center justify-between px-2">
+                  <p className="text-xs font-black uppercase tracking-widest text-gray-400">Live Users</p>
+                  <span className="rounded-full bg-gray-100 px-2 py-1 text-[10px] font-black text-gray-500">{filteredUsers.length}</span>
+                </div>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search users..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full rounded-xl border border-gray-200 bg-gray-50 py-2 pl-9 pr-4 text-sm font-semibold outline-none focus:border-emerald-500 focus:bg-white"
+                  />
+                </div>
+                {offices.length > 2 && (
+                  <select
+                    value={selectedOffice}
+                    onChange={(e) => setSelectedOffice(e.target.value)}
+                    className="w-full rounded-xl border border-gray-200 bg-gray-50 p-2 text-sm font-semibold outline-none focus:border-emerald-500 focus:bg-white"
+                  >
+                    {offices.map((office) => (
+                      <option key={office} value={office}>{office}</option>
+                    ))}
+                  </select>
+                )}
               </div>
-              <div className="custom-scrollbar max-h-[680px] space-y-2 overflow-auto">
+              <div className="custom-scrollbar max-h-[600px] space-y-2 overflow-auto">
                 {loading ? (
                   <div className="p-6 text-center text-sm font-bold text-gray-400">Loading live locations...</div>
-                ) : users.length === 0 ? (
-                  <div className="p-6 text-center text-sm font-bold text-gray-400">No field users available.</div>
+                ) : filteredUsers.length === 0 ? (
+                  <div className="p-6 text-center text-sm font-bold text-gray-400">No matching users found.</div>
                 ) : (
-                  users.map((item) => (
+                  filteredUsers.map((item) => (
                     <button
                       key={item.user.id}
                       onClick={() => setSelectedUserId(item.user.id)}
@@ -245,13 +286,16 @@ const LocationTrackerPage: React.FC = () => {
                     </button>
                   </div>
                 </div>
-                <div className="relative h-[440px] bg-gray-100">
-                  <iframe title="Live location map" src={mapUrl(mapLatitude, mapLongitude)} className="h-full w-full border-0" loading="lazy" />
-                  {!mapLatitude || !mapLongitude ? (
-                    <div className="absolute inset-0 flex items-center justify-center bg-white/80 text-sm font-black text-gray-500">
-                      Waiting for live GPS update.
-                    </div>
-                  ) : null}
+                <div className="relative h-[500px] bg-gray-100 rounded-b-2xl overflow-hidden">
+                  <LocationMap
+                    latitude={mapLatitude}
+                    longitude={mapLongitude}
+                    accuracy={mapAccuracy}
+                    routePoints={routeData?.points || []}
+                    stops={routeData?.stops || []}
+                    replayIndex={replayIndex}
+                    isReplaying={replayPlaying}
+                  />
                 </div>
               </div>
 
@@ -277,12 +321,25 @@ const LocationTrackerPage: React.FC = () => {
                     {routeLoading ? (
                       <p className="text-sm font-bold text-gray-400">Loading route...</p>
                     ) : routeData?.points?.length ? (
-                      routeData.points.filter((_, index) => index % Math.max(1, Math.floor(routeData.points.length / 12)) === 0).map((point, index) => (
-                        <div key={`${point.recordedAt}-${index}`} className="flex gap-3 border-l-2 border-emerald-100 pl-3">
-                          <span className="text-xs font-black text-emerald-600">{format(new Date(point.recordedAt), 'hh:mm a')}</span>
-                          <p className="text-xs font-semibold text-gray-600">Location update · {point.latitude.toFixed(5)}, {point.longitude.toFixed(5)}</p>
-                        </div>
-                      ))
+                      routeData.points.filter((_, index) => index % Math.max(1, Math.floor(routeData.points.length / 12)) === 0).map((point, index, array) => {
+                        const actualIndex = routeData.points.indexOf(point);
+                        return (
+                          <div 
+                            key={`${point.recordedAt}-${actualIndex}`} 
+                            className="flex gap-3 border-l-2 border-emerald-100 pl-3 cursor-pointer hover:bg-emerald-50/50 p-2 rounded-r-lg transition"
+                            onClick={() => {
+                                setReplayPlaying(false);
+                                setReplayIndex(actualIndex);
+                            }}
+                          >
+                            <span className="text-xs font-black text-emerald-600">{format(new Date(point.recordedAt), 'hh:mm a')}</span>
+                            <div className="flex-1">
+                              <p className="text-xs font-semibold text-gray-900">Location update</p>
+                              <p className="text-[10px] font-bold text-gray-400">{Number((point.speed || 0) * 3.6).toFixed(1)} km/h · {point.latitude.toFixed(4)}, {point.longitude.toFixed(4)}</p>
+                            </div>
+                          </div>
+                        )
+                      })
                     ) : (
                       <p className="text-sm font-bold text-gray-400">No route points for this date.</p>
                     )}
@@ -292,13 +349,28 @@ const LocationTrackerPage: React.FC = () => {
                 <section className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
                   <h2 className="text-sm font-black uppercase tracking-widest text-gray-500">Visited Stops</h2>
                   <div className="mt-4 max-h-80 space-y-3 overflow-auto">
-                    {routeData?.stops?.length ? routeData.stops.map((stop, index) => (
-                      <div key={`${stop.startedAt}-${index}`} className="rounded-xl border border-gray-100 bg-gray-50 p-3">
-                        <p className="text-sm font-black text-gray-900">Unknown Location</p>
-                        <p className="mt-1 text-xs font-semibold text-gray-500">{format(new Date(stop.startedAt), 'hh:mm a')} · {formatDuration(stop.durationSeconds)}</p>
-                        <p className="mt-1 text-[11px] font-bold text-gray-400">{stop.latitude.toFixed(5)}, {stop.longitude.toFixed(5)}</p>
-                      </div>
-                    )) : (
+                    {routeData?.stops?.length ? routeData.stops.map((stop, index) => {
+                       const relatedPointIndex = routeData.points.findIndex(p => p.recordedAt === stop.startedAt);
+                       return (
+                        <div 
+                           key={`${stop.startedAt}-${index}`} 
+                           className="rounded-xl border border-gray-100 bg-gray-50 p-3 cursor-pointer hover:border-red-200 hover:bg-red-50/50 transition"
+                           onClick={() => {
+                             if (relatedPointIndex !== -1) {
+                               setReplayPlaying(false);
+                               setReplayIndex(relatedPointIndex);
+                             }
+                           }}
+                        >
+                          <div className="flex items-center gap-2 mb-1">
+                            <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                            <p className="text-sm font-black text-gray-900">Detected Stop</p>
+                          </div>
+                          <p className="mt-1 text-xs font-semibold text-gray-500">{format(new Date(stop.startedAt), 'hh:mm a')} · Duration: {formatDuration(stop.durationSeconds)}</p>
+                          <p className="mt-1 text-[11px] font-bold text-gray-400">{stop.latitude.toFixed(5)}, {stop.longitude.toFixed(5)}</p>
+                        </div>
+                      )
+                    }) : (
                       <p className="text-sm font-bold text-gray-400">No 5+ minute stops detected.</p>
                     )}
                   </div>

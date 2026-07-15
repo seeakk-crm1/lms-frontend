@@ -62,7 +62,7 @@ export interface DashboardSummaryResponse {
   };
 }
 
-const buildRequestKey = (filters: Record<string, unknown>): string =>
+const buildRequestKey = (filters: Record<string, any>): string =>
   JSON.stringify(
     Object.entries(filters)
       .filter(([, value]) => value !== undefined && value !== null && value !== '')

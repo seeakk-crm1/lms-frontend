@@ -57,8 +57,8 @@ const toPoint = (position: GeolocationPosition): LocationPointPayload => ({
 const LocationTrackingClient = () => {
   const user = useAuthStore((state) => state.user);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const sessionIdRef = useRef<string | undefined>();
-  const attendanceRecordIdRef = useRef<string | undefined>();
+  const sessionIdRef = useRef<string | undefined>(undefined);
+  const attendanceRecordIdRef = useRef<string | undefined>(undefined);
   const lastPointRef = useRef<LocationPointPayload | null>(null);
   const deniedToastShownRef = useRef(false);
 
