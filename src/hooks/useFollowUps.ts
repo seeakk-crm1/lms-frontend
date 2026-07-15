@@ -264,6 +264,7 @@ export const useCompleteFollowUpMutation = () => {
       queryClient.invalidateQueries({ queryKey: MANDATORY_FOLLOWUP_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: OVERDUE_MANDATORY_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: ['followups', 'advanced-calendar'] });
+      queryClient.invalidateQueries({ queryKey: ['followups', 'advanced-calendar-details'] });
       queryClient.invalidateQueries({ queryKey: ['leads'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
       toast.success('Follow-up completed');
@@ -282,6 +283,7 @@ export const useSnoozeFollowUpMutation = () => {
       queryClient.invalidateQueries({ queryKey: MANDATORY_FOLLOWUP_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: OVERDUE_MANDATORY_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: ['followups', 'advanced-calendar'] });
+      queryClient.invalidateQueries({ queryKey: ['followups', 'advanced-calendar-details'] });
       toast.success('Follow-up snoozed');
     },
     onError: (error: any) => {
