@@ -73,8 +73,12 @@ const LocationTrackerPage: React.FC = () => {
 
   const filteredUsers = useMemo(() => {
     return users.filter((u) => {
-      const matchName = (u.user.name || '').toLowerCase().includes(searchQuery.toLowerCase()) || 
-                        (u.user.email || '').toLowerCase().includes(searchQuery.toLowerCase());
+      const q = searchQuery.toLowerCase();
+      const matchName = (u.user.name || '').toLowerCase().includes(q) || 
+                        (u.user.email || '').toLowerCase().includes(q) ||
+                        (u.user.role || '').toLowerCase().includes(q) ||
+                        (u.user.phone || '').toLowerCase().includes(q) ||
+                        (u.user.employeeId || '').toLowerCase().includes(q);
       const matchOffice = selectedOffice === 'All' || u.user.office === selectedOffice;
       return matchName && matchOffice;
     });

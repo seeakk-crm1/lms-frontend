@@ -15,8 +15,10 @@ export interface LocationPointPayload {
 export interface LiveLocationUser {
   user: {
     id: string;
-    name?: string | null;
-    email?: string | null;
+    name: string;
+    email: string;
+    phone?: string | null;
+    employeeId?: string | null;
     avatarUrl?: string | null;
     role?: string | null;
     department?: string | null;
