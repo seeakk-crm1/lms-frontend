@@ -3,25 +3,44 @@ import { motion } from 'framer-motion';
 import { Calendar, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { getTodayFollowUpUtilization } from '../../services/followupSettings.api';
 
+type FollowUpUtilization = { count: number; limit: number; limitEnabled: boolean };
+
+let utilizationRequest: Promise<FollowUpUtilization | null> | null = null;
+
+const loadTodayFollowUpUtilization = (): Promise<FollowUpUtilization | null> => {
+  if (!utilizationRequest) {
+    utilizationRequest = getTodayFollowUpUtilization()
+      .then((res) => (res.success ? res.data : null))
+      .finally(() => {
+        utilizationRequest = null;
+      });
+  }
+  return utilizationRequest;
+};
+
 const FollowUpCapacityWidget: React.FC = () => {
-  const [data, setData] = useState<{ count: number; limit: number; limitEnabled: boolean } | null>(null);
+  const [data, setData] = useState<FollowUpUtilization | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let mounted = true;
     const fetchUtilization = async () => {
       try {
-        const res = await getTodayFollowUpUtilization();
-        if (res.success) {
-          setData(res.data);
+        const nextData = await loadTodayFollowUpUtilization();
+        if (mounted && nextData) {
+          setData(nextData);
         }
       } catch (error) {
         console.error('Failed to load today follow-up utilization', error);
       } finally {
-        setLoading(false);
+        if (mounted) setLoading(false);
       }
     };
 
-    fetchUtilization();
+    void fetchUtilization();
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   if (loading || !data) {

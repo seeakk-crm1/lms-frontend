@@ -51,6 +51,13 @@ const buildDateRange = (view: 'month' | 'week' | 'day' | 'list', selectedDate: s
   };
 };
 
+const invalidateLeadFollowUpViews = (queryClient: ReturnType<typeof useQueryClient>, followUp?: FollowUp) => {
+  queryClient.invalidateQueries({ queryKey: ['leads'] });
+  if (followUp?.leadId) {
+    queryClient.invalidateQueries({ queryKey: ['lead', followUp.leadId] });
+  }
+};
+
 export const useCalendarQuery = () => {
   const { view, selectedDate, selectedUser } = useFollowupStore();
 
@@ -217,12 +224,13 @@ export const useCreateFollowUpMutation = () => {
 
   return useMutation({
     mutationFn: (payload: CreateFollowUpInput) => createFollowUp(payload),
-    onSuccess: () => {
+    onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: ['followups', 'calendar'] });
       queryClient.invalidateQueries({ queryKey: ['followups', 'today'] });
       queryClient.invalidateQueries({ queryKey: MANDATORY_FOLLOWUP_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: OVERDUE_MANDATORY_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: ['followups', 'advanced-calendar'] });
+      invalidateLeadFollowUpViews(queryClient, response?.data);
       toast.success('Follow-up scheduled');
     },
     onError: (error: any) => {
@@ -257,7 +265,7 @@ export const useCompleteFollowUpMutation = () => {
       context?.previousToday?.forEach(([queryKey, data]) => queryClient.setQueryData(queryKey, data));
       toast.error(error?.response?.data?.message || 'Failed to complete follow-up');
     },
-    onSuccess: () => {
+    onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: ['followups', 'calendar'] });
       queryClient.invalidateQueries({ queryKey: ['followups', 'today'] });
       queryClient.invalidateQueries({ queryKey: ['followups', 'history'] });
@@ -265,7 +273,7 @@ export const useCompleteFollowUpMutation = () => {
       queryClient.invalidateQueries({ queryKey: OVERDUE_MANDATORY_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: ['followups', 'advanced-calendar'] });
       queryClient.invalidateQueries({ queryKey: ['followups', 'advanced-calendar-details'] });
-      queryClient.invalidateQueries({ queryKey: ['leads'] });
+      invalidateLeadFollowUpViews(queryClient, response?.data);
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
       toast.success('Follow-up completed');
     },
@@ -276,7 +284,7 @@ export const useSnoozeFollowUpMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, payload }: { id: string; payload: SnoozeFollowUpInput }) => snoozeFollowUp(id, payload),
-    onSuccess: () => {
+    onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: ['followups', 'calendar'] });
       queryClient.invalidateQueries({ queryKey: ['followups', 'today'] });
       queryClient.invalidateQueries({ queryKey: ['followups', 'alerts'] });
@@ -284,6 +292,7 @@ export const useSnoozeFollowUpMutation = () => {
       queryClient.invalidateQueries({ queryKey: OVERDUE_MANDATORY_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: ['followups', 'advanced-calendar'] });
       queryClient.invalidateQueries({ queryKey: ['followups', 'advanced-calendar-details'] });
+      invalidateLeadFollowUpViews(queryClient, response?.data);
       toast.success('Follow-up snoozed');
     },
     onError: (error: any) => {

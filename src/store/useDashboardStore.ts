@@ -88,6 +88,14 @@ const createInitialDashboardSlice = (): Omit<DashboardState, 'reset' | 'setSelec
 
 let isFetchingAPI = false;
 let dashboardRequestSequence = 0;
+let inFlightDashboardRequestKey: string | null = null;
+
+const buildDashboardRequestKey = (filters: DashboardSummaryFilters): string =>
+    JSON.stringify(
+        Object.entries(filters)
+            .filter(([, value]) => value !== undefined && value !== null && value !== '')
+            .sort(([a], [b]) => a.localeCompare(b)),
+    );
 
 const useDashboardStore = create<DashboardState>((set) => ({
     ...createInitialDashboardSlice(),
@@ -116,13 +124,15 @@ const useDashboardStore = create<DashboardState>((set) => ({
         const requestedOfficeId = requestedFilters.officeId;
         const hasExistingData = state.kpiData.length > 0;
         const requestId = dashboardRequestSequence + 1;
+        const requestKey = buildDashboardRequestKey(requestedFilters);
         dashboardRequestSequence = requestId;
 
-        if (isFetchingAPI && JSON.stringify(requestedFilters) === JSON.stringify(state.filters)) {
+        if (isFetchingAPI && requestKey === inFlightDashboardRequestKey) {
             return;
         }
 
         isFetchingAPI = true;
+        inFlightDashboardRequestKey = requestKey;
 
         set({
             isLoading: true,
@@ -131,7 +141,7 @@ const useDashboardStore = create<DashboardState>((set) => ({
             selectedRange: requestedRange,
             selectedOfficeId: requestedOfficeId,
             filters: requestedFilters,
-            kpiData: [],
+            ...(hasExistingData ? {} : { kpiData: [] }),
         });
 
         try {
@@ -166,7 +176,10 @@ const useDashboardStore = create<DashboardState>((set) => ({
                 isRefreshing: false,
             });
         } finally {
-            isFetchingAPI = false;
+            if (requestId === dashboardRequestSequence) {
+                isFetchingAPI = false;
+                inFlightDashboardRequestKey = null;
+            }
         }
     }
 }));

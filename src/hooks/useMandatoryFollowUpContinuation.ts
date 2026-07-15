@@ -58,6 +58,9 @@ export const useSaveMandatoryFollowUpContinuationMutation = () => {
 
       queryClient.invalidateQueries({ queryKey: ['followups'] });
       queryClient.invalidateQueries({ queryKey: ['leads'] });
+      if (response.data?.leadId) {
+        queryClient.invalidateQueries({ queryKey: ['lead', response.data.leadId] });
+      }
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
       void queryClient.invalidateQueries({ queryKey: ['followups', 'overdue-mandatory'] });
       toast.success(

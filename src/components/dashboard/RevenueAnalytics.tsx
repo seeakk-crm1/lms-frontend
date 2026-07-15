@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
 import { DollarSign, TrendingUp, Calendar, Award, Filter, RefreshCw, UserCheck, PieChart, Trophy, Briefcase } from 'lucide-react';
@@ -22,6 +22,40 @@ const formatCurrency = (val: number) => {
 
 type RevenueAnalyticsProps = {
   dashboardFilters?: DashboardSummaryFilters;
+};
+
+type RevenueMetadata = {
+  users: Array<{ id: string; label: string; subtitle?: string }>;
+  stages: Array<{ id: string; label: string; color?: string; isClosed?: boolean }>;
+  supervisors: Array<{ id: string; name: string; username?: string; email?: string }>;
+};
+
+let revenueMetadataRequest: Promise<RevenueMetadata> | null = null;
+
+const loadRevenueMetadata = (force = false): Promise<RevenueMetadata> => {
+  if (force) revenueMetadataRequest = null;
+  if (!revenueMetadataRequest) {
+    revenueMetadataRequest = Promise.all([getLeadMeta(), getSupervisors()])
+      .then(([leadMeta, supervisorsList]) => {
+        let supervisors: any[] = [];
+        if (Array.isArray(supervisorsList)) {
+          supervisors = supervisorsList;
+        } else if (supervisorsList && Array.isArray((supervisorsList as any).supervisors)) {
+          supervisors = (supervisorsList as any).supervisors;
+        }
+
+        return {
+          users: leadMeta.users || [],
+          stages: (leadMeta.stages || []).filter((s) => s.isClosed && !s.isLOB),
+          supervisors,
+        };
+      })
+      .catch((error) => {
+        revenueMetadataRequest = null;
+        throw error;
+      });
+  }
+  return revenueMetadataRequest;
 };
 
 const RevenueAnalytics: React.FC<RevenueAnalyticsProps> = ({ dashboardFilters }) => {
@@ -67,59 +101,53 @@ const RevenueAnalytics: React.FC<RevenueAnalyticsProps> = ({ dashboardFilters })
 
   // Chart Range State
   const [chartView, setChartView] = useState<'daily' | 'monthly' | 'yearly'>('daily');
+  const revenueRequestSequence = useRef(0);
 
-  const fetchMetadata = async () => {
+  const fetchMetadata = useCallback(async (force = false) => {
     try {
-      const [leadMeta, supervisorsList] = await Promise.all([
-        getLeadMeta(),
-        getSupervisors(),
-      ]);
-
-      let supervisors: any[] = [];
-      if (Array.isArray(supervisorsList)) {
-        supervisors = supervisorsList;
-      } else if (supervisorsList && Array.isArray((supervisorsList as any).supervisors)) {
-        supervisors = (supervisorsList as any).supervisors;
-      }
-
-      setMetaOptions({
-        users: leadMeta.users || [],
-        stages: (leadMeta.stages || []).filter((s) => s.isClosed && !s.isLOB),
-        supervisors,
-      });
+      setMetaOptions(await loadRevenueMetadata(force));
     } catch (err: any) {
       console.error('Failed to load filters metadata', err);
     }
-  };
+  }, []);
+
+  const effectiveFilters = useMemo<RevenueAnalyticsFilters>(() => ({
+    ...filters,
+    officeId: dashboardFilters?.officeId || filters.officeId,
+    userId: dashboardFilters?.userId || filters.userId,
+    stageId: dashboardFilters?.stageId || filters.stageId,
+    sourceId: dashboardFilters?.sourceId || filters.sourceId,
+    status: dashboardFilters?.status || filters.status,
+    dateFrom: dashboardFilters?.dateFrom || filters.dateFrom,
+    dateTo: dashboardFilters?.dateTo || filters.dateTo,
+  }), [dashboardFilters, filters]);
 
   const fetchRevenueData = useCallback(async (isRefresh = false) => {
+    const requestId = revenueRequestSequence.current + 1;
+    revenueRequestSequence.current = requestId;
+
     if (isRefresh) setRefreshing(true);
     else setLoading(true);
 
     setError(null);
     try {
-      const res = await getRevenueAnalytics({
-        ...filters,
-        officeId: dashboardFilters?.officeId || filters.officeId,
-        userId: dashboardFilters?.userId || filters.userId,
-        stageId: dashboardFilters?.stageId || filters.stageId,
-        sourceId: dashboardFilters?.sourceId || filters.sourceId,
-        status: dashboardFilters?.status || filters.status,
-        dateFrom: dashboardFilters?.dateFrom || filters.dateFrom,
-        dateTo: dashboardFilters?.dateTo || filters.dateTo,
-      });
+      const res = await getRevenueAnalytics(effectiveFilters);
+      if (requestId !== revenueRequestSequence.current) return;
       if (res.success && res.data) {
         setData(res.data);
       } else {
         setError('Failed to load revenue data');
       }
     } catch (err: any) {
+      if (requestId !== revenueRequestSequence.current) return;
       setError(err?.response?.data?.message || err.message || 'An error occurred fetching revenue analytics');
     } finally {
-      setLoading(false);
-      setRefreshing(false);
+      if (requestId === revenueRequestSequence.current) {
+        setLoading(false);
+        setRefreshing(false);
+      }
     }
-  }, [dashboardFilters, filters]);
+  }, [effectiveFilters]);
 
   useEffect(() => {
     void fetchMetadata();
@@ -162,7 +190,7 @@ const RevenueAnalytics: React.FC<RevenueAnalyticsProps> = ({ dashboardFilters })
         }));
       }
 
-      void fetchMetadata();
+      void fetchMetadata(true);
       void fetchRevenueData(true);
     };
 

@@ -1,5 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import DashboardLayout from '../components/dashboard/DashboardLayout';
 import KPICards from '../components/dashboard/KPICards';
 import LeadGrowthChart from '../components/dashboard/LeadGrowthChart';
@@ -24,18 +23,67 @@ interface DashboardProps {
     mode?: 'admin' | 'operations';
 }
 
+type DashboardFilterMeta = {
+    stages: Option[];
+    sources: Option[];
+};
+
+let filterMetaRequest: Promise<DashboardFilterMeta> | null = null;
+const userOptionsRequests = new Map<string, Promise<Option[]>>();
+
+const loadDashboardFilterMeta = (): Promise<DashboardFilterMeta> => {
+    if (!filterMetaRequest) {
+        filterMetaRequest = getLeadMeta()
+            .then((meta) => ({
+                stages: (meta.stages || []).map((item: any) => ({ value: item.id, label: item.label })),
+                sources: (meta.sources || []).map((item: any) => ({ value: item.id, label: item.label })),
+            }))
+            .catch((error) => {
+                filterMetaRequest = null;
+                throw error;
+            });
+    }
+    return filterMetaRequest;
+};
+
+const loadDashboardUserOptions = (officeId?: string): Promise<Option[]> => {
+    const key = officeId || 'ALL';
+    const existing = userOptionsRequests.get(key);
+    if (existing) return existing;
+
+    const request = getUsers({
+        page: 1,
+        limit: 500,
+        isActive: true,
+        officeId,
+    })
+        .then((payload) => {
+            const users = payload?.users || [];
+            return users
+                .filter((item: any) => item?.isActive !== false)
+                .map((item: any) => ({
+                    value: item.id,
+                    label: item.name || item.username || item.email,
+                }));
+        })
+        .finally(() => {
+            userOptionsRequests.delete(key);
+        });
+
+    userOptionsRequests.set(key, request);
+    return request;
+};
+
 const Dashboard: React.FC<DashboardProps> = ({ mode = 'operations' }) => {
     const fetchDashboardData = useDashboardStore((state) => state.fetchDashboardData);
     const dashboardFilters = useDashboardStore((state) => state.filters);
     const selectedOfficeId = useDashboardStore((state) => state.selectedOfficeId);
     const error = useDashboardStore((state) => state.error);
     const user = useAuthStore((state) => state.user);
-    const [filterMeta, setFilterMeta] = useState<{
-        stages: Option[];
-        sources: Option[];
-    }>({ stages: [], sources: [] });
+    const [filterMeta, setFilterMeta] = useState<DashboardFilterMeta>({ stages: [], sources: [] });
     const [userOptions, setUserOptions] = useState<Option[]>([]);
     const [isLoadingUsers, setIsLoadingUsers] = useState(false);
+    const selectedUserIdRef = useRef(dashboardFilters.userId);
 
     const canSeeMetrics = hasAnyPermission(user?.permissions || [], [
         'LEADS_VIEW_ALL',
@@ -95,7 +143,11 @@ const Dashboard: React.FC<DashboardProps> = ({ mode = 'operations' }) => {
         [],
     );
 
-    const hasFetched = React.useRef(false);
+    const hasFetched = useRef(false);
+
+    useEffect(() => {
+        selectedUserIdRef.current = dashboardFilters.userId;
+    }, [dashboardFilters.userId]);
 
     useEffect(() => {
         if (!shouldFetchDashboardData) return;
@@ -107,13 +159,10 @@ const Dashboard: React.FC<DashboardProps> = ({ mode = 'operations' }) => {
 
     useEffect(() => {
         let mounted = true;
-        void getLeadMeta()
+        void loadDashboardFilterMeta()
             .then((meta) => {
                 if (!mounted) return;
-                setFilterMeta({
-                    stages: (meta.stages || []).map((item: any) => ({ value: item.id, label: item.label })),
-                    sources: (meta.sources || []).map((item: any) => ({ value: item.id, label: item.label })),
-                });
+                setFilterMeta(meta);
             })
             .catch(() => {
                 if (mounted) setFilterMeta({ stages: [], sources: [] });
@@ -127,23 +176,12 @@ const Dashboard: React.FC<DashboardProps> = ({ mode = 'operations' }) => {
         if (!showUserFilter) return;
         let mounted = true;
         setIsLoadingUsers(true);
-        void getUsers({
-            page: 1,
-            limit: 500,
-            isActive: true,
-            officeId: selectedOfficeId || undefined,
-        })
-            .then((payload) => {
+        void loadDashboardUserOptions(selectedOfficeId || undefined)
+            .then((options) => {
                 if (!mounted) return;
-                const users = payload?.users || [];
-                const options = users
-                    .filter((item: any) => item?.isActive !== false)
-                    .map((item: any) => ({
-                        value: item.id,
-                        label: item.name || item.username || item.email,
-                    }));
                 setUserOptions(options);
-                if (dashboardFilters.userId && !options.some((option) => option.value === dashboardFilters.userId)) {
+                const selectedUserId = selectedUserIdRef.current;
+                if (selectedUserId && !options.some((option) => option.value === selectedUserId)) {
                     void fetchDashboardData({ userId: undefined });
                 }
             })
@@ -156,17 +194,12 @@ const Dashboard: React.FC<DashboardProps> = ({ mode = 'operations' }) => {
         return () => {
             mounted = false;
         };
-    }, [dashboardFilters.userId, fetchDashboardData, selectedOfficeId, showUserFilter]);
+    }, [fetchDashboardData, selectedOfficeId, showUserFilter]);
 
-    const applyDashboardFilters = (patch: Partial<DashboardSummaryFilters>) => {
+    const applyDashboardFilters = useCallback((patch: Partial<DashboardSummaryFilters>) => {
         void fetchDashboardData(patch);
-    };
+    }, [fetchDashboardData]);
 
-    useEffect(() => {
-        console.log('Dashboard Render Complete');
-    }, []);
-
-    console.log('Dashboard Render Started');
     return (
         <DashboardLayout>
             <div className="flex-1 overflow-x-hidden overflow-y-auto custom-scrollbar relative">

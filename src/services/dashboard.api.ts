@@ -62,12 +62,33 @@ export interface DashboardSummaryResponse {
   };
 }
 
-export const getDashboardSummary = async (filters: DashboardSummaryFilters): Promise<DashboardSummaryResponse> => {
-  const response = await api.get('/dashboard/summary', {
-    params: filters,
-  });
+const buildRequestKey = (filters: Record<string, unknown>): string =>
+  JSON.stringify(
+    Object.entries(filters)
+      .filter(([, value]) => value !== undefined && value !== null && value !== '')
+      .sort(([a], [b]) => a.localeCompare(b)),
+  );
 
-  return response.data;
+const inFlightSummaryRequests = new Map<string, Promise<DashboardSummaryResponse>>();
+const inFlightRevenueRequests = new Map<string, Promise<RevenueAnalyticsResponse>>();
+
+export const getDashboardSummary = async (filters: DashboardSummaryFilters): Promise<DashboardSummaryResponse> => {
+  const key = buildRequestKey(filters);
+  const existing = inFlightSummaryRequests.get(key);
+  if (existing) return existing;
+
+  const request = api
+    .get('/dashboard/summary', {
+      params: filters,
+    })
+    .then((response) => response.data);
+
+  inFlightSummaryRequests.set(key, request);
+  try {
+    return await request;
+  } finally {
+    inFlightSummaryRequests.delete(key);
+  }
 };
 
 export interface RevenueAnalyticsFilters {
@@ -105,8 +126,20 @@ export interface RevenueAnalyticsResponse {
 }
 
 export const getRevenueAnalytics = async (filters: RevenueAnalyticsFilters): Promise<RevenueAnalyticsResponse> => {
-  const response = await api.get('/dashboard/revenue', {
-    params: filters,
-  });
-  return response.data;
+  const key = buildRequestKey(filters);
+  const existing = inFlightRevenueRequests.get(key);
+  if (existing) return existing;
+
+  const request = api
+    .get('/dashboard/revenue', {
+      params: filters,
+    })
+    .then((response) => response.data);
+
+  inFlightRevenueRequests.set(key, request);
+  try {
+    return await request;
+  } finally {
+    inFlightRevenueRequests.delete(key);
+  }
 };

@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Settings,
@@ -50,6 +51,7 @@ import {
 import type { FollowUp } from '../../types/followup.types';
 
 const FollowUpSettingsPage: React.FC = () => {
+  const queryClient = useQueryClient();
   const user = useAuthStore((state) => state.user);
   const updateUser = useAuthStore((state) => state.updateUser);
   const permissions = user?.permissions || [];
@@ -499,6 +501,14 @@ const FollowUpSettingsPage: React.FC = () => {
           setBulkReasonId('');
           setBulkDescription('');
           setBulkAutoDistribute(false);
+        }
+        if (movedCount > 0) {
+          queryClient.invalidateQueries({ queryKey: ['leads'] });
+          queryClient.invalidateQueries({ queryKey: ['followups', 'calendar'] });
+          queryClient.invalidateQueries({ queryKey: ['followups', 'today'] });
+          queryClient.invalidateQueries({ queryKey: ['followups', 'history'] });
+          queryClient.invalidateQueries({ queryKey: ['followups', 'advanced-calendar'] });
+          queryClient.invalidateQueries({ queryKey: ['followups', 'advanced-calendar-details'] });
         }
         loadPendingFollowUps();
       }

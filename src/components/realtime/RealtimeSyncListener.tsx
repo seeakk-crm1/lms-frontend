@@ -9,6 +9,8 @@ import { useMandatoryFollowUpBlocked } from '../../hooks/useMandatoryFollowUpBlo
 import useDashboardStore from '../../store/useDashboardStore';
 import { dispatchAttendanceRefresh } from '../../utils/attendanceRefresh';
 
+let dashboardRefreshTimer: ReturnType<typeof setTimeout> | null = null;
+
 const refreshAuthenticatedUser = async (): Promise<void> => {
   const { updateUser, clearAuth } = useAuthStore.getState();
   try {
@@ -42,7 +44,17 @@ const invalidatePermissionBoundQueries = (): void => {
 const refetchDashboardIfLoaded = (): void => {
   const state = useDashboardStore.getState();
   if (state.kpiData.length === 0) return;
-  void state.fetchDashboardData(state.selectedRange);
+
+  if (dashboardRefreshTimer) {
+    clearTimeout(dashboardRefreshTimer);
+  }
+
+  dashboardRefreshTimer = setTimeout(() => {
+    dashboardRefreshTimer = null;
+    const latestState = useDashboardStore.getState();
+    if (latestState.kpiData.length === 0) return;
+    void latestState.fetchDashboardData();
+  }, 300);
 };
 
 const RealtimeSyncListener = () => {
