@@ -66,6 +66,7 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({ open, onClose, init
     handleSubmit,
     reset,
     watch,
+    control,
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema) as any,

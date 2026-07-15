@@ -3,6 +3,7 @@ import { Controller, useFormContext } from 'react-hook-form';
 import type { UserFormData } from './CreateUserModal.types';
 import PhoneInput from '../common/PhoneInput';
 import { validatePhoneStr } from '../../utils/phoneUtils';
+import type { PhoneCountry } from '../../constants/phoneCountries';
 
 interface AddressLevelOption {
   id: string;
