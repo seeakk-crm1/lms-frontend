@@ -47,6 +47,18 @@ const sidebarMenus: SidebarSection[] = [
                     { label: 'Departments', path: '/admin/departments', requiredPermissions: ['DEPARTMENTS_VIEW'] },
                     { label: 'Organization Chart', path: '/admin/organisation-chart', requiredPermissions: ['USERS_VIEW', 'DEPARTMENTS_VIEW'] },
                     { label: 'Roster Sheet', path: '/admin/roster', requiredPermissions: ['USERS_VIEW', 'SYSTEM_CONFIG'] },
+                    {
+                        label: 'Location Tracker',
+                        path: '/location-tracker',
+                        requiredPermissions: [
+                            'LOCATION_TRACKING_VIEW_LIVE',
+                            'LOCATION_TRACKING_VIEW_HISTORY',
+                            'LOCATION_TRACKING_REPLAY',
+                            'LOCATION_TRACKING_VIEW_ALL',
+                            'LOCATION_TRACKING_VIEW_ASSIGNED',
+                            'SYSTEM_CONFIG'
+                        ]
+                    },
                     { label: 'Offices', path: '/admin/offices', requiredPermissions: ['SYSTEM_CONFIG'] }
                 ]
             },

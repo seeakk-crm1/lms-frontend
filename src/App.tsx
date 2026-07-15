@@ -23,6 +23,7 @@ import { queryClient } from './lib/queryClient';
 import FollowUpReminderListener from './components/calendar/FollowUpReminderListener';
 import AuthenticatedWorkflowGates from './components/AuthenticatedWorkflowGates';
 import RealtimeSyncListener from './components/realtime/RealtimeSyncListener';
+import LocationTrackingClient from './components/location/LocationTrackingClient';
 import { shouldRunAuthenticatedWorkflow } from './utils/publicRoutes';
 import Login from './pages/Login';
 import InvitePage from './pages/InvitePage';
@@ -64,6 +65,7 @@ import ExportCenterPage from './modules/reports/pages/ExportCenterPage';
 import LOBReasonsPage from './modules/lob-reasons/pages/LOBReasonsPage';
 import FollowUpExtensionReasonsPage from './modules/followup-extension-reasons/pages/FollowUpExtensionReasonsPage';
 import AttendancePage from './pages/attendance/AttendancePage';
+import LocationTrackerPage from './pages/location/LocationTrackerPage';
 
 interface RouteProps {
   children: ReactNode;
@@ -210,6 +212,7 @@ function App() {
       <AuthenticatedWorkflowGates>
       {workflowEnabled ? <FollowUpReminderListener /> : null}
       {workflowEnabled ? <RealtimeSyncListener /> : null}
+      {workflowEnabled ? <LocationTrackingClient /> : null}
       <Routes>
         <Route path="/" element={
           <div className="min-h-screen bg-white font-sans selection:bg-emerald-200 selection:text-emerald-900 overflow-x-hidden">
@@ -460,6 +463,21 @@ function App() {
         <Route path="/attendance" element={
           <PermissionRoute permissions={['view_attendance', 'mark_attendance']}>
             <AttendancePage />
+          </PermissionRoute>
+        } />
+
+        <Route path="/location-tracker" element={
+          <PermissionRoute
+            permissions={[
+              'LOCATION_TRACKING_VIEW_LIVE',
+              'LOCATION_TRACKING_VIEW_HISTORY',
+              'LOCATION_TRACKING_REPLAY',
+              'LOCATION_TRACKING_VIEW_ALL',
+              'LOCATION_TRACKING_VIEW_ASSIGNED',
+              'SYSTEM_CONFIG',
+            ]}
+          >
+            <LocationTrackerPage />
           </PermissionRoute>
         } />
 
