@@ -41,9 +41,17 @@ export interface FollowUp {
     name: string;
     email: string | null;
     phone: string | null;
+    profileImage?: string | null;
+    stage?: {
+      name: string;
+      color: string;
+    } | null;
     assignedToId?: string | null;
     assignedTo?: FollowUpUser | null;
   };
+  assignedUserName?: string;
+  officeName?: string | null;
+  priority?: string | null;
   userId: string;
   workspaceId: string;
   type: FollowUpType;
@@ -168,11 +176,22 @@ export interface FollowUpReminderItem {
   id: string;
   leadId: string;
   leadName: string;
+  leadProfileImage?: string | null;
+  leadPhone?: string | null;
+  leadStage?: {
+    name: string;
+    color: string;
+  } | null;
+  assignedUserName: string;
+  officeName?: string | null;
   userId: string;
   type: FollowUpType;
   description: string | null;
+  latestFollowupNote?: string | null;
   scheduledAt: string;
   minutesUntil: number;
+  priority?: string | null;
+  status: FollowUpStatus;
   user: FollowUpUser;
 }
 
