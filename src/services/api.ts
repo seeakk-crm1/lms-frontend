@@ -119,6 +119,23 @@ api.interceptors.request.use(
   (error) => Promise.reject(error),
 );
 
+import axiosRetry from 'axios-retry';
+
+// Configure axios-retry for transient failures
+axiosRetry(api, {
+  retries: 3,
+  retryDelay: axiosRetry.exponentialDelay,
+  retryCondition: (error: AxiosError) => {
+    // Retry on 502, 503, 504 and network interruptions
+    if (!error.response && error.message === 'Network Error') return true;
+    if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) return true;
+    const status = error.response?.status;
+    if (status && [502, 503, 504].includes(status)) return true;
+    // Do NOT retry 400, 401, 403, 404, 500 (since 500 usually implies hard backend crash, but we only retry transient ones)
+    return false;
+  },
+});
+
 // Add a response interceptor for fallback coverage
 api.interceptors.response.use(
   (response) => response,
@@ -133,16 +150,42 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    if (!error.response && error.message === 'Network Error') {
+    const showToastError = (message: string, id?: string) => {
       import('react-hot-toast').then(({ toast }) => {
-        toast.error('Connection Error: Cannot reach the server. Please check your connection or CORS settings.', { id: 'cors-error' });
+        toast.error(message, { id: id || 'api-error' });
       });
-      // Prevent further retries by standardizing the error for react-query if possible
-      error.isAxiosError = false; // Hack to prevent axios-specific retry logic in some libs
+    };
+
+    // Differentiate error types instead of generic CORS
+    if (!error.response) {
+      if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+        showToastError('Connection Timeout: The server took too long to respond.');
+      } else if (error.message === 'Network Error') {
+        showToastError('Network Disconnected: Please check your internet connection.');
+      }
+      error.isAxiosError = false; 
       return Promise.reject(error);
     }
 
-    if (error.response?.status === 423) {
+    const status = error.response.status;
+    
+    // Explicit error messaging
+    if (status >= 500 && status !== 502 && status !== 503 && status !== 504) {
+      showToastError('Internal Server Error: Something went wrong on our end.');
+    } else if (status === 404) {
+      // Opt not to toast 404s globally as they are often handled gracefully, but we can log them
+      console.warn('API 404 Not Found:', originalRequest.url);
+    } else if (status === 403) {
+      showToastError('Forbidden: You do not have permission to perform this action.');
+    } else if (status === 400) {
+      // Usually validation errors have a message in response.data.message
+      const data = error.response.data as any;
+      if (data?.message) {
+        showToastError(`Validation Error: ${data.message}`);
+      }
+    }
+
+    if (status === 423) {
       const payload = error.response.data as {
         errorCode?: string;
         mandatoryFollowupRequired?: boolean;
@@ -161,7 +204,7 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    if (status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
       try {
         const newAccessToken = await refreshAccessToken();

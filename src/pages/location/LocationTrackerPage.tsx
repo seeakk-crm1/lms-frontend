@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { format, subDays } from 'date-fns';
+import { useQuery } from '@tanstack/react-query';
 import {
   Activity,
   Battery,
@@ -51,12 +52,8 @@ const updatedAgo = (value?: string | null) => {
 // mapUrl removed
 
 const LocationTrackerPage: React.FC = () => {
-  const [users, setUsers] = useState<LiveLocationUser[]>([]);
   const [selectedUserId, setSelectedUserId] = useState('');
   const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
-  const [routeData, setRouteData] = useState<RouteResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [routeLoading, setRouteLoading] = useState(false);
   const [replayIndex, setReplayIndex] = useState(0);
   const [replayPlaying, setReplayPlaying] = useState(false);
   const [replaySpeed, setReplaySpeed] = useState(1);
@@ -64,7 +61,21 @@ const LocationTrackerPage: React.FC = () => {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedOffice, setSelectedOffice] = useState('All');
-  
+
+  const { data: users = [], isLoading: loading, isError: isLiveError, refetch: loadLive } = useQuery({
+    queryKey: ['location-tracking', 'live'],
+    queryFn: () => getLiveLocations(),
+    refetchInterval: 30000, // Background refresh every 30s
+    staleTime: 15000,
+  });
+
+  const { data: routeData, isLoading: routeLoading, isError: isRouteError } = useQuery({
+    queryKey: ['location-tracking', 'route', selectedUserId, selectedDate],
+    queryFn: () => getLocationRoute({ userId: selectedUserId, date: selectedDate }),
+    enabled: !!selectedUserId,
+    staleTime: 5 * 60 * 1000,
+  });
+
   const offices = useMemo(() => {
     const set = new Set<string>();
     users.forEach((u) => { if (u.user.office) set.add(u.user.office); });
@@ -84,6 +95,13 @@ const LocationTrackerPage: React.FC = () => {
     });
   }, [users, searchQuery, selectedOffice]);
 
+  // Set default selected user if not set
+  useEffect(() => {
+    if (!selectedUserId && filteredUsers.length > 0) {
+      setSelectedUserId(filteredUsers[0].user.id);
+    }
+  }, [selectedUserId, filteredUsers]);
+
   const selectedUser = useMemo(
     () => users.find((item) => item.user.id === selectedUserId) || filteredUsers[0] || null,
     [selectedUserId, users, filteredUsers],
@@ -94,24 +112,10 @@ const LocationTrackerPage: React.FC = () => {
   const mapLongitude = selectedRoutePoint?.longitude ?? selectedUser?.longitude;
   const mapAccuracy = selectedRoutePoint?.accuracy ?? selectedUser?.accuracy;
 
-  const loadLive = async () => {
-    const data = await getLiveLocations();
-    setUsers(data);
-    setSelectedUserId((current) => current || data[0]?.user.id || '');
-  };
-
   useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    loadLive()
-      .catch(() => undefined)
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-
     const socket = connectRealtime();
     const onLocationUpdate = (data?: any) => {
-      // Optimistic UI update or full reload if needed. The backend emit includes { point, userId }
+      // Optimistic UI update or full reload if needed.
       void loadLive();
     };
     socket?.on('location_updated', onLocationUpdate);
@@ -119,22 +123,17 @@ const LocationTrackerPage: React.FC = () => {
     socket?.on('location_session_stopped', onLocationUpdate);
 
     return () => {
-      cancelled = true;
       socket?.off('location_updated', onLocationUpdate);
       socket?.off('location_session_started', onLocationUpdate);
       socket?.off('location_session_stopped', onLocationUpdate);
     };
-  }, []);
+  }, [loadLive]);
 
+  // Reset replay when route changes
   useEffect(() => {
-    if (!selectedUser?.user.id) return;
-    setRouteLoading(true);
     setReplayIndex(0);
-    getLocationRoute({ userId: selectedUser.user.id, date: selectedDate })
-      .then(setRouteData)
-      .catch(() => setRouteData(null))
-      .finally(() => setRouteLoading(false));
-  }, [selectedDate, selectedUser?.user.id]);
+    setReplayPlaying(false);
+  }, [routeData?.points?.length]);
 
   useEffect(() => {
     if (!replayPlaying || !routeData?.points?.length) return;
@@ -203,7 +202,7 @@ const LocationTrackerPage: React.FC = () => {
               <div key={label} className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
                 <Icon className="h-5 w-5 text-emerald-500" />
                 <p className="mt-3 text-[10px] font-black uppercase tracking-widest text-gray-400">{label}</p>
-                <p className="text-2xl font-black text-gray-950">{value}</p>
+                <p className="text-2xl font-black text-gray-950">{isLiveError && label !== "Today's KM" ? '--' : isRouteError && label === "Today's KM" ? '--' : value}</p>
               </div>
             ))}
           </div>
@@ -238,7 +237,9 @@ const LocationTrackerPage: React.FC = () => {
                 )}
               </div>
               <div className="custom-scrollbar max-h-[600px] space-y-2 overflow-auto">
-                {loading ? (
+                {isLiveError ? (
+                  <div className="p-6 text-center text-sm font-bold text-red-400">Failed to load live users.</div>
+                ) : loading ? (
                   <div className="p-6 text-center text-sm font-bold text-gray-400">Loading live locations...</div>
                 ) : filteredUsers.length === 0 ? (
                   <div className="p-6 text-center text-sm font-bold text-gray-400">No matching users found.</div>
@@ -322,7 +323,9 @@ const LocationTrackerPage: React.FC = () => {
                 <section className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
                   <h2 className="text-sm font-black uppercase tracking-widest text-gray-500">Travel Timeline</h2>
                   <div className="mt-4 max-h-80 space-y-3 overflow-auto">
-                    {routeLoading ? (
+                    {isRouteError ? (
+                      <p className="text-sm font-bold text-red-400">Failed to load route data.</p>
+                    ) : routeLoading ? (
                       <p className="text-sm font-bold text-gray-400">Loading route...</p>
                     ) : routeData?.points?.length ? (
                       routeData.points.filter((_, index) => index % Math.max(1, Math.floor(routeData.points.length / 12)) === 0).map((point, index, array) => {
@@ -353,7 +356,9 @@ const LocationTrackerPage: React.FC = () => {
                 <section className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
                   <h2 className="text-sm font-black uppercase tracking-widest text-gray-500">Visited Stops</h2>
                   <div className="mt-4 max-h-80 space-y-3 overflow-auto">
-                    {routeData?.stops?.length ? routeData.stops.map((stop, index) => {
+                    {isRouteError ? (
+                      <p className="text-sm font-bold text-red-400">Failed to load stops.</p>
+                    ) : routeData?.stops?.length ? routeData.stops.map((stop, index) => {
                        const relatedPointIndex = routeData.points.findIndex(p => p.recordedAt === stop.startedAt);
                        return (
                         <div 

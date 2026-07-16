@@ -132,10 +132,11 @@ const MandatoryFollowUpContinuationGate: React.FC<Props> = ({ children }) => {
   }
 
   useEffect(() => {
-    if (query.isError) {
-      toast.error('Unable to verify mandatory follow-ups.');
+    // Only show the toast if it's a hard error and not currently fetching/retrying
+    if (query.isError && !query.isFetching) {
+      toast.error('Unable to verify mandatory follow-ups. Some features may be restricted until connection is restored.', { id: 'mandatory-error' });
     }
-  }, [query.isError]);
+  }, [query.isError, query.isFetching]);
 
   return (
     <>
