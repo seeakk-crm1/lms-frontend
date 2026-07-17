@@ -86,6 +86,8 @@ export const ExportLeadsModal: React.FC<ExportLeadsModalProps> = ({ isOpen, onCl
   const dynamicFields = useLeadStore((state: any) => state.dynamicFields);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFields, setSelectedFields] = useState<Set<string>>(new Set());
+  const [fieldOrder, setFieldOrder] = useState<Record<string, number>>({});
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   const fieldGroups = useMemo(() => {
     const groups = [...STATIC_FIELD_GROUPS];
@@ -107,55 +109,131 @@ export const ExportLeadsModal: React.FC<ExportLeadsModalProps> = ({ isOpen, onCl
 
   useEffect(() => {
     if (isOpen) {
+      setValidationError(null);
       try {
         const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
         if (saved) {
           const parsed = JSON.parse(saved);
           if (Array.isArray(parsed) && parsed.length > 0) {
             const initialSet = new Set<string>(parsed);
+            const initialOrder: Record<string, number> = {};
+            
             fieldGroups.forEach((group) => {
               group.fields.forEach((field) => {
-                if (field.mandatory) initialSet.add(field.id);
+                if (field.mandatory && !initialSet.has(field.id)) {
+                  initialSet.add(field.id);
+                  parsed.push(field.id);
+                }
               });
             });
+
+            let counter = 1;
+            parsed.forEach((id: string) => {
+              if (initialSet.has(id)) {
+                initialOrder[id] = counter++;
+              }
+            });
+
             setSelectedFields(initialSet);
+            setFieldOrder(initialOrder);
             return;
           }
         }
       } catch (e) {
         // ignore
       }
-      setSelectedFields(new Set(allFieldIds));
+      
+      const initialSet = new Set(allFieldIds);
+      const initialOrder: Record<string, number> = {};
+      allFieldIds.forEach((id, index) => {
+        initialOrder[id] = index + 1;
+      });
+      setSelectedFields(initialSet);
+      setFieldOrder(initialOrder);
     }
   }, [isOpen, allFieldIds, fieldGroups]);
 
   const handleToggle = (id: string, mandatory?: boolean) => {
     if (mandatory) return;
     const next = new Set(selectedFields);
-    if (next.has(id)) next.delete(id);
-    else next.add(id);
+    const nextOrder = { ...fieldOrder };
+    
+    if (next.has(id)) {
+      next.delete(id);
+      delete nextOrder[id];
+    } else {
+      next.add(id);
+      const currentOrders = Object.values(nextOrder).filter(val => typeof val === 'number' && !isNaN(val));
+      const maxOrder = currentOrders.length > 0 ? Math.max(...currentOrders) : 0;
+      nextOrder[id] = maxOrder + 1;
+    }
     setSelectedFields(next);
+    setFieldOrder(nextOrder);
+    setValidationError(null);
+  };
+
+  const handleOrderChange = (id: string, value: string) => {
+    const nextOrder = { ...fieldOrder };
+    const num = parseInt(value, 10);
+    if (isNaN(num)) {
+      delete nextOrder[id];
+    } else {
+      nextOrder[id] = num;
+    }
+    setFieldOrder(nextOrder);
+    setValidationError(null);
   };
 
   const handleSelectAll = () => {
-    setSelectedFields(new Set(allFieldIds));
+    const nextSet = new Set(allFieldIds);
+    const nextOrder: Record<string, number> = {};
+    allFieldIds.forEach((id, index) => {
+      nextOrder[id] = index + 1;
+    });
+    setSelectedFields(nextSet);
+    setFieldOrder(nextOrder);
+    setValidationError(null);
   };
 
   const handleClearAll = () => {
-    const next = new Set<string>();
+    const nextSet = new Set<string>();
+    const nextOrder: Record<string, number> = {};
+    let counter = 1;
     fieldGroups.forEach((group) => {
       group.fields.forEach((field) => {
-        if (field.mandatory) next.add(field.id);
+        if (field.mandatory) {
+          nextSet.add(field.id);
+          nextOrder[field.id] = counter++;
+        }
       });
     });
-    setSelectedFields(next);
+    setSelectedFields(nextSet);
+    setFieldOrder(nextOrder);
+    setValidationError(null);
   };
 
   const handleExportClick = () => {
     if (selectedFields.size === 0) return;
     
-    // Maintain order according to how they appear in the UI groups
-    const orderedSelection = allFieldIds.filter(id => selectedFields.has(id));
+    const usedOrders = new Set<number>();
+    for (const id of Array.from(selectedFields)) {
+      const order = fieldOrder[id];
+      if (order === undefined || isNaN(order) || order <= 0) {
+        setValidationError('Every selected field must have a valid positive order number.');
+        return;
+      }
+      if (usedOrders.has(order)) {
+        setValidationError('Duplicate order numbers are not allowed.');
+        return;
+      }
+      usedOrders.add(order);
+    }
+    
+    setValidationError(null);
+
+    const orderedSelection = Array.from(selectedFields).sort((a, b) => {
+      return (fieldOrder[a] || 0) - (fieldOrder[b] || 0);
+    });
     
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(orderedSelection));
     onExport(orderedSelection);
@@ -265,13 +343,25 @@ export const ExportLeadsModal: React.FC<ExportLeadsModalProps> = ({ isOpen, onCl
                                 } transition-transform group-active:scale-90`}
                               />
                             </div>
-                            <div className="flex flex-col">
+                            <div className="flex flex-col flex-1">
                               <span className={`text-sm font-semibold ${isSelected ? 'text-blue-900' : 'text-gray-700'}`}>
                                 {field.label}
                               </span>
                               {field.mandatory && (
                                 <span className="text-[10px] font-bold text-red-500 uppercase tracking-wide mt-0.5">Required</span>
                               )}
+                            </div>
+                            <div className="flex items-center ml-auto pl-2">
+                              <input 
+                                type="number"
+                                min="1"
+                                disabled={!isSelected}
+                                value={fieldOrder[field.id] || ''}
+                                onChange={(e) => handleOrderChange(field.id, e.target.value)}
+                                onClick={(e) => e.stopPropagation()}
+                                placeholder="-"
+                                className="w-12 sm:w-14 text-center rounded-md border border-gray-300 py-1 text-xs font-semibold text-gray-700 shadow-sm outline-none transition-colors focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-400"
+                              />
                             </div>
                           </label>
                         );
@@ -283,13 +373,19 @@ export const ExportLeadsModal: React.FC<ExportLeadsModalProps> = ({ isOpen, onCl
             </div>
 
             {/* Footer */}
-            <div className="border-t border-gray-100 bg-white px-6 py-4 shrink-0 flex flex-col-reverse sm:flex-row items-center justify-between gap-3">
-              <p className="text-sm font-semibold text-gray-500">
-                {selectedFields.size} {selectedFields.size === 1 ? 'field' : 'fields'} selected
-              </p>
-              <div className="flex w-full sm:w-auto items-center gap-3">
-                <button
-                  onClick={onClose}
+            <div className="border-t border-gray-100 bg-white px-6 py-4 shrink-0 flex flex-col gap-3">
+              {validationError && (
+                <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600 border border-red-100 text-center font-medium">
+                  {validationError}
+                </div>
+              )}
+              <div className="flex flex-col-reverse sm:flex-row items-center justify-between gap-3">
+                <p className="text-sm font-semibold text-gray-500">
+                  {selectedFields.size} {selectedFields.size === 1 ? 'field' : 'fields'} selected
+                </p>
+                <div className="flex w-full sm:w-auto items-center gap-3">
+                  <button
+                    onClick={onClose}
                   className="w-full sm:w-auto rounded-xl border border-gray-200 bg-white px-5 py-2.5 text-sm font-bold text-gray-700 transition-colors hover:bg-gray-50 hover:text-gray-900"
                 >
                   Cancel
@@ -315,6 +411,7 @@ export const ExportLeadsModal: React.FC<ExportLeadsModalProps> = ({ isOpen, onCl
                   )}
                 </button>
               </div>
+            </div>
             </div>
           </motion.div>
         </div>
