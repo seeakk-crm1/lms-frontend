@@ -44,6 +44,12 @@ const LeadAvatar: React.FC<LeadAvatarProps> = ({
     let nextUrl: string | null = null;
     setFailed(false);
 
+    const isAbsolute = imageUrl.startsWith('http://') || imageUrl.startsWith('https://');
+    if (isAbsolute) {
+      setObjectUrl(imageUrl);
+      return undefined;
+    }
+
     api.get(imageUrl, { responseType: 'blob' })
       .then((response) => {
         if (!active) return;

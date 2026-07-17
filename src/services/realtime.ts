@@ -299,7 +299,3 @@ export const disconnectRealtime = (): void => {
   socket.disconnect();
   socket = null;
 };
-socket.removeAllListeners();
-socket.disconnect();
-socket = null;
-};

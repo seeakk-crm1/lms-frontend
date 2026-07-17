@@ -47,7 +47,14 @@ const FollowUpActionModal: React.FC<Props> = ({ isOpen, followUp, onClose, onOpe
   const leadEmail = followUp.lead?.email || followUp.leadEmail;
   const leadCompany = followUp.lead?.companyName || followUp.leadCompanyName;
   const leadPhone = followUp.lead?.phone || followUp.leadPhone;
-  const leadImage = followUp.lead?.profileImageUrl || followUp.leadProfileImage;
+  const leadImage =
+    followUp.lead?.profileImageUrl ||
+    followUp.lead?.profileImage ||
+    followUp.lead?.avatarUrl ||
+    followUp.lead?.image ||
+    followUp.profileImageUrl ||
+    followUp.leadProfileImage ||
+    followUp.image;
   const stageName = followUp.lead?.stage?.name || followUp.leadStage?.name;
   const stageColor = followUp.lead?.stage?.color || followUp.leadStage?.color || '#6b7280';
   
