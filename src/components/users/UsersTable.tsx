@@ -361,9 +361,13 @@ const UsersTable: React.FC = () => {
                     <div className="flex items-center gap-3">
                       <div 
                         onClick={(e) => e.stopPropagation()}
-                        className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-600 font-bold shrink-0"
+                        className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-600 font-bold shrink-0 overflow-hidden"
                       >
-                        {user.name?.charAt(0) || user.email.charAt(0).toUpperCase()}
+                        {user.profileImageUrl ? (
+                          <img src={user.profileImageUrl} alt={user.name || 'User'} className="w-full h-full object-cover" />
+                        ) : (
+                          user.name?.charAt(0) || user.email.charAt(0).toUpperCase()
+                        )}
                       </div>
                       <div className="min-w-0">
                         <div 

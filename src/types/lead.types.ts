@@ -45,12 +45,12 @@ export interface LeadListItem {
   createdAt: string;
   updatedAt: string;
   isStarred?: boolean;
-  assignedTo: (Pick<User, 'id' | 'email' | 'name' | 'username'> & { displayName?: string }) | null;
+  assignedTo: (Pick<User, 'id' | 'email' | 'name' | 'username' | 'profileImageUrl'> & { displayName?: string }) | null;
   stage: Pick<LeadStage, 'id' | 'name' | 'color' | 'isLOB' | 'isClosed'> | null;
   lifecycle: Pick<LeadLifeCycle, 'id' | 'name' | 'isDefault'> | null;
   source: Pick<LeadSource, 'id' | 'name' | 'status'> | null;
-  createdBy: Pick<User, 'id' | 'email' | 'name' | 'username'> & { displayName?: string };
-  closedBy?: (Pick<User, 'id' | 'email' | 'name' | 'username'> & { displayName?: string }) | null;
+  createdBy: Pick<User, 'id' | 'email' | 'name' | 'username' | 'profileImageUrl'> & { displayName?: string };
+  closedBy?: (Pick<User, 'id' | 'email' | 'name' | 'username' | 'profileImageUrl'> & { displayName?: string }) | null;
   lobLogs: Array<{
     id: string;
     reasonId: string;

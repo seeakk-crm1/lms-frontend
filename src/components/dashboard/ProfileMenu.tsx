@@ -99,11 +99,15 @@ const ProfileMenu: React.FC = () => {
           </div>
           <div className="relative">
             <div
-              className={`flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 text-xs font-bold text-white shadow-md shadow-emerald-500/20 ring-2 ring-white transition-all sm:h-10 sm:w-10 sm:text-base ${
+              className={`flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 text-xs font-bold text-white shadow-md shadow-emerald-500/20 ring-2 ring-white transition-all sm:h-10 sm:w-10 sm:text-base overflow-hidden ${
                 isMenuOpen ? 'scale-[1.02] ring-emerald-100 shadow-lg shadow-emerald-500/20' : 'group-hover:ring-emerald-100'
               }`}
             >
-              {displayName.charAt(0).toUpperCase()}
+              {user?.profileImageUrl ? (
+                <img src={user.profileImageUrl} alt={displayName} className="w-full h-full object-cover" />
+              ) : (
+                displayName.charAt(0).toUpperCase()
+              )}
             </div>
             <div className="absolute bottom-0 right-[-2px] h-2.5 w-2.5 rounded-full border-2 border-white bg-green-500 sm:right-0 sm:h-3 sm:w-3" />
           </div>
@@ -123,8 +127,12 @@ const ProfileMenu: React.FC = () => {
               <div className="border-b border-gray-100 bg-gradient-to-br from-emerald-50 via-white to-white px-5 py-5">
                 <div className="flex items-start gap-4">
                   <div className="relative mt-0.5">
-                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600 text-lg font-black text-white shadow-lg shadow-emerald-500/20">
-                      {initials}
+                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600 text-lg font-black text-white shadow-lg shadow-emerald-500/20 overflow-hidden">
+                      {user?.profileImageUrl ? (
+                        <img src={user.profileImageUrl} alt={displayName} className="w-full h-full object-cover" />
+                      ) : (
+                        initials
+                      )}
                     </div>
                     <div className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-white text-emerald-500 shadow-sm">
                       <Sparkles size={10} />

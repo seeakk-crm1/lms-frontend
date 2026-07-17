@@ -349,14 +349,25 @@ const LeadViewDrawer: React.FC<LeadViewDrawerProps> = ({
                       <DetailRow
                         label="Assigned to"
                         value={
-                          <span className="inline-flex flex-col items-end">
-                            <span>{resolvedLead.assignedTo?.displayName || 'Unassigned'}</span>
-                            {resolvedLead.assignedTo?.email ? (
-                              <span className="text-[11px] font-medium text-gray-500">
-                                {resolvedLead.assignedTo.email}
-                              </span>
-                            ) : null}
-                          </span>
+                          <div className="flex items-center gap-2 justify-end">
+                            <span className="inline-flex flex-col items-end">
+                              <span>{resolvedLead.assignedTo?.displayName || 'Unassigned'}</span>
+                              {resolvedLead.assignedTo?.email ? (
+                                <span className="text-[11px] font-medium text-gray-500">
+                                  {resolvedLead.assignedTo.email}
+                                </span>
+                              ) : null}
+                            </span>
+                            {resolvedLead.assignedTo && (
+                              <div className="h-8 w-8 shrink-0 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-500 overflow-hidden">
+                                {resolvedLead.assignedTo.profileImageUrl ? (
+                                  <img src={resolvedLead.assignedTo.profileImageUrl} alt="Assigned" className="w-full h-full object-cover" />
+                                ) : (
+                                  (resolvedLead.assignedTo.displayName || resolvedLead.assignedTo.email || 'U').charAt(0).toUpperCase()
+                                )}
+                              </div>
+                            )}
+                          </div>
                         }
                       />
                       <DetailRow label="Life cycle" value={resolvedLead.lifecycle?.name || 'No lifecycle'} />

@@ -118,6 +118,7 @@ type CreateUserPayload = {
   stateId?: string;
   districtId?: string;
   assignedLocationIds?: string[];
+  profileImageUrl?: string;
 };
 
 const normalizeTargetCycleId = (value?: string | null): string | null =>
@@ -157,6 +158,7 @@ const CreateUserModal: React.FC = () => {
       isActive: true,
       assignedLocationIds: [],
       assignedTargetCycleId: '',
+      profileImageUrl: '',
     }
   });
 
@@ -207,6 +209,7 @@ const CreateUserModal: React.FC = () => {
     stateId: toOptional(data.stateId),
     districtId: toOptional(data.districtId),
     assignedLocationIds: (data.assignedLocationIds || []).filter(Boolean),
+    profileImageUrl: toOptional(data.profileImageUrl),
   });
 
   const toUpdatePayload = (data: UserFormData): Record<string, unknown> => {
@@ -226,6 +229,7 @@ const CreateUserModal: React.FC = () => {
       districtId: toOptional(data.districtId),
       assignedLocationIds: (data.assignedLocationIds || []).filter(Boolean),
       isActive: data.isActive,
+      profileImageUrl: toOptional(data.profileImageUrl),
       ...(targetCycleChanged ? { assignedTargetCycleId: nextTargetCycleId } : {}),
     };
   };
@@ -259,6 +263,7 @@ const CreateUserModal: React.FC = () => {
         isActive: u.isActive,
         assignedLocationIds: u.assignedLocations?.map((l: any) => l.location.id) || [],
         assignedTargetCycleId: u.assignedTargetCycleId || u.assignedTargetCycle?.id || '',
+        profileImageUrl: u.profileImageUrl || '',
       });
       initialTargetCycleIdRef.current = normalizeTargetCycleId(
         u.assignedTargetCycleId || u.assignedTargetCycle?.id || null,
@@ -281,6 +286,7 @@ const CreateUserModal: React.FC = () => {
             isActive: true,
             assignedLocationIds: [],
             assignedTargetCycleId: '',
+            profileImageUrl: '',
         });
     }
   }, [userDetail, reset, isCreateModalOpen, selectedUserId]);

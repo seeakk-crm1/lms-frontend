@@ -13,4 +13,5 @@ export interface UserFormData {
   isActive: boolean;
   assignedLocationIds: string[];
   assignedTargetCycleId?: string;
+  profileImageUrl?: string;
 }

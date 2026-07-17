@@ -280,10 +280,23 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
                     <FollowUpBadge value={lead.nextFollowUpAt} />
                   </td>
                   <td className="px-6 py-5">
-                    <div className="text-sm font-black text-gray-900">
-                      {lead.assignedTo?.displayName || 'Unassigned'}
+                    <div className="flex items-center gap-3">
+                      {lead.assignedTo && (
+                        <div className="h-8 w-8 shrink-0 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-500 overflow-hidden">
+                          {lead.assignedTo.profileImageUrl ? (
+                            <img src={lead.assignedTo.profileImageUrl} alt="Assigned" className="w-full h-full object-cover" />
+                          ) : (
+                            (lead.assignedTo.displayName || lead.assignedTo.email || 'U').charAt(0).toUpperCase()
+                          )}
+                        </div>
+                      )}
+                      <div>
+                        <div className="text-sm font-black text-gray-900">
+                          {lead.assignedTo?.displayName || 'Unassigned'}
+                        </div>
+                        <div className="text-xs font-semibold text-gray-400">{lead.assignedTo?.email || 'Assign owner'}</div>
+                      </div>
                     </div>
-                    <div className="text-xs font-semibold text-gray-400">{lead.assignedTo?.email || 'Assign owner'}</div>
                   </td>
                   <td className="px-6 py-5">
                     <span

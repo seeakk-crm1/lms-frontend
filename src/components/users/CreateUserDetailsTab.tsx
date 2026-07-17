@@ -4,6 +4,7 @@ import type { UserFormData } from './CreateUserModal.types';
 import PhoneInput from '../common/PhoneInput';
 import { validatePhoneStr } from '../../utils/phoneUtils';
 import type { PhoneCountry } from '../../constants/phoneCountries';
+import UserAvatarUpload from './UserAvatarUpload';
 
 interface AddressLevelOption {
   id: string;
@@ -71,6 +72,10 @@ const CreateUserDetailsTab: React.FC<CreateUserDetailsTabProps> = ({
           </p>
         </div>
       ) : null}
+
+      <div className="mb-2">
+        <UserAvatarUpload name="profileImageUrl" />
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-1.5">
