@@ -176,6 +176,8 @@ export interface FollowUpReminderItem {
   id: string;
   leadId: string;
   leadName: string;
+  leadEmail?: string | null;
+  leadCompanyName?: string | null;
   leadProfileImage?: string | null;
   leadPhone?: string | null;
   leadStage?: {
@@ -189,6 +191,8 @@ export interface FollowUpReminderItem {
   description: string | null;
   latestFollowupNote?: string | null;
   scheduledAt: string;
+  originalScheduledDate?: string | null;
+  extendedDate?: string | null;
   minutesUntil: number;
   priority?: string | null;
   status: FollowUpStatus;
