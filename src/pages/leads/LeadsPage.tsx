@@ -9,6 +9,7 @@ import DeleteLeadModal from './components/DeleteLeadModal';
 import LeadFilters from './components/LeadFilters';
 import LeadSlaDecisionModal from './components/LeadSlaDecisionModal';
 import LeadsTable from './components/LeadsTable';
+import { ExportLeadsModal } from './components/ExportLeadsModal';
 import { getLeadById } from '../../services/leads.api';
 import {
   useLeadsQuery,
@@ -38,6 +39,7 @@ const LeadsPage: React.FC = () => {
   const [searchDraft, setSearchDraft] = useState('');
   const [exportIncludeArchived, setExportIncludeArchived] = useState(false);
   const [isExportOpen, setIsExportOpen] = useState(false);
+  const [exportModalState, setExportModalState] = useState<{isOpen: boolean, format: 'csv'|'xlsx'}>({ isOpen: false, format: 'csv' });
   const exportMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -199,7 +201,7 @@ const LeadsPage: React.FC = () => {
 
   const openLeadCount = useMemo(() => leads.filter((lead) => !lead.isClosed && !lead.isLOB).length, [leads]);
 
-  const handleExportCsv = useCallback(() => {
+  const handleExportCsv = useCallback((fields: string[]) => {
     exportMutation.mutate({
       search: search || undefined,
       stage: filters.stage || undefined,
@@ -209,10 +211,13 @@ const LeadsPage: React.FC = () => {
       status: filters.status || undefined,
       starred: filters.starred && filters.starred !== 'ALL' ? filters.starred : undefined,
       includeArchived: exportIncludeArchived,
+      fields,
+    }, {
+      onSuccess: () => setExportModalState(prev => ({ ...prev, isOpen: false }))
     });
   }, [exportMutation, exportIncludeArchived, filters.assignedTo, filters.officeId, filters.source, filters.stage, filters.status, filters.starred, search, showOfficeFilter]);
 
-  const handleExportXlsx = useCallback(() => {
+  const handleExportXlsx = useCallback((fields: string[]) => {
     exportXlsxMutation.mutate({
       search: search || undefined,
       stage: filters.stage || undefined,
@@ -222,6 +227,9 @@ const LeadsPage: React.FC = () => {
       status: filters.status || undefined,
       starred: filters.starred && filters.starred !== 'ALL' ? filters.starred : undefined,
       includeArchived: exportIncludeArchived,
+      fields,
+    }, {
+      onSuccess: () => setExportModalState(prev => ({ ...prev, isOpen: false }))
     });
   }, [exportXlsxMutation, exportIncludeArchived, filters.assignedTo, filters.officeId, filters.source, filters.stage, filters.status, filters.starred, search, showOfficeFilter]);
 
@@ -515,7 +523,7 @@ const LeadsPage: React.FC = () => {
                             type="button"
                             onClick={() => {
                               setIsExportOpen(false);
-                              handleExportXlsx();
+                              setExportModalState({ isOpen: true, format: 'xlsx' });
                             }}
                             disabled={exportMutation.isPending || exportXlsxMutation.isPending}
                             className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm font-bold text-gray-700 hover:bg-emerald-50 hover:text-emerald-600 transition-colors disabled:opacity-50"
@@ -526,7 +534,7 @@ const LeadsPage: React.FC = () => {
                             type="button"
                             onClick={() => {
                               setIsExportOpen(false);
-                              handleExportCsv();
+                              setExportModalState({ isOpen: true, format: 'csv' });
                             }}
                             disabled={exportMutation.isPending || exportXlsxMutation.isPending}
                             className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm font-bold text-gray-700 hover:bg-emerald-50 hover:text-emerald-600 transition-colors disabled:opacity-50"
@@ -668,6 +676,17 @@ const LeadsPage: React.FC = () => {
           onClose={closeSlaModal}
           onExtend={handleExtendLeadSla}
           onMoveToLob={handleMoveLeadToLob}
+        />
+
+        <ExportLeadsModal
+          isOpen={exportModalState.isOpen}
+          onClose={() => setExportModalState(prev => ({ ...prev, isOpen: false }))}
+          isExporting={exportMutation.isPending || exportXlsxMutation.isPending}
+          exportFormatLabel={exportModalState.format === 'csv' ? 'CSV' : 'Excel'}
+          onExport={(fields) => {
+            if (exportModalState.format === 'csv') handleExportCsv(fields);
+            else handleExportXlsx(fields);
+          }}
         />
       </DashboardLayout>
     );

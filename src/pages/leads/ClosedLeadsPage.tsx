@@ -10,6 +10,7 @@ import type { LeadListItem } from '../../types/lead.types';
 import ClosedLeadFilters from './components/ClosedLeadFilters';
 import ClosedLeadsTable from './components/ClosedLeadsTable';
 import RevenueEditModal from './components/RevenueEditModal';
+import { ExportLeadsModal } from './components/ExportLeadsModal';
 import { lazyWithChunkRecovery } from '../../utils/chunkLoadRecovery';
 import { canUseOfficeFilter } from '../../utils/officeFilterAccess';
 
@@ -113,6 +114,7 @@ const ClosedLeadsPage: React.FC = () => {
   const exportMutation = useExportClosedLeads();
   const updateRevenueMutation = useUpdateRevenueMutation();
   const reopenLeadMutation = useReopenLeadMutation();
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
   useEffect(() => {
     setSearchDraft(search);
@@ -141,7 +143,7 @@ const ClosedLeadsPage: React.FC = () => {
   );
   const lostCount = useMemo(() => leads.filter((lead) => lead.closureType === 'LOST').length, [leads]);
 
-  const handleExport = useCallback(() => {
+  const handleExport = useCallback((fields: string[]) => {
     exportMutation.mutate({
       search: search || undefined,
       assignedTo: filters.assignedTo || undefined,
@@ -152,6 +154,9 @@ const ClosedLeadsPage: React.FC = () => {
       dateTo: filters.dateTo || undefined,
       minRevenue: filters.minRevenue ? Number(filters.minRevenue) : undefined,
       maxRevenue: filters.maxRevenue ? Number(filters.maxRevenue) : undefined,
+      fields,
+    }, {
+      onSuccess: () => setIsExportModalOpen(false)
     });
   }, [exportMutation, filters, search, showOfficeFilter]);
 
@@ -223,7 +228,7 @@ const ClosedLeadsPage: React.FC = () => {
               >
                 <button
                   type="button"
-                  onClick={handleExport}
+                  onClick={() => setIsExportModalOpen(true)}
                   disabled={exportMutation.isPending}
                   className="inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-black text-gray-700 shadow-sm transition-all hover:border-emerald-200 hover:text-emerald-600 disabled:cursor-not-allowed disabled:opacity-70"
                 >
@@ -321,6 +326,14 @@ const ClosedLeadsPage: React.FC = () => {
         onClose={() => setReopenModalLead(null)}
         onConfirm={confirmReopen}
       />
+
+        <ExportLeadsModal
+          isOpen={isExportModalOpen}
+          onClose={() => setIsExportModalOpen(false)}
+          isExporting={exportMutation.isPending}
+          exportFormatLabel="CSV"
+          onExport={handleExport}
+        />
 
       <Suspense fallback={null}>
         <LeadViewDrawer
