@@ -115,43 +115,62 @@ export const handleUnauthorizedRequest = async <T>(
  * Rotates refresh → access via `/auth/refresh`, updates zustand + localStorage.
  * Concurrent callers await the same in-flight promise (no duplicate rotations).
  */
-let isRefreshing = false;
-
 export const refreshAccessToken = async (): Promise<string> => {
   if (refreshPromise) return refreshPromise;
-  if (isRefreshing) return new Promise(() => {}); // hang until refresh finishes if not caught by refreshPromise
-  
+
   const refreshToken = localStorage.getItem('refreshToken');
   if (!refreshToken) {
     throw new AuthSessionError('No refresh token available');
   }
 
-  isRefreshing = true;
-  
   refreshPromise = (async () => {
-    try {
-      console.log('Refresh Started');
-      const { data } = await axios.post<{
-        accessToken: string;
-        refreshToken: string;
-        user: User;
-      }>(
-        `${API_URL}/auth/refresh`,
-        { refreshToken },
-        { withCredentials: true },
-      );
-      console.log('Refresh Success');
+    let lastError: unknown;
 
-      useAuthStore.getState().setAuth(data.user, data.accessToken, data.refreshToken);
-      notifyAccessTokenRefreshed(data.accessToken);
-      return data.accessToken;
+    try {
+      for (let attempt = 0; attempt < MAX_REFRESH_ATTEMPTS; attempt += 1) {
+        const currentRefreshToken = localStorage.getItem('refreshToken');
+        if (!currentRefreshToken) {
+          throw new AuthSessionError('No refresh token available');
+        }
+
+        try {
+          console.log('Refresh Started');
+          const { data } = await axios.post<{
+            accessToken: string;
+            refreshToken: string;
+            user: User;
+          }>(
+            `${API_URL}/auth/refresh`,
+            { refreshToken: currentRefreshToken },
+            { withCredentials: true },
+          );
+          console.log('Refresh Success');
+
+          useAuthStore.getState().setAuth(data.user, data.accessToken, data.refreshToken);
+          notifyAccessTokenRefreshed(data.accessToken);
+          return data.accessToken;
+        } catch (error) {
+          lastError = error;
+          const canRetry =
+            isTransientRefreshFailure(error) && attempt < MAX_REFRESH_ATTEMPTS - 1;
+          if (!canRetry) {
+            throw error;
+          }
+          await sleep(REFRESH_RETRY_DELAY_MS * (attempt + 1));
+        }
+      }
+
+      throw lastError ?? new AuthSessionError('Refresh token request failed');
     } catch (err: any) {
       console.error('Refresh Failed', err);
-      useAuthStore.getState().clearAuth();
-      throw new AuthSessionError('Refresh token request failed');
+      if (!err.response?.status) {
+        import('react-hot-toast').then(({ toast }) => {
+          toast.error('Authentication service is temporarily unreachable. Please try again in a moment.', { id: 'auth-server-unreachable' });
+        });
+      }
+      throw err;
     } finally {
       refreshPromise = null;
-      isRefreshing = false;
     }
   })();
 

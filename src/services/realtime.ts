@@ -257,11 +257,15 @@ export const connectRealtime = (): Socket | null => {
 
   lastSocketUserId = userId;
 
+  const transports = resolveSocketTransports();
+  const pollingOnly = transports.length === 1 && transports[0] === 'polling';
   console.log('Connection Started');
   socket = io(baseUrl, {
     path: SOCKET_IO_CLIENT_PATH,
-    transports: ['websocket'],
+    transports,
+    upgrade: !pollingOnly,
     withCredentials: true,
+    rememberUpgrade: socketRememberUpgrade(),
     auth: (cb) => {
       void (async () => {
         try {
@@ -294,4 +298,8 @@ export const disconnectRealtime = (): void => {
   socket.removeAllListeners();
   socket.disconnect();
   socket = null;
+};
+socket.removeAllListeners();
+socket.disconnect();
+socket = null;
 };
