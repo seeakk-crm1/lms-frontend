@@ -257,15 +257,11 @@ export const connectRealtime = (): Socket | null => {
 
   lastSocketUserId = userId;
 
-  const transports = resolveSocketTransports();
-  const pollingOnly = transports.length === 1 && transports[0] === 'polling';
   console.log('Connection Started');
   socket = io(baseUrl, {
     path: SOCKET_IO_CLIENT_PATH,
-    transports,
-    upgrade: !pollingOnly,
+    transports: ['websocket'],
     withCredentials: true,
-    rememberUpgrade: socketRememberUpgrade(),
     auth: (cb) => {
       void (async () => {
         try {
