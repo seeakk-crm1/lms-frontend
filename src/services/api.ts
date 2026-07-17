@@ -161,7 +161,7 @@ api.interceptors.response.use(
       if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
         showToastError('Connection Timeout: The server took too long to respond.');
       } else if (error.message === 'Network Error') {
-        showToastError('Network Disconnected: Please check your internet connection.');
+        showToastError('Server temporarily unreachable. Please try again in a moment.', 'server-unreachable');
       }
       error.isAxiosError = false; 
       return Promise.reject(error);

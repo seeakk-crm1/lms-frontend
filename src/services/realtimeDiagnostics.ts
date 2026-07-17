@@ -37,8 +37,8 @@ export const explainFailureKind = (kind: ConnectionFailureKind, backendOrigin: s
   switch (kind) {
     case 'cors_surface_symptom':
       return (
-        `Often NOT a CORS misconfiguration: the polling request got a non-OK response (404/502) without ACAO headers. ` +
-        `Open ${healthUrl} — if it is not JSON {"ok":true,...}, your backend URL is wrong or Render has no running service (see x-render-routing: no-server).`
+        `The browser can surface this as CORS when the backend host returns a non-app response without app headers. ` +
+        `Open ${healthUrl} — if it is not JSON {"ok":true,...}, the frontend is pointed at the wrong backend URL or the backend service is not running.`
       );
     case 'backend_unreachable':
       return `Cannot reach ${backendOrigin}. Check VPN, Render sleep/failure, or set VITE_SOCKET_URL / VITE_API_URL in Vercel (redeploy after env change).`;

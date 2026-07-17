@@ -55,7 +55,7 @@ export const isRefreshAuthFailure = (error: unknown): boolean => {
 export const isTransientRefreshFailure = (error: unknown): boolean => {
   if (!axios.isAxiosError(error)) return false;
   const status = error.response?.status;
-  // CORS or offline network errors have no status. We should not retry these.
+  // Browser network errors have no status. Do not loop aggressively here.
   if (!status) return false;
   return status === 500 || status === 502 || status === 503 || status === 504;
 };
@@ -165,7 +165,7 @@ export const refreshAccessToken = async (): Promise<string> => {
       console.error('Refresh Failed', err);
       if (!err.response?.status) {
         import('react-hot-toast').then(({ toast }) => {
-          toast.error('Connection Error: Cannot reach the server. Please check your connection or CORS settings.', { id: 'cors-error' });
+          toast.error('Authentication service is temporarily unreachable. Please try again in a moment.', { id: 'auth-server-unreachable' });
         });
       }
       throw err;
