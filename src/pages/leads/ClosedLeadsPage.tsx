@@ -154,7 +154,7 @@ const ClosedLeadsPage: React.FC = () => {
       dateTo: filters.dateTo || undefined,
       minRevenue: filters.minRevenue ? Number(filters.minRevenue) : undefined,
       maxRevenue: filters.maxRevenue ? Number(filters.maxRevenue) : undefined,
-      fields,
+      fields: fields.length > 0 ? fields.join(',') : undefined,
     }, {
       onSuccess: () => setIsExportModalOpen(false)
     });

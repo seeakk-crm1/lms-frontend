@@ -211,7 +211,7 @@ const LeadsPage: React.FC = () => {
       status: filters.status || undefined,
       starred: filters.starred && filters.starred !== 'ALL' ? filters.starred : undefined,
       includeArchived: exportIncludeArchived,
-      fields,
+      fields: fields.length > 0 ? fields.join(',') : undefined,
     }, {
       onSuccess: () => setExportModalState(prev => ({ ...prev, isOpen: false }))
     });
@@ -227,7 +227,7 @@ const LeadsPage: React.FC = () => {
       status: filters.status || undefined,
       starred: filters.starred && filters.starred !== 'ALL' ? filters.starred : undefined,
       includeArchived: exportIncludeArchived,
-      fields,
+      fields: fields.length > 0 ? fields.join(',') : undefined,
     }, {
       onSuccess: () => setExportModalState(prev => ({ ...prev, isOpen: false }))
     });
