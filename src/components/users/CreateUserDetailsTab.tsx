@@ -1,11 +1,10 @@
 import React from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
 import type { UserFormData } from './CreateUserModal.types';
-import { getImageUrl } from '../../../utils/getImageUrl';
+import { getImageUrl } from '../../utils/getImageUrl';
 import PhoneInput from '../common/PhoneInput';
 import { validatePhoneStr } from '../../utils/phoneUtils';
 import type { PhoneCountry } from '../../constants/phoneCountries';
-import UserAvatarUpload from './UserAvatarUpload';
 
 interface AddressLevelOption {
   id: string;
@@ -90,9 +89,9 @@ const CreateUserDetailsTab: React.FC<CreateUserDetailsTabProps> = ({
       <section className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
           <div className="relative h-28 w-28 shrink-0 rounded-full border-4 border-white bg-gray-50 shadow-md overflow-hidden flex items-center justify-center text-4xl font-bold text-gray-400">
-            {profileImagePreviewUrl || getImageUrl(watch('profileImageUrl') || watch('profileImageThumbnail')) ? (
+            {profileImagePreviewUrl || getImageUrl(watch('profileImageUrl')) ? (
               <img
-                src={profileImagePreviewUrl || getImageUrl(watch('profileImageUrl') || watch('profileImageThumbnail'))}
+                src={profileImagePreviewUrl || getImageUrl(watch('profileImageUrl'))}
                 alt="Profile"
                 className="h-full w-full object-cover"
               />
