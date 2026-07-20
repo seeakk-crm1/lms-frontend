@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     LayoutDashboard, Users, Settings, FileText, Calendar as CalendarIcon,
-    Briefcase, FileBarChart, Unplug, MapPin, ChevronDown, Activity, ChevronRight, LogOut, LucideIcon, X
+    Briefcase, FileBarChart, Unplug, ChevronDown, Activity, ChevronRight, LogOut, LucideIcon, X
 } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import useAuthStore from '../../store/useAuthStore';
@@ -115,8 +115,7 @@ const sidebarMenus: SidebarSection[] = [
     {
         title: 'SYSTEM',
         items: [
-            { icon: Unplug, label: 'Unlock Staff', path: '/unlock-staff', requiredPermissions: ['USERS_UNLOCK', 'USERS_EDIT', 'SYSTEM_CONFIG'] },
-            { icon: MapPin, label: 'Locations', path: '/locations', requiredPermissions: ['LOCATION_VIEW', 'LOCATION_MANAGE', 'SYSTEM_CONFIG'] }
+            { icon: Unplug, label: 'Unlock Staff', path: '/unlock-staff', requiredPermissions: ['USERS_UNLOCK', 'USERS_EDIT', 'SYSTEM_CONFIG'] }
         ]
     }
 ];

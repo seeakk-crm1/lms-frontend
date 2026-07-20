@@ -55,8 +55,6 @@ const roleExamples = [
         'TARGET_CYCLES_VIEW',
         'LEAD_DYNAMICS_VIEW',
         'LOB_REASONS_VIEW',
-        'LOCATION_VIEW',
-        'LOCATION_MANAGE',
         'LEADS_VIEW_ALL',
         'LEADS_VIEW_TEAM',
         'LEADS_CREATE',
