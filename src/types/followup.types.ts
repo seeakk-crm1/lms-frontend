@@ -61,12 +61,6 @@ export interface FollowUp {
   scheduledAt: string;
   completedAt: string | null;
   recentDescription?: string | null;
-  latestFollowupNote?: string | null;
-  latestFollowupAt?: string | null;
-  latestFollowupBy?: string | null;
-  latestLeadRemark?: string | null;
-  latestLeadRemarkAt?: string | null;
-  latestLeadRemarkBy?: string | null;
   previousFollowupDate?: string | null;
   newFollowupDate?: string | null;
   snoozedBy?: string | null;
@@ -196,11 +190,6 @@ export interface FollowUpReminderItem {
   type: FollowUpType;
   description: string | null;
   latestFollowupNote?: string | null;
-  latestFollowupAt?: string | null;
-  latestFollowupBy?: string | null;
-  latestLeadRemark?: string | null;
-  latestLeadRemarkAt?: string | null;
-  latestLeadRemarkBy?: string | null;
   scheduledAt: string;
   originalScheduledDate?: string | null;
   extendedDate?: string | null;

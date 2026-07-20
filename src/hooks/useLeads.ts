@@ -311,7 +311,6 @@ export const useUpdateLeadMutation = () => {
       queryClient.invalidateQueries({ queryKey: ['lead', variables.id] });
       queryClient.invalidateQueries({ queryKey: ['lead-approvals'] });
       queryClient.invalidateQueries({ queryKey: ['followups'] });
-      queryClient.invalidateQueries({ queryKey: ['followups', 'alerts'] });
       queryClient.invalidateQueries({ queryKey: ['lead-remarks', variables.id] });
       if (response?.approvalRequired) {
         toast.success(response.message || 'Approval request created successfully. Other fields updated.');
