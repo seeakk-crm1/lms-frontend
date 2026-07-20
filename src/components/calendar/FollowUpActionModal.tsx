@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { CheckCircle2, Clock3, X, User, PhoneCall, Building2, Calendar, Tag, AlertCircle, FileText, ArrowRight } from 'lucide-react';
+import { CheckCircle2, Clock3, X, PhoneCall, Building2, Calendar, Tag, AlertCircle, FileText, ArrowRight, MessageSquareText } from 'lucide-react';
 import { format } from 'date-fns';
 import { formatFollowUpTypeLabel } from '../../modules/followups/followUpTypeUi';
 import type { FollowUp } from '../../types/followup.types';
@@ -36,6 +36,13 @@ const getStatusColor = (status: string) => {
   }
 };
 
+const formatActivityTime = (value?: string | null): string | null => {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return format(date, 'dd MMM yyyy, hh:mm a');
+};
+
 const FollowUpActionModal: React.FC<Props> = ({ isOpen, followUp, onClose, onOpenLead, onMarkCompleted, onSnooze }) => {
   const typeLabel = useMemo(() => (followUp ? formatFollowUpTypeLabel(followUp.type) : ''), [followUp]);
   const isCompleted = followUp?.status === 'COMPLETED';
@@ -65,7 +72,12 @@ const FollowUpActionModal: React.FC<Props> = ({ isOpen, followUp, onClose, onOpe
   const originalDate = followUp.originalScheduledDate || followUp.previousFollowupDate || followUp.scheduledAt;
   const extendedDate = followUp.extendedDate || followUp.newFollowupDate;
   
-  const latestNote = followUp.latestFollowupNote || followUp.recentDescription || followUp.description || 'No notes available';
+  const latestFollowupNote = followUp.latestFollowupNote || followUp.recentDescription || null;
+  const latestFollowupTime = formatActivityTime(followUp.latestFollowupAt || followUp.updatedAt || followUp.createdAt);
+  const latestFollowupBy = followUp.latestFollowupBy || followUp.user?.displayName || followUp.user?.name || null;
+  const latestLeadRemark = followUp.latestLeadRemark || null;
+  const latestLeadRemarkTime = formatActivityTime(followUp.latestLeadRemarkAt);
+  const latestLeadRemarkBy = followUp.latestLeadRemarkBy || null;
 
   return (
     <AnimatePresence>
@@ -212,14 +224,45 @@ const FollowUpActionModal: React.FC<Props> = ({ isOpen, followUp, onClose, onOpe
                 ) : null}
               </div>
 
-              <div className="mt-5 border-t border-gray-100 pt-5">
-                <p className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 mb-2">
-                  <FileText className="h-3.5 w-3.5" /> Latest Follow-up Note
-                </p>
-                <div className="rounded-xl bg-gray-50 p-4 border border-gray-100">
-                  <p className="text-sm font-semibold text-gray-700 whitespace-pre-wrap leading-relaxed">
-                    {latestNote}
+            </div>
+
+            {/* Latest Activity */}
+            <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+              <h5 className="text-xs font-black uppercase tracking-wider text-gray-400 mb-4">Latest Activity</h5>
+
+              <div className="space-y-4">
+                <div className="rounded-xl border border-emerald-100 bg-emerald-50/50 p-4">
+                  <p className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-emerald-700 mb-2">
+                    <FileText className="h-3.5 w-3.5" /> Last Follow-up Note
                   </p>
+                  <div className="max-h-28 overflow-y-auto pr-1">
+                    <p className="text-sm font-semibold text-gray-800 whitespace-pre-wrap break-words leading-relaxed">
+                      {latestFollowupNote || 'No follow-up notes available.'}
+                    </p>
+                  </div>
+                  {latestFollowupNote ? (
+                    <div className="mt-3 flex flex-col gap-1 text-[11px] font-bold text-gray-500 sm:flex-row sm:items-center sm:justify-between">
+                      <span>Last Follow-up Time: {latestFollowupTime || '-'}</span>
+                      {latestFollowupBy ? <span>Added By: {latestFollowupBy}</span> : null}
+                    </div>
+                  ) : null}
+                </div>
+
+                <div className="rounded-xl border border-blue-100 bg-blue-50/50 p-4">
+                  <p className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-blue-700 mb-2">
+                    <MessageSquareText className="h-3.5 w-3.5" /> Last Lead Remark
+                  </p>
+                  <div className="max-h-28 overflow-y-auto pr-1">
+                    <p className="text-sm font-semibold text-gray-800 whitespace-pre-wrap break-words leading-relaxed">
+                      {latestLeadRemark || 'No lead remarks available.'}
+                    </p>
+                  </div>
+                  {latestLeadRemark ? (
+                    <div className="mt-3 flex flex-col gap-1 text-[11px] font-bold text-gray-500 sm:flex-row sm:items-center sm:justify-between">
+                      <span>Last Remark Added: {latestLeadRemarkTime || '-'}</span>
+                      {latestLeadRemarkBy ? <span>Added By: {latestLeadRemarkBy}</span> : null}
+                    </div>
+                  ) : null}
                 </div>
               </div>
             </div>
