@@ -4,6 +4,7 @@ import { X, User, Target, Save, Loader2, Shield } from 'lucide-react';
 import { useForm, FormProvider, SubmitHandler } from 'react-hook-form';
 import { useQueryClient } from '@tanstack/react-query';
 import { useUsersStore } from '../../store/useUsersStore';
+import * as usersApi from '../../services/users.api';
 import {
   useUserDetailQuery,
   useRolesQuery,
@@ -138,8 +139,6 @@ const CreateUserModal: React.FC = () => {
   const { data: officesData } = useOfficesQuery();
   const { data: locationTreeData } = useLocationTreeQuery();
   const { data: allLocationsData } = useAllLocationsQuery();
-
-  const [accessTabErrorCount, setAccessTabErrorCount] = useState(0);
 
   const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
   const [profileImagePreviewUrl, setProfileImagePreviewUrl] = useState<string | null>(null);

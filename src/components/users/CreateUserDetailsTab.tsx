@@ -41,7 +41,7 @@ interface CreateUserDetailsTabProps {
   handleProfileImageChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   handleRemoveProfileImage: () => void;
   isProfileImageSaving: boolean;
-  profileImageInputRef: React.RefObject<HTMLInputElement>;
+  profileImageInputRef: React.RefObject<HTMLInputElement | null>;
   profileImageFile: File | null;
 }
 
