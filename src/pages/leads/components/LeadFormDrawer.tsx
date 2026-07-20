@@ -26,6 +26,7 @@ import { LEAD_WHATSAPP_PERMISSIONS } from '../../../constants/whatsappPermission
 import { getLeadPayments, updateLeadTotalAmount, requestAdvancePayment, uploadLeadProfileImage, removeLeadProfileImage } from '../../../services/leads.api';
 import LeadAvatar from './LeadAvatar';
 import type { ListLeadsResponse } from '../../../types/lead.types';
+import { getImageUrl } from '../../../utils/getImageUrl';
 
 interface LeadFormDrawerProps {
   isOpen: boolean;
@@ -1103,7 +1104,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
                       <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
                         <LeadAvatar
                           name={formValues.name || hydratedLead?.name || 'Lead'}
-                          imageUrl={hydratedLead?.profileImageUrl || hydratedLead?.profileImageThumbnail}
+                          imageUrl={getImageUrl(hydratedLead?.profileImageUrl || hydratedLead?.profileImageThumbnail)}
                           localPreviewUrl={profileImagePreviewUrl}
                           className="h-28 w-28"
                           textClassName="text-4xl"

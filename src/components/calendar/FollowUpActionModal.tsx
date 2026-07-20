@@ -8,6 +8,7 @@ import WhatsAppActionButton from '../common/WhatsAppActionButton';
 import { LEAD_WHATSAPP_PERMISSIONS } from '../../constants/whatsappPermissions';
 import { formatPhoneWithFlag } from '../../utils/phoneUtils';
 import LeadAvatar from '../../pages/leads/components/LeadAvatar';
+import { getImageUrl } from '../../utils/getImageUrl';
 
 interface Props {
   isOpen: boolean;

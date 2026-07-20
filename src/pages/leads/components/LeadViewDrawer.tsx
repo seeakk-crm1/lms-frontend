@@ -21,6 +21,7 @@ import WhatsAppActionButton from '../../../components/common/WhatsAppActionButto
 import { LEAD_WHATSAPP_PERMISSIONS } from '../../../constants/whatsappPermissions';
 import LeadAvatar from './LeadAvatar';
 import { formatPhoneWithFlag } from '../../../utils/phoneUtils';
+import { getImageUrl } from '../../../utils/getImageUrl';
 
 interface LeadViewDrawerProps {
   isOpen: boolean;
@@ -174,7 +175,7 @@ const LeadViewDrawer: React.FC<LeadViewDrawerProps> = ({
                 <div className="flex min-w-0 flex-1 items-center gap-3">
                   <LeadAvatar
                     name={resolvedLead?.name}
-                    imageUrl={resolvedLead?.profileImageThumbnail || resolvedLead?.profileImageUrl}
+                    imageUrl={getImageUrl(resolvedLead?.profileImageThumbnail || resolvedLead?.profileImageUrl)}
                     className="h-14 w-14"
                     textClassName="text-lg"
                   />
@@ -361,7 +362,7 @@ const LeadViewDrawer: React.FC<LeadViewDrawerProps> = ({
                             {resolvedLead.assignedTo && (
                               <div className="h-8 w-8 shrink-0 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-500 overflow-hidden">
                                 {resolvedLead.assignedTo.profileImageUrl ? (
-                                  <img src={resolvedLead.assignedTo.profileImageUrl} alt="Assigned" className="w-full h-full object-cover" />
+                                  <img src={getImageUrl(resolvedLead.assignedTo.profileImageUrl)} alt="Assigned" className="w-full h-full object-cover" />
                                 ) : (
                                   (resolvedLead.assignedTo.displayName || resolvedLead.assignedTo.email || 'U').charAt(0).toUpperCase()
                                 )}

@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import useAuthStore from '../../store/useAuthStore';
 import { getPrimaryRoleName } from '../../utils/permissions';
 import UserProfileModal from './UserProfileModal';
+import { getImageUrl } from '../../utils/getImageUrl';
 
 type UserProfileTab = 'profile' | 'security';
 
@@ -104,7 +105,7 @@ const ProfileMenu: React.FC = () => {
               }`}
             >
               {user?.profileImageUrl ? (
-                <img src={user.profileImageUrl} alt={displayName} className="w-full h-full object-cover" />
+                <img src={getImageUrl(user.profileImageUrl)} alt={displayName} className="w-full h-full object-cover" />
               ) : (
                 displayName.charAt(0).toUpperCase()
               )}
@@ -129,7 +130,7 @@ const ProfileMenu: React.FC = () => {
                   <div className="relative mt-0.5">
                     <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600 text-lg font-black text-white shadow-lg shadow-emerald-500/20 overflow-hidden">
                       {user?.profileImageUrl ? (
-                        <img src={user.profileImageUrl} alt={displayName} className="w-full h-full object-cover" />
+                        <img src={getImageUrl(user.profileImageUrl)} alt={displayName} className="w-full h-full object-cover" />
                       ) : (
                         initials
                       )}

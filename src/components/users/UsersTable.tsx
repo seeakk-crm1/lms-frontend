@@ -36,6 +36,7 @@ import { USER_WHATSAPP_PERMISSIONS } from '../../constants/whatsappPermissions';
 import OfficeFilterSelect from '../OfficeFilterSelect';
 import useAuthStore from '../../store/useAuthStore';
 import { canUseOfficeFilter } from '../../utils/officeFilterAccess';
+import { getImageUrl } from '../../utils/getImageUrl';
 
 const UsersTable: React.FC = () => {
   const { search, setSearch, filters, setFilters, page, setPage, openCreateModal } = useUsersStore();
@@ -364,7 +365,7 @@ const UsersTable: React.FC = () => {
                         className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-600 font-bold shrink-0 overflow-hidden"
                       >
                         {user.profileImageUrl ? (
-                          <img src={user.profileImageUrl} alt={user.name || 'User'} className="w-full h-full object-cover" />
+                          <img src={getImageUrl(user.profileImageUrl)} alt={user.name || 'User'} className="w-full h-full object-cover" />
                         ) : (
                           user.name?.charAt(0) || user.email.charAt(0).toUpperCase()
                         )}

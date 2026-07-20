@@ -4,6 +4,7 @@ import imageCompression from 'browser-image-compression';
 import { useFormContext, Controller } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import api from '../../services/api';
+import { getImageUrl } from '../../../utils/getImageUrl';
 
 interface UserAvatarUploadProps {
   name: string;
@@ -73,7 +74,7 @@ const UserAvatarUpload: React.FC<UserAvatarUploadProps> = ({ name }) => {
       <div className="flex items-center gap-6 w-full">
         <div className="relative h-20 w-20 shrink-0 rounded-full border-4 border-white bg-gray-50 shadow-md overflow-hidden group">
           {currentImageUrl ? (
-            <img src={currentImageUrl} alt="Profile" className="h-full w-full object-cover" />
+            <img src={getImageUrl(currentImageUrl)} alt="Profile" className="h-full w-full object-cover" />
           ) : (
             <div className="flex h-full w-full items-center justify-center text-emerald-600 bg-emerald-50">
               <Camera className="h-7 w-7 opacity-50" />
