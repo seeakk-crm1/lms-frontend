@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, User, Target, Save, Loader2, Shield } from 'lucide-react';
 import { useForm, FormProvider, SubmitHandler } from 'react-hook-form';
+import { useQueryClient } from '@tanstack/react-query';
 import { useUsersStore } from '../../store/useUsersStore';
 import {
   useUserDetailQuery,
