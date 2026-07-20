@@ -11,6 +11,7 @@ import LeadSlaDecisionModal from './components/LeadSlaDecisionModal';
 import LeadsTable from './components/LeadsTable';
 import { ExportLeadsModal } from './components/ExportLeadsModal';
 import { getLeadById } from '../../services/leads.api';
+import { createSheetFromLeadExport } from '../../services/sheets.api';
 import {
   useLeadsQuery,
   useLeadMetaQuery,
@@ -23,6 +24,7 @@ import {
   useExtendLeadSlaMutation,
   useToggleLeadStarMutation,
 } from '../../hooks/useLeads';
+import { useMutation } from '@tanstack/react-query';
 import { LeadListItem } from '../../types/lead.types';
 import { lazyWithChunkRecovery } from '../../utils/chunkLoadRecovery';
 import useAuthStore from '../../store/useAuthStore';
@@ -87,6 +89,30 @@ const LeadsPage: React.FC = () => {
   const { data: meta } = useLeadMetaQuery();
   const exportMutation = useExportLeads();
   const exportXlsxMutation = useExportLeadsXlsx();
+  const importToSheetsMutation = useMutation({
+    mutationFn: (fields: string[]) =>
+      createSheetFromLeadExport({
+        fields,
+        filters: {
+          search: search || undefined,
+          stage: filters.stage || undefined,
+          assignedTo: filters.assignedTo || undefined,
+          source: filters.source || undefined,
+          officeId: showOfficeFilter ? filters.officeId || undefined : undefined,
+          status: filters.status || undefined,
+          starred: filters.starred && filters.starred !== 'ALL' ? filters.starred : undefined,
+          includeArchived: exportIncludeArchived,
+        },
+      }),
+    onSuccess: (sheet) => {
+      toast.success('Lead export imported to Sheets');
+      setExportModalState((prev) => ({ ...prev, isOpen: false }));
+      navigate(`/sheets?sheetId=${sheet.id}`);
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || 'Unable to import lead export to Sheets');
+    },
+  });
   const deleteMutation = useDeleteLeadMutation();
   const permanentDeleteMutation = usePermanentDeleteLeadMutation();
   const bulkDeleteMutation = useBulkDeleteLeadsMutation();
@@ -682,7 +708,9 @@ const LeadsPage: React.FC = () => {
           isOpen={exportModalState.isOpen}
           onClose={() => setExportModalState(prev => ({ ...prev, isOpen: false }))}
           isExporting={exportMutation.isPending || exportXlsxMutation.isPending}
+          isImportingToSheets={importToSheetsMutation.isPending}
           exportFormatLabel={exportModalState.format === 'csv' ? 'CSV' : 'Excel'}
+          onImportToSheets={(fields) => importToSheetsMutation.mutate(fields)}
           onExport={(fields) => {
             if (exportModalState.format === 'csv') handleExportCsv(fields);
             else handleExportXlsx(fields);

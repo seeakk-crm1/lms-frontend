@@ -1,13 +1,15 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Search, X, CheckSquare, Square, Download } from 'lucide-react';
+import { Search, X, CheckSquare, Square, Download, FileSpreadsheet } from 'lucide-react';
 import { useLeadStore } from '../../../store/leadStore';
 
 interface ExportLeadsModalProps {
   isOpen: boolean;
   onClose: () => void;
   onExport: (selectedFields: string[]) => void;
+  onImportToSheets?: (selectedFields: string[]) => void;
   isExporting: boolean;
+  isImportingToSheets?: boolean;
   exportFormatLabel?: string;
 }
 
@@ -82,7 +84,15 @@ const STATIC_FIELD_GROUPS: FieldGroup[] = [
 
 const LOCAL_STORAGE_KEY = 'seeakk_export_selected_fields';
 
-export const ExportLeadsModal: React.FC<ExportLeadsModalProps> = ({ isOpen, onClose, onExport, isExporting, exportFormatLabel = '' }) => {
+export const ExportLeadsModal: React.FC<ExportLeadsModalProps> = ({
+  isOpen,
+  onClose,
+  onExport,
+  onImportToSheets,
+  isExporting,
+  isImportingToSheets = false,
+  exportFormatLabel = '',
+}) => {
   const dynamicFields = useLeadStore((state: any) => state.dynamicFields);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFields, setSelectedFields] = useState<Set<string>>(new Set());
@@ -212,7 +222,7 @@ export const ExportLeadsModal: React.FC<ExportLeadsModalProps> = ({ isOpen, onCl
     setValidationError(null);
   };
 
-  const handleExportClick = () => {
+  const getOrderedSelection = () => {
     if (selectedFields.size === 0) return;
     
     const usedOrders = new Set<number>();
@@ -236,7 +246,19 @@ export const ExportLeadsModal: React.FC<ExportLeadsModalProps> = ({ isOpen, onCl
     });
     
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(orderedSelection));
+    return orderedSelection;
+  };
+
+  const handleExportClick = () => {
+    const orderedSelection = getOrderedSelection();
+    if (!orderedSelection) return;
     onExport(orderedSelection);
+  };
+
+  const handleImportToSheetsClick = () => {
+    const orderedSelection = getOrderedSelection();
+    if (!orderedSelection || !onImportToSheets) return;
+    onImportToSheets(orderedSelection);
   };
 
   const filteredGroups = useMemo(() => {
@@ -390,9 +412,28 @@ export const ExportLeadsModal: React.FC<ExportLeadsModalProps> = ({ isOpen, onCl
                 >
                   Cancel
                 </button>
+                {onImportToSheets && (
+                  <button
+                    onClick={handleImportToSheetsClick}
+                    disabled={selectedFields.size === 0 || isExporting || isImportingToSheets}
+                    className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-5 py-2.5 text-sm font-black text-emerald-700 transition-colors hover:bg-emerald-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isImportingToSheets ? (
+                      <span className="flex items-center gap-2">
+                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-emerald-300 border-t-emerald-700" />
+                        Importing...
+                      </span>
+                    ) : (
+                      <>
+                        <FileSpreadsheet className="h-4 w-4" />
+                        Import to Sheets
+                      </>
+                    )}
+                  </button>
+                )}
                 <button
                   onClick={handleExportClick}
-                  disabled={selectedFields.size === 0 || isExporting}
+                  disabled={selectedFields.size === 0 || isExporting || isImportingToSheets}
                   className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-2.5 text-sm font-black text-white shadow-sm shadow-blue-600/20 transition-colors hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isExporting ? (

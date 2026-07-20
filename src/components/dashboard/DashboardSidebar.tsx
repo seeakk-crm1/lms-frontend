@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     LayoutDashboard, Users, Settings, FileText, Calendar as CalendarIcon,
-    Briefcase, FileBarChart, Unplug, ChevronDown, Activity, ChevronRight, LogOut, LucideIcon, X
+    Briefcase, FileBarChart, Table2, Unplug, ChevronDown, Activity, ChevronRight, LogOut, LucideIcon, X
 } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import useAuthStore from '../../store/useAuthStore';
@@ -109,6 +109,7 @@ const sidebarMenus: SidebarSection[] = [
                     { label: 'Export Center', path: '/reports/export', requiredPermissions: ['REPORTS_VIEW', 'REPORTS_GENERATE'] },
                 ]
             },
+            { icon: Table2, label: 'Sheets', path: '/sheets', requiredPermissions: ['SHEETS_VIEW'] },
             { icon: FileBarChart, label: 'LOB Analysis', path: '/lob-analysis', requiredPermissions: ['LOB_ANALYSIS_VIEW'] }
         ]
     },

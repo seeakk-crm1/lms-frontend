@@ -66,6 +66,7 @@ import LOBReasonsPage from './modules/lob-reasons/pages/LOBReasonsPage';
 import FollowUpExtensionReasonsPage from './modules/followup-extension-reasons/pages/FollowUpExtensionReasonsPage';
 import AttendancePage from './pages/attendance/AttendancePage';
 import LocationTrackerPage from './pages/location/LocationTrackerPage';
+import SheetsPage from './pages/sheets/SheetsPage';
 
 interface RouteProps {
   children: ReactNode;
@@ -418,6 +419,12 @@ function App() {
         <Route path="/lob-analysis" element={
           <PermissionRoute permissions={['LOB_ANALYSIS_VIEW']}>
             <LOBAnalysisPage />
+          </PermissionRoute>
+        } />
+
+        <Route path="/sheets" element={
+          <PermissionRoute permissions={['SHEETS_VIEW']}>
+            <SheetsPage />
           </PermissionRoute>
         } />
 
