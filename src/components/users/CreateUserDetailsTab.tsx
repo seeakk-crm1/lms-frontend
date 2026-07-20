@@ -1,7 +1,7 @@
 import React from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
 import type { UserFormData } from './CreateUserModal.types';
-import { getImageUrl } from '../../../utils/getImageUrl';
+import { getImageUrl } from '../../utils/getImageUrl';
 import PhoneInput from '../common/PhoneInput';
 import { validatePhoneStr } from '../../utils/phoneUtils';
 import type { PhoneCountry } from '../../constants/phoneCountries';
