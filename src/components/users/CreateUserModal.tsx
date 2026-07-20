@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, User, Target, Save, Loader2, Shield } from 'lucide-react';
 import { useForm, FormProvider, SubmitHandler } from 'react-hook-form';
@@ -10,102 +10,16 @@ import {
   useRolesQuery,
   useSupervisorsQuery,
   useOfficesQuery,
-  useLocationTreeQuery,
-  useAllLocationsQuery,
   useDepartmentsQuery,
 } from '../../hooks/useUsersQuery';
 import { useCreateInviteUserMutation, useUpdateUserMutation } from '../../hooks/useUserMutations';
 import { assignUserTargetCycleAdmin } from '../../services/target.api';
-import { DEFAULT_PHONE_COUNTRY, PHONE_COUNTRIES, type PhoneCountry } from '../../constants/phoneCountries';
 import CreateUserDetailsTab from './CreateUserDetailsTab';
 import CreateUserAccessTab from './CreateUserAccessTab';
 import CreateUserTargetsTab from './CreateUserTargetsTab';
 import type { UserFormData } from './CreateUserModal.types';
-import type { Location } from '../../types/user.types';
 
 import { toast } from 'react-hot-toast';
-
-const findPhoneCountryByDialCode = (value?: string): PhoneCountry => {
-  const trimmed = (value || '').trim();
-  const sortedCountries = [...PHONE_COUNTRIES].sort((left, right) => right.dialCode.length - left.dialCode.length);
-  const match = sortedCountries.find((country) => trimmed.startsWith(country.dialCode));
-  return match || DEFAULT_PHONE_COUNTRY;
-};
-
-const toPhoneDigits = (value: string): string => value.replace(/\D/g, '');
-
-const normalizePhoneDigitsForCountry = (value: string, country: PhoneCountry): string => {
-  let digits = toPhoneDigits(value);
-  const dialCodeDigits = country.dialCode.replace('+', '');
-
-  if (digits.startsWith(dialCodeDigits)) {
-    digits = digits.slice(dialCodeDigits.length);
-  }
-
-  if (country.iso === 'IN' && digits.length > 10 && digits.startsWith('0')) {
-    digits = digits.slice(1);
-  }
-
-  return digits.slice(0, country.maxDigits);
-};
-
-const toE164PhoneNumber = (digits: string, country: PhoneCountry): string =>
-  digits ? `${country.dialCode}${digits}` : '';
-
-const formatPhoneInputValue = (value: string, country: PhoneCountry): string => {
-  const digits = normalizePhoneDigitsForCountry(value, country);
-  return country.format(digits);
-};
-
-const getPhoneValidationMessage = (value: string, country: PhoneCountry): string | true => {
-  const trimmed = value.trim();
-  if (!trimmed) return true;
-
-  const digits = normalizePhoneDigitsForCountry(trimmed, country);
-  if (!digits) return 'Enter a phone number.';
-  if (digits.length < country.minDigits) {
-    return `Enter a valid ${country.name} phone number.`;
-  }
-  if (digits.length > country.maxDigits) {
-    return `Phone number is too long for ${country.name}.`;
-  }
-
-  return true;
-};
-
-const formatLocationLabel = (value?: string | null) => {
-  const normalized = (value || '').trim();
-  if (!normalized) return 'Location';
-
-  return normalized
-    .replace(/_/g, ' ')
-    .toLowerCase()
-    .replace(/\b\w/g, (character) => character.toUpperCase());
-};
-
-const getAddressPathFromLocation = (
-  countryId: string,
-  leafId: string,
-  locationById: Map<string, Location>,
-) => {
-  const path: string[] = [];
-  let cursorId: string | undefined = leafId;
-  const visited = new Set<string>();
-
-  while (cursorId) {
-    if (visited.has(cursorId)) break;
-    visited.add(cursorId);
-
-    const location = locationById.get(cursorId);
-    if (!location) break;
-    if (location.id === countryId) break;
-
-    path.push(location.id);
-    cursorId = location.parentId;
-  }
-
-  return path.reverse();
-};
 
 type CreateUserPayload = {
   name: string;
@@ -116,10 +30,6 @@ type CreateUserPayload = {
   departmentId?: string;
   supervisorId?: string;
   officeId?: string;
-  countryId?: string;
-  stateId?: string;
-  districtId?: string;
-  assignedLocationIds?: string[];
   profileImageUrl?: string;
 };
 
@@ -130,15 +40,12 @@ const CreateUserModal: React.FC = () => {
   const { isCreateModalOpen, selectedUserId, closeCreateModal } = useUsersStore();
   const [activeTab, setActiveTab] = useState<'details' | 'access' | 'targets'>('details');
   const initialTargetCycleIdRef = useRef<string | null>(null);
-  const [selectedPhoneCountry, setSelectedPhoneCountry] = useState<PhoneCountry>(DEFAULT_PHONE_COUNTRY);
   
   const { data: userDetail } = useUserDetailQuery(selectedUserId);
   const { data: rolesData } = useRolesQuery();
   const { data: deptsData } = useDepartmentsQuery();
   const { data: supervisorsData } = useSupervisorsQuery();
   const { data: officesData } = useOfficesQuery();
-  const { data: locationTreeData } = useLocationTreeQuery();
-  const { data: allLocationsData } = useAllLocationsQuery();
 
   const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
   const [profileImagePreviewUrl, setProfileImagePreviewUrl] = useState<string | null>(null);
@@ -216,20 +123,13 @@ const CreateUserModal: React.FC = () => {
       departmentId: '',
       supervisorId: '',
       officeId: '',
-      countryId: '',
-      stateId: '',
-      districtId: '',
       isActive: true,
-      assignedLocationIds: [],
       assignedTargetCycleId: '',
       profileImageUrl: '',
     }
   });
 
-  const { reset, handleSubmit, watch, setFocus, setValue, clearErrors, formState: { isSubmitting, errors } } = methods;
-  const countryId = watch('countryId');
-  const stateId = watch('stateId');
-  const districtId = watch('districtId');
+  const { reset, handleSubmit, setFocus, formState: { isSubmitting, errors } } = methods;
 
   const getFieldClassName = (hasError?: boolean) =>
     `w-full px-4 py-2.5 rounded-xl outline-none transition-all text-sm ${
@@ -248,10 +148,10 @@ const CreateUserModal: React.FC = () => {
   const renderFieldError = (message?: string) =>
     message ? <p className="text-[11px] text-rose-500 font-bold leading-relaxed">{message}</p> : null;
 
-  const detailsTabErrorCount = ['name', 'username', 'email', 'phone', 'countryId', 'stateId', 'districtId'].filter(
+  const detailsTabErrorCount = ['name', 'username', 'email', 'phone'].filter(
     (key) => Boolean(errors[key as keyof typeof errors]),
   ).length;
-  const accessTabErrorCount = ['roleId', 'departmentId', 'supervisorId', 'officeId', 'assignedLocationIds'].filter(
+  const accessTabErrorCount = ['roleId', 'departmentId', 'supervisorId', 'officeId'].filter(
     (key) => Boolean(errors[key as keyof typeof errors]),
   ).length;
 
@@ -269,10 +169,6 @@ const CreateUserModal: React.FC = () => {
     departmentId: toOptional(data.departmentId),
     supervisorId: toOptional(data.supervisorId),
     officeId: toOptional(data.officeId),
-    countryId: toOptional(data.countryId),
-    stateId: toOptional(data.stateId),
-    districtId: toOptional(data.districtId),
-    assignedLocationIds: (data.assignedLocationIds || []).filter(Boolean),
     profileImageUrl: toOptional(data.profileImageUrl),
   });
 
@@ -288,10 +184,6 @@ const CreateUserModal: React.FC = () => {
       departmentId: toOptional(data.departmentId),
       supervisorId: data.supervisorId.trim() ? data.supervisorId.trim() : null,
       officeId: toOptional(data.officeId),
-      countryId: toOptional(data.countryId),
-      stateId: toOptional(data.stateId),
-      districtId: toOptional(data.districtId),
-      assignedLocationIds: (data.assignedLocationIds || []).filter(Boolean),
       isActive: data.isActive,
       profileImageUrl: toOptional(data.profileImageUrl),
       ...(targetCycleChanged ? { assignedTargetCycleId: nextTargetCycleId } : {}),
@@ -308,7 +200,6 @@ const CreateUserModal: React.FC = () => {
   useEffect(() => {
     if (userDetail?.user) {
       const u = userDetail.user;
-      setSelectedPhoneCountry(findPhoneCountryByDialCode(u.phone || ''));
       reset({
         name: u.name || '',
         username: u.username || '',
@@ -321,11 +212,7 @@ const CreateUserModal: React.FC = () => {
             ? u.supervisor
             : u.supervisor?.id || '',
         officeId: u.office?.id || '',
-        countryId: u.country?.id || '',
-        stateId: u.state?.id || '',
-        districtId: u.district?.id || '',
         isActive: u.isActive,
-        assignedLocationIds: u.assignedLocations?.map((l: any) => l.location.id) || [],
         assignedTargetCycleId: u.assignedTargetCycleId || u.assignedTargetCycle?.id || '',
         profileImageUrl: u.profileImageUrl || '',
       });
@@ -334,7 +221,6 @@ const CreateUserModal: React.FC = () => {
       );
     } else if (isCreateModalOpen && !selectedUserId) {
         initialTargetCycleIdRef.current = null;
-        setSelectedPhoneCountry(DEFAULT_PHONE_COUNTRY);
         reset({
             name: '',
             username: '',
@@ -344,36 +230,12 @@ const CreateUserModal: React.FC = () => {
             departmentId: '',
             supervisorId: '',
             officeId: '',
-            countryId: '',
-            stateId: '',
-            districtId: '',
             isActive: true,
-            assignedLocationIds: [],
             assignedTargetCycleId: '',
             profileImageUrl: '',
         });
     }
   }, [userDetail, reset, isCreateModalOpen, selectedUserId]);
-
-  useEffect(() => {
-    if (!isCreateModalOpen || selectedUserId) return;
-    setSelectedPhoneCountry(DEFAULT_PHONE_COUNTRY);
-  }, [isCreateModalOpen, selectedUserId]);
-
-  useEffect(() => {
-    if (!countryId) {
-      setValue('stateId', '');
-      setValue('districtId', '');
-      clearErrors(['stateId', 'districtId']);
-    }
-  }, [clearErrors, countryId, setValue]);
-
-  useEffect(() => {
-    if (!stateId) {
-      setValue('districtId', '');
-      clearErrors('districtId');
-    }
-  }, [clearErrors, setValue, stateId]);
 
   const onSubmit: SubmitHandler<UserFormData> = async (data) => {
     if (isMutationPending) return;
@@ -446,9 +308,6 @@ const CreateUserModal: React.FC = () => {
       'username',
       'email',
       'phone',
-      'countryId',
-      'stateId',
-      'districtId',
     ];
     const accessFields: Array<keyof UserFormData> = [
       'roleId',
@@ -456,7 +315,6 @@ const CreateUserModal: React.FC = () => {
       'supervisorId',
       'officeId',
       'isActive',
-      'assignedLocationIds',
     ];
 
     if (detailFields.includes(firstErrorField)) {
@@ -473,106 +331,6 @@ const CreateUserModal: React.FC = () => {
   };
 
   const submitForm = handleSubmit(onSubmit, onInvalid);
-
-  const allLocations = (allLocationsData?.locations || []) as Location[];
-  const locationById = useMemo(
-    () => new Map(allLocations.map((location) => [location.id, location])),
-    [allLocations],
-  );
-
-  const countryOptions = useMemo(
-    () =>
-      allLocations
-        .filter((location) => location.type === 'COUNTRY')
-        .map((location) => ({ id: location.id, name: location.name })),
-    [allLocations],
-  );
-
-  const addressSelectionPath = useMemo(() => {
-    if (!countryId) return [];
-
-    if (districtId) {
-      const derivedPath = getAddressPathFromLocation(countryId, districtId, locationById);
-      if (derivedPath.length > 0) return derivedPath;
-    }
-
-    if (stateId) {
-      const derivedPath = getAddressPathFromLocation(countryId, stateId, locationById);
-      if (derivedPath.length > 0) return derivedPath;
-      return [stateId];
-    }
-
-    return [];
-  }, [countryId, districtId, locationById, stateId]);
-
-  const addressLevels = useMemo(() => {
-    if (!countryId) return [];
-
-    const levels: Array<{
-      key: string;
-      label: string;
-      selectedId: string;
-      options: Array<{ id: string; name: string }>;
-      helperText?: string;
-    }> = [];
-
-    let parentId = countryId;
-    let levelIndex = 0;
-
-    while (parentId) {
-      const childOptions = allLocations.filter((location) => location.parentId === parentId);
-      if (childOptions.length === 0) break;
-
-      const selectedId = addressSelectionPath[levelIndex] || '';
-      const levelLabel =
-        childOptions[0]?.level?.levelName ||
-        formatLocationLabel(childOptions[0]?.type) ||
-        `Level ${levelIndex + 1}`;
-
-      levels.push({
-        key: `${parentId}-${levelIndex}`,
-        label: levelLabel,
-        selectedId,
-        options: childOptions.map((location) => ({
-          id: location.id,
-          name: location.name,
-        })),
-        helperText:
-          !selectedId && levelIndex > 0
-            ? `Choose the previous ${levels[levelIndex - 1]?.label.toLowerCase()} first to unlock this level.`
-            : undefined,
-      });
-
-      if (!selectedId) break;
-
-      parentId = selectedId;
-      levelIndex += 1;
-    }
-
-    return levels;
-  }, [addressSelectionPath, allLocations, countryId]);
-
-  const handleCountryChange = (nextCountryId: string) => {
-    setValue('countryId', nextCountryId, { shouldDirty: true, shouldValidate: true });
-    setValue('stateId', '', { shouldDirty: true, shouldValidate: true });
-    setValue('districtId', '', { shouldDirty: true, shouldValidate: true });
-    clearErrors(['countryId', 'stateId', 'districtId']);
-  };
-
-  const handleAddressLevelChange = (levelIndex: number, nextLocationId: string) => {
-    const nextPath = addressSelectionPath.slice(0, levelIndex);
-
-    if (nextLocationId) {
-      nextPath.push(nextLocationId);
-    }
-
-    setValue('stateId', nextPath[0] || '', { shouldDirty: true, shouldValidate: true });
-    setValue('districtId', nextPath.length >= 2 ? nextPath[nextPath.length - 1] : '', {
-      shouldDirty: true,
-      shouldValidate: true,
-    });
-    clearErrors(['stateId', 'districtId']);
-  };
 
   const departments = Array.isArray(deptsData) ? deptsData : deptsData?.departments || [];
   const safeRoles = (rolesData?.roles || []).map((role: any) => ({
@@ -613,7 +371,7 @@ const CreateUserModal: React.FC = () => {
             <h2 className="text-xl font-bold text-gray-900">
               {selectedUserId ? 'Modify User Profile' : 'Onboard New User'}
             </h2>
-            <p className="text-sm text-gray-500">Configure profile, access, location boundaries, and targets</p>
+            <p className="text-sm text-gray-500">Configure profile, access control, and targets</p>
           </div>
           <button onClick={closeCreateModal} className="p-2 hover:bg-gray-100 rounded-xl transition-colors text-gray-400">
             <X className="w-5 h-5" />
@@ -656,22 +414,10 @@ const CreateUserModal: React.FC = () => {
               {/* Tab: Details */}
               <div style={{ display: activeTab === 'details' ? 'block' : 'none' }} className="space-y-6">
                 <CreateUserDetailsTab
-                  countryOptions={countryOptions}
-                  countryId={countryId}
-                  addressLevels={addressLevels}
-                  onCountryChange={handleCountryChange}
-                  onAddressLevelChange={handleAddressLevelChange}
                   selectedUserId={selectedUserId}
-                  selectedPhoneCountry={selectedPhoneCountry}
-                  setSelectedPhoneCountry={setSelectedPhoneCountry}
                   detailsTabErrorCount={detailsTabErrorCount}
                   getFieldClassName={getFieldClassName}
-                  getSelectClassName={getSelectClassName}
                   renderFieldError={renderFieldError}
-                  normalizePhoneDigitsForCountry={normalizePhoneDigitsForCountry}
-                  toE164PhoneNumber={toE164PhoneNumber}
-                  formatPhoneInputValue={formatPhoneInputValue}
-                  getPhoneValidationMessage={getPhoneValidationMessage}
                   profileImagePreviewUrl={profileImagePreviewUrl}
                   handleProfileImageChange={handleProfileImageChange}
                   handleRemoveProfileImage={handleRemoveProfileImage}
@@ -688,7 +434,6 @@ const CreateUserModal: React.FC = () => {
                   safeDepartments={safeDepartments}
                   supervisorsData={supervisorsData}
                   officesData={officesData}
-                  locationTreeData={locationTreeData}
                   accessTabErrorCount={accessTabErrorCount}
                   getSelectClassName={getSelectClassName}
                   renderFieldError={renderFieldError}

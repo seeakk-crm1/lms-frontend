@@ -1,8 +1,6 @@
 import React from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
-import { MapPin } from 'lucide-react';
 import { motion } from 'framer-motion';
-import LocationSelector from './LocationSelector';
 import type { UserFormData } from './CreateUserModal.types';
 import useAuthStore from '../../store/useAuthStore';
 import { isSuperAdmin } from '../../utils/permissions';
@@ -12,7 +10,6 @@ interface CreateUserAccessTabProps {
   safeDepartments: Array<{ value: string; label: string }>;
   supervisorsData: any;
   officesData: any;
-  locationTreeData: any;
   accessTabErrorCount: number;
   getSelectClassName: (hasError?: boolean) => string;
   renderFieldError: (message?: string) => React.ReactNode;
@@ -23,7 +20,6 @@ const CreateUserAccessTab: React.FC<CreateUserAccessTabProps> = ({
   safeDepartments,
   supervisorsData,
   officesData,
-  locationTreeData,
   accessTabErrorCount,
   getSelectClassName,
   renderFieldError,
@@ -130,20 +126,6 @@ const CreateUserAccessTab: React.FC<CreateUserAccessTabProps> = ({
           <p className="text-sm font-bold text-gray-700">Account Active</p>
           <p className="text-[10px] text-gray-500">Enable or disable user access immediately</p>
         </div>
-      </div>
-
-      <div className="space-y-3">
-        <label className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-2">
-          <MapPin className="w-4 h-4" />
-          Assigned Visibility Boundary
-        </label>
-        <Controller
-          name="assignedLocationIds"
-          control={control}
-          render={({ field }) => (
-            <LocationSelector locations={locationTreeData?.tree || []} selectedIds={field.value} onSelect={field.onChange} />
-          )}
-        />
       </div>
     </div>
   );

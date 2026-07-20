@@ -1,41 +1,15 @@
 import React from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
-import type { UserFormData } from './CreateUserModal.types';
 import { getImageUrl } from '../../utils/getImageUrl';
 import PhoneInput from '../common/PhoneInput';
 import { validatePhoneStr } from '../../utils/phoneUtils';
-import type { PhoneCountry } from '../../constants/phoneCountries';
-
-interface AddressLevelOption {
-  id: string;
-  name: string;
-}
-
-interface AddressLevelField {
-  key: string;
-  label: string;
-  selectedId: string;
-  options: AddressLevelOption[];
-  helperText?: string;
-}
+import type { UserFormData } from './CreateUserModal.types';
 
 interface CreateUserDetailsTabProps {
-  countryOptions: AddressLevelOption[];
-  countryId: string;
-  addressLevels: AddressLevelField[];
-  onCountryChange: (value: string) => void;
-  onAddressLevelChange: (levelIndex: number, value: string) => void;
   selectedUserId: string | null | undefined;
-  selectedPhoneCountry: PhoneCountry;
-  setSelectedPhoneCountry: React.Dispatch<React.SetStateAction<PhoneCountry>>;
   detailsTabErrorCount: number;
   getFieldClassName: (hasError?: boolean) => string;
-  getSelectClassName: (hasError?: boolean) => string;
   renderFieldError: (message?: string) => React.ReactNode;
-  normalizePhoneDigitsForCountry: (value: string, country: PhoneCountry) => string;
-  toE164PhoneNumber: (digits: string, country: PhoneCountry) => string;
-  formatPhoneInputValue: (value: string, country: PhoneCountry) => string;
-  getPhoneValidationMessage: (value: string, country: PhoneCountry) => string | true;
   profileImagePreviewUrl: string | null;
   handleProfileImageChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   handleRemoveProfileImage: () => void;
@@ -45,22 +19,10 @@ interface CreateUserDetailsTabProps {
 }
 
 const CreateUserDetailsTab: React.FC<CreateUserDetailsTabProps> = ({
-  countryOptions,
-  countryId,
-  addressLevels,
-  onCountryChange,
-  onAddressLevelChange,
   selectedUserId,
-  selectedPhoneCountry,
-  setSelectedPhoneCountry,
   detailsTabErrorCount,
   getFieldClassName,
-  getSelectClassName,
   renderFieldError,
-  normalizePhoneDigitsForCountry,
-  toE164PhoneNumber,
-  formatPhoneInputValue,
-  getPhoneValidationMessage,
   profileImagePreviewUrl,
   handleProfileImageChange,
   handleRemoveProfileImage,
@@ -236,67 +198,6 @@ const CreateUserDetailsTab: React.FC<CreateUserDetailsTabProps> = ({
         </div>
       </div>
 
-      <div className="h-px bg-gray-100 my-2" />
-      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Permanent Address</p>
-
-      <input type="hidden" {...register('countryId')} />
-      <input type="hidden" {...register('stateId')} />
-      <input type="hidden" {...register('districtId')} />
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="space-y-1.5">
-          <label className="text-[10px] font-bold text-gray-400 uppercase">Country</label>
-          <select
-            value={countryId}
-            onChange={(event) => onCountryChange(event.target.value)}
-            className={getSelectClassName(Boolean(errors.countryId))}
-          >
-            <option value="">Select Country</option>
-            {countryOptions.map((l) => (
-              <option key={l.id} value={l.id}>
-                {l.name}
-              </option>
-            ))}
-          </select>
-          {renderFieldError(errors.countryId?.message)}
-        </div>
-
-        {addressLevels.map((level, index) => (
-          <div key={level.key} className="space-y-1.5">
-            <label className="text-[10px] font-bold text-gray-400 uppercase">{level.label}</label>
-            <select
-              value={level.selectedId}
-              onChange={(event) => onAddressLevelChange(index, event.target.value)}
-              className={getSelectClassName(Boolean(index === 0 ? errors.stateId : errors.districtId))}
-              disabled={!countryId}
-            >
-              <option value="">Select {level.label}</option>
-              {level.options.map((option) => (
-                <option key={option.id} value={option.id}>
-                  {option.name}
-                </option>
-              ))}
-            </select>
-            {level.helperText && !(index === 0 ? errors.stateId : errors.districtId) ? (
-              <p className="text-[11px] text-gray-400 font-semibold">{level.helperText}</p>
-            ) : null}
-            {index === 0 ? renderFieldError(errors.stateId?.message) : null}
-            {index === 1 ? renderFieldError(errors.districtId?.message) : null}
-          </div>
-        ))}
-      </div>
-
-      {countryId && addressLevels.length === 0 ? (
-        <p className="text-[11px] text-gray-400 font-semibold">
-          This country does not have additional location levels configured yet.
-        </p>
-      ) : null}
-
-      {countryId && addressLevels.length > 2 ? (
-        <p className="text-[11px] text-emerald-600 font-semibold">
-          Extra address levels are shown automatically from your location setup.
-        </p>
-      ) : null}
     </div>
   );
 };
