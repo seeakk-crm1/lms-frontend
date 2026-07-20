@@ -138,6 +138,70 @@ const CreateUserModal: React.FC = () => {
   const { data: locationTreeData } = useLocationTreeQuery();
   const { data: allLocationsData } = useAllLocationsQuery();
 
+  const [accessTabErrorCount, setAccessTabErrorCount] = useState(0);
+
+  const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
+  const [profileImagePreviewUrl, setProfileImagePreviewUrl] = useState<string | null>(null);
+  const [isProfileImageSaving, setIsProfileImageSaving] = useState(false);
+  const profileImageInputRef = useRef<HTMLInputElement>(null);
+
+  const handleProfileImageChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error('Please select a valid image file (JPEG, PNG, WEBP).');
+      event.target.value = '';
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(file);
+    if (profileImagePreviewUrl) URL.revokeObjectURL(profileImagePreviewUrl);
+    setProfileImagePreviewUrl(objectUrl);
+    setProfileImageFile(file);
+
+    if (!selectedUserId) return;
+
+    setIsProfileImageSaving(true);
+    try {
+      const response = await usersApi.uploadUserProfileImage(selectedUserId, file);
+      if (response?.data) {
+        queryClient.invalidateQueries({ queryKey: ['users'] });
+        queryClient.invalidateQueries({ queryKey: ['user', selectedUserId] });
+      }
+      toast.success('Profile image updated.');
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || 'Could not save profile image.');
+    } finally {
+      setIsProfileImageSaving(false);
+      event.target.value = '';
+    }
+  };
+
+  const handleRemoveProfileImage = async () => {
+    setProfileImageFile(null);
+    if (profileImagePreviewUrl) {
+      URL.revokeObjectURL(profileImagePreviewUrl);
+      setProfileImagePreviewUrl(null);
+    }
+
+    if (!selectedUserId) return;
+
+    setIsProfileImageSaving(true);
+    try {
+      await usersApi.removeUserProfileImage(selectedUserId);
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      queryClient.invalidateQueries({ queryKey: ['user', selectedUserId] });
+      toast.success('Profile image removed.');
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || 'Could not remove profile image.');
+    } finally {
+      setIsProfileImageSaving(false);
+    }
+  };
+
+  const queryClient = useQueryClient();
   const createInviteUser = useCreateInviteUserMutation();
   const updateUser = useUpdateUserMutation();
   const isMutationPending = createInviteUser.isPending || updateUser.isPending;
@@ -342,6 +406,15 @@ const CreateUserModal: React.FC = () => {
             return;
           }
         }
+        
+        if (newUserId && profileImageFile) {
+          try {
+            await usersApi.uploadUserProfileImage(newUserId, profileImageFile);
+          } catch (imageError: any) {
+            toast.error(imageError?.response?.data?.message || 'Account created, but profile image upload failed.', { duration: 5000 });
+          }
+        }
+        
         toast.dismiss(toastId);
       }
       closeCreateModal();
@@ -599,6 +672,12 @@ const CreateUserModal: React.FC = () => {
                   toE164PhoneNumber={toE164PhoneNumber}
                   formatPhoneInputValue={formatPhoneInputValue}
                   getPhoneValidationMessage={getPhoneValidationMessage}
+                  profileImagePreviewUrl={profileImagePreviewUrl}
+                  handleProfileImageChange={handleProfileImageChange}
+                  handleRemoveProfileImage={handleRemoveProfileImage}
+                  isProfileImageSaving={isProfileImageSaving}
+                  profileImageInputRef={profileImageInputRef}
+                  profileImageFile={profileImageFile}
                 />
               </div>
 

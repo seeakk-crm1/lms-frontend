@@ -37,9 +37,23 @@ export const resetPassword = async (id: string, payload: any) => {
   return data;
 };
 
-export const sendAccessLink = async (id: string) => {
-  const { data } = await api.post(`/admin/users/${id}/access-link`);
-  return data.data;
+export const sendAccessLink = async (userId: string) => {
+  const response = await api.post(`/admin/users/${userId}/access-link`);
+  return response.data;
+};
+
+export const uploadUserProfileImage = async (userId: string, file: File) => {
+  const formData = new FormData();
+  formData.append('image', file);
+  const response = await api.post(`/admin/users/${userId}/profile-image`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return response.data;
+};
+
+export const removeUserProfileImage = async (userId: string) => {
+  const response = await api.delete(`/admin/users/${userId}/profile-image`);
+  return response.data;
 };
 
 // Target Settings

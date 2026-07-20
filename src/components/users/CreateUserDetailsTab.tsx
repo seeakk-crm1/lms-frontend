@@ -1,6 +1,7 @@
 import React from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
 import type { UserFormData } from './CreateUserModal.types';
+import { getImageUrl } from '../../../utils/getImageUrl';
 import PhoneInput from '../common/PhoneInput';
 import { validatePhoneStr } from '../../utils/phoneUtils';
 import type { PhoneCountry } from '../../constants/phoneCountries';
@@ -36,6 +37,12 @@ interface CreateUserDetailsTabProps {
   toE164PhoneNumber: (digits: string, country: PhoneCountry) => string;
   formatPhoneInputValue: (value: string, country: PhoneCountry) => string;
   getPhoneValidationMessage: (value: string, country: PhoneCountry) => string | true;
+  profileImagePreviewUrl: string | null;
+  handleProfileImageChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  handleRemoveProfileImage: () => void;
+  isProfileImageSaving: boolean;
+  profileImageInputRef: React.RefObject<HTMLInputElement>;
+  profileImageFile: File | null;
 }
 
 const CreateUserDetailsTab: React.FC<CreateUserDetailsTabProps> = ({
@@ -55,10 +62,17 @@ const CreateUserDetailsTab: React.FC<CreateUserDetailsTabProps> = ({
   toE164PhoneNumber,
   formatPhoneInputValue,
   getPhoneValidationMessage,
+  profileImagePreviewUrl,
+  handleProfileImageChange,
+  handleRemoveProfileImage,
+  isProfileImageSaving,
+  profileImageInputRef,
+  profileImageFile,
 }) => {
   const {
     register,
     control,
+    watch,
     formState: { errors },
   } = useFormContext<UserFormData>();
 
@@ -73,9 +87,60 @@ const CreateUserDetailsTab: React.FC<CreateUserDetailsTabProps> = ({
         </div>
       ) : null}
 
-      <div className="mb-2">
-        <UserAvatarUpload name="profileImageUrl" />
-      </div>
+      <section className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
+          <div className="relative h-28 w-28 shrink-0 rounded-full border-4 border-white bg-gray-50 shadow-md overflow-hidden flex items-center justify-center text-4xl font-bold text-gray-400">
+            {profileImagePreviewUrl || getImageUrl(watch('profileImageUrl') || watch('profileImageThumbnail')) ? (
+              <img
+                src={profileImagePreviewUrl || getImageUrl(watch('profileImageUrl') || watch('profileImageThumbnail'))}
+                alt="Profile"
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              (watch('name') || 'User').charAt(0).toUpperCase()
+            )}
+          </div>
+          <div className="min-w-0 flex-1">
+            <h3 className="text-lg font-black text-gray-900">Profile Image</h3>
+            <p className="mt-1 text-sm font-semibold text-gray-500">
+              JPG, PNG, or WEBP up to 20 MB. Images are optimized automatically.
+            </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <input
+                ref={profileImageInputRef}
+                type="file"
+                accept="image/jpeg,image/jpg,image/png,image/webp"
+                className="hidden"
+                onChange={handleProfileImageChange}
+              />
+              <button
+                type="button"
+                onClick={() => profileImageInputRef.current?.click()}
+                disabled={isProfileImageSaving}
+                className="inline-flex items-center gap-2 rounded-2xl bg-emerald-500 px-4 py-2 text-xs font-black uppercase tracking-wider text-white shadow-lg shadow-emerald-500/20 transition-all hover:bg-emerald-600 disabled:cursor-wait disabled:opacity-60"
+              >
+                <span className="h-4 w-4 flex items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"></path><path d="M12 12v9"></path><path d="m16 16-4-4-4 4"></path></svg>
+                </span>
+                {watch('profileImageUrl') || profileImageFile ? 'Change Image' : 'Upload'}
+              </button>
+              {(watch('profileImageUrl') || profileImageFile) && (
+                <button
+                  type="button"
+                  onClick={handleRemoveProfileImage}
+                  disabled={isProfileImageSaving}
+                  className="inline-flex items-center gap-2 rounded-2xl border border-rose-100 bg-rose-50 px-4 py-2 text-xs font-black uppercase tracking-wider text-rose-600 transition-all hover:bg-rose-100 disabled:cursor-wait disabled:opacity-60"
+                >
+                  <span className="h-4 w-4 flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                  </span>
+                  Remove Image
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      </section>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-1.5">
