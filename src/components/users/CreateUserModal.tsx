@@ -138,6 +138,7 @@ const CreateUserModal: React.FC = () => {
   const { data: locationTreeData } = useLocationTreeQuery();
   const { data: allLocationsData } = useAllLocationsQuery();
 
+  const [accessTabErrorCount, setAccessTabErrorCount] = useState(0);
 
   const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
   const [profileImagePreviewUrl, setProfileImagePreviewUrl] = useState<string | null>(null);
