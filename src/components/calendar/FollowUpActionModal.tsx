@@ -9,6 +9,7 @@ import { LEAD_WHATSAPP_PERMISSIONS } from '../../constants/whatsappPermissions';
 import { formatPhoneWithFlag } from '../../utils/phoneUtils';
 import LeadAvatar from '../../pages/leads/components/LeadAvatar';
 import { getImageUrl } from '../../utils/getImageUrl';
+import FollowUpActivityContextCard from '../followups/FollowUpActivityContextCard';
 
 interface Props {
   isOpen: boolean;
@@ -213,14 +214,7 @@ const FollowUpActionModal: React.FC<Props> = ({ isOpen, followUp, onClose, onOpe
               </div>
 
               <div className="mt-5 border-t border-gray-100 pt-5">
-                <p className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 mb-2">
-                  <FileText className="h-3.5 w-3.5" /> Latest Follow-up Note
-                </p>
-                <div className="rounded-xl bg-gray-50 p-4 border border-gray-100">
-                  <p className="text-sm font-semibold text-gray-700 whitespace-pre-wrap leading-relaxed">
-                    {latestNote}
-                  </p>
-                </div>
+                <FollowUpActivityContextCard leadId={followUp.lead?.id || followUp.leadId} />
               </div>
             </div>
           </div>

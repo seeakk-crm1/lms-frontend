@@ -6,6 +6,7 @@ import { Loader2, X } from 'lucide-react';
 import { z } from 'zod';
 import { formatFollowUpTypeLabel } from '../../modules/followups/followUpTypeUi';
 import type { FollowUp } from '../../types/followup.types';
+import FollowUpActivityContextCard from '../followups/FollowUpActivityContextCard';
 
 const formSchema = z.object({
   description: z.string().trim().min(1, 'Description is required').max(2000, 'Description is too long'),
@@ -77,6 +78,10 @@ const CompleteFollowUpModal: React.FC<Props> = ({
               <button onClick={resetModal} className="rounded-xl border border-gray-200 p-2 text-gray-400 hover:bg-gray-50">
                 <X className="h-4 w-4" />
               </button>
+            </div>
+            
+            <div className="px-5">
+              <FollowUpActivityContextCard leadId={followUp.leadId} />
             </div>
 
             <form

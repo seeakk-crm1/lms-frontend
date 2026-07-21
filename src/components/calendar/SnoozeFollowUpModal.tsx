@@ -4,6 +4,7 @@ import { Loader2, X } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import type { FollowUp } from '../../types/followup.types';
 import { useActiveExtensionReasonsQuery } from '../../modules/followup-extension-reasons/hooks/useFollowUpExtensionReasons';
+import FollowUpActivityContextCard from '../followups/FollowUpActivityContextCard';
 import { useLifecycleExtensionLimit } from '../../hooks/useLifecycleExtensionLimit';
 import {
   lifecycleExtensionHint,
@@ -115,6 +116,11 @@ const SnoozeFollowUpModal: React.FC<Props> = ({
                 <X className="h-4 w-4" />
               </button>
             </div>
+            
+            <div className="px-5">
+              <FollowUpActivityContextCard leadId={followUp?.leadId || null} />
+            </div>
+
             <div className="space-y-4 p-5">
               <div>
                 <label className="block text-[11px] font-black uppercase tracking-widest text-gray-400">
