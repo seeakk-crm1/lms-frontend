@@ -15,6 +15,7 @@ const API_URL = ENV.API_URL;
 
 interface CustomAxiosRequestConfig extends InternalAxiosRequestConfig {
   _retry?: boolean;
+  _suppressGlobalErrorToast?: boolean;
 }
 
 const api = axios.create({
@@ -151,6 +152,7 @@ api.interceptors.response.use(
     }
 
     const showToastError = (message: string, id?: string) => {
+      if (originalRequest._suppressGlobalErrorToast) return;
       import('react-hot-toast').then(({ toast }) => {
         toast.error(message, { id: id || 'api-error' });
       });

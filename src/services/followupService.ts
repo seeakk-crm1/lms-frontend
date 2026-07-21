@@ -15,6 +15,14 @@ import type {
   TodayFollowUpsResponse,
 } from '../types/followup.types';
 
+type ApiRequestConfig = Parameters<typeof api.get>[1] & {
+  _suppressGlobalErrorToast?: boolean;
+};
+
+const suppressGlobalErrorToastConfig: ApiRequestConfig = {
+  _suppressGlobalErrorToast: true,
+};
+
 export const getCalendarData = async (params: CalendarQueryParams) => {
   const response = await api.get<CalendarResponse>('/followups/calendar', { params });
   return response.data;
@@ -31,6 +39,7 @@ export const getAdvancedCalendarSummary = async (params: { startDate: string; en
 export const getOverdueMandatoryFollowUps = async () => {
   const response = await api.get<import('../types/followup.types').OverdueMandatoryFollowUpResponse>(
     '/followups/overdue-mandatory',
+    suppressGlobalErrorToastConfig,
   );
   return response.data;
 };
@@ -69,6 +78,7 @@ export const getLifecycleExtensionLimit = async (leadId: string) => {
 export const getMandatoryFollowUpContinuation = async () => {
   const response = await api.get<import('../types/mandatoryFollowup.types').MandatoryFollowUpContinuationResponse>(
     '/followups/mandatory-continuation',
+    suppressGlobalErrorToastConfig,
   );
   return response.data;
 };

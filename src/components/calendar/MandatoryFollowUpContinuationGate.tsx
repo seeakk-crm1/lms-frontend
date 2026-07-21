@@ -16,6 +16,21 @@ interface Props {
   children: React.ReactNode;
 }
 
+const isConnectivityVerificationError = (error: unknown): boolean => {
+  const err = error as {
+    code?: string;
+    message?: string;
+    response?: { status?: number };
+  } | null;
+
+  if (!err) return false;
+  if (!err.response) {
+    return err.code === 'ECONNABORTED' || err.message === 'Network Error' || Boolean(err.message?.includes('timeout'));
+  }
+
+  return [502, 503, 504].includes(err.response.status ?? 0);
+};
+
 const MandatoryFollowUpContinuationGate: React.FC<Props> = ({ children }) => {
   const { blocked, enabled, items, query, clearSessionBlock, setSessionBlock } = useMandatoryFollowUpBlocked();
   const saveMutation = useSaveMandatoryFollowUpContinuationMutation();
@@ -122,6 +137,12 @@ const MandatoryFollowUpContinuationGate: React.FC<Props> = ({ children }) => {
       />
     ) : null;
 
+  useEffect(() => {
+    if (query.isError && !query.isFetching && isConnectivityVerificationError(query.error)) {
+      toast.error('Unable to verify mandatory follow-ups. Some features may be restricted until connection is restored.', { id: 'mandatory-error' });
+    }
+  }, [query.error, query.isError, query.isFetching]);
+
   if (!enabled) {
     return (
       <>
@@ -130,13 +151,6 @@ const MandatoryFollowUpContinuationGate: React.FC<Props> = ({ children }) => {
       </>
     );
   }
-
-  useEffect(() => {
-    // Only show the toast if it's a hard error and not currently fetching/retrying
-    if (query.isError && !query.isFetching) {
-      toast.error('Unable to verify mandatory follow-ups. Some features may be restricted until connection is restored.', { id: 'mandatory-error' });
-    }
-  }, [query.isError, query.isFetching]);
 
   return (
     <>
