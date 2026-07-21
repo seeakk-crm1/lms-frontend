@@ -4,7 +4,6 @@ import { CalendarClock, Loader2, User, Phone, CheckCircle, Flame, MessageSquare,
 import { formatFollowUpTypeLabel } from '../../modules/followups/followUpTypeUi';
 import type { MandatoryFollowUpContinuationItem } from '../../types/mandatoryFollowup.types';
 import type { FollowUpType } from '../../types/followup.types';
-import FollowUpActivityContextCard from '../followups/FollowUpActivityContextCard';
 
 const FOLLOW_UP_TYPES: FollowUpType[] = ['CALL', 'VISIT', 'MEETING'];
 
@@ -190,10 +189,6 @@ const MandatoryFollowUpContinuationModal: React.FC<Props> = ({
                 Overdue by {item.overdueDays} day(s)
               </div>
             )}
-          </div>
-
-          <div className="px-5 pb-2">
-            <FollowUpActivityContextCard leadId={item.leadId} />
           </div>
 
           {/* Interactive Form */}
