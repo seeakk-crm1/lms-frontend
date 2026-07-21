@@ -35,6 +35,7 @@ export interface LiveLocationUser {
   lastUpdatedAt?: string | null;
   status: 'Moving' | 'Stopped' | 'Offline' | string;
   trackingStatus?: string | null;
+  address?: string | null;
 }
 
 export interface RouteResponse {

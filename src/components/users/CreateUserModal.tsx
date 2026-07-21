@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, User, Target, Save, Loader2, Shield } from 'lucide-react';
+import { X, User, Target, Save, Loader2, Shield, MapPin } from 'lucide-react';
 import { useForm, FormProvider, SubmitHandler } from 'react-hook-form';
 import { useQueryClient } from '@tanstack/react-query';
 import { useUsersStore } from '../../store/useUsersStore';
@@ -17,6 +17,7 @@ import { assignUserTargetCycleAdmin } from '../../services/target.api';
 import CreateUserDetailsTab from './CreateUserDetailsTab';
 import CreateUserAccessTab from './CreateUserAccessTab';
 import CreateUserTargetsTab from './CreateUserTargetsTab';
+import CreateUserLocationTab from './CreateUserLocationTab';
 import type { UserFormData } from './CreateUserModal.types';
 
 import { toast } from 'react-hot-toast';
@@ -38,7 +39,7 @@ const normalizeTargetCycleId = (value?: string | null): string | null =>
 
 const CreateUserModal: React.FC = () => {
   const { isCreateModalOpen, selectedUserId, closeCreateModal } = useUsersStore();
-  const [activeTab, setActiveTab] = useState<'details' | 'access' | 'targets'>('details');
+  const [activeTab, setActiveTab] = useState<'details' | 'access' | 'targets' | 'location'>('details');
   const initialTargetCycleIdRef = useRef<string | null>(null);
   
   const { data: userDetail } = useUserDetailQuery(selectedUserId);
@@ -384,6 +385,7 @@ const CreateUserModal: React.FC = () => {
             { id: 'details', label: 'Details', fullLabel: 'Personal Details', icon: User },
             { id: 'access', label: 'Access', fullLabel: 'Access Control', icon: Shield },
             { id: 'targets', label: 'Targets', fullLabel: 'Target Settings', icon: Target },
+            ...(selectedUserId ? [{ id: 'location', label: 'Location', fullLabel: 'Live Location', icon: MapPin }] : []),
           ].map((tab) => (
             <button
               key={tab.id}
@@ -444,6 +446,13 @@ const CreateUserModal: React.FC = () => {
               <div style={{ display: activeTab === 'targets' ? 'block' : 'none' }}>
                 <CreateUserTargetsTab />
               </div>
+
+              {/* Tab: Location */}
+              {activeTab === 'location' && selectedUserId && (
+                <div className="space-y-6">
+                  <CreateUserLocationTab userId={selectedUserId} />
+                </div>
+              )}
             </form>
           </FormProvider>
         </div>

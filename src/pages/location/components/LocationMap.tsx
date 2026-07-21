@@ -66,6 +66,8 @@ interface LocationMapProps {
   stops?: Array<{ latitude: number; longitude: number; startedAt: string; durationSeconds: number }>;
   replayIndex?: number;
   isReplaying?: boolean;
+  allUsers?: Array<any>;
+  selectedUserId?: string;
 }
 
 const LocationMap: React.FC<LocationMapProps> = ({
@@ -76,6 +78,8 @@ const LocationMap: React.FC<LocationMapProps> = ({
   stops = [],
   replayIndex = 0,
   isReplaying = false,
+  allUsers = [],
+  selectedUserId = '',
 }) => {
   const centerLat = latitude ?? 20.5937;
   const centerLng = longitude ?? 78.9629;
@@ -157,6 +161,33 @@ const LocationMap: React.FC<LocationMapProps> = ({
               </Popup>
           </Marker>
         )}
+        {/* Render all other users when not replaying */}
+        {!isReplaying && allUsers.map((u) => {
+          if (!u.latitude || !u.longitude) return null;
+          if (u.userId === selectedUserId) return null; // We already render the selected user
+          
+          const statusColor = u.status === 'Moving' ? 'bg-emerald-500' : u.status === 'Offline' ? 'bg-gray-400' : 'bg-amber-500';
+          const icon = L.divIcon({
+            className: 'custom-all-user-marker',
+            html: `<div class="w-6 h-6 rounded-full border-2 border-white shadow-md bg-white overflow-hidden flex items-center justify-center">
+                     ${u.user.profileImage ? `<img src="${u.user.profileImage}" class="w-full h-full object-cover" />` : `<span class="text-[8px] font-bold text-gray-500">${u.user.name.charAt(0)}</span>`}
+                     <div class="absolute bottom-0 right-0 w-2 h-2 rounded-full border border-white ${statusColor}"></div>
+                   </div>`,
+            iconSize: [24, 24],
+            iconAnchor: [12, 12],
+          });
+
+          return (
+            <Marker key={u.userId} position={[u.latitude, u.longitude]} icon={icon}>
+              <Popup>
+                <div className="p-1">
+                  <p className="font-bold text-gray-900">{u.user.name}</p>
+                  <p className="text-xs text-gray-500">{u.status}</p>
+                </div>
+              </Popup>
+            </Marker>
+          );
+        })}
       </MapContainer>
       
       {!latitude && !longitude && routePoints.length === 0 && (

@@ -140,7 +140,7 @@ const SheetsPage: React.FC = () => {
 
   const stagesQuery = useQuery({
     queryKey: ['sheet-lead-stages'],
-    queryFn: () => getLeadStages({ status: 'ACTIVE', page: 1, limit: 200 }),
+    queryFn: () => getLeadStages({ status: 'ACTIVE', page: 1, limit: 200, search: '' }),
     staleTime: 60_000,
   });
 

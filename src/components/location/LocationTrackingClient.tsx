@@ -1,11 +1,13 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
+import { motion, AnimatePresence } from 'framer-motion';
+import { MapPin } from 'lucide-react';
 import useAuthStore from '../../store/useAuthStore';
 import { getTodayStatus } from '../../services/attendance.api';
 import { pushLocationPoints, startLocationSession, type LocationPointPayload } from '../../services/locationTracking.api';
+import { idbGetQueue, idbSavePoints, idbClearQueue } from '../../utils/indexedDB';
 
 const FIELD_TRACKING_TERMS = ['field sales', 'sales executive', 'marketing executive', 'field staff'];
-const CACHE_KEY = 'seeakk_location_queue';
 const TRACK_INTERVAL_MS = 30_000;
 const MIN_DISTANCE_METERS = 20;
 
@@ -31,18 +33,6 @@ const distanceMeters = (left: LocationPointPayload, right: LocationPointPayload)
   return 2 * radius * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 };
 
-const readQueue = (): LocationPointPayload[] => {
-  try {
-    return JSON.parse(localStorage.getItem(CACHE_KEY) || '[]');
-  } catch {
-    return [];
-  }
-};
-
-const writeQueue = (items: LocationPointPayload[]) => {
-  localStorage.setItem(CACHE_KEY, JSON.stringify(items.slice(-500)));
-};
-
 const toPoint = (position: GeolocationPosition): LocationPointPayload => ({
   latitude: position.coords.latitude,
   longitude: position.coords.longitude,
@@ -60,16 +50,31 @@ const LocationTrackingClient = () => {
   const sessionIdRef = useRef<string | undefined>(undefined);
   const attendanceRecordIdRef = useRef<string | undefined>(undefined);
   const lastPointRef = useRef<LocationPointPayload | null>(null);
-  const deniedToastShownRef = useRef(false);
+  
+  const [showPermissionDialog, setShowPermissionDialog] = useState(false);
+  const permissionRequestedRef = useRef(false);
 
   useEffect(() => {
     if (!isAuthenticated || !user || !isFieldUser(user) || !('geolocation' in navigator)) return;
 
+    // Check if permission already granted or denied
+    navigator.permissions?.query({ name: 'geolocation' }).then((status) => {
+      if (status.state === 'prompt' && !permissionRequestedRef.current) {
+        setShowPermissionDialog(true);
+      } else if (status.state === 'granted') {
+        startEngine();
+      }
+    });
+  }, [isAuthenticated, user]);
+
+  const startEngine = () => {
+    setShowPermissionDialog(false);
+    permissionRequestedRef.current = true;
     let cancelled = false;
     let intervalId: number | undefined;
 
     const upload = async (point?: LocationPointPayload) => {
-      const queued = readQueue();
+      const queued = await idbGetQueue();
       const points = [...queued, ...(point ? [point] : [])];
       if (points.length === 0) return;
 
@@ -80,9 +85,9 @@ const LocationTrackingClient = () => {
           points,
         });
         sessionIdRef.current = response?.data?.sessionId || sessionIdRef.current;
-        writeQueue([]);
+        await idbClearQueue();
       } catch {
-        writeQueue(points);
+        if (point) await idbSavePoints([point]);
       }
     };
 
@@ -91,16 +96,25 @@ const LocationTrackingClient = () => {
         (position) => {
           const point = toPoint(position);
           const last = lastPointRef.current;
-          if (last && distanceMeters(last, point) < MIN_DISTANCE_METERS) {
-            return;
+          
+          let shouldUpload = true;
+          if (last) {
+            const dist = distanceMeters(last, point);
+            const timeDiff = Math.abs(new Date(point.recordedAt).getTime() - new Date(last.recordedAt).getTime());
+            // Smart tracking: push if >20m moved OR >60s elapsed
+            if (dist < MIN_DISTANCE_METERS && timeDiff < 60_000) {
+              shouldUpload = false;
+            }
           }
-          lastPointRef.current = point;
-          void upload(point);
+
+          if (shouldUpload) {
+            lastPointRef.current = point;
+            void upload(point);
+          }
         },
         (error) => {
-          if (!deniedToastShownRef.current && error.code === error.PERMISSION_DENIED) {
-            deniedToastShownRef.current = true;
-            toast.error('Location access is required for field attendance.');
+          if (error.code === error.PERMISSION_DENIED) {
+            toast.error('Location tracking is required for field attendance. Please enable GPS.');
           }
         },
         { enableHighAccuracy: true, maximumAge: 15_000, timeout: 20_000 },
@@ -115,25 +129,25 @@ const LocationTrackingClient = () => {
         const record = data?.record;
         const checkedIn = Boolean(record?.checkInTime && !data?.checkoutCompleted && !record?.checkOutTime);
         if (!checkedIn) return;
+        
         attendanceRecordIdRef.current = record?.id;
         const started = await startLocationSession({
           attendanceRecordId: record?.id,
           deviceType: /Mobi|Android|iPhone/i.test(navigator.userAgent) ? 'mobile-web' : 'web',
         });
         sessionIdRef.current = started?.data?.id || started?.data?.sessionId;
+        
         await upload();
         captureAndUpload();
         intervalId = window.setInterval(captureAndUpload, TRACK_INTERVAL_MS);
       } catch {
-        // Tracking is best-effort and must not block the app shell.
+        // tracking is best-effort
       }
     };
 
     void bootstrap();
 
-    const onOnline = () => {
-      void upload();
-    };
+    const onOnline = () => { void upload(); };
     window.addEventListener('online', onOnline);
 
     return () => {
@@ -141,9 +155,53 @@ const LocationTrackingClient = () => {
       if (intervalId) window.clearInterval(intervalId);
       window.removeEventListener('online', onOnline);
     };
-  }, [isAuthenticated, user]);
+  };
 
-  return null;
+  return (
+    <AnimatePresence>
+      {showPermissionDialog && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-gray-900/40 backdrop-blur-sm p-4"
+        >
+          <motion.div
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.95, opacity: 0 }}
+            className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl"
+          >
+            <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
+              <MapPin size={28} />
+            </div>
+            <h3 className="mb-2 text-xl font-bold text-gray-900">Enable Location Tracking</h3>
+            <p className="mb-6 text-sm leading-relaxed text-gray-500">
+              Seeakk requires location access to monitor field activity and automatically generate your travel routes while you work.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowPermissionDialog(false)}
+                className="flex-1 rounded-xl bg-gray-100 px-4 py-2.5 text-sm font-semibold text-gray-600 transition hover:bg-gray-200"
+              >
+                Block
+              </button>
+              <button
+                onClick={() => {
+                  startEngine();
+                  // Trigger browser prompt
+                  navigator.geolocation.getCurrentPosition(() => {}, () => {});
+                }}
+                className="flex-1 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
+              >
+                Allow
+              </button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
 };
 
 export default LocationTrackingClient;

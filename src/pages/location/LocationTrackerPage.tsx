@@ -2,36 +2,12 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { format, subDays } from 'date-fns';
 import { useQuery } from '@tanstack/react-query';
 import {
-  Activity,
-  Battery,
-  Clock,
-  Download,
-  Gauge,
-  MapPin,
-  Navigation,
-  Pause,
-  Play,
-  RefreshCw,
-  Route,
-  Search,
-  Users,
+  Activity, Battery, Clock, Gauge, MapPin, Navigation, Pause, Play, RefreshCw, Route, Search, Users, Filter, X
 } from 'lucide-react';
 import DashboardLayout from '../../components/dashboard/DashboardLayout';
 import LocationMap from './components/LocationMap';
-import { connectRealtime } from '../../services/realtime';
-import {
-  exportLocationRoute,
-  getLiveLocations,
-  getLocationRoute,
-  type LiveLocationUser,
-  type RouteResponse,
-} from '../../services/locationTracking.api';
-
-const statusClass = (status?: string) => {
-  if (status === 'Moving') return 'bg-emerald-50 text-emerald-700 border-emerald-100';
-  if (status === 'Stopped') return 'bg-amber-50 text-amber-700 border-amber-100';
-  return 'bg-gray-50 text-gray-500 border-gray-100';
-};
+import { getLiveLocations, getLocationRoute, type LiveLocationUser, type RouteResponse } from '../../services/locationTracking.api';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const formatDuration = (seconds = 0) => {
   const h = Math.floor(seconds / 3600);
@@ -49,8 +25,6 @@ const updatedAgo = (value?: string | null) => {
   return `Last seen ${format(new Date(value), 'hh:mm a')}`;
 };
 
-// mapUrl removed
-
 const LocationTrackerPage: React.FC = () => {
   const [selectedUserId, setSelectedUserId] = useState('');
   const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
@@ -61,19 +35,19 @@ const LocationTrackerPage: React.FC = () => {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedOffice, setSelectedOffice] = useState('All');
+  const [showFilters, setShowFilters] = useState(false);
+  const [panelOpen, setPanelOpen] = useState(true);
 
-  const { data: users = [], isLoading: loading, isError: isLiveError, refetch: loadLive } = useQuery({
+  const { data: users = [], isLoading: loading, refetch: loadLive } = useQuery({
     queryKey: ['location-tracking', 'live'],
     queryFn: () => getLiveLocations(),
-    refetchInterval: 30000, // Background refresh every 30s
-    staleTime: 15000,
+    refetchInterval: 30000,
   });
 
-  const { data: routeData, isLoading: routeLoading, isError: isRouteError } = useQuery({
+  const { data: routeData, isLoading: routeLoading } = useQuery({
     queryKey: ['location-tracking', 'route', selectedUserId, selectedDate],
     queryFn: () => getLocationRoute({ userId: selectedUserId, date: selectedDate }),
     enabled: !!selectedUserId,
-    staleTime: 5 * 60 * 1000,
   });
 
   const offices = useMemo(() => {
@@ -86,317 +60,238 @@ const LocationTrackerPage: React.FC = () => {
     return users.filter((u) => {
       const q = searchQuery.toLowerCase();
       const matchName = (u.user.name || '').toLowerCase().includes(q) || 
-                        (u.user.email || '').toLowerCase().includes(q) ||
-                        (u.user.role || '').toLowerCase().includes(q) ||
-                        (u.user.phone || '').toLowerCase().includes(q) ||
-                        (u.user.employeeId || '').toLowerCase().includes(q);
+                        (u.user.role || '').toLowerCase().includes(q);
       const matchOffice = selectedOffice === 'All' || u.user.office === selectedOffice;
       return matchName && matchOffice;
     });
   }, [users, searchQuery, selectedOffice]);
 
-  // Set default selected user if not set
   useEffect(() => {
     if (!selectedUserId && filteredUsers.length > 0) {
       setSelectedUserId(filteredUsers[0].user.id);
     }
-  }, [selectedUserId, filteredUsers]);
+  }, [filteredUsers, selectedUserId]);
 
   const selectedUser = useMemo(
-    () => users.find((item) => item.user.id === selectedUserId) || filteredUsers[0] || null,
-    [selectedUserId, users, filteredUsers],
+    () => users.find((u) => u.user.id === selectedUserId),
+    [users, selectedUserId]
   );
+  
+  const stats = routeData?.stats;
 
-  const selectedRoutePoint = routeData?.points?.[replayIndex] || routeData?.points?.[routeData.points.length - 1];
-  const mapLatitude = selectedRoutePoint?.latitude ?? selectedUser?.latitude;
-  const mapLongitude = selectedRoutePoint?.longitude ?? selectedUser?.longitude;
-  const mapAccuracy = selectedRoutePoint?.accuracy ?? selectedUser?.accuracy;
-
+  // Playback Logic
   useEffect(() => {
-    const socket = connectRealtime();
-    const onLocationUpdate = (data?: any) => {
-      // Optimistic UI update or full reload if needed.
-      void loadLive();
-    };
-    socket?.on('location_updated', onLocationUpdate);
-    socket?.on('location_session_started', onLocationUpdate);
-    socket?.on('location_session_stopped', onLocationUpdate);
-
+    if (replayPlaying && routeData?.points?.length) {
+      replayTimerRef.current = window.setInterval(() => {
+        setReplayIndex(prev => {
+          if (prev >= routeData.points.length - 1) {
+            setReplayPlaying(false);
+            return prev;
+          }
+          return prev + 1;
+        });
+      }, 1000 / replaySpeed);
+    }
     return () => {
-      socket?.off('location_updated', onLocationUpdate);
-      socket?.off('location_session_started', onLocationUpdate);
-      socket?.off('location_session_stopped', onLocationUpdate);
-    };
-  }, [loadLive]);
-
-  // Reset replay when route changes
-  useEffect(() => {
-    setReplayIndex(0);
-    setReplayPlaying(false);
-  }, [routeData?.points?.length]);
-
-  useEffect(() => {
-    if (!replayPlaying || !routeData?.points?.length) return;
-    replayTimerRef.current = window.setInterval(() => {
-      setReplayIndex((current) => {
-        if (current >= routeData.points.length - 1) {
-          setReplayPlaying(false);
-          return current;
-        }
-        return current + 1;
-      });
-    }, Math.max(250, 1000 / replaySpeed));
-
-    return () => {
-      if (replayTimerRef.current) window.clearInterval(replayTimerRef.current);
+      if (replayTimerRef.current) clearInterval(replayTimerRef.current);
     };
   }, [replayPlaying, replaySpeed, routeData?.points?.length]);
 
-  const stats = routeData?.stats;
-  const liveCounts = {
-    active: users.filter((item) => item.trackingStatus === 'ACTIVE').length,
-    moving: users.filter((item) => item.status === 'Moving').length,
-    stopped: users.filter((item) => item.status === 'Stopped').length,
-    offline: users.filter((item) => item.status === 'Offline').length,
-  };
-
-  const handleExport = async () => {
-    if (!selectedUser?.user.id) return;
-    const blob = await exportLocationRoute({ userId: selectedUser.user.id, date: selectedDate });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `route-${selectedUser.user.name || selectedUser.user.id}-${selectedDate}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
-  };
-
   return (
     <DashboardLayout>
-      <div className="custom-scrollbar flex-1 overflow-auto bg-slate-50 p-4 md:p-6">
-        <div className="mx-auto max-w-[1500px] space-y-5">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <p className="text-[11px] font-black uppercase tracking-[0.25em] text-emerald-600">Management</p>
-              <h1 className="mt-1 text-3xl font-black text-gray-950">Location Tracker</h1>
-              <p className="mt-1 text-sm font-semibold text-gray-500">Live field staff movement, routes, stops, and daily travel statistics.</p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <button onClick={() => setSelectedDate(format(new Date(), 'yyyy-MM-dd'))} className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-black text-gray-700">Today</button>
-              <button onClick={() => setSelectedDate(format(subDays(new Date(), 1), 'yyyy-MM-dd'))} className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-black text-gray-700">Yesterday</button>
-              <input type="date" value={selectedDate} onChange={(event) => setSelectedDate(event.target.value)} className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-bold text-gray-700" />
-              <button onClick={() => void loadLive()} className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2 text-sm font-black text-white">
-                <RefreshCw className="h-4 w-4" /> Refresh
-              </button>
-            </div>
-          </div>
+      <div className="relative h-[calc(100vh-64px)] w-full overflow-hidden bg-gray-50">
+        
+        {/* Fullscreen Map Background */}
+        <div className="absolute inset-0 z-0">
+          <LocationMap 
+            latitude={selectedUser?.latitude}
+            longitude={selectedUser?.longitude}
+            routePoints={routeData?.points}
+            stops={routeData?.stops}
+            replayIndex={replayIndex}
+            isReplaying={replayPlaying}
+            allUsers={users}
+            selectedUserId={selectedUserId}
+          />
+        </div>
 
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-            {[
-              ['Active', liveCounts.active, Users],
-              ['Moving', liveCounts.moving, Navigation],
-              ['Stopped', liveCounts.stopped, Activity],
-              ['Offline', liveCounts.offline, Clock],
-              ["Today's KM", stats?.totalDistanceKm ?? 0, Route],
-            ].map(([label, value, Icon]: any) => (
-              <div key={label} className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
-                <Icon className="h-5 w-5 text-emerald-500" />
-                <p className="mt-3 text-[10px] font-black uppercase tracking-widest text-gray-400">{label}</p>
-                <p className="text-2xl font-black text-gray-950">{isLiveError && label !== "Today's KM" ? '--' : isRouteError && label === "Today's KM" ? '--' : value}</p>
-              </div>
-            ))}
-          </div>
-
-          <div className="grid gap-5 xl:grid-cols-[340px_1fr]">
-            <aside className="rounded-2xl border border-gray-100 bg-white p-3 shadow-sm">
-              <div className="mb-3 space-y-3">
-                <div className="flex items-center justify-between px-2">
-                  <p className="text-xs font-black uppercase tracking-widest text-gray-400">Live Users</p>
-                  <span className="rounded-full bg-gray-100 px-2 py-1 text-[10px] font-black text-gray-500">{filteredUsers.length}</span>
+        {/* Floating Controls Overlay */}
+        <div className="pointer-events-none absolute inset-0 z-10 flex h-full w-full flex-col justify-between p-4">
+          
+          {/* Top Bar: Controls */}
+          <div className="pointer-events-auto flex items-start justify-between gap-4">
+            
+            {/* Left Panel: Users & Filters */}
+            <motion.div 
+              initial={{ x: -300, opacity: 0 }} 
+              animate={{ x: 0, opacity: 1 }}
+              className={`flex w-80 flex-col gap-4 ${panelOpen ? '' : 'hidden'}`}
+            >
+              <div className="rounded-3xl border border-white/20 bg-white/80 p-4 shadow-xl backdrop-blur-xl">
+                <div className="mb-4 flex items-center justify-between">
+                  <h2 className="text-sm font-black uppercase tracking-widest text-gray-800">Field Workforce</h2>
+                  <button onClick={() => setShowFilters(!showFilters)} className="rounded-xl bg-gray-100 p-2 text-gray-500 hover:bg-gray-200">
+                    <Filter size={16} />
+                  </button>
                 </div>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+
+                <AnimatePresence>
+                  {showFilters && (
+                    <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} className="mb-4 overflow-hidden">
+                      <div className="flex flex-col gap-3 rounded-2xl bg-gray-50 p-3">
+                        <input
+                          type="date"
+                          value={selectedDate}
+                          onChange={(e) => setSelectedDate(e.target.value)}
+                          className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-bold text-gray-700"
+                        />
+                        <select
+                          value={selectedOffice}
+                          onChange={(e) => setSelectedOffice(e.target.value)}
+                          className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-bold text-gray-700"
+                        >
+                          {offices.map((o) => <option key={o} value={o}>{o}</option>)}
+                        </select>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                <div className="relative mb-4">
+                  <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
                   <input
                     type="text"
                     placeholder="Search users..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 py-2 pl-9 pr-4 text-sm font-semibold outline-none focus:border-emerald-500 focus:bg-white"
+                    className="w-full rounded-xl border border-gray-200 bg-gray-50/50 py-2.5 pl-9 pr-4 text-xs font-semibold text-gray-700 outline-none transition focus:border-emerald-500 focus:bg-white"
                   />
                 </div>
-                {offices.length > 2 && (
-                  <select
-                    value={selectedOffice}
-                    onChange={(e) => setSelectedOffice(e.target.value)}
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 p-2 text-sm font-semibold outline-none focus:border-emerald-500 focus:bg-white"
-                  >
-                    {offices.map((office) => (
-                      <option key={office} value={office}>{office}</option>
-                    ))}
-                  </select>
-                )}
-              </div>
-              <div className="custom-scrollbar max-h-[600px] space-y-2 overflow-auto">
-                {isLiveError ? (
-                  <div className="p-6 text-center text-sm font-bold text-red-400">Failed to load live users.</div>
-                ) : loading ? (
-                  <div className="p-6 text-center text-sm font-bold text-gray-400">Loading live locations...</div>
-                ) : filteredUsers.length === 0 ? (
-                  <div className="p-6 text-center text-sm font-bold text-gray-400">No matching users found.</div>
-                ) : (
-                  filteredUsers.map((item) => (
-                    <button
-                      key={item.user.id}
-                      onClick={() => setSelectedUserId(item.user.id)}
-                      className={`w-full rounded-xl border p-3 text-left transition ${
-                        selectedUser?.user.id === item.user.id ? 'border-emerald-200 bg-emerald-50/70' : 'border-gray-100 bg-white hover:bg-gray-50'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500 text-sm font-black text-white">
-                          {(item.user.name || item.user.email || '?').slice(0, 1).toUpperCase()}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-black text-gray-900">{item.user.name || item.user.email}</p>
-                          <p className="truncate text-xs font-semibold text-gray-500">{updatedAgo(item.lastUpdatedAt)}</p>
-                        </div>
-                      </div>
-                      <div className="mt-3 flex items-center justify-between gap-2">
-                        <span className={`rounded-full border px-2 py-1 text-[10px] font-black ${statusClass(item.status)}`}>{item.status}</span>
-                        <span className="text-[10px] font-black text-gray-400">{Number((item.speed || 0) * 3.6).toFixed(1)} km/h</span>
-                      </div>
-                    </button>
-                  ))
-                )}
-              </div>
-            </aside>
 
-            <main className="space-y-5">
-              <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
-                <div className="flex flex-col gap-3 border-b border-gray-100 p-4 lg:flex-row lg:items-center lg:justify-between">
-                  <div>
-                    <p className="text-lg font-black text-gray-950">{selectedUser?.user.name || 'Select a user'}</p>
-                    <p className="text-sm font-semibold text-gray-500">{selectedUser?.user.role || 'Field staff'} · {selectedUser?.user.office || 'No office assigned'}</p>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <button disabled={!routeData?.points?.length} onClick={() => setReplayPlaying((value) => !value)} className="inline-flex items-center gap-2 rounded-xl bg-gray-900 px-4 py-2 text-sm font-black text-white disabled:opacity-40">
-                      {replayPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-                      Replay Route
-                    </button>
-                    {[1, 2, 4].map((speed) => (
-                      <button key={speed} onClick={() => setReplaySpeed(speed)} className={`rounded-xl border px-3 py-2 text-xs font-black ${replaySpeed === speed ? 'border-emerald-500 text-emerald-600' : 'border-gray-200 text-gray-500'}`}>{speed}x</button>
-                    ))}
-                    <button onClick={handleExport} disabled={!selectedUser} className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-black text-gray-700 disabled:opacity-40">
-                      <Download className="h-4 w-4" /> Export
-                    </button>
-                  </div>
-                </div>
-                <div className="relative h-[500px] bg-gray-100 rounded-b-2xl overflow-hidden">
-                  <LocationMap
-                    latitude={mapLatitude}
-                    longitude={mapLongitude}
-                    accuracy={mapAccuracy}
-                    routePoints={routeData?.points || []}
-                    stops={routeData?.stops || []}
-                    replayIndex={replayIndex}
-                    isReplaying={replayPlaying}
-                  />
+                <div className="flex max-h-[calc(100vh-320px)] flex-col gap-2 overflow-y-auto pr-1">
+                  {filteredUsers.map((u) => {
+                    const isSelected = selectedUserId === u.user.id;
+                    const statusColor = u.status === 'Moving' ? 'bg-emerald-500' : u.status === 'Offline' ? 'bg-gray-400' : 'bg-amber-500';
+                    return (
+                      <div
+                        key={u.user.id}
+                        onClick={() => setSelectedUserId(u.user.id)}
+                        className={`group relative flex cursor-pointer items-center gap-3 rounded-2xl border p-3 transition ${
+                          isSelected ? 'border-emerald-500 bg-emerald-50/80 shadow-md' : 'border-transparent bg-white hover:border-gray-200 hover:shadow-sm'
+                        }`}
+                      >
+                        <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full border border-gray-100 bg-gray-100">
+                          {u.user.avatarUrl ? (
+                            <img src={u.user.avatarUrl} className="h-full w-full object-cover" />
+                          ) : (
+                            <div className="flex h-full w-full items-center justify-center font-bold text-gray-400">{u.user.name.charAt(0)}</div>
+                          )}
+                          <div className={`absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white ${statusColor}`}></div>
+                        </div>
+                        <div className="flex-1 overflow-hidden">
+                          <p className="truncate text-xs font-bold text-gray-900">{u.user.name}</p>
+                          <p className="truncate text-[10px] font-semibold text-gray-500">{updatedAgo(u.lastUpdatedAt)}</p>
+                        </div>
+                        {u.batteryPercentage && (
+                          <div className="flex flex-col items-end text-[9px] font-bold text-gray-400">
+                            <Battery size={12} className={u.batteryPercentage < 20 ? 'text-red-500' : 'text-emerald-500'} />
+                            {u.batteryPercentage}%
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
+            </motion.div>
 
-              <div className="grid gap-3 md:grid-cols-4">
+            {/* Top Right: Stats Cards */}
+            <div className="pointer-events-auto flex gap-3">
+              <button onClick={() => setPanelOpen(!panelOpen)} className="rounded-2xl border border-white/20 bg-white/80 p-3 shadow-lg backdrop-blur-xl hover:bg-white text-gray-700">
+                <Users size={20} />
+              </button>
+              
+              <div className="hidden md:flex gap-3">
                 {[
-                  ['Distance', `${stats?.totalDistanceKm ?? 0} km`, Route],
-                  ['Moving Time', formatDuration(stats?.movingSeconds), Clock],
-                  ['Stops', stats?.numberOfStops ?? 0, MapPin],
-                  ['Avg Speed', `${stats?.averageSpeedKmh ?? 0} km/h`, Gauge],
-                ].map(([label, value, Icon]: any) => (
-                  <div key={label} className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
-                    <Icon className="h-5 w-5 text-emerald-500" />
-                    <p className="mt-2 text-[10px] font-black uppercase tracking-widest text-gray-400">{label}</p>
-                    <p className="text-xl font-black text-gray-950">{value}</p>
+                  ['Active Today', users.filter(u => u.status !== 'Offline').length, Activity, 'text-emerald-500'],
+                  ['Offline', users.filter(u => u.status === 'Offline').length, Navigation, 'text-gray-400'],
+                  ['Total Distance', `${stats?.totalDistanceKm ?? 0} km`, Route, 'text-blue-500'],
+                ].map(([label, value, Icon, colorClass]: any) => (
+                  <div key={label} className="flex items-center gap-3 rounded-2xl border border-white/20 bg-white/80 px-4 py-2 shadow-lg backdrop-blur-xl">
+                    <div className={`rounded-xl bg-gray-50 p-2 ${colorClass}`}><Icon size={16} /></div>
+                    <div>
+                      <p className="text-[9px] font-black uppercase tracking-widest text-gray-500">{label}</p>
+                      <p className="text-sm font-black text-gray-900">{value}</p>
+                    </div>
                   </div>
                 ))}
               </div>
+            </div>
 
-              <div className="grid gap-5 lg:grid-cols-2">
-                <section className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
-                  <h2 className="text-sm font-black uppercase tracking-widest text-gray-500">Travel Timeline</h2>
-                  <div className="mt-4 max-h-80 space-y-3 overflow-auto">
-                    {isRouteError ? (
-                      <p className="text-sm font-bold text-red-400">Failed to load route data.</p>
-                    ) : routeLoading ? (
-                      <p className="text-sm font-bold text-gray-400">Loading route...</p>
-                    ) : routeData?.points?.length ? (
-                      routeData.points.filter((_, index) => index % Math.max(1, Math.floor(routeData.points.length / 12)) === 0).map((point, index, array) => {
-                        const actualIndex = routeData.points.indexOf(point);
-                        return (
-                          <div 
-                            key={`${point.recordedAt}-${actualIndex}`} 
-                            className="flex gap-3 border-l-2 border-emerald-100 pl-3 cursor-pointer hover:bg-emerald-50/50 p-2 rounded-r-lg transition"
-                            onClick={() => {
-                                setReplayPlaying(false);
-                                setReplayIndex(actualIndex);
-                            }}
-                          >
-                            <span className="text-xs font-black text-emerald-600">{format(new Date(point.recordedAt), 'hh:mm a')}</span>
-                            <div className="flex-1">
-                              <p className="text-xs font-semibold text-gray-900">Location update</p>
-                              <p className="text-[10px] font-bold text-gray-400">{Number((point.speed || 0) * 3.6).toFixed(1)} km/h · {point.latitude.toFixed(4)}, {point.longitude.toFixed(4)}</p>
-                            </div>
-                          </div>
-                        )
-                      })
-                    ) : (
-                      <p className="text-sm font-bold text-gray-400">No route points for this date.</p>
-                    )}
-                  </div>
-                </section>
-
-                <section className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
-                  <h2 className="text-sm font-black uppercase tracking-widest text-gray-500">Visited Stops</h2>
-                  <div className="mt-4 max-h-80 space-y-3 overflow-auto">
-                    {isRouteError ? (
-                      <p className="text-sm font-bold text-red-400">Failed to load stops.</p>
-                    ) : routeData?.stops?.length ? routeData.stops.map((stop, index) => {
-                       const relatedPointIndex = routeData.points.findIndex(p => p.recordedAt === stop.startedAt);
-                       return (
-                        <div 
-                           key={`${stop.startedAt}-${index}`} 
-                           className="rounded-xl border border-gray-100 bg-gray-50 p-3 cursor-pointer hover:border-red-200 hover:bg-red-50/50 transition"
-                           onClick={() => {
-                             if (relatedPointIndex !== -1) {
-                               setReplayPlaying(false);
-                               setReplayIndex(relatedPointIndex);
-                             }
-                           }}
-                        >
-                          <div className="flex items-center gap-2 mb-1">
-                            <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                            <p className="text-sm font-black text-gray-900">Detected Stop</p>
-                          </div>
-                          <p className="mt-1 text-xs font-semibold text-gray-500">{format(new Date(stop.startedAt), 'hh:mm a')} · Duration: {formatDuration(stop.durationSeconds)}</p>
-                          <p className="mt-1 text-[11px] font-bold text-gray-400">{stop.latitude.toFixed(5)}, {stop.longitude.toFixed(5)}</p>
-                        </div>
-                      )
-                    }) : (
-                      <p className="text-sm font-bold text-gray-400">No 5+ minute stops detected.</p>
-                    )}
-                  </div>
-                </section>
-              </div>
-
-              <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
-                <div className="flex flex-wrap items-center gap-4 text-xs font-bold text-gray-500">
-                  <span className="inline-flex items-center gap-1"><Battery className="h-4 w-4" /> Battery {selectedUser?.batteryPercentage ?? 'N/A'}%</span>
-                  <span>Accuracy {selectedUser?.accuracy ? `${Math.round(selectedUser.accuracy)}m` : 'N/A'}</span>
-                  <span>Max Speed {stats?.maxSpeedKmh ?? 0} km/h</span>
-                  <span>Check-In {stats?.firstCheckIn ? format(new Date(stats.firstCheckIn), 'hh:mm a') : 'N/A'}</span>
-                  <span>Check-Out {stats?.lastCheckOut ? format(new Date(stats.lastCheckOut), 'hh:mm a') : 'N/A'}</span>
-                </div>
-              </div>
-            </main>
           </div>
+
+          {/* Bottom Bar: Timeline & Playback */}
+          {selectedUserId && (
+            <motion.div 
+              initial={{ y: 100, opacity: 0 }} 
+              animate={{ y: 0, opacity: 1 }}
+              className="pointer-events-auto mx-auto w-full max-w-4xl rounded-3xl border border-white/20 bg-white/90 p-4 shadow-2xl backdrop-blur-xl"
+            >
+              <div className="flex items-center justify-between gap-6">
+                
+                {/* Playback Controls */}
+                <div className="flex shrink-0 items-center gap-4 border-r border-gray-200 pr-6">
+                  <button 
+                    onClick={() => {
+                      if (replayIndex >= (routeData?.points?.length || 0) - 1) setReplayIndex(0);
+                      setReplayPlaying(!replayPlaying);
+                    }}
+                    className={`flex h-12 w-12 items-center justify-center rounded-2xl shadow-md transition ${replayPlaying ? 'bg-amber-100 text-amber-600' : 'bg-emerald-500 text-white hover:bg-emerald-600'}`}
+                  >
+                    {replayPlaying ? <Pause size={24} fill="currentColor" /> : <Play size={24} fill="currentColor" className="ml-1" />}
+                  </button>
+                  <div className="flex flex-col gap-1">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Speed</p>
+                    <div className="flex gap-1">
+                      {[1, 5, 10].map(s => (
+                        <button 
+                          key={s} 
+                          onClick={() => setReplaySpeed(s)}
+                          className={`rounded-lg px-2 py-1 text-[10px] font-bold transition ${replaySpeed === s ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
+                        >
+                          {s}x
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Scrubber / Timeline overview */}
+                <div className="flex-1">
+                  <div className="mb-2 flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-gray-500">
+                    <span>{stats?.firstCheckIn ? format(new Date(stats.firstCheckIn), 'hh:mm a') : 'Start'}</span>
+                    <span className="text-emerald-600">
+                      {routeData?.points?.[replayIndex] ? format(new Date(routeData.points[replayIndex].recordedAt), 'hh:mm a') : '00:00'}
+                    </span>
+                    <span>{stats?.lastCheckOut ? format(new Date(stats.lastCheckOut), 'hh:mm a') : 'End'}</span>
+                  </div>
+                  <input 
+                    type="range" 
+                    min={0} 
+                    max={Math.max(0, (routeData?.points?.length || 1) - 1)} 
+                    value={replayIndex}
+                    onChange={(e) => {
+                      setReplayPlaying(false);
+                      setReplayIndex(parseInt(e.target.value));
+                    }}
+                    className="h-2 w-full appearance-none rounded-full bg-gray-200 accent-emerald-500"
+                  />
+                </div>
+
+              </div>
+            </motion.div>
+          )}
+
         </div>
       </div>
     </DashboardLayout>
