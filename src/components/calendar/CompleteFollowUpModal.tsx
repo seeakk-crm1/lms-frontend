@@ -6,6 +6,7 @@ import { Loader2, X } from 'lucide-react';
 import { z } from 'zod';
 import { formatFollowUpTypeLabel } from '../../modules/followups/followUpTypeUi';
 import type { FollowUp } from '../../types/followup.types';
+import FollowUpContextCard from './FollowUpContextCard';
 
 const formSchema = z.object({
   description: z.string().trim().min(1, 'Description is required').max(2000, 'Description is too long'),
@@ -86,6 +87,8 @@ const CompleteFollowUpModal: React.FC<Props> = ({
               })}
               className="space-y-5 p-5"
             >
+              <FollowUpContextCard leadId={followUp.leadId} />
+              
               <div>
                 <label className="text-[11px] font-black uppercase tracking-widest text-gray-400">Description</label>
                 <textarea

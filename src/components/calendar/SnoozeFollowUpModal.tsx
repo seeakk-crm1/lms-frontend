@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Loader2, X } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
+import FollowUpContextCard from './FollowUpContextCard';
 import type { FollowUp } from '../../types/followup.types';
 import { useActiveExtensionReasonsQuery } from '../../modules/followup-extension-reasons/hooks/useFollowUpExtensionReasons';
 import { useLifecycleExtensionLimit } from '../../hooks/useLifecycleExtensionLimit';
@@ -116,6 +117,8 @@ const SnoozeFollowUpModal: React.FC<Props> = ({
               </button>
             </div>
             <div className="space-y-4 p-5">
+              <FollowUpContextCard leadId={followUp?.leadId} />
+              
               <div>
                 <label className="block text-[11px] font-black uppercase tracking-widest text-gray-400">
                   Current Follow-Up Date
