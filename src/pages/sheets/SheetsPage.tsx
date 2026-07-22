@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { format } from 'date-fns';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
@@ -59,6 +60,29 @@ const columnLetter = (index: number) => {
     number = Math.floor((number - 1) / 26);
   }
   return value;
+};
+
+const toInputDateTime = (dateStr?: string | null): string => {
+  if (!dateStr) return '';
+  try {
+    const d = new Date(dateStr);
+    if (Number.isNaN(d.getTime())) return dateStr || '';
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  } catch {
+    return dateStr || '';
+  }
+};
+
+const formatFollowupDisplay = (valStr: string): string => {
+  if (!valStr) return '—';
+  try {
+    const d = new Date(valStr);
+    if (Number.isNaN(d.getTime())) return valStr;
+    return format(d, 'dd MMM yyyy, hh:mm a');
+  } catch {
+    return valStr;
+  }
 };
 
 const createBlankRows = (count: number, columns: SheetColumn[]): SheetRow[] =>
@@ -457,6 +481,9 @@ const SheetsPage: React.FC = () => {
       if (applied.length > 0) {
         toast.success(`Successfully updated ${applied.length} lead(s) in CRM.`);
         void queryClient.invalidateQueries({ queryKey: ['leads'] });
+        void queryClient.invalidateQueries({ queryKey: ['followups'] });
+        void queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+        void queryClient.invalidateQueries({ queryKey: ['sheet', draft?.id] });
       }
       if (pending.length > 0) {
         toast(pending[0].message || 'Lead stage change submitted and pending approval.', { icon: '⏳' });
@@ -1155,7 +1182,7 @@ const SheetsPage: React.FC = () => {
                                 onDoubleClick={() => {
                                   if (editable) {
                                     setEditingCell({ rowIndex: actualRowIdx, colIndex: colIdx, rowId: row.id, columnId: column.id });
-                                    setEditingValue(valStr);
+                                    setEditingValue(isFollowupDateCol ? toInputDateTime(valStr) : valStr);
                                   }
                                 }}
                                 onContextMenu={(e) => handleContextMenu(e, row.id, column.id)}
@@ -1327,7 +1354,11 @@ const SheetsPage: React.FC = () => {
                                       <ExternalLink className="w-3 h-3 shrink-0 opacity-70 group-hover/link:opacity-100 transition-opacity" />
                                     </button>
                                   </div>
-                                ) : (
+                                ) : isFollowupDateCol ? (
+                                   <span className="truncate block max-w-full font-mono text-emerald-600 dark:text-emerald-400 font-semibold" title={valStr}>
+                                     {formatFollowupDisplay(valStr)}
+                                   </span>
+                                 ) : (
                                   <span className="truncate block max-w-full font-mono">{valStr}</span>
                                 )}
 
