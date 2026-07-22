@@ -108,15 +108,15 @@ const SnoozeFollowUpModal: React.FC<Props> = ({
             initial={{ opacity: 0, scale: 0.95, y: 8 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 8 }}
-            className="relative w-full max-w-md rounded-t-3xl border border-gray-100 bg-white shadow-2xl sm:rounded-3xl"
+            className="relative w-full max-w-md rounded-t-3xl border border-gray-100 bg-white shadow-2xl sm:rounded-3xl flex flex-col max-h-[90vh] overflow-hidden"
           >
-            <div className="flex items-center justify-between gap-3 border-b border-gray-100 px-5 py-4">
+            <div className="flex items-center justify-between gap-3 border-b border-gray-100 px-5 py-4 shrink-0">
               <h3 className="text-lg font-black text-gray-900">Snooze Follow-up</h3>
               <button onClick={onClose} className="rounded-xl border border-gray-200 p-2 text-gray-400 hover:bg-gray-50">
                 <X className="h-4 w-4" />
               </button>
             </div>
-            <div className="space-y-4 p-5">
+            <div className="space-y-4 p-5 flex-1 overflow-y-auto min-h-0 scrollbar-thin">
               <FollowUpContextCard leadId={followUp?.leadId} />
               
               <div>

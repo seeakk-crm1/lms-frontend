@@ -255,29 +255,58 @@ const MandatoryOverdueFollowUpGate: React.FC<Props> = ({ children }) => {
                               </div>
 
                               {/* Call & WhatsApp Quick Actions */}
-                              {activeItem.leadPhone || (activeItem.customerName && /^\+?\d[\d\s-]{6,}$/.test(activeItem.customerName.trim())) ? (
-                                <div className="flex items-center gap-2 shrink-0">
-                                  <a
-                                    href={`tel:${(activeItem.leadPhone || activeItem.customerName).replace(/[^0-9+]/g, '')}`}
-                                    className="inline-flex items-center justify-center gap-1.5 rounded-full bg-blue-50 px-3.5 py-1.5 text-xs font-bold text-blue-600 hover:bg-blue-100 transition-colors ring-1 ring-blue-100"
-                                  >
-                                    <PhoneCall className="h-3.5 w-3.5" />
-                                    Call
-                                  </a>
-                                  <WhatsAppActionButton
-                                    phone={activeItem.leadPhone || activeItem.customerName}
-                                    variant="cta"
-                                    stopPropagation={false}
-                                    requiredPermissions={LEAD_WHATSAPP_PERMISSIONS}
-                                    title="WhatsApp"
-                                    audit={{
-                                      entityType: 'FollowUp',
-                                      entityId: activeItem.id,
-                                      entityName: activeItem.leadName,
-                                    }}
-                                  />
-                                </div>
-                              ) : null}
+                              {(() => {
+                                const validPhone =
+                                  activeItem.leadPhone ||
+                                  (activeItem.customerName && /^\+?\d[\d\s-]{6,}$/.test(activeItem.customerName.trim())
+                                    ? activeItem.customerName.trim()
+                                    : null);
+
+                                return validPhone ? (
+                                  <div className="flex items-center gap-2 shrink-0">
+                                    <a
+                                      href={`tel:${validPhone.replace(/[^0-9+]/g, '')}`}
+                                      className="inline-flex items-center justify-center gap-1.5 rounded-full bg-blue-50 px-3.5 py-1.5 text-xs font-bold text-blue-600 hover:bg-blue-100 transition-colors ring-1 ring-blue-100"
+                                    >
+                                      <PhoneCall className="h-3.5 w-3.5" />
+                                      Call
+                                    </a>
+                                    <WhatsAppActionButton
+                                      phone={validPhone}
+                                      variant="cta"
+                                      stopPropagation={false}
+                                      requiredPermissions={LEAD_WHATSAPP_PERMISSIONS}
+                                      title="WhatsApp"
+                                      audit={{
+                                        entityType: 'FollowUp',
+                                        entityId: activeItem.id,
+                                        entityName: activeItem.leadName,
+                                      }}
+                                    />
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center gap-2 shrink-0">
+                                    <button
+                                      disabled
+                                      type="button"
+                                      title="No phone number available"
+                                      className="inline-flex items-center justify-center gap-1.5 rounded-full bg-gray-100 px-3.5 py-1.5 text-xs font-bold text-gray-400 cursor-not-allowed opacity-60 ring-1 ring-gray-200"
+                                    >
+                                      <PhoneCall className="h-3.5 w-3.5" />
+                                      Call
+                                    </button>
+                                    <button
+                                      disabled
+                                      type="button"
+                                      title="No phone number available"
+                                      className="inline-flex items-center justify-center gap-1.5 rounded-full bg-gray-100 px-3.5 py-1.5 text-xs font-bold text-gray-400 cursor-not-allowed opacity-60 ring-1 ring-gray-200"
+                                    >
+                                      <span>💬</span>
+                                      WhatsApp
+                                    </button>
+                                  </div>
+                                );
+                              })()}
                             </div>
                           </div>
 
