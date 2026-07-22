@@ -533,29 +533,40 @@ const SheetsPage: React.FC = () => {
           });
         });
       }
+      console.log('[Sheet Sync Started]', { changesCount: changes?.length || 0, changes });
       return syncSheetLeadChanges(draft.id, changes);
     },
     onSuccess: (result) => {
+      console.log('[Sheet Sync Server Response]', result);
       if (!result) return;
       const applied = result.applied || [];
       const pending = result.pending || [];
       const blocked = result.blocked || [];
 
+      if (applied.length === 0 && pending.length === 0 && blocked.length === 0) {
+        toast('No changes detected to sync.', { icon: 'ℹ️' });
+        return;
+      }
+
       if (applied.length > 0) {
-        toast.success(`Successfully updated ${applied.length} lead(s) in CRM.`);
+        toast.success(result.message || `Successfully updated ${applied.length} change(s) in CRM.`);
         void queryClient.invalidateQueries({ queryKey: ['leads'] });
         void queryClient.invalidateQueries({ queryKey: ['followups'] });
         void queryClient.invalidateQueries({ queryKey: ['dashboard'] });
         void queryClient.invalidateQueries({ queryKey: ['sheet', draft?.id] });
       }
       if (pending.length > 0) {
-        toast(pending[0].message || 'Lead stage change submitted and pending approval.', { icon: '⏳' });
+        toast(pending[0].message || `${pending.length} change(s) submitted and pending supervisor approval.`, { icon: '⏳' });
       }
       if (blocked.length > 0) {
-        toast.error(blocked[0].message || 'Lead update was blocked by CRM rules.');
+        toast.error(blocked[0].message || `${blocked.length} change(s) could not be updated.`);
       }
+      console.log('[Sheet Sync Finished]');
     },
-    onError: (error: any) => toast.error(error?.response?.data?.message || 'Unable to sync leads'),
+    onError: (error: any) => {
+      console.error('[Sheet Sync Error]', error);
+      toast.error(error?.response?.data?.message || error?.message || 'Unable to sync leads');
+    },
   });
 
   // Handle Master Dropdown Select (Stage, Source, User, Status, FollowUp Type)
