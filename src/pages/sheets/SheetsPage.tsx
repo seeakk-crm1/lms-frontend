@@ -38,6 +38,7 @@ import useAuthStore from '../../store/useAuthStore';
 import { hasPermission } from '../../utils/permission.util';
 
 import SheetFollowUpModal from './components/SheetFollowUpModal';
+import SheetProductModal from './components/SheetProductModal';
 
 import { SheetsCellBar } from './components/SheetsCellBar';
 import { SheetsContextMenu } from './components/SheetsContextMenu';
@@ -202,6 +203,34 @@ const SheetsPage: React.FC = () => {
     rowId: '',
     columnId: '',
   });
+
+  // CRM Product Selector Modal Integration
+  const [productModal, setProductModal] = useState<{
+    isOpen: boolean;
+    rowId: string;
+    columnId: string;
+    leadId?: string;
+    leadName?: string;
+    initialValue?: string | null;
+  }>({
+    isOpen: false,
+    rowId: '',
+    columnId: '',
+  });
+
+  const handleOpenProductModal = useCallback(
+    (rowId: string, columnId: string, leadId?: string, leadName?: string, valStr?: string) => {
+      setProductModal({
+        isOpen: true,
+        rowId,
+        columnId,
+        leadId,
+        leadName,
+        initialValue: valStr || null,
+      });
+    },
+    [],
+  );
 
   const handleOpenFollowUpModal = useCallback(
     (rowId: string, columnId: string, leadId?: string, leadName?: string, valStr?: string) => {
@@ -1185,6 +1214,7 @@ const SheetsPage: React.FC = () => {
                             const isSourceCol = colKey.includes('source');
                             const isUserCol = colKey.includes('assigned') || colKey.includes('user');
                             const isFollowupTypeCol = colKey.includes('followup type') || colKey.includes('follow-up type');
+                            const isProductsCol = column.leadFieldKey === 'products' || colKey.includes('product');
                             const isFollowupDateCol =
                               column.leadFieldKey === 'nextFollowupDate' ||
                               column.leadFieldKey === 'nextFollowUpAt' ||
@@ -1226,7 +1256,15 @@ const SheetsPage: React.FC = () => {
                                 onMouseEnter={() => handleCellMouseEnter(actualRowIdx, colIdx)}
                                 onDoubleClick={() => {
                                   if (editable) {
-                                    if (isFollowupDateCol) {
+                                    if (isProductsCol) {
+                                      handleOpenProductModal(
+                                        row.id,
+                                        column.id,
+                                        leadId || undefined,
+                                        row.metadata?.leadName || (row.cells?.name ? String(row.cells.name) : undefined),
+                                        valStr,
+                                      );
+                                    } else if (isFollowupDateCol) {
                                       handleOpenFollowUpModal(
                                         row.id,
                                         column.id,
@@ -1379,7 +1417,26 @@ const SheetsPage: React.FC = () => {
                                       <ExternalLink className="w-3 h-3 shrink-0 opacity-70 group-hover/link:opacity-100 transition-opacity" />
                                     </button>
                                   </div>
-                                ) : isFollowupDateCol ? (
+                                 ) : isProductsCol ? (
+                                   <button
+                                     type="button"
+                                     onClick={(e) => {
+                                       e.stopPropagation();
+                                       handleOpenProductModal(
+                                         row.id,
+                                         column.id,
+                                         leadId || undefined,
+                                         row.metadata?.leadName || (row.cells?.name ? String(row.cells.name) : undefined),
+                                         valStr,
+                                       );
+                                     }}
+                                     className="w-full text-left truncate font-mono text-emerald-600 dark:text-emerald-400 font-semibold hover:underline cursor-pointer flex items-center justify-between"
+                                     title="Click to select products"
+                                   >
+                                     <span className="truncate">{valStr || 'Select Products'}</span>
+                                     <ChevronDown className="w-3 h-3 opacity-60 ml-1 shrink-0" />
+                                   </button>
+                                 ) : isFollowupDateCol ? (
                                    <button
                                      type="button"
                                      onClick={(e) => {
@@ -1398,8 +1455,8 @@ const SheetsPage: React.FC = () => {
                                      {formatFollowupDisplay(valStr)}
                                    </button>
                                  ) : (
-                                  <span className="truncate block max-w-full font-mono">{valStr}</span>
-                                )}
+                                   <span className="truncate block max-w-full font-mono">{valStr}</span>
+                                 )}
 
                                 {/* Fill Handle */}
                                 {isSelected && editable && (
@@ -1529,6 +1586,36 @@ const SheetsPage: React.FC = () => {
           onClose={() => setSheetFollowUpModal((prev) => ({ ...prev, isOpen: false }))}
           onSaved={(newIsoDate) => {
             updateCell(sheetFollowUpModal.rowId, sheetFollowUpModal.columnId, newIsoDate);
+          }}
+        />
+
+        {/* CRM Product Selector Modal */}
+        <SheetProductModal
+          isOpen={productModal.isOpen}
+          leadId={productModal.leadId}
+          leadName={productModal.leadName}
+          initialValue={productModal.initialValue}
+          onClose={() => setProductModal((prev) => ({ ...prev, isOpen: false }))}
+          onSaved={(formattedProducts, newTotalAmount) => {
+            updateCell(productModal.rowId, productModal.columnId, formattedProducts);
+            const totalAmountCol = columns.find(
+              (c) => c.leadFieldKey === 'totalAmount' || (c.leadFieldKey || c.id || '').toLowerCase().includes('total amount'),
+            );
+            if (totalAmountCol) {
+              updateCell(productModal.rowId, totalAmountCol.id, newTotalAmount);
+            }
+            const balanceAmountCol = columns.find(
+              (c) => c.leadFieldKey === 'balanceAmount' || (c.leadFieldKey || c.id || '').toLowerCase().includes('balance amount'),
+            );
+            if (balanceAmountCol) {
+              const advCol = columns.find(
+                (c) => c.leadFieldKey === 'advanceAmount' || (c.leadFieldKey || c.id || '').toLowerCase().includes('advance amount'),
+              );
+              const currentRow = draft?.rows.find((r) => r.id === productModal.rowId);
+              const advVal = advCol ? Number(currentRow?.cells?.[advCol.id] || 0) : 0;
+              const newBalance = Math.max(0, newTotalAmount - advVal);
+              updateCell(productModal.rowId, balanceAmountCol.id, newBalance);
+            }
           }}
         />
       </div>
