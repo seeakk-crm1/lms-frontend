@@ -39,6 +39,7 @@ import { SheetsToolbar } from './components/SheetsToolbar';
 import { FindReplaceModal } from './components/FindReplaceModal';
 
 type SelectedCell = { rowIndex: number; colIndex: number; rowId: string; columnId: string } | null;
+type SelectionRange = { startRowIdx: number; startColIdx: number; endRowIdx: number; endColIdx: number } | null;
 type SortState = { columnId: string; direction: 'asc' | 'desc' } | null;
 
 const columnLetter = (index: number) => {
@@ -74,6 +75,7 @@ const applyCellStyle = (formatting: SheetFormatting | null | undefined, rowId: s
     fontWeight: cellFormat.bold ? 'bold' : 'normal',
     fontStyle: cellFormat.italic ? 'italic' : 'normal',
     textDecoration: cellFormat.underline ? 'underline' : 'none',
+    fontSize: cellFormat.fontSize ? `${cellFormat.fontSize}px` : undefined,
     color: (cellFormat.color as string) || undefined,
     backgroundColor: (cellFormat.bgColor as string) || undefined,
     textAlign: (cellFormat.align as any) || 'left',
@@ -96,10 +98,22 @@ const SheetsPage: React.FC = () => {
   const canFormat = hasPermission(permissions, 'SHEETS_FORMAT_MANAGE');
   const editable = canEdit || canFormat;
 
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    return (localStorage.getItem('seeakk_sheets_theme') as 'light' | 'dark') || 'dark';
+  });
+
+  const handleToggleTheme = () => {
+    const next = theme === 'dark' ? 'light' : 'dark';
+    setTheme(next);
+    localStorage.setItem('seeakk_sheets_theme', next);
+  };
+
   const [search, setSearch] = useState('');
   const [activeSheetId, setActiveSheetId] = useState<string | null>(null);
   const [draft, setDraft] = useState<Sheet | null>(null);
   const [selectedCell, setSelectedCell] = useState<SelectedCell>(null);
+  const [selectionRange, setSelectionRange] = useState<SelectionRange>(null);
+  const [isMouseDown, setIsMouseDown] = useState(false);
   const [editingCell, setEditingCell] = useState<SelectedCell>(null);
   const [editingValue, setEditingValue] = useState('');
   const [clipboardValue, setClipboardValue] = useState<string | null>(null);
@@ -114,12 +128,12 @@ const SheetsPage: React.FC = () => {
   const [isHeaderFrozen, setIsHeaderFrozen] = useState(true);
   const [rowWindowStart, setRowWindowStart] = useState(0);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; rowId: string; columnId: string } | null>(null);
-  const [isDraggingFill, setIsDraggingFill] = useState(false);
   const [activeStageMenuCell, setActiveStageMenuCell] = useState<{ rowId: string; columnId: string } | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const gridContainerRef = useRef<HTMLDivElement>(null);
   const autoSaveTimerRef = useRef<number | null>(null);
+
+  const isLight = theme === 'light';
 
   const sheetsQuery = useQuery({
     queryKey: ['sheets', search],
@@ -164,6 +178,7 @@ const SheetsPage: React.FC = () => {
     setSaveStatus('saved');
     setRowWindowStart(0);
     setSelectedCell(null);
+    setSelectionRange(null);
     setEditingCell(null);
   }, [sheetQuery.data]);
 
@@ -249,25 +264,50 @@ const SheetsPage: React.FC = () => {
     [draft, editable, remember],
   );
 
+  // Bulk formatting support across selection range
   const updateFormatting = useCallback(
     (patch: Record<string, unknown>) => {
-      if (!draft || !selectedCell || !canFormat) return;
-      const key = getCellKey(selectedCell.rowId, selectedCell.columnId);
+      if (!draft || !canFormat) return;
+      const targetCells: Array<{ rowId: string; columnId: string }> = [];
+
+      if (selectionRange) {
+        const minRow = Math.min(selectionRange.startRowIdx, selectionRange.endRowIdx);
+        const maxRow = Math.max(selectionRange.startRowIdx, selectionRange.endRowIdx);
+        const minCol = Math.min(selectionRange.startColIdx, selectionRange.endColIdx);
+        const maxCol = Math.max(selectionRange.startColIdx, selectionRange.endColIdx);
+
+        for (let r = minRow; r <= maxRow; r += 1) {
+          const row = filteredSortedRows[r];
+          if (!row) continue;
+          for (let c = minCol; c <= maxCol; c += 1) {
+            const col = columns[c];
+            if (col) targetCells.push({ rowId: row.id, columnId: col.id });
+          }
+        }
+      } else if (selectedCell) {
+        targetCells.push({ rowId: selectedCell.rowId, columnId: selectedCell.columnId });
+      }
+
+      if (targetCells.length === 0) return;
+
+      const newCellFormatting = { ...(draft.formatting?.cells || {}) };
+      targetCells.forEach(({ rowId, columnId }) => {
+        const key = getCellKey(rowId, columnId);
+        newCellFormatting[key] = {
+          ...(newCellFormatting[key] || {}),
+          ...patch,
+        };
+      });
+
       remember({
         ...draft,
         formatting: {
           ...(draft.formatting || {}),
-          cells: {
-            ...(draft.formatting?.cells || {}),
-            [key]: {
-              ...(draft.formatting?.cells?.[key] || {}),
-              ...patch,
-            },
-          },
+          cells: newCellFormatting,
         },
       });
     },
-    [canFormat, draft, remember, selectedCell],
+    [canFormat, columns, draft, filteredSortedRows, remember, selectedCell, selectionRange],
   );
 
   const createMutation = useMutation({
@@ -411,7 +451,7 @@ const SheetsPage: React.FC = () => {
     const val = String(row?.cells?.[selectedCell.columnId] ?? '');
     setClipboardValue(val);
     void navigator.clipboard.writeText(val);
-    toast.success('Copied cell');
+    toast.success('Copied to clipboard');
   }, [draft, selectedCell]);
 
   const handleCut = useCallback(() => {
@@ -429,7 +469,39 @@ const SheetsPage: React.FC = () => {
     });
   }, [clipboardValue, draft, editable, selectedCell, updateCell]);
 
-  // Excel Keyboard Navigation & Editing
+  // Handle Cell Click & Drag Range Selection
+  const handleCellMouseDown = (rIdx: number, cIdx: number, rowId: string, colId: string, e: React.MouseEvent) => {
+    setIsMouseDown(true);
+    if (e.shiftKey && selectedCell) {
+      setSelectionRange({
+        startRowIdx: selectedCell.rowIndex,
+        startColIdx: selectedCell.colIndex,
+        endRowIdx: rIdx,
+        endColIdx: cIdx,
+      });
+    } else {
+      setSelectedCell({ rowIndex: rIdx, colIndex: cIdx, rowId, columnId: colId });
+      setSelectionRange({ startRowIdx: rIdx, startColIdx: cIdx, endRowIdx: rIdx, endColIdx: cIdx });
+    }
+  };
+
+  const handleCellMouseEnter = (rIdx: number, cIdx: number) => {
+    if (isMouseDown && selectionRange) {
+      setSelectionRange({
+        ...selectionRange,
+        endRowIdx: rIdx,
+        endColIdx: cIdx,
+      });
+    }
+  };
+
+  useEffect(() => {
+    const handleMouseUp = () => setIsMouseDown(false);
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => window.removeEventListener('mouseup', handleMouseUp);
+  }, []);
+
+  // Excel Keyboard Navigation & Shortcut Commands
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (editingCell || showFindReplace || !selectedCell || !draft) return;
@@ -445,30 +517,46 @@ const SheetsPage: React.FC = () => {
         e.preventDefault();
         if (rowIdx > 0) {
           const nextRow = filteredSortedRows[rowIdx - 1];
-          setSelectedCell({ rowIndex: rowIdx - 1, colIndex: colIdx, rowId: nextRow.id, columnId: columns[colIdx].id });
+          const nextSel = { rowIndex: rowIdx - 1, colIndex: colIdx, rowId: nextRow.id, columnId: columns[colIdx].id };
+          setSelectedCell(nextSel);
+          setSelectionRange({ startRowIdx: nextSel.rowIndex, startColIdx: nextSel.colIndex, endRowIdx: nextSel.rowIndex, endColIdx: nextSel.colIndex });
         }
       } else if (e.key === 'ArrowDown') {
         e.preventDefault();
         if (rowIdx < totalRows - 1) {
           const nextRow = filteredSortedRows[rowIdx + 1];
-          setSelectedCell({ rowIndex: rowIdx + 1, colIndex: colIdx, rowId: nextRow.id, columnId: columns[colIdx].id });
+          const nextSel = { rowIndex: rowIdx + 1, colIndex: colIdx, rowId: nextRow.id, columnId: columns[colIdx].id };
+          setSelectedCell(nextSel);
+          setSelectionRange({ startRowIdx: nextSel.rowIndex, startColIdx: nextSel.colIndex, endRowIdx: nextSel.rowIndex, endColIdx: nextSel.colIndex });
         }
       } else if (e.key === 'ArrowLeft') {
         e.preventDefault();
         if (colIdx > 0) {
-          setSelectedCell({ rowIndex: rowIdx, colIndex: colIdx - 1, rowId: selectedCell.rowId, columnId: columns[colIdx - 1].id });
+          const nextSel = { rowIndex: rowIdx, colIndex: colIdx - 1, rowId: selectedCell.rowId, columnId: columns[colIdx - 1].id };
+          setSelectedCell(nextSel);
+          setSelectionRange({ startRowIdx: nextSel.rowIndex, startColIdx: nextSel.colIndex, endRowIdx: nextSel.rowIndex, endColIdx: nextSel.colIndex });
         }
       } else if (e.key === 'ArrowRight') {
         e.preventDefault();
         if (colIdx < totalCols - 1) {
-          setSelectedCell({ rowIndex: rowIdx, colIndex: colIdx + 1, rowId: selectedCell.rowId, columnId: columns[colIdx + 1].id });
+          const nextSel = { rowIndex: rowIdx, colIndex: colIdx + 1, rowId: selectedCell.rowId, columnId: columns[colIdx + 1].id };
+          setSelectedCell(nextSel);
+          setSelectionRange({ startRowIdx: nextSel.rowIndex, startColIdx: nextSel.colIndex, endRowIdx: nextSel.rowIndex, endColIdx: nextSel.colIndex });
         }
       } else if (e.key === 'Tab') {
         e.preventDefault();
         if (e.shiftKey) {
-          if (colIdx > 0) setSelectedCell({ rowIndex: rowIdx, colIndex: colIdx - 1, rowId: selectedCell.rowId, columnId: columns[colIdx - 1].id });
+          if (colIdx > 0) {
+            const nextSel = { rowIndex: rowIdx, colIndex: colIdx - 1, rowId: selectedCell.rowId, columnId: columns[colIdx - 1].id };
+            setSelectedCell(nextSel);
+            setSelectionRange({ startRowIdx: nextSel.rowIndex, startColIdx: nextSel.colIndex, endRowIdx: nextSel.rowIndex, endColIdx: nextSel.colIndex });
+          }
         } else {
-          if (colIdx < totalCols - 1) setSelectedCell({ rowIndex: rowIdx, colIndex: colIdx + 1, rowId: selectedCell.rowId, columnId: columns[colIdx + 1].id });
+          if (colIdx < totalCols - 1) {
+            const nextSel = { rowIndex: rowIdx, colIndex: colIdx + 1, rowId: selectedCell.rowId, columnId: columns[colIdx + 1].id };
+            setSelectedCell(nextSel);
+            setSelectionRange({ startRowIdx: nextSel.rowIndex, startColIdx: nextSel.colIndex, endRowIdx: nextSel.rowIndex, endColIdx: nextSel.colIndex });
+          }
         }
       } else if (e.key === 'Enter') {
         e.preventDefault();
@@ -477,6 +565,29 @@ const SheetsPage: React.FC = () => {
           const val = String(row?.cells?.[columns[colIdx].id] ?? '');
           setEditingCell(selectedCell);
           setEditingValue(val);
+        }
+      } else if (e.key === 'Delete' || e.key === 'Backspace') {
+        e.preventDefault();
+        if (editable) {
+          if (selectionRange) {
+            const minRow = Math.min(selectionRange.startRowIdx, selectionRange.endRowIdx);
+            const maxRow = Math.max(selectionRange.startRowIdx, selectionRange.endRowIdx);
+            const minCol = Math.min(selectionRange.startColIdx, selectionRange.endColIdx);
+            const maxCol = Math.max(selectionRange.startColIdx, selectionRange.endColIdx);
+            const updatedRows = draft.rows.map((row, rIdx) => {
+              if (rIdx >= minRow && rIdx <= maxRow) {
+                const newCells = { ...row.cells };
+                for (let c = minCol; c <= maxCol; c += 1) {
+                  if (columns[c]) newCells[columns[c].id] = '';
+                }
+                return { ...row, cells: newCells };
+              }
+              return row;
+            });
+            remember({ ...draft, rows: updatedRows });
+          } else {
+            updateCell(selectedCell.rowId, selectedCell.columnId, '');
+          }
         }
       } else if (e.key === 'Home') {
         e.preventDefault();
@@ -517,7 +628,7 @@ const SheetsPage: React.FC = () => {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [columns, draft, editable, editingCell, filteredSortedRows, handleCopy, handleCut, handlePaste, handleRedo, handleUndo, selectedCell, showFindReplace]);
+  }, [columns, draft, editable, editingCell, filteredSortedRows, handleCopy, handleCut, handlePaste, handleRedo, handleUndo, remember, selectedCell, selectionRange, showFindReplace, updateCell]);
 
   // Context Menu Handlers
   const handleContextMenu = (e: React.MouseEvent, rowId: string, columnId: string) => {
@@ -566,7 +677,9 @@ const SheetsPage: React.FC = () => {
         const val = String(row.cells?.[col.id] ?? '');
         const target = matchCase ? val : val.toLowerCase();
         if (target.includes(q)) {
-          setSelectedCell({ rowIndex: r, colIndex: c, rowId: row.id, columnId: col.id });
+          const nextSel = { rowIndex: r, colIndex: c, rowId: row.id, columnId: col.id };
+          setSelectedCell(nextSel);
+          setSelectionRange({ startRowIdx: r, startColIdx: c, endRowIdx: r, endColIdx: c });
           return;
         }
       }
@@ -614,11 +727,34 @@ const SheetsPage: React.FC = () => {
     }
   };
 
+  // Cell Address & Selection Bounds
   const activeCellKey = selectedCell ? getCellKey(selectedCell.rowId, selectedCell.columnId) : '';
   const activeFormat = draft?.formatting?.cells?.[activeCellKey] || {};
   const selectedRow = selectedCell ? draft?.rows.find((r) => r.id === selectedCell.rowId) : null;
   const activeCellValue = selectedCell && selectedRow ? String(selectedRow.cells?.[selectedCell.columnId] ?? '') : '';
-  const activeCellAddress = selectedCell ? `${columnLetter(selectedCell.colIndex)}${selectedCell.rowIndex + 1}` : '';
+
+  const activeCellAddress = useMemo(() => {
+    if (!selectedCell) return '';
+    if (selectionRange) {
+      const minRow = Math.min(selectionRange.startRowIdx, selectionRange.endRowIdx);
+      const maxRow = Math.max(selectionRange.startRowIdx, selectionRange.endRowIdx);
+      const minCol = Math.min(selectionRange.startColIdx, selectionRange.endColIdx);
+      const maxCol = Math.max(selectionRange.startColIdx, selectionRange.endColIdx);
+      if (minRow !== maxRow || minCol !== maxCol) {
+        return `${columnLetter(minCol)}${minRow + 1}:${columnLetter(maxCol)}${maxRow + 1}`;
+      }
+    }
+    return `${columnLetter(selectedCell.colIndex)}${selectedCell.rowIndex + 1}`;
+  }, [selectedCell, selectionRange]);
+
+  const isCellInRange = (rIdx: number, cIdx: number) => {
+    if (!selectionRange) return false;
+    const minRow = Math.min(selectionRange.startRowIdx, selectionRange.endRowIdx);
+    const maxRow = Math.max(selectionRange.startRowIdx, selectionRange.endRowIdx);
+    const minCol = Math.min(selectionRange.startColIdx, selectionRange.endColIdx);
+    const maxCol = Math.max(selectionRange.startColIdx, selectionRange.endColIdx);
+    return rIdx >= minRow && rIdx <= maxRow && cIdx >= minCol && cIdx <= maxCol;
+  };
 
   if (!canView) {
     return (
@@ -634,8 +770,12 @@ const SheetsPage: React.FC = () => {
 
   return (
     <DashboardLayout>
-      <div className="flex flex-col h-[calc(100vh-64px)] bg-slate-950 text-slate-100 overflow-hidden select-none">
-        {/* Professional Spreadsheet Toolbar */}
+      <div
+        className={`flex flex-col h-[calc(100vh-64px)] overflow-hidden select-none transition-colors ${
+          isLight ? 'bg-slate-100 text-slate-900' : 'bg-slate-950 text-slate-100'
+        }`}
+      >
+        {/* Responsive Toolbar */}
         <SheetsToolbar
           sheets={sheets}
           activeSheetId={activeSheetId}
@@ -645,6 +785,8 @@ const SheetsPage: React.FC = () => {
           onDeleteSheet={() => canDelete && window.confirm('Delete sheet?') && deleteMutation.mutate()}
           saveStatus={saveStatus}
           onManualSave={() => draft && saveMutation.mutate({ sheet: draft })}
+          theme={theme}
+          onToggleTheme={handleToggleTheme}
           canUndo={history.length > 0}
           canRedo={future.length > 0}
           onUndo={handleUndo}
@@ -696,13 +838,17 @@ const SheetsPage: React.FC = () => {
           }}
           onCommit={() => setEditingCell(null)}
           disabled={!editable || !selectedCell}
+          theme={theme}
         />
 
         {/* Main Grid & Versions Sidebar Layout */}
-        <div className="flex-1 flex overflow-hidden relative bg-slate-950">
+        <div className="flex-1 flex overflow-hidden relative">
           <div
-            ref={gridContainerRef}
-            className="flex-1 overflow-auto bg-slate-950 relative scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-slate-950"
+            className={`flex-1 overflow-auto relative scrollbar-thin ${
+              isLight
+                ? 'bg-white scrollbar-thumb-slate-300 scrollbar-track-slate-100'
+                : 'bg-slate-950 scrollbar-thumb-slate-800 scrollbar-track-slate-950'
+            }`}
             onScroll={(event) => {
               const top = event.currentTarget.scrollTop;
               const nextStart = Math.max(0, Math.floor(top / 36) - 15);
@@ -710,26 +856,41 @@ const SheetsPage: React.FC = () => {
             }}
           >
             {!draft || sheetQuery.isLoading ? (
-              <div className="grid h-full place-items-center text-sm font-bold text-slate-500">
+              <div className="grid h-full place-items-center text-sm font-bold text-slate-400">
                 Loading sheet data...
               </div>
             ) : (
               <div style={{ height: Math.max(640, filteredSortedRows.length * 36 + 60), position: 'relative' }}>
-                <table className="absolute left-0 top-0 border-collapse bg-slate-900 text-xs w-max" style={{ top: rowWindowStart * 36 }}>
-                  <thead className={`${isHeaderFrozen ? 'sticky top-0 z-20 shadow-md' : ''} bg-slate-800 text-slate-300 font-semibold border-b border-slate-700`}>
+                <table
+                  className={`absolute left-0 top-0 border-collapse text-xs w-max ${
+                    isLight ? 'bg-white text-slate-800' : 'bg-slate-900 text-slate-100'
+                  }`}
+                  style={{ top: rowWindowStart * 36 }}
+                >
+                  <thead
+                    className={`${isHeaderFrozen ? 'sticky top-0 z-20 shadow-xs' : ''} ${
+                      isLight ? 'bg-slate-100 text-slate-700 border-slate-200' : 'bg-slate-800 text-slate-300 border-slate-700'
+                    } font-semibold border-b`}
+                  >
                     <tr>
-                      <th className="sticky left-0 z-30 w-12 h-8 bg-slate-800 border-r border-b border-slate-700 text-center font-mono text-[11px] text-slate-400 select-none">
+                      <th
+                        className={`sticky left-0 z-30 w-12 h-8 border-r border-b text-center font-mono text-[11px] select-none ${
+                          isLight ? 'bg-slate-100 border-slate-200 text-slate-500' : 'bg-slate-800 border-slate-700 text-slate-400'
+                        }`}
+                      >
                         #
                       </th>
                       {columns.map((column, colIdx) => (
                         <th
                           key={column.id}
                           style={{ width: column.width || 160, minWidth: column.width || 160 }}
-                          className="h-8 px-2 border-r border-b border-slate-700 bg-slate-800 font-mono text-left text-slate-200 select-none group relative"
+                          className={`h-8 px-2 border-r border-b font-mono text-left select-none group relative ${
+                            isLight ? 'bg-slate-100 border-slate-200 text-slate-700' : 'bg-slate-800 border-slate-700 text-slate-200'
+                          }`}
                         >
                           <div className="flex items-center justify-between">
-                            <span className="truncate text-slate-300">
-                              <span className="text-emerald-400 font-bold mr-1.5">{columnLetter(colIdx)}</span>
+                            <span className="truncate">
+                              <span className="text-emerald-500 font-bold mr-1.5">{columnLetter(colIdx)}</span>
                               {column.label}
                             </span>
                             <button
@@ -737,7 +898,9 @@ const SheetsPage: React.FC = () => {
                                 columnId: column.id,
                                 direction: sortState?.columnId === column.id && sortState.direction === 'asc' ? 'desc' : 'asc',
                               })}
-                              className="p-0.5 hover:bg-slate-700 rounded text-slate-400 hover:text-slate-100 transition-colors opacity-0 group-hover:opacity-100"
+                              className={`p-0.5 rounded transition-colors opacity-0 group-hover:opacity-100 ${
+                                isLight ? 'hover:bg-slate-200 text-slate-600' : 'hover:bg-slate-700 text-slate-400'
+                              }`}
                             >
                               <ChevronDown className="w-3 h-3" />
                             </button>
@@ -750,12 +913,24 @@ const SheetsPage: React.FC = () => {
                     {visibleRows.map((row, rowIndex) => {
                       const actualRowIdx = rowWindowStart + rowIndex;
                       return (
-                        <tr key={row.id} className="h-9 hover:bg-slate-800/40 border-b border-slate-800/60 transition-colors">
-                          <td className="sticky left-0 z-10 w-12 h-9 bg-slate-900 border-r border-slate-800 text-center font-mono text-[11px] text-slate-500 font-medium select-none">
+                        <tr
+                          key={row.id}
+                          className={`h-9 border-b transition-colors ${
+                            isLight
+                              ? 'border-slate-200/80 hover:bg-slate-50'
+                              : 'border-slate-800/80 hover:bg-slate-800/40'
+                          }`}
+                        >
+                          <td
+                            className={`sticky left-0 z-10 w-12 h-9 border-r text-center font-mono text-[11px] font-medium select-none ${
+                              isLight ? 'bg-slate-100 border-slate-200 text-slate-500' : 'bg-slate-900 border-slate-800 text-slate-500'
+                            }`}
+                          >
                             {actualRowIdx + 1}
                           </td>
                           {columns.map((column, colIdx) => {
                             const isSelected = selectedCell?.rowId === row.id && selectedCell.columnId === column.id;
+                            const isSelectedInRange = isCellInRange(actualRowIdx, colIdx);
                             const isEditing = editingCell?.rowId === row.id && editingCell.columnId === column.id;
                             const value = row.cells?.[column.id] ?? '';
                             const valStr = String(value ?? '');
@@ -770,10 +945,17 @@ const SheetsPage: React.FC = () => {
                               <td
                                 key={column.id}
                                 style={{ width: column.width || 160, minWidth: column.width || 160, ...cellStyle }}
-                                className={`h-9 border-r border-slate-800/80 px-2.5 text-xs text-slate-200 relative select-none ${
-                                  isSelected ? 'ring-2 ring-emerald-500 z-10 bg-emerald-950/20' : ''
+                                className={`h-9 border-r px-2.5 text-xs relative select-none ${
+                                  isLight ? 'border-slate-200 text-slate-800' : 'border-slate-800/80 text-slate-200'
+                                } ${
+                                  isSelected
+                                    ? 'ring-2 ring-emerald-500 z-10'
+                                    : isSelectedInRange
+                                      ? isLight ? 'bg-emerald-500/15' : 'bg-emerald-950/30'
+                                      : ''
                                 }`}
-                                onClick={() => setSelectedCell({ rowIndex: actualRowIdx, colIndex: colIdx, rowId: row.id, columnId: column.id })}
+                                onMouseDown={(e) => handleCellMouseDown(actualRowIdx, colIdx, row.id, column.id, e)}
+                                onMouseEnter={() => handleCellMouseEnter(actualRowIdx, colIdx)}
                                 onDoubleClick={() => {
                                   if (editable) {
                                     setEditingCell({ rowIndex: actualRowIdx, colIndex: colIdx, rowId: row.id, columnId: column.id });
@@ -800,14 +982,16 @@ const SheetsPage: React.FC = () => {
                                         setEditingCell(null);
                                       }
                                     }}
-                                    className="w-full h-full bg-slate-950 text-white font-mono px-1 border border-emerald-500 rounded focus:outline-none"
+                                    className={`w-full h-full font-mono px-1 border border-emerald-500 rounded focus:outline-none ${
+                                      isLight ? 'bg-white text-slate-900' : 'bg-slate-950 text-white'
+                                    }`}
                                   />
                                 ) : isStageColumn ? (
                                   <div className="relative flex items-center">
                                     <button
                                       onClick={() => setActiveStageMenuCell(activeStageMenuCell?.rowId === row.id ? null : { rowId: row.id, columnId: column.id })}
                                       disabled={!editable}
-                                      className="px-2 py-0.5 rounded-full text-[11px] font-semibold text-white shadow-sm flex items-center space-x-1 hover:opacity-90 transition-opacity"
+                                      className="px-2 py-0.5 rounded-full text-[11px] font-semibold text-white shadow-xs flex items-center space-x-1 hover:opacity-90 transition-opacity"
                                       style={{ backgroundColor: matchedStage?.color || '#475569' }}
                                     >
                                       <span>{matchedStage?.name || valStr || 'Select Stage'}</span>
@@ -815,12 +999,18 @@ const SheetsPage: React.FC = () => {
                                     </button>
 
                                     {activeStageMenuCell?.rowId === row.id && activeStageMenuCell?.columnId === column.id && (
-                                      <div className="absolute left-0 top-full mt-1 z-50 bg-slate-900 border border-slate-700 rounded-lg shadow-xl p-1.5 w-44 space-y-1">
+                                      <div
+                                        className={`absolute left-0 top-full mt-1 z-50 rounded-lg shadow-xl p-1.5 w-44 space-y-1 border ${
+                                          isLight ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-700'
+                                        }`}
+                                      >
                                         {leadStages.map((stage: any) => (
                                           <button
                                             key={stage.id}
                                             onClick={() => handleStageSelect(row.id, column.id, stage.name, row.metadata?.leadId)}
-                                            className="w-full text-left px-2.5 py-1 rounded text-xs text-white font-medium flex items-center space-x-2 hover:bg-slate-800 transition-colors"
+                                            className={`w-full text-left px-2.5 py-1 rounded text-xs font-medium flex items-center space-x-2 transition-colors ${
+                                              isLight ? 'hover:bg-slate-100 text-slate-800' : 'hover:bg-slate-800 text-white'
+                                            }`}
                                           >
                                             <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: stage.color }} />
                                             <span>{stage.name}</span>
@@ -832,7 +1022,7 @@ const SheetsPage: React.FC = () => {
                                 ) : row.metadata?.leadId && (column.leadFieldKey === 'name' || column.label.toLowerCase().includes('lead name')) ? (
                                   <button
                                     onClick={() => navigate('/leads', { state: { openLeadId: row.metadata?.leadId } })}
-                                    className="text-emerald-400 hover:text-emerald-300 font-semibold underline truncate max-w-full text-left"
+                                    className="text-emerald-500 hover:underline font-bold truncate max-w-full text-left"
                                   >
                                     {valStr}
                                   </button>
@@ -840,15 +1030,11 @@ const SheetsPage: React.FC = () => {
                                   <span className="truncate block max-w-full font-mono">{valStr}</span>
                                 )}
 
-                                {/* Excel Bottom-Right Fill Handle */}
+                                {/* Fill Handle */}
                                 {isSelected && editable && (
                                   <div
-                                    onMouseDown={(e) => {
-                                      e.stopPropagation();
-                                      setIsDraggingFill(true);
-                                    }}
-                                    className="absolute -bottom-1 -right-1 w-2.5 h-2.5 bg-emerald-500 border border-white cursor-crosshair z-30 shadow"
-                                    title="Drag to fill down"
+                                    className="absolute -bottom-1 -right-1 w-2.5 h-2.5 bg-emerald-500 border border-white cursor-crosshair z-30 shadow-xs"
+                                    title="Drag to fill"
                                   />
                                 )}
                               </td>
@@ -865,8 +1051,12 @@ const SheetsPage: React.FC = () => {
 
           {/* Version History Drawer */}
           {showVersions && (
-            <aside className="w-80 shrink-0 border-l border-slate-800 bg-slate-900 p-4 overflow-y-auto">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+            <aside
+              className={`w-80 shrink-0 border-l p-4 overflow-y-auto ${
+                isLight ? 'bg-white border-slate-200 text-slate-900' : 'bg-slate-900 border-slate-800 text-slate-100'
+              }`}
+            >
+              <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
                 <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400">Version History</h2>
                 <button onClick={() => setShowVersions(false)} className="text-slate-400 hover:text-slate-200">
                   <X className="w-4 h-4" />
@@ -876,16 +1066,18 @@ const SheetsPage: React.FC = () => {
                 {versionsQuery.data?.map((version) => (
                   <div
                     key={version.id}
-                    className="p-3 bg-slate-950 border border-slate-800 rounded-xl hover:border-emerald-500/50 transition-colors flex items-center justify-between"
+                    className={`p-3 border rounded-xl transition-colors flex items-center justify-between ${
+                      isLight ? 'bg-slate-50 border-slate-200 hover:border-emerald-500' : 'bg-slate-950 border-slate-800 hover:border-emerald-500/50'
+                    }`}
                   >
                     <div>
-                      <div className="text-xs font-bold text-slate-200">Version {version.version}</div>
-                      <div className="text-[11px] text-slate-500">{new Date(version.createdAt).toLocaleString()}</div>
+                      <div className="text-xs font-bold">Version {version.version}</div>
+                      <div className="text-[11px] text-slate-400">{new Date(version.createdAt).toLocaleString()}</div>
                     </div>
                     <button
                       onClick={() => restoreMutation.mutate(version.id)}
                       disabled={restoreMutation.isPending}
-                      className="px-2.5 py-1 bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-600/40 rounded text-[11px] font-semibold transition-colors"
+                      className="px-2.5 py-1 bg-emerald-600/20 text-emerald-500 border border-emerald-500/30 hover:bg-emerald-600/40 rounded text-[11px] font-semibold transition-colors"
                     >
                       Restore
                     </button>

@@ -7,6 +7,7 @@ interface SheetsCellBarProps {
   onChangeValue: (val: string) => void;
   onCommit: () => void;
   disabled?: boolean;
+  theme?: 'dark' | 'light';
 }
 
 export const SheetsCellBar: React.FC<SheetsCellBarProps> = ({
@@ -15,7 +16,10 @@ export const SheetsCellBar: React.FC<SheetsCellBarProps> = ({
   onChangeValue,
   onCommit,
   disabled,
+  theme = 'dark',
 }) => {
+  const isLight = theme === 'light';
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       onCommit();
@@ -23,13 +27,21 @@ export const SheetsCellBar: React.FC<SheetsCellBarProps> = ({
   };
 
   return (
-    <div className="flex items-center space-x-2 px-3 py-1 bg-slate-950 border-b border-slate-800 text-xs text-slate-200">
-      <div className="flex items-center space-x-1 font-mono font-semibold px-2 py-1 bg-slate-900 border border-slate-800 rounded min-w-[70px] justify-center text-emerald-400 select-none">
+    <div
+      className={`flex items-center space-x-2 px-3 py-1 border-b text-xs transition-colors ${
+        isLight ? 'bg-slate-100 border-slate-200 text-slate-800' : 'bg-slate-950 border-slate-800 text-slate-200'
+      }`}
+    >
+      <div
+        className={`flex items-center space-x-1 font-mono font-bold px-2 py-0.5 border rounded min-w-[70px] justify-center select-none ${
+          isLight ? 'bg-white border-slate-300 text-emerald-600' : 'bg-slate-900 border-slate-800 text-emerald-400'
+        }`}
+      >
         <span>{cellAddress || 'A1'}</span>
       </div>
 
-      <div className="flex items-center text-slate-500 font-mono select-none px-1">
-        <FunctionSquare className="w-4 h-4 text-emerald-500/70" />
+      <div className="flex items-center text-slate-400 font-mono select-none px-1">
+        <FunctionSquare className="w-4 h-4 text-emerald-500/80" />
       </div>
 
       <div className="flex-1">
@@ -40,8 +52,12 @@ export const SheetsCellBar: React.FC<SheetsCellBarProps> = ({
           onKeyDown={handleKeyDown}
           onBlur={onCommit}
           disabled={disabled}
-          placeholder={cellAddress ? 'Type a value or text...' : 'Select a cell'}
-          className="w-full bg-slate-900 border border-slate-800 focus:border-emerald-500/80 rounded px-2.5 py-1 text-slate-100 placeholder-slate-600 focus:outline-none font-mono text-xs transition-colors"
+          placeholder={cellAddress ? 'Type cell value...' : 'Select a cell'}
+          className={`w-full border rounded px-2.5 py-1 font-mono text-xs focus:outline-none transition-colors ${
+            isLight
+              ? 'bg-white border-slate-300 focus:border-emerald-500 text-slate-900 placeholder-slate-400'
+              : 'bg-slate-900 border-slate-800 focus:border-emerald-500 text-slate-100 placeholder-slate-600'
+          }`}
         />
       </div>
     </div>
