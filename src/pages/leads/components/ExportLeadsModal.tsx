@@ -64,7 +64,6 @@ const STATIC_FIELD_GROUPS: FieldGroup[] = [
   {
     name: 'Follow-up',
     fields: [
-      { id: 'lastRemark', label: 'Last Remark' },
       { id: 'remarks', label: 'Remarks' },
       { id: 'nextFollowUpAt', label: 'Next Follow Up At' },
     ],
