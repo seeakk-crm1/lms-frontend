@@ -131,6 +131,8 @@ export interface OverdueMandatoryFollowUpItem {
   leadId: string;
   leadName: string;
   customerName: string;
+  leadPhone?: string | null;
+  leadEmail?: string | null;
   leadStage: { id: string; name: string; color: string } | null;
   scheduledAt: string;
   status: string;

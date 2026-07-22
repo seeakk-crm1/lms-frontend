@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { format } from 'date-fns';
-import { AlertTriangle, Loader2 } from 'lucide-react';
+import { AlertTriangle, Loader2, PhoneCall } from 'lucide-react';
 import {
   useOverdueMandatoryBlocked,
   useInvalidateOverdueMandatory,
@@ -19,6 +19,10 @@ import type { FollowUp } from '../../types/followup.types';
 import { stageBadgeStyle } from '../../utils/leadStageColor';
 import BulkExtendOverdueModal from './BulkExtendOverdueModal';
 import { bulkExtendFollowUps } from '../../services/followupSettings.api';
+import FollowUpContextCard from './FollowUpContextCard';
+import WhatsAppActionButton from '../common/WhatsAppActionButton';
+import { LEAD_WHATSAPP_PERMISSIONS } from '../../constants/whatsappPermissions';
+import { formatPhoneWithFlag } from '../../utils/phoneUtils';
 
 interface Props {
   children: React.ReactNode;
@@ -119,8 +123,8 @@ const MandatoryOverdueFollowUpGate: React.FC<Props> = ({ children }) => {
     lead: {
       id: item.leadId,
       name: item.leadName,
-      email: null,
-      phone: null,
+      email: item.leadEmail || null,
+      phone: item.leadPhone || (item.customerName && /^\+?\d[\d\s-]{6,}$/.test(item.customerName.trim()) ? item.customerName.trim() : null),
     },
     userId: user?.id || '',
     workspaceId: user?.workspaceId || '',
@@ -228,23 +232,57 @@ const MandatoryOverdueFollowUpGate: React.FC<Props> = ({ children }) => {
                           </table>
                         </div>
                       ) : (
-                        <div className="rounded-2xl border border-gray-100 bg-gray-50 p-4 text-sm">
-                          <div className="flex items-center justify-between gap-2">
-                            <p className="font-black text-gray-900">{activeItem.leadName}</p>
-                            {activeItem.leadStage ? (
-                              <span
-                                className="rounded-full px-2 py-0.5 text-[10px] font-black"
-                                style={stageBadgeStyle(activeItem.leadStage.color)}
-                              >
-                                {activeItem.leadStage.name}
-                              </span>
-                            ) : null}
+                        <div className="space-y-4">
+                          {/* Lead Profile Header Card with Quick Actions */}
+                          <div className="rounded-2xl border border-gray-100 bg-gray-50 p-4 text-sm shadow-xs">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <p className="font-black text-gray-900 text-base">{activeItem.leadName}</p>
+                                  {activeItem.leadStage ? (
+                                    <span
+                                      className="rounded-full px-2.5 py-0.5 text-[10px] font-black"
+                                      style={stageBadgeStyle(activeItem.leadStage.color)}
+                                    >
+                                      {activeItem.leadStage.name}
+                                    </span>
+                                  ) : null}
+                                </div>
+                                <p className="mt-1 text-xs text-gray-600">Customer: {activeItem.customerName}</p>
+                                <p className="mt-0.5 text-xs text-gray-500">
+                                  Scheduled: {format(new Date(activeItem.scheduledAt), 'PPp')}
+                                </p>
+                              </div>
+
+                              {/* Call & WhatsApp Quick Actions */}
+                              {activeItem.leadPhone || (activeItem.customerName && /^\+?\d[\d\s-]{6,}$/.test(activeItem.customerName.trim())) ? (
+                                <div className="flex items-center gap-2 shrink-0">
+                                  <a
+                                    href={`tel:${(activeItem.leadPhone || activeItem.customerName).replace(/[^0-9+]/g, '')}`}
+                                    className="inline-flex items-center justify-center gap-1.5 rounded-full bg-blue-50 px-3.5 py-1.5 text-xs font-bold text-blue-600 hover:bg-blue-100 transition-colors ring-1 ring-blue-100"
+                                  >
+                                    <PhoneCall className="h-3.5 w-3.5" />
+                                    Call
+                                  </a>
+                                  <WhatsAppActionButton
+                                    phone={activeItem.leadPhone || activeItem.customerName}
+                                    variant="cta"
+                                    stopPropagation={false}
+                                    requiredPermissions={LEAD_WHATSAPP_PERMISSIONS}
+                                    title="WhatsApp"
+                                    audit={{
+                                      entityType: 'FollowUp',
+                                      entityId: activeItem.id,
+                                      entityName: activeItem.leadName,
+                                    }}
+                                  />
+                                </div>
+                              ) : null}
+                            </div>
                           </div>
-                          <p className="mt-2 text-gray-600">Customer: {activeItem.customerName}</p>
-                          <p className="mt-1 text-gray-600">
-                            Scheduled: {format(new Date(activeItem.scheduledAt), 'PPp')}
-                          </p>
-                          <p className="mt-1 font-bold text-red-600">Status: Overdue</p>
+
+                          {/* Context Card: Latest Follow-up Note & Latest Lead Remark */}
+                          <FollowUpContextCard leadId={activeItem.leadId} />
                         </div>
                       )}
 
