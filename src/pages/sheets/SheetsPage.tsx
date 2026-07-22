@@ -79,7 +79,7 @@ const formatFollowupDisplay = (valStr: string): string => {
   try {
     const d = new Date(valStr);
     if (Number.isNaN(d.getTime())) return valStr;
-    return format(d, 'dd MMM yyyy, hh:mm a');
+    return format(d, 'dd MMM yyyy • hh:mm a');
   } catch {
     return valStr;
   }
@@ -1151,7 +1151,18 @@ const SheetsPage: React.FC = () => {
                             const isSourceCol = colKey.includes('source');
                             const isUserCol = colKey.includes('assigned') || colKey.includes('user');
                             const isFollowupTypeCol = colKey.includes('followup type') || colKey.includes('follow-up type');
-                            const isFollowupDateCol = colKey.includes('followup date') || colKey.includes('follow-up date') || colKey.includes('next followup') || colKey.includes('scheduled');
+                            const isFollowupDateCol =
+                              column.leadFieldKey === 'nextFollowupDate' ||
+                              column.leadFieldKey === 'nextFollowUpAt' ||
+                              colKey.includes('next follow up') ||
+                              colKey.includes('next followup') ||
+                              colKey.includes('next follow-up') ||
+                              colKey.includes('followup date') ||
+                              colKey.includes('follow-up date') ||
+                              colKey.includes('follow up date') ||
+                              colKey.includes('nextfollowupat') ||
+                              colKey.includes('nextfollowup') ||
+                              colKey.includes('scheduled');
 
                             const isNameCol = column.leadFieldKey === 'name' || colKey.includes('name');
                             const isPhoneCol = column.leadFieldKey === 'phone' || colKey.includes('phone') || colKey.includes('mobile');
