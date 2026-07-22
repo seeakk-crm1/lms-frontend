@@ -48,6 +48,7 @@ import type { LeadListItem } from '../../types/lead.types';
 type SelectedCell = { rowIndex: number; colIndex: number; rowId: string; columnId: string } | null;
 type SelectionRange = { startRowIdx: number; startColIdx: number; endRowIdx: number; endColIdx: number } | null;
 type SortState = { columnId: string; direction: 'asc' | 'desc' } | null;
+type SearchLocation = { rowIndex: number; colIndex: number; rowId: string; columnId: string };
 
 const columnLetter = (index: number) => {
   let value = '';
@@ -88,6 +89,15 @@ const applyCellStyle = (formatting: SheetFormatting | null | undefined, rowId: s
     textAlign: (cellFormat.align as any) || 'left',
   };
 };
+
+const FOLLOW_UP_TYPES: DropdownOption[] = [
+  { id: 'CALL', label: 'Call' },
+  { id: 'MEETING', label: 'Meeting' },
+  { id: 'EMAIL', label: 'Email' },
+  { id: 'WHATSAPP', label: 'WhatsApp' },
+  { id: 'SITE_VISIT', label: 'Site Visit' },
+  { id: 'DEMO', label: 'Demo' },
+];
 
 const SheetsPage: React.FC = () => {
   const queryClient = useQueryClient();
@@ -131,17 +141,30 @@ const SheetsPage: React.FC = () => {
   const [future, setFuture] = useState<Sheet[]>([]);
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'unsaved' | 'error'>('saved');
   const [showVersions, setShowVersions] = useState(false);
-  const [showFindReplace, setShowFindReplace] = useState(false);
+
+  // Find & Replace state
+  const [findReplaceOpen, setFindReplaceOpen] = useState(false);
+  const [findReplaceMode, setFindReplaceMode] = useState<'find' | 'replace'>('find');
+  const [searchState, setSearchState] = useState<{ query: string; matchCase: boolean; wholeCell: boolean; scope: 'sheet' | 'column' | 'selection' }>({
+    query: '',
+    matchCase: false,
+    wholeCell: false,
+    scope: 'sheet',
+  });
+  const [searchResults, setSearchResults] = useState<SearchLocation[]>([]);
+  const [searchIndex, setSearchIndex] = useState(0);
+
   const [isHeaderFrozen, setIsHeaderFrozen] = useState(true);
   const [rowWindowStart, setRowWindowStart] = useState(0);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; rowId: string; columnId: string } | null>(null);
-  const [activeDropdownCell, setActiveDropdownCell] = useState<{ rowId: string; columnId: string; type: 'stage' | 'source' | 'user' | 'status' } | null>(null);
+  const [activeDropdownCell, setActiveDropdownCell] = useState<{ rowId: string; columnId: string; type: 'stage' | 'source' | 'user' | 'followupType' } | null>(null);
 
   // CRM Lead Form Drawer Integration
   const [editingFormLead, setEditingFormLead] = useState<LeadListItem | null>(null);
   const [duplicateCandidates, setDuplicateCandidates] = useState<LeadListItem[]>([]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const gridViewportRef = useRef<HTMLDivElement>(null);
   const autoSaveTimerRef = useRef<number | null>(null);
 
   const isLight = theme === 'light';
@@ -236,6 +259,11 @@ const SheetsPage: React.FC = () => {
   }, [columns, draft?.rows, filterText, sortState]);
 
   const visibleRows = filteredSortedRows.slice(rowWindowStart, rowWindowStart + 200);
+
+  // Exact height of grid based on active rows to prevent empty whitespace scrolling
+  const exactGridHeight = useMemo(() => {
+    return Math.max(360, filteredSortedRows.length * 36 + 32);
+  }, [filteredSortedRows.length]);
 
   const remember = useCallback((next: Sheet) => {
     setDraft((current) => {
@@ -440,7 +468,7 @@ const SheetsPage: React.FC = () => {
     onError: (error: any) => toast.error(error?.response?.data?.message || 'Unable to sync leads'),
   });
 
-  // Handle Master Dropdown Select (Stage, Source, User, Status)
+  // Handle Master Dropdown Select (Stage, Source, User, Status, FollowUp Type)
   const handleDropdownSelect = useCallback(
     (fieldKey: string, option: DropdownOption, targetRowId: string, targetColId: string, leadId?: string | null) => {
       const targetRows: Array<{ rowId: string; leadId?: string | null }> = [];
@@ -488,7 +516,6 @@ const SheetsPage: React.FC = () => {
         return;
       }
 
-      // If leadId not directly present, check matching leads in sheet rows / query
       const matchingRows = (draft?.rows || []).filter((r) => {
         const m = r.metadata || {};
         if (phone && m.phone && m.phone.trim() === phone.trim()) return true;
@@ -519,6 +546,99 @@ const SheetsPage: React.FC = () => {
     },
     [draft?.rows],
   );
+
+  // Find & Replace Search Engine
+  useEffect(() => {
+    if (!searchState.query || !draft) {
+      setSearchResults([]);
+      setSearchIndex(0);
+      return;
+    }
+
+    const q = searchState.matchCase ? searchState.query : searchState.query.toLowerCase();
+    const results: SearchLocation[] = [];
+
+    filteredSortedRows.forEach((row, rIdx) => {
+      columns.forEach((col, cIdx) => {
+        if (searchState.scope === 'column' && selectedCell && cIdx !== selectedCell.colIndex) return;
+        if (searchState.scope === 'selection' && selectionRange) {
+          const minRow = Math.min(selectionRange.startRowIdx, selectionRange.endRowIdx);
+          const maxRow = Math.max(selectionRange.startRowIdx, selectionRange.endRowIdx);
+          const minCol = Math.min(selectionRange.startColIdx, selectionRange.endColIdx);
+          const maxCol = Math.max(selectionRange.startColIdx, selectionRange.endColIdx);
+          if (rIdx < minRow || rIdx > maxRow || cIdx < minCol || cIdx > maxCol) return;
+        }
+
+        const val = String(row.cells?.[col.id] ?? '').trim();
+        const target = searchState.matchCase ? val : val.toLowerCase();
+
+        const isMatch = searchState.wholeCell ? target === q : target.includes(q);
+        if (isMatch) {
+          results.push({ rowIndex: rIdx, colIndex: cIdx, rowId: row.id, columnId: col.id });
+        }
+      });
+    });
+
+    setSearchResults(results);
+    setSearchIndex(0);
+  }, [columns, draft, filteredSortedRows, searchState, selectedCell, selectionRange]);
+
+  // Focus & Scroll to Matched Cell
+  const focusSearchLocation = useCallback(
+    (index: number) => {
+      if (searchResults.length === 0 || !searchResults[index]) return;
+      const target = searchResults[index];
+      setSelectedCell({ rowIndex: target.rowIndex, colIndex: target.colIndex, rowId: target.rowId, columnId: target.columnId });
+      setSelectionRange({ startRowIdx: target.rowIndex, startColIdx: target.colIndex, endRowIdx: target.rowIndex, endColIdx: target.colIndex });
+
+      if (gridViewportRef.current) {
+        const topPx = target.rowIndex * 36;
+        gridViewportRef.current.scrollTo({ top: Math.max(0, topPx - 100), behavior: 'smooth' });
+      }
+    },
+    [searchResults],
+  );
+
+  const handleFindNextMatch = () => {
+    if (searchResults.length === 0) return;
+    const nextIdx = (searchIndex + 1) % searchResults.length;
+    setSearchIndex(nextIdx);
+    focusSearchLocation(nextIdx);
+  };
+
+  const handleFindPrevMatch = () => {
+    if (searchResults.length === 0) return;
+    const prevIdx = (searchIndex - 1 + searchResults.length) % searchResults.length;
+    setSearchIndex(prevIdx);
+    focusSearchLocation(prevIdx);
+  };
+
+  const handleReplaceCurrentMatch = (replacement: string) => {
+    if (searchResults.length === 0 || !searchResults[searchIndex] || !editable) return;
+    const target = searchResults[searchIndex];
+    updateCell(target.rowId, target.columnId, replacement);
+    toast.success('Replaced 1 match');
+  };
+
+  const handleReplaceAllMatches = (replacement: string) => {
+    if (searchResults.length === 0 || !draft || !editable) return;
+    const updatedRows = [...draft.rows];
+    searchResults.forEach((target) => {
+      const rowIdx = updatedRows.findIndex((r) => r.id === target.rowId);
+      if (rowIdx !== -1) {
+        updatedRows[rowIdx] = {
+          ...updatedRows[rowIdx],
+          cells: {
+            ...updatedRows[rowIdx].cells,
+            [target.columnId]: replacement,
+          },
+        };
+      }
+    });
+
+    remember({ ...draft, rows: updatedRows });
+    toast.success(`Replaced all ${searchResults.length} occurrence(s)`);
+  };
 
   const handleUndo = useCallback(() => {
     const previous = history.at(-1);
@@ -595,9 +715,25 @@ const SheetsPage: React.FC = () => {
   // Excel Keyboard Navigation & Shortcut Commands
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (editingCell || showFindReplace || !selectedCell || !draft) return;
+      if (editingCell || !draft) return;
       const target = e.target as HTMLElement;
       if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT') return;
+
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
+        e.preventDefault();
+        setFindReplaceMode('find');
+        setFindReplaceOpen(true);
+        return;
+      }
+
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'h') {
+        e.preventDefault();
+        setFindReplaceMode('replace');
+        setFindReplaceOpen(true);
+        return;
+      }
+
+      if (!selectedCell) return;
 
       const rowIdx = selectedCell.rowIndex;
       const colIdx = selectedCell.colIndex;
@@ -711,15 +847,12 @@ const SheetsPage: React.FC = () => {
       } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'x') {
         e.preventDefault();
         handleCut();
-      } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
-        e.preventDefault();
-        setShowFindReplace(true);
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [columns, draft, editable, editingCell, filteredSortedRows, handleCopy, handleCut, handlePaste, handleRedo, handleUndo, remember, selectedCell, selectionRange, showFindReplace, updateCell]);
+  }, [columns, draft, editable, editingCell, filteredSortedRows, handleCopy, handleCut, handlePaste, handleRedo, handleUndo, remember, selectedCell, selectionRange, updateCell]);
 
   // Context Menu Handlers
   const handleContextMenu = (e: React.MouseEvent, rowId: string, columnId: string) => {
@@ -755,67 +888,6 @@ const SheetsPage: React.FC = () => {
     if (!contextMenu || !editable) return;
     updateCell(contextMenu.rowId, contextMenu.columnId, '');
     toast.success('Cell cleared');
-  };
-
-  // Find & Replace
-  const handleFindNext = (query: string, matchCase: boolean) => {
-    if (!draft || !query) return;
-    const q = matchCase ? query : query.toLowerCase();
-    for (let r = 0; r < filteredSortedRows.length; r += 1) {
-      const row = filteredSortedRows[r];
-      for (let c = 0; c < columns.length; c += 1) {
-        const col = columns[c];
-        const val = String(row.cells?.[col.id] ?? '');
-        const target = matchCase ? val : val.toLowerCase();
-        if (target.includes(q)) {
-          const nextSel = { rowIndex: r, colIndex: c, rowId: row.id, columnId: col.id };
-          setSelectedCell(nextSel);
-          setSelectionRange({ startRowIdx: r, startColIdx: c, endRowIdx: r, endColIdx: c });
-          return;
-        }
-      }
-    }
-    toast('No matches found', { icon: '🔍' });
-  };
-
-  const handleReplace = (query: string, replacement: string, matchCase: boolean) => {
-    if (!selectedCell || !draft || !editable) return;
-    const row = draft.rows.find((r) => r.id === selectedCell.rowId);
-    if (!row) return;
-    const currentVal = String(row.cells?.[selectedCell.columnId] ?? '');
-    const q = matchCase ? query : query.toLowerCase();
-    const target = matchCase ? currentVal : currentVal.toLowerCase();
-    if (target.includes(q)) {
-      const newText = currentVal.replace(new RegExp(query, matchCase ? 'g' : 'gi'), replacement);
-      updateCell(selectedCell.rowId, selectedCell.columnId, newText);
-      toast.success('Replaced 1 match');
-    }
-  };
-
-  const handleReplaceAll = (query: string, replacement: string, matchCase: boolean) => {
-    if (!draft || !query || !editable) return;
-    let count = 0;
-    const updatedRows = draft.rows.map((row) => {
-      const newCells = { ...row.cells };
-      let rowModified = false;
-      columns.forEach((col) => {
-        const val = String(newCells[col.id] ?? '');
-        const q = matchCase ? query : query.toLowerCase();
-        const target = matchCase ? val : val.toLowerCase();
-        if (target.includes(q)) {
-          newCells[col.id] = val.replace(new RegExp(query, matchCase ? 'g' : 'gi'), replacement);
-          count += 1;
-          rowModified = true;
-        }
-      });
-      return rowModified ? { ...row, cells: newCells } : row;
-    });
-    if (count > 0) {
-      remember({ ...draft, rows: updatedRows });
-      toast.success(`Replaced ${count} occurrence(s)`);
-    } else {
-      toast('No occurrences found to replace', { icon: 'ℹ️' });
-    }
   };
 
   // Cell Address & Selection Bounds
@@ -903,7 +975,10 @@ const SheetsPage: React.FC = () => {
           onPaste={handlePaste}
           activeCellFormat={activeFormat as any}
           onApplyFormat={updateFormatting}
-          onToggleFindReplace={() => setShowFindReplace(!showFindReplace)}
+          onToggleFindReplace={() => {
+            setFindReplaceMode('find');
+            setFindReplaceOpen(!findReplaceOpen);
+          }}
           onToggleFilter={() => setFilterText(filterText ? '' : ' ')}
           hasFilterActive={Boolean(filterText.trim())}
           onToggleFreezeHeader={() => setIsHeaderFrozen(!isHeaderFrozen)}
@@ -951,6 +1026,7 @@ const SheetsPage: React.FC = () => {
         {/* Main Grid & Versions Sidebar Layout */}
         <div className="flex-1 flex overflow-hidden relative">
           <div
+            ref={gridViewportRef}
             className={`flex-1 overflow-auto relative scrollbar-thin ${
               isLight
                 ? 'bg-white scrollbar-thumb-slate-300 scrollbar-track-slate-100'
@@ -967,7 +1043,7 @@ const SheetsPage: React.FC = () => {
                 Loading sheet data...
               </div>
             ) : (
-              <div style={{ height: Math.max(640, filteredSortedRows.length * 36 + 60), position: 'relative' }}>
+              <div style={{ height: exactGridHeight, position: 'relative' }}>
                 <table
                   className={`absolute left-0 top-0 border-collapse text-xs w-max ${
                     isLight ? 'bg-white text-slate-800' : 'bg-slate-900 text-slate-100'
@@ -1047,6 +1123,8 @@ const SheetsPage: React.FC = () => {
                             const isStageCol = colKey.includes('stage');
                             const isSourceCol = colKey.includes('source');
                             const isUserCol = colKey.includes('assigned') || colKey.includes('user');
+                            const isFollowupTypeCol = colKey.includes('followup type') || colKey.includes('follow-up type');
+                            const isFollowupDateCol = colKey.includes('followup date') || colKey.includes('follow-up date') || colKey.includes('next followup') || colKey.includes('scheduled');
 
                             const isNameCol = column.leadFieldKey === 'name' || colKey.includes('name');
                             const isPhoneCol = column.leadFieldKey === 'phone' || colKey.includes('phone') || colKey.includes('mobile');
@@ -1083,27 +1161,57 @@ const SheetsPage: React.FC = () => {
                                 onContextMenu={(e) => handleContextMenu(e, row.id, column.id)}
                               >
                                 {isEditing ? (
-                                  <input
-                                    autoFocus
-                                    type="text"
-                                    value={editingValue}
-                                    onChange={(e) => setEditingValue(e.target.value)}
-                                    onBlur={() => {
-                                      updateCell(row.id, column.id, editingValue);
-                                      setEditingCell(null);
-                                    }}
-                                    onKeyDown={(e) => {
-                                      if (e.key === 'Enter') {
+                                  isFollowupDateCol ? (
+                                    <input
+                                      autoFocus
+                                      type="datetime-local"
+                                      value={editingValue}
+                                      onChange={(e) => setEditingValue(e.target.value)}
+                                      onBlur={() => {
                                         updateCell(row.id, column.id, editingValue);
                                         setEditingCell(null);
-                                      } else if (e.key === 'Escape') {
+                                        if (leadId && canSync) {
+                                          syncMutation.mutate([{ rowId: row.id, leadId, fieldKey: 'nextFollowupDate', newValue: editingValue }]);
+                                        }
+                                      }}
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                          updateCell(row.id, column.id, editingValue);
+                                          setEditingCell(null);
+                                          if (leadId && canSync) {
+                                            syncMutation.mutate([{ rowId: row.id, leadId, fieldKey: 'nextFollowupDate', newValue: editingValue }]);
+                                          }
+                                        } else if (e.key === 'Escape') {
+                                          setEditingCell(null);
+                                        }
+                                      }}
+                                      className={`w-full h-full font-mono px-1 border border-emerald-500 rounded focus:outline-none ${
+                                        isLight ? 'bg-white text-slate-900' : 'bg-slate-950 text-white'
+                                      }`}
+                                    />
+                                  ) : (
+                                    <input
+                                      autoFocus
+                                      type="text"
+                                      value={editingValue}
+                                      onChange={(e) => setEditingValue(e.target.value)}
+                                      onBlur={() => {
+                                        updateCell(row.id, column.id, editingValue);
                                         setEditingCell(null);
-                                      }
-                                    }}
-                                    className={`w-full h-full font-mono px-1 border border-emerald-500 rounded focus:outline-none ${
-                                      isLight ? 'bg-white text-slate-900' : 'bg-slate-950 text-white'
-                                    }`}
-                                  />
+                                      }}
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                          updateCell(row.id, column.id, editingValue);
+                                          setEditingCell(null);
+                                        } else if (e.key === 'Escape') {
+                                          setEditingCell(null);
+                                        }
+                                      }}
+                                      className={`w-full h-full font-mono px-1 border border-emerald-500 rounded focus:outline-none ${
+                                        isLight ? 'bg-white text-slate-900' : 'bg-slate-950 text-white'
+                                      }`}
+                                    />
+                                  )
                                 ) : isStageCol ? (
                                   <div className="relative flex items-center">
                                     <button
@@ -1170,6 +1278,30 @@ const SheetsPage: React.FC = () => {
                                         options={masterUserOptions}
                                         selectedValue={valStr}
                                         onSelect={(opt) => handleDropdownSelect('assignedUser', opt, row.id, column.id, row.metadata?.leadId)}
+                                        onClose={() => setActiveDropdownCell(null)}
+                                        isLight={isLight}
+                                      />
+                                    )}
+                                  </div>
+                                ) : isFollowupTypeCol ? (
+                                  <div className="relative flex items-center">
+                                    <button
+                                      onClick={() => setActiveDropdownCell(activeDropdownCell?.rowId === row.id && activeDropdownCell?.columnId === column.id ? null : { rowId: row.id, columnId: column.id, type: 'followupType' })}
+                                      disabled={!editable}
+                                      className={`px-2 py-0.5 rounded-md text-[11px] font-medium border flex items-center justify-between w-full ${
+                                        isLight ? 'bg-slate-50 border-slate-300 text-slate-800' : 'bg-slate-800 border-slate-700 text-slate-200'
+                                      }`}
+                                    >
+                                      <span className="truncate">{valStr || 'Follow-up Type'}</span>
+                                      <ChevronDown className="w-3 h-3 opacity-60 ml-1" />
+                                    </button>
+
+                                    {activeDropdownCell?.rowId === row.id && activeDropdownCell?.columnId === column.id && (
+                                      <SearchableDropdownMenu
+                                        title="Select Follow-up Type"
+                                        options={FOLLOW_UP_TYPES}
+                                        selectedValue={valStr}
+                                        onSelect={(opt) => handleDropdownSelect('followupType', opt, row.id, column.id, row.metadata?.leadId)}
                                         onClose={() => setActiveDropdownCell(null)}
                                         isLight={isLight}
                                       />
@@ -1277,14 +1409,19 @@ const SheetsPage: React.FC = () => {
           />
         )}
 
-        {/* Find & Replace Modal */}
+        {/* Enhanced Find & Replace Modal */}
         <FindReplaceModal
-          isOpen={showFindReplace}
-          onClose={() => setShowFindReplace(false)}
-          onFindNext={handleFindNext}
-          onFindPrev={handleFindNext}
-          onReplace={handleReplace}
-          onReplaceAll={handleReplaceAll}
+          isOpen={findReplaceOpen}
+          initialMode={findReplaceMode}
+          onClose={() => setFindReplaceOpen(false)}
+          onSearchChange={setSearchState}
+          onFindNext={handleFindNextMatch}
+          onFindPrev={handleFindPrevMatch}
+          onReplace={handleReplaceCurrentMatch}
+          onReplaceAll={handleReplaceAllMatches}
+          matchCount={searchResults.length}
+          currentMatchIndex={searchIndex}
+          isLight={isLight}
         />
 
         {/* Duplicate Match Resolution Modal */}
