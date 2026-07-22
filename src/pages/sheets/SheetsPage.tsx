@@ -13,6 +13,8 @@ import {
 import { toast } from 'react-hot-toast';
 import DashboardLayout from '../../components/dashboard/DashboardLayout';
 import { getLeadStages } from '../../services/leadStage.api';
+import { getActiveLeadSources } from '../../services/leadSource.api';
+import { getUsers } from '../../services/users.api';
 import {
   createSheet,
   deleteSheet,
@@ -37,6 +39,8 @@ import { SheetsCellBar } from './components/SheetsCellBar';
 import { SheetsContextMenu } from './components/SheetsContextMenu';
 import { SheetsToolbar } from './components/SheetsToolbar';
 import { FindReplaceModal } from './components/FindReplaceModal';
+import { DropdownOption, SearchableDropdownMenu } from './components/SearchableDropdownMenu';
+import LeadViewDrawer from '../leads/components/LeadViewDrawer';
 
 type SelectedCell = { rowIndex: number; colIndex: number; rowId: string; columnId: string } | null;
 type SelectionRange = { startRowIdx: number; startColIdx: number; endRowIdx: number; endColIdx: number } | null;
@@ -128,7 +132,8 @@ const SheetsPage: React.FC = () => {
   const [isHeaderFrozen, setIsHeaderFrozen] = useState(true);
   const [rowWindowStart, setRowWindowStart] = useState(0);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; rowId: string; columnId: string } | null>(null);
-  const [activeStageMenuCell, setActiveStageMenuCell] = useState<{ rowId: string; columnId: string } | null>(null);
+  const [activeDropdownCell, setActiveDropdownCell] = useState<{ rowId: string; columnId: string; type: 'stage' | 'source' | 'user' | 'status' } | null>(null);
+  const [viewingLeadId, setViewingLeadId] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const autoSaveTimerRef = useRef<number | null>(null);
@@ -153,9 +158,22 @@ const SheetsPage: React.FC = () => {
     enabled: showVersions && Boolean(activeSheetId),
   });
 
+  // Dynamic Master Configuration Queries
   const stagesQuery = useQuery({
     queryKey: ['sheet-lead-stages'],
     queryFn: () => getLeadStages({ status: 'ACTIVE', page: 1, limit: 200, search: '' }),
+    staleTime: 60_000,
+  });
+
+  const sourcesQuery = useQuery({
+    queryKey: ['sheet-lead-sources'],
+    queryFn: () => getActiveLeadSources(),
+    staleTime: 60_000,
+  });
+
+  const usersQuery = useQuery({
+    queryKey: ['sheet-assigned-users'],
+    queryFn: () => getUsers({ limit: 200, status: 'ACTIVE' }),
     staleTime: 60_000,
   });
 
@@ -184,6 +202,9 @@ const SheetsPage: React.FC = () => {
 
   const sheets = sheetsQuery.data?.data || [];
   const leadStages = stagesQuery.data?.data || [];
+  const leadSources = sourcesQuery.data?.data || [];
+  const rawUsers = usersQuery.data?.users || usersQuery.data || [];
+  const assignedUsers = Array.isArray(rawUsers) ? rawUsers : [];
 
   const columns = useMemo(
     () => (draft?.columns || []).filter((column) => !hiddenColumns.has(column.id)),
@@ -413,20 +434,44 @@ const SheetsPage: React.FC = () => {
     onError: (error: any) => toast.error(error?.response?.data?.message || 'Unable to sync leads'),
   });
 
-  const handleStageSelect = useCallback(
-    (rowId: string, columnId: string, stageName: string, leadId?: string | null) => {
-      updateCell(rowId, columnId, stageName);
-      setActiveStageMenuCell(null);
-      if (leadId && canSync) {
-        syncMutation.mutate([{
-          rowId,
-          leadId,
-          fieldKey: 'stage',
-          newValue: stageName,
-        }]);
+  // Handle Master Dropdown Select (Stage, Source, User, Status)
+  const handleDropdownSelect = useCallback(
+    (fieldKey: string, option: DropdownOption, targetRowId: string, targetColId: string, leadId?: string | null) => {
+      const targetRows: Array<{ rowId: string; leadId?: string | null }> = [];
+
+      if (selectionRange && draft) {
+        const minRow = Math.min(selectionRange.startRowIdx, selectionRange.endRowIdx);
+        const maxRow = Math.max(selectionRange.startRowIdx, selectionRange.endRowIdx);
+        for (let r = minRow; r <= maxRow; r += 1) {
+          const row = filteredSortedRows[r];
+          if (row) targetRows.push({ rowId: row.id, leadId: row.metadata?.leadId });
+        }
+      } else {
+        targetRows.push({ rowId: targetRowId, leadId });
+      }
+
+      targetRows.forEach(({ rowId }) => {
+        updateCell(rowId, targetColId, option.label);
+      });
+
+      setActiveDropdownCell(null);
+
+      if (canSync) {
+        const changes = targetRows
+          .filter((tr) => Boolean(tr.leadId))
+          .map((tr) => ({
+            rowId: tr.rowId,
+            leadId: tr.leadId,
+            fieldKey,
+            newValue: option.id || option.label,
+          }));
+
+        if (changes.length > 0) {
+          syncMutation.mutate(changes);
+        }
       }
     },
-    [canSync, syncMutation, updateCell],
+    [canSync, draft, filteredSortedRows, selectionRange, syncMutation, updateCell],
   );
 
   const handleUndo = useCallback(() => {
@@ -756,6 +801,22 @@ const SheetsPage: React.FC = () => {
     return rIdx >= minRow && rIdx <= maxRow && cIdx >= minCol && cIdx <= maxCol;
   };
 
+  // Build Master Dropdown Options
+  const masterStageOptions: DropdownOption[] = useMemo(
+    () => leadStages.map((s: any) => ({ id: s.id, label: s.name, color: s.color })),
+    [leadStages],
+  );
+
+  const masterSourceOptions: DropdownOption[] = useMemo(
+    () => leadSources.map((s: any) => ({ id: s.id, label: s.name })),
+    [leadSources],
+  );
+
+  const masterUserOptions: DropdownOption[] = useMemo(
+    () => assignedUsers.map((u: any) => ({ id: u.id, label: u.name || u.email })),
+    [assignedUsers],
+  );
+
   if (!canView) {
     return (
       <DashboardLayout>
@@ -936,8 +997,12 @@ const SheetsPage: React.FC = () => {
                             const valStr = String(value ?? '');
                             const cellStyle = applyCellStyle(draft.formatting, row.id, column.id);
 
-                            const isStageColumn = column.leadFieldKey === 'stage' || column.label.toLowerCase().includes('stage');
-                            const matchedStage = isStageColumn
+                            const colKey = (column.leadFieldKey || column.id || column.label).toLowerCase();
+                            const isStageCol = colKey.includes('stage');
+                            const isSourceCol = colKey.includes('source');
+                            const isUserCol = colKey.includes('assigned') || colKey.includes('user');
+
+                            const matchedStage = isStageCol
                               ? leadStages.find((s: any) => s.name.toLowerCase() === valStr.toLowerCase() || s.id === valStr)
                               : null;
 
@@ -986,10 +1051,10 @@ const SheetsPage: React.FC = () => {
                                       isLight ? 'bg-white text-slate-900' : 'bg-slate-950 text-white'
                                     }`}
                                   />
-                                ) : isStageColumn ? (
+                                ) : isStageCol ? (
                                   <div className="relative flex items-center">
                                     <button
-                                      onClick={() => setActiveStageMenuCell(activeStageMenuCell?.rowId === row.id ? null : { rowId: row.id, columnId: column.id })}
+                                      onClick={() => setActiveDropdownCell(activeDropdownCell?.rowId === row.id && activeDropdownCell?.columnId === column.id ? null : { rowId: row.id, columnId: column.id, type: 'stage' })}
                                       disabled={!editable}
                                       className="px-2 py-0.5 rounded-full text-[11px] font-semibold text-white shadow-xs flex items-center space-x-1 hover:opacity-90 transition-opacity"
                                       style={{ backgroundColor: matchedStage?.color || '#475569' }}
@@ -998,30 +1063,69 @@ const SheetsPage: React.FC = () => {
                                       <ChevronDown className="w-3 h-3 opacity-70" />
                                     </button>
 
-                                    {activeStageMenuCell?.rowId === row.id && activeStageMenuCell?.columnId === column.id && (
-                                      <div
-                                        className={`absolute left-0 top-full mt-1 z-50 rounded-lg shadow-xl p-1.5 w-44 space-y-1 border ${
-                                          isLight ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-700'
-                                        }`}
-                                      >
-                                        {leadStages.map((stage: any) => (
-                                          <button
-                                            key={stage.id}
-                                            onClick={() => handleStageSelect(row.id, column.id, stage.name, row.metadata?.leadId)}
-                                            className={`w-full text-left px-2.5 py-1 rounded text-xs font-medium flex items-center space-x-2 transition-colors ${
-                                              isLight ? 'hover:bg-slate-100 text-slate-800' : 'hover:bg-slate-800 text-white'
-                                            }`}
-                                          >
-                                            <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: stage.color }} />
-                                            <span>{stage.name}</span>
-                                          </button>
-                                        ))}
-                                      </div>
+                                    {activeDropdownCell?.rowId === row.id && activeDropdownCell?.columnId === column.id && (
+                                      <SearchableDropdownMenu
+                                        title="Select Lead Stage"
+                                        options={masterStageOptions}
+                                        selectedValue={valStr}
+                                        onSelect={(opt) => handleDropdownSelect('stage', opt, row.id, column.id, row.metadata?.leadId)}
+                                        onClose={() => setActiveDropdownCell(null)}
+                                        isLight={isLight}
+                                      />
+                                    )}
+                                  </div>
+                                ) : isSourceCol ? (
+                                  <div className="relative flex items-center">
+                                    <button
+                                      onClick={() => setActiveDropdownCell(activeDropdownCell?.rowId === row.id && activeDropdownCell?.columnId === column.id ? null : { rowId: row.id, columnId: column.id, type: 'source' })}
+                                      disabled={!editable}
+                                      className={`px-2 py-0.5 rounded-md text-[11px] font-medium border flex items-center justify-between w-full ${
+                                        isLight ? 'bg-slate-50 border-slate-300 text-slate-800' : 'bg-slate-800 border-slate-700 text-slate-200'
+                                      }`}
+                                    >
+                                      <span className="truncate">{valStr || 'Select Source'}</span>
+                                      <ChevronDown className="w-3 h-3 opacity-60 ml-1" />
+                                    </button>
+
+                                    {activeDropdownCell?.rowId === row.id && activeDropdownCell?.columnId === column.id && (
+                                      <SearchableDropdownMenu
+                                        title="Select Lead Source"
+                                        options={masterSourceOptions}
+                                        selectedValue={valStr}
+                                        onSelect={(opt) => handleDropdownSelect('source', opt, row.id, column.id, row.metadata?.leadId)}
+                                        onClose={() => setActiveDropdownCell(null)}
+                                        isLight={isLight}
+                                      />
+                                    )}
+                                  </div>
+                                ) : isUserCol ? (
+                                  <div className="relative flex items-center">
+                                    <button
+                                      onClick={() => setActiveDropdownCell(activeDropdownCell?.rowId === row.id && activeDropdownCell?.columnId === column.id ? null : { rowId: row.id, columnId: column.id, type: 'user' })}
+                                      disabled={!editable}
+                                      className={`px-2 py-0.5 rounded-md text-[11px] font-medium border flex items-center justify-between w-full ${
+                                        isLight ? 'bg-slate-50 border-slate-300 text-slate-800' : 'bg-slate-800 border-slate-700 text-slate-200'
+                                      }`}
+                                    >
+                                      <span className="truncate">{valStr || 'Assign User'}</span>
+                                      <ChevronDown className="w-3 h-3 opacity-60 ml-1" />
+                                    </button>
+
+                                    {activeDropdownCell?.rowId === row.id && activeDropdownCell?.columnId === column.id && (
+                                      <SearchableDropdownMenu
+                                        title="Select Assigned User"
+                                        options={masterUserOptions}
+                                        selectedValue={valStr}
+                                        onSelect={(opt) => handleDropdownSelect('assignedUser', opt, row.id, column.id, row.metadata?.leadId)}
+                                        onClose={() => setActiveDropdownCell(null)}
+                                        isLight={isLight}
+                                      />
                                     )}
                                   </div>
                                 ) : row.metadata?.leadId && (column.leadFieldKey === 'name' || column.label.toLowerCase().includes('lead name')) ? (
                                   <button
-                                    onClick={() => navigate('/leads', { state: { openLeadId: row.metadata?.leadId } })}
+                                    type="button"
+                                    onClick={() => setViewingLeadId(row.metadata?.leadId || null)}
                                     className="text-emerald-500 hover:underline font-bold truncate max-w-full text-left"
                                   >
                                     {valStr}
@@ -1117,6 +1221,15 @@ const SheetsPage: React.FC = () => {
           onReplace={handleReplace}
           onReplaceAll={handleReplaceAll}
         />
+
+        {/* Integrated CRM Lead Details View Drawer */}
+        {viewingLeadId && (
+          <LeadViewDrawer
+            isOpen={Boolean(viewingLeadId)}
+            lead={{ id: viewingLeadId } as any}
+            onClose={() => setViewingLeadId(null)}
+          />
+        )}
       </div>
     </DashboardLayout>
   );
