@@ -37,6 +37,10 @@ import {
 import useAuthStore from '../../store/useAuthStore';
 import { hasPermission } from '../../utils/permission.util';
 
+import SnoozeFollowUpModal from '../../components/calendar/SnoozeFollowUpModal';
+import { createFollowUp as createFollowUpApi, snoozeFollowUp as snoozeFollowUpApi } from '../../services/followupService';
+import type { FollowUp } from '../../types/followup.types';
+
 import { SheetsCellBar } from './components/SheetsCellBar';
 import { SheetsContextMenu } from './components/SheetsContextMenu';
 import { SheetsToolbar } from './components/SheetsToolbar';
@@ -186,6 +190,91 @@ const SheetsPage: React.FC = () => {
   // CRM Lead Form Drawer Integration
   const [editingFormLead, setEditingFormLead] = useState<LeadListItem | null>(null);
   const [duplicateCandidates, setDuplicateCandidates] = useState<LeadListItem[]>([]);
+
+  // CRM Follow-up Scheduling Modal Integration
+  const [snoozeModal, setSnoozeModal] = useState<{
+    isOpen: boolean;
+    rowId: string;
+    columnId: string;
+    leadId?: string;
+    leadName?: string;
+    followUp: FollowUp | null;
+    value: string;
+    recentDescription: string;
+    selectedReasonId: string;
+    reminderActionType: 'SNOOZE' | 'REMIND_LATER';
+    isSubmitting: boolean;
+  }>({
+    isOpen: false,
+    rowId: '',
+    columnId: '',
+    value: '',
+    recentDescription: '',
+    selectedReasonId: '',
+    reminderActionType: 'SNOOZE',
+    followUp: null,
+    isSubmitting: false,
+  });
+
+  const handleOpenFollowUpModal = useCallback(
+    (rowId: string, columnId: string, leadId?: string, leadName?: string, valStr?: string) => {
+      if (!canSync) {
+        toast.error('You do not have permission to edit follow-ups.');
+        return;
+      }
+      const currentDateTime = toInputDateTime(valStr) || toInputDateTime(new Date().toISOString());
+      setSnoozeModal({
+        isOpen: true,
+        rowId,
+        columnId,
+        leadId,
+        leadName,
+        value: currentDateTime,
+        recentDescription: '',
+        selectedReasonId: '',
+        reminderActionType: 'SNOOZE',
+        isSubmitting: false,
+        followUp: leadId
+          ? ({
+              id: `virtual_${leadId}`,
+              leadId,
+              scheduledAt: valStr || new Date().toISOString(),
+              status: 'SCHEDULED',
+              type: 'CALL',
+              lead: { id: leadId, name: leadName || 'Lead' },
+            } as any)
+          : null,
+      });
+    },
+    [canSync],
+  );
+
+  const handleSaveFollowUpModal = async () => {
+    if (!snoozeModal.leadId || !snoozeModal.value) {
+      toast.error('Please select a valid follow-up date and time.');
+      return;
+    }
+    setSnoozeModal((prev) => ({ ...prev, isSubmitting: true }));
+    try {
+      const isoString = new Date(snoozeModal.value).toISOString();
+      await createFollowUpApi({
+        leadId: snoozeModal.leadId,
+        type: 'CALL',
+        scheduledAt: isoString,
+        description: snoozeModal.recentDescription || undefined,
+      });
+      updateCell(snoozeModal.rowId, snoozeModal.columnId, isoString);
+      toast.success('Follow-up scheduled successfully');
+      void queryClient.invalidateQueries({ queryKey: ['leads'] });
+      void queryClient.invalidateQueries({ queryKey: ['followups'] });
+      void queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      void queryClient.invalidateQueries({ queryKey: ['sheet', activeSheetId] });
+      setSnoozeModal((prev) => ({ ...prev, isOpen: false, isSubmitting: false }));
+    } catch (err: any) {
+      setSnoozeModal((prev) => ({ ...prev, isSubmitting: false }));
+      toast.error(err?.response?.data?.message || err?.message || 'Failed to update follow-up');
+    }
+  };
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const gridViewportRef = useRef<HTMLDivElement>(null);
@@ -1192,42 +1281,23 @@ const SheetsPage: React.FC = () => {
                                 onMouseEnter={() => handleCellMouseEnter(actualRowIdx, colIdx)}
                                 onDoubleClick={() => {
                                   if (editable) {
-                                    setEditingCell({ rowIndex: actualRowIdx, colIndex: colIdx, rowId: row.id, columnId: column.id });
-                                    setEditingValue(isFollowupDateCol ? toInputDateTime(valStr) : valStr);
+                                    if (isFollowupDateCol) {
+                                      handleOpenFollowUpModal(
+                                        row.id,
+                                        column.id,
+                                        leadId || undefined,
+                                        row.metadata?.leadName || (row.cells?.name ? String(row.cells.name) : undefined),
+                                        valStr,
+                                      );
+                                    } else {
+                                      setEditingCell({ rowIndex: actualRowIdx, colIndex: colIdx, rowId: row.id, columnId: column.id });
+                                      setEditingValue(valStr);
+                                    }
                                   }
                                 }}
                                 onContextMenu={(e) => handleContextMenu(e, row.id, column.id)}
                               >
                                 {isEditing ? (
-                                  isFollowupDateCol ? (
-                                    <input
-                                      autoFocus
-                                      type="datetime-local"
-                                      value={editingValue}
-                                      onChange={(e) => setEditingValue(e.target.value)}
-                                      onBlur={() => {
-                                        updateCell(row.id, column.id, editingValue);
-                                        setEditingCell(null);
-                                        if (leadId && canSync) {
-                                          syncMutation.mutate([{ rowId: row.id, leadId, fieldKey: 'nextFollowupDate', newValue: editingValue }]);
-                                        }
-                                      }}
-                                      onKeyDown={(e) => {
-                                        if (e.key === 'Enter') {
-                                          updateCell(row.id, column.id, editingValue);
-                                          setEditingCell(null);
-                                          if (leadId && canSync) {
-                                            syncMutation.mutate([{ rowId: row.id, leadId, fieldKey: 'nextFollowupDate', newValue: editingValue }]);
-                                          }
-                                        } else if (e.key === 'Escape') {
-                                          setEditingCell(null);
-                                        }
-                                      }}
-                                      className={`w-full h-full font-mono px-1 border border-emerald-500 rounded focus:outline-none ${
-                                        isLight ? 'bg-white text-slate-900' : 'bg-slate-950 text-white'
-                                      }`}
-                                    />
-                                  ) : (
                                     <input
                                       autoFocus
                                       type="text"
@@ -1249,7 +1319,6 @@ const SheetsPage: React.FC = () => {
                                         isLight ? 'bg-white text-slate-900' : 'bg-slate-950 text-white'
                                       }`}
                                     />
-                                  )
                                 ) : isStageCol ? (
                                   <div className="relative flex items-center">
                                     <button
@@ -1366,9 +1435,23 @@ const SheetsPage: React.FC = () => {
                                     </button>
                                   </div>
                                 ) : isFollowupDateCol ? (
-                                   <span className="truncate block max-w-full font-mono text-emerald-600 dark:text-emerald-400 font-semibold" title={valStr}>
+                                   <button
+                                     type="button"
+                                     onClick={(e) => {
+                                       e.stopPropagation();
+                                       handleOpenFollowUpModal(
+                                         row.id,
+                                         column.id,
+                                         leadId || undefined,
+                                         row.metadata?.leadName || (row.cells?.name ? String(row.cells.name) : undefined),
+                                         valStr,
+                                       );
+                                     }}
+                                     className="w-full text-left truncate font-mono text-emerald-600 dark:text-emerald-400 font-semibold hover:underline cursor-pointer"
+                                     title="Click to schedule follow-up in CRM"
+                                   >
                                      {formatFollowupDisplay(valStr)}
-                                   </span>
+                                   </button>
                                  ) : (
                                   <span className="truncate block max-w-full font-mono">{valStr}</span>
                                 )}
@@ -1491,6 +1574,23 @@ const SheetsPage: React.FC = () => {
             }}
           />
         )}
+
+        {/* Shared CRM Follow-up Scheduling Modal */}
+        <SnoozeFollowUpModal
+          isOpen={snoozeModal.isOpen}
+          followUp={snoozeModal.followUp}
+          value={snoozeModal.value}
+          onChange={(val) => setSnoozeModal((prev) => ({ ...prev, value: val }))}
+          recentDescription={snoozeModal.recentDescription}
+          onRecentDescriptionChange={(val) => setSnoozeModal((prev) => ({ ...prev, recentDescription: val }))}
+          selectedReasonId={snoozeModal.selectedReasonId}
+          onSelectedReasonIdChange={(val) => setSnoozeModal((prev) => ({ ...prev, selectedReasonId: val }))}
+          reminderActionType={snoozeModal.reminderActionType}
+          onReminderActionTypeChange={(val) => setSnoozeModal((prev) => ({ ...prev, reminderActionType: val }))}
+          onClose={() => setSnoozeModal((prev) => ({ ...prev, isOpen: false }))}
+          onSubmit={handleSaveFollowUpModal}
+          isSubmitting={snoozeModal.isSubmitting}
+        />
       </div>
     </DashboardLayout>
   );
