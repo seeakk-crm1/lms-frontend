@@ -17,6 +17,8 @@ export type SheetRow = {
     leadId?: string | null;
     leadName?: string | null;
     leadNumber?: string | null;
+    phone?: string | null;
+    email?: string | null;
   };
 };
 

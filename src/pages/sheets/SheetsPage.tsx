@@ -4,6 +4,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ChevronDown,
   Download,
+  ExternalLink,
   FileSpreadsheet,
   Plus,
   Search,
@@ -40,7 +41,9 @@ import { SheetsContextMenu } from './components/SheetsContextMenu';
 import { SheetsToolbar } from './components/SheetsToolbar';
 import { FindReplaceModal } from './components/FindReplaceModal';
 import { DropdownOption, SearchableDropdownMenu } from './components/SearchableDropdownMenu';
-import LeadViewDrawer from '../leads/components/LeadViewDrawer';
+import { DuplicateMatchModal } from './components/DuplicateMatchModal';
+import LeadFormDrawer from '../leads/components/LeadFormDrawer';
+import type { LeadListItem } from '../../types/lead.types';
 
 type SelectedCell = { rowIndex: number; colIndex: number; rowId: string; columnId: string } | null;
 type SelectionRange = { startRowIdx: number; startColIdx: number; endRowIdx: number; endColIdx: number } | null;
@@ -133,7 +136,10 @@ const SheetsPage: React.FC = () => {
   const [rowWindowStart, setRowWindowStart] = useState(0);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; rowId: string; columnId: string } | null>(null);
   const [activeDropdownCell, setActiveDropdownCell] = useState<{ rowId: string; columnId: string; type: 'stage' | 'source' | 'user' | 'status' } | null>(null);
-  const [viewingLeadId, setViewingLeadId] = useState<string | null>(null);
+
+  // CRM Lead Form Drawer Integration
+  const [editingFormLead, setEditingFormLead] = useState<LeadListItem | null>(null);
+  const [duplicateCandidates, setDuplicateCandidates] = useState<LeadListItem[]>([]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const autoSaveTimerRef = useRef<number | null>(null);
@@ -472,6 +478,46 @@ const SheetsPage: React.FC = () => {
       }
     },
     [canSync, draft, filteredSortedRows, selectionRange, syncMutation, updateCell],
+  );
+
+  // Handle Opening Interactive Lead Identifiers (Name, Mobile, Email)
+  const handleOpenLeadForm = useCallback(
+    (leadId?: string | null, phone?: string | null, email?: string | null, leadName?: string | null) => {
+      if (leadId) {
+        setEditingFormLead({ id: leadId } as LeadListItem);
+        return;
+      }
+
+      // If leadId not directly present, check matching leads in sheet rows / query
+      const matchingRows = (draft?.rows || []).filter((r) => {
+        const m = r.metadata || {};
+        if (phone && m.phone && m.phone.trim() === phone.trim()) return true;
+        if (email && m.email && m.email.trim().toLowerCase() === email.trim().toLowerCase()) return true;
+        if (leadName && m.leadName && m.leadName.trim().toLowerCase() === leadName.trim().toLowerCase()) return true;
+        return false;
+      });
+
+      const matchedLeadIds = Array.from(new Set(matchingRows.map((r) => r.metadata?.leadId).filter(Boolean))) as string[];
+
+      if (matchedLeadIds.length === 1) {
+        setEditingFormLead({ id: matchedLeadIds[0] } as LeadListItem);
+      } else if (matchedLeadIds.length > 1) {
+        const candidateItems = matchedLeadIds.map((id) => {
+          const rowMatch = matchingRows.find((r) => r.metadata?.leadId === id);
+          const m = rowMatch?.metadata || {};
+          return {
+            id,
+            name: m.leadName || 'Lead',
+            phone: m.phone || '',
+            email: m.email || '',
+          } as LeadListItem;
+        });
+        setDuplicateCandidates(candidateItems);
+      } else {
+        toast.error('No matching CRM lead record found for this identifier.');
+      }
+    },
+    [draft?.rows],
   );
 
   const handleUndo = useCallback(() => {
@@ -994,13 +1040,20 @@ const SheetsPage: React.FC = () => {
                             const isSelectedInRange = isCellInRange(actualRowIdx, colIdx);
                             const isEditing = editingCell?.rowId === row.id && editingCell.columnId === column.id;
                             const value = row.cells?.[column.id] ?? '';
-                            const valStr = String(value ?? '');
+                            const valStr = String(value ?? '').trim();
                             const cellStyle = applyCellStyle(draft.formatting, row.id, column.id);
 
                             const colKey = (column.leadFieldKey || column.id || column.label).toLowerCase();
                             const isStageCol = colKey.includes('stage');
                             const isSourceCol = colKey.includes('source');
                             const isUserCol = colKey.includes('assigned') || colKey.includes('user');
+
+                            const isNameCol = column.leadFieldKey === 'name' || colKey.includes('name');
+                            const isPhoneCol = column.leadFieldKey === 'phone' || colKey.includes('phone') || colKey.includes('mobile');
+                            const isEmailCol = column.leadFieldKey === 'email' || colKey.includes('email');
+
+                            const isLeadIdentifier = (isNameCol || isPhoneCol || isEmailCol) && valStr.length > 0;
+                            const leadId = row.metadata?.leadId;
 
                             const matchedStage = isStageCol
                               ? leadStages.find((s: any) => s.name.toLowerCase() === valStr.toLowerCase() || s.id === valStr)
@@ -1122,14 +1175,26 @@ const SheetsPage: React.FC = () => {
                                       />
                                     )}
                                   </div>
-                                ) : row.metadata?.leadId && (column.leadFieldKey === 'name' || column.label.toLowerCase().includes('lead name')) ? (
-                                  <button
-                                    type="button"
-                                    onClick={() => setViewingLeadId(row.metadata?.leadId || null)}
-                                    className="text-emerald-500 hover:underline font-bold truncate max-w-full text-left"
-                                  >
-                                    {valStr}
-                                  </button>
+                                ) : isLeadIdentifier ? (
+                                  <div className="flex items-center space-x-1.5 truncate max-w-full">
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleOpenLeadForm(
+                                          leadId,
+                                          isPhoneCol ? valStr : row.metadata?.phone,
+                                          isEmailCol ? valStr : row.metadata?.email,
+                                          isNameCol ? valStr : row.metadata?.leadName,
+                                        );
+                                      }}
+                                      className="text-emerald-500 hover:text-emerald-400 font-semibold hover:underline truncate max-w-full text-left flex items-center space-x-1 group/link"
+                                      title="Open Lead Form"
+                                    >
+                                      <span className="truncate">{valStr}</span>
+                                      <ExternalLink className="w-3 h-3 shrink-0 opacity-70 group-hover/link:opacity-100 transition-opacity" />
+                                    </button>
+                                  </div>
                                 ) : (
                                   <span className="truncate block max-w-full font-mono">{valStr}</span>
                                 )}
@@ -1222,12 +1287,29 @@ const SheetsPage: React.FC = () => {
           onReplaceAll={handleReplaceAll}
         />
 
-        {/* Integrated CRM Lead Details View Drawer */}
-        {viewingLeadId && (
-          <LeadViewDrawer
-            isOpen={Boolean(viewingLeadId)}
-            lead={{ id: viewingLeadId } as any}
-            onClose={() => setViewingLeadId(null)}
+        {/* Duplicate Match Resolution Modal */}
+        <DuplicateMatchModal
+          isOpen={duplicateCandidates.length > 0}
+          matchingLeads={duplicateCandidates}
+          onSelectLead={(lead) => {
+            setEditingFormLead(lead);
+            setDuplicateCandidates([]);
+          }}
+          onClose={() => setDuplicateCandidates([])}
+          isLight={isLight}
+        />
+
+        {/* Integrated CRM Lead Create/Edit Form Drawer */}
+        {editingFormLead && (
+          <LeadFormDrawer
+            isOpen={Boolean(editingFormLead)}
+            mode="edit"
+            lead={editingFormLead}
+            onClose={() => {
+              setEditingFormLead(null);
+              void queryClient.invalidateQueries({ queryKey: ['sheet', activeSheetId] });
+              void queryClient.invalidateQueries({ queryKey: ['sheets'] });
+            }}
           />
         )}
       </div>
