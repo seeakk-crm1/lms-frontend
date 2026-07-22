@@ -37,9 +37,7 @@ import {
 import useAuthStore from '../../store/useAuthStore';
 import { hasPermission } from '../../utils/permission.util';
 
-import SnoozeFollowUpModal from '../../components/calendar/SnoozeFollowUpModal';
-import { createFollowUp as createFollowUpApi, snoozeFollowUp as snoozeFollowUpApi } from '../../services/followupService';
-import type { FollowUp } from '../../types/followup.types';
+import SheetFollowUpModal from './components/SheetFollowUpModal';
 
 import { SheetsCellBar } from './components/SheetsCellBar';
 import { SheetsContextMenu } from './components/SheetsContextMenu';
@@ -191,29 +189,18 @@ const SheetsPage: React.FC = () => {
   const [editingFormLead, setEditingFormLead] = useState<LeadListItem | null>(null);
   const [duplicateCandidates, setDuplicateCandidates] = useState<LeadListItem[]>([]);
 
-  // CRM Follow-up Scheduling Modal Integration
-  const [snoozeModal, setSnoozeModal] = useState<{
+  // CRM Follow-up Scheduling Modal Integration (uses same PUT /leads/:id API as All Leads)
+  const [sheetFollowUpModal, setSheetFollowUpModal] = useState<{
     isOpen: boolean;
     rowId: string;
     columnId: string;
     leadId?: string;
     leadName?: string;
-    followUp: FollowUp | null;
-    value: string;
-    recentDescription: string;
-    selectedReasonId: string;
-    reminderActionType: 'SNOOZE' | 'REMIND_LATER';
-    isSubmitting: boolean;
+    currentFollowUpAt?: string | null;
   }>({
     isOpen: false,
     rowId: '',
     columnId: '',
-    value: '',
-    recentDescription: '',
-    selectedReasonId: '',
-    reminderActionType: 'SNOOZE',
-    followUp: null,
-    isSubmitting: false,
   });
 
   const handleOpenFollowUpModal = useCallback(
@@ -222,59 +209,17 @@ const SheetsPage: React.FC = () => {
         toast.error('You do not have permission to edit follow-ups.');
         return;
       }
-      const currentDateTime = toInputDateTime(valStr) || toInputDateTime(new Date().toISOString());
-      setSnoozeModal({
+      setSheetFollowUpModal({
         isOpen: true,
         rowId,
         columnId,
         leadId,
         leadName,
-        value: currentDateTime,
-        recentDescription: '',
-        selectedReasonId: '',
-        reminderActionType: 'SNOOZE',
-        isSubmitting: false,
-        followUp: leadId
-          ? ({
-              id: `virtual_${leadId}`,
-              leadId,
-              scheduledAt: valStr || new Date().toISOString(),
-              status: 'SCHEDULED',
-              type: 'CALL',
-              lead: { id: leadId, name: leadName || 'Lead' },
-            } as any)
-          : null,
+        currentFollowUpAt: valStr || null,
       });
     },
     [canSync],
   );
-
-  const handleSaveFollowUpModal = async () => {
-    if (!snoozeModal.leadId || !snoozeModal.value) {
-      toast.error('Please select a valid follow-up date and time.');
-      return;
-    }
-    setSnoozeModal((prev) => ({ ...prev, isSubmitting: true }));
-    try {
-      const isoString = new Date(snoozeModal.value).toISOString();
-      await createFollowUpApi({
-        leadId: snoozeModal.leadId,
-        type: 'CALL',
-        scheduledAt: isoString,
-        description: snoozeModal.recentDescription || undefined,
-      });
-      updateCell(snoozeModal.rowId, snoozeModal.columnId, isoString);
-      toast.success('Follow-up scheduled successfully');
-      void queryClient.invalidateQueries({ queryKey: ['leads'] });
-      void queryClient.invalidateQueries({ queryKey: ['followups'] });
-      void queryClient.invalidateQueries({ queryKey: ['dashboard'] });
-      void queryClient.invalidateQueries({ queryKey: ['sheet', activeSheetId] });
-      setSnoozeModal((prev) => ({ ...prev, isOpen: false, isSubmitting: false }));
-    } catch (err: any) {
-      setSnoozeModal((prev) => ({ ...prev, isSubmitting: false }));
-      toast.error(err?.response?.data?.message || err?.message || 'Failed to update follow-up');
-    }
-  };
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const gridViewportRef = useRef<HTMLDivElement>(null);
@@ -1575,21 +1520,16 @@ const SheetsPage: React.FC = () => {
           />
         )}
 
-        {/* Shared CRM Follow-up Scheduling Modal */}
-        <SnoozeFollowUpModal
-          isOpen={snoozeModal.isOpen}
-          followUp={snoozeModal.followUp}
-          value={snoozeModal.value}
-          onChange={(val) => setSnoozeModal((prev) => ({ ...prev, value: val }))}
-          recentDescription={snoozeModal.recentDescription}
-          onRecentDescriptionChange={(val) => setSnoozeModal((prev) => ({ ...prev, recentDescription: val }))}
-          selectedReasonId={snoozeModal.selectedReasonId}
-          onSelectedReasonIdChange={(val) => setSnoozeModal((prev) => ({ ...prev, selectedReasonId: val }))}
-          reminderActionType={snoozeModal.reminderActionType}
-          onReminderActionTypeChange={(val) => setSnoozeModal((prev) => ({ ...prev, reminderActionType: val }))}
-          onClose={() => setSnoozeModal((prev) => ({ ...prev, isOpen: false }))}
-          onSubmit={handleSaveFollowUpModal}
-          isSubmitting={snoozeModal.isSubmitting}
+        {/* CRM Follow-up Scheduling Modal — uses same PUT /leads/:id flow as All Leads */}
+        <SheetFollowUpModal
+          isOpen={sheetFollowUpModal.isOpen}
+          leadId={sheetFollowUpModal.leadId}
+          leadName={sheetFollowUpModal.leadName}
+          currentFollowUpAt={sheetFollowUpModal.currentFollowUpAt}
+          onClose={() => setSheetFollowUpModal((prev) => ({ ...prev, isOpen: false }))}
+          onSaved={(newIsoDate) => {
+            updateCell(sheetFollowUpModal.rowId, sheetFollowUpModal.columnId, newIsoDate);
+          }}
         />
       </div>
     </DashboardLayout>
