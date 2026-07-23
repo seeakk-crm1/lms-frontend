@@ -543,9 +543,68 @@ const SheetsPage: React.FC = () => {
       const pending = result.pending || [];
       const blocked = result.blocked || [];
 
+      console.log('[Diagnostic] Sync Started');
       if (applied.length === 0 && pending.length === 0 && blocked.length === 0) {
         toast('No changes detected to sync.', { icon: 'ℹ️' });
         return;
+      }
+
+      console.log('[Diagnostic] CRM Update Success');
+      if (applied.length > 0 || pending.length > 0) {
+        setDraft((currentDraft) => {
+          if (!currentDraft) return currentDraft;
+          console.log('[Diagnostic] Updated Lead Received');
+          console.log('[Diagnostic] Replacing Row');
+          const newRows = [...currentDraft.rows];
+          
+          const updateRowWithLead = (changeItem: any) => {
+            if (!changeItem.lead || !changeItem.rowId) return;
+            const lead = changeItem.lead;
+            const rowIndex = newRows.findIndex(r => r.id === changeItem.rowId);
+            if (rowIndex === -1) return;
+            
+            const rowToUpdate = { ...newRows[rowIndex], cells: { ...newRows[rowIndex].cells } };
+            
+            currentDraft.columns.forEach(col => {
+              const colKey = (col.leadFieldKey || col.id || col.label).toLowerCase();
+              if (colKey.includes('total amount') || colKey === 'totalamount') {
+                rowToUpdate.cells[col.id] = lead.totalAmount ?? rowToUpdate.cells[col.id];
+              } else if (colKey.includes('advance amount') || colKey === 'advanceamount' || colKey === 'approved advance amount') {
+                rowToUpdate.cells[col.id] = lead.advanceAmount ?? rowToUpdate.cells[col.id];
+              } else if (colKey.includes('balance amount') || colKey === 'balanceamount') {
+                const total = lead.totalAmount || 0;
+                const adv = lead.advanceAmount || 0;
+                rowToUpdate.cells[col.id] = Math.max(0, total - adv);
+              } else if (colKey.includes('expected revenue') || colKey === 'expectedrevenue') {
+                rowToUpdate.cells[col.id] = lead.expectedRevenue ?? rowToUpdate.cells[col.id];
+              } else if (colKey.includes('revenue contribution') || colKey === 'revenuecontribution') {
+                rowToUpdate.cells[col.id] = lead.revenueContribution ?? rowToUpdate.cells[col.id];
+              } else if (col.leadFieldKey === 'products' || colKey.includes('product')) {
+                if (Array.isArray(lead.products)) {
+                  rowToUpdate.cells[col.id] = lead.products.map((p: any) => `${p.productName || 'Product'} ×${p.quantity || 1}`).join(', ');
+                }
+              } else if (col.leadFieldKey === 'stageId' || colKey.includes('stage')) {
+                if (lead.stage?.name) {
+                  rowToUpdate.cells[col.id] = lead.stage.name;
+                }
+              } else if (colKey.includes('remarks') || colKey === 'lastremark') {
+                rowToUpdate.cells[col.id] = lead.lastRemark || lead.remarks || rowToUpdate.cells[col.id];
+              } else if (col.leadFieldKey === 'nextFollowUpAt' || colKey.includes('followup date') || colKey.includes('follow up date') || colKey.includes('next follow up')) {
+                if (lead.nextFollowUpAt) {
+                  rowToUpdate.cells[col.id] = lead.nextFollowUpAt.split('T')[0];
+                }
+              }
+            });
+            newRows[rowIndex] = rowToUpdate;
+          };
+          
+          applied.forEach(updateRowWithLead);
+          pending.forEach(updateRowWithLead);
+          
+          console.log('[Diagnostic] Refreshing Grid');
+          console.log('[Diagnostic] Row Updated');
+          return { ...currentDraft, rows: newRows };
+        });
       }
 
       if (applied.length > 0) {
