@@ -35,9 +35,14 @@ const roleExamples = [
   },
   {
     name: 'Manager',
-    description: 'Supervises teams, approvals, reports, and day-to-day operational monitoring.',
+    description: 'Supervises teams, approvals, reports, office locations, and day-to-day operational monitoring.',
     permissionStrategy: (availableKeys: Set<string>) =>
       pickExistingPermissions(availableKeys, [
+        'DASHBOARD_VIEW_ALL',
+        'DASHBOARD_VIEW_ASSIGNED',
+        'OFFICE_LOCATION_VIEW',
+        'OFFICE_LOCATION_CREATE',
+        'OFFICE_LOCATION_EDIT',
         'USERS_VIEW',
         'USERS_CREATE',
         'USERS_EDIT',
@@ -78,9 +83,11 @@ const roleExamples = [
   },
   {
     name: 'Executive',
-    description: 'Handles assigned leads, updates workflow tasks, and completes operational actions.',
+    description: 'Handles assigned leads, updates workflow tasks, views own dashboard, and completes operational actions.',
     permissionStrategy: (availableKeys: Set<string>) =>
       pickExistingPermissions(availableKeys, [
+        'DASHBOARD_VIEW_OWN',
+        'OFFICE_LOCATION_VIEW',
         'LEADS_VIEW_OWN',
         'LEADS_VIEW_TEAM',
         'LEADS_CREATE',
@@ -95,7 +102,7 @@ const roleExamples = [
     name: 'Read Only',
     description: 'Views dashboards and records without edit, delete, or approval authority.',
     permissionStrategy: (availableKeys: Set<string>) =>
-      Array.from(availableKeys).filter((key) => key.includes('_VIEW')),
+      Array.from(availableKeys).filter((key) => key.includes('_VIEW') || key.endsWith('_view')),
   },
 ] satisfies RoleTemplateDefinition[];
 
@@ -161,7 +168,6 @@ const RoleModal: React.FC<RoleModalProps> = ({ isOpen, onClose, role, onDelete }
         permissions: [],
       });
     }
-    // Only switch to details tab when modal first opens
     if (isOpen && !fullRole) {
       setActiveTab('details');
     }
@@ -176,8 +182,7 @@ const RoleModal: React.FC<RoleModalProps> = ({ isOpen, onClose, role, onDelete }
       }
       onClose();
     } catch (error: any) {
-      // Mutations already handle their own error toasts if configured, 
-      // but we handled them previously. React Query handles this.
+      // Handled in mutation toasts
     }
   };
 
@@ -185,7 +190,7 @@ const RoleModal: React.FC<RoleModalProps> = ({ isOpen, onClose, role, onDelete }
     if (errors.permissions) {
       toast.error('Minimum one permission required (Tab 2)', { id: 'validation-error' });
     } else {
-      toast.error('Please fix the errors in the Details tab', { id: 'validation-error' });
+      toast.error('Please fix the errors in the Role Identity tab', { id: 'validation-error' });
     }
   };
 
@@ -197,7 +202,7 @@ const RoleModal: React.FC<RoleModalProps> = ({ isOpen, onClose, role, onDelete }
     setValue('description', example.description, { shouldDirty: true, shouldValidate: true });
     setValue('permissions', recommendedPermissions, { shouldDirty: true, shouldValidate: true });
     setActiveTab('permissions');
-    toast.success(`Loaded ${example.name} template. You can still adjust every permission manually.`);
+    toast.success(`Loaded ${example.name} template. You can adjust every permission manually.`);
   };
 
   if (!isOpen) return null;
@@ -210,223 +215,290 @@ const RoleModal: React.FC<RoleModalProps> = ({ isOpen, onClose, role, onDelete }
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
-          className="absolute inset-0 bg-gray-900/60 backdrop-blur-md"
+          className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
         />
       </AnimatePresence>
 
       <motion.div
-        initial={{ opacity: 0, scale: 0.96, y: 10 }}
+        initial={{ opacity: 0, scale: 0.97, y: 10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.96, y: 10 }}
+        exit={{ opacity: 0, scale: 0.97, y: 10 }}
         transition={{ duration: 0.2 }}
-        className="relative w-full max-w-4xl bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+        className="relative w-full max-w-4xl bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] border border-slate-100"
       >
-        {/* Header */}
-        <div className="p-4 md:p-6 border-b border-gray-50 flex items-center justify-between bg-white sticky top-0 z-10">
-          <div className="flex items-center gap-2 md:gap-3">
-            <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shadow-sm shrink-0">
-                <Shield className="w-5 h-5 md:w-6 md:h-6" />
+        {/* Header - Clean Light Theme */}
+        <div className="p-5 md:p-6 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10">
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 md:w-12 md:h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shadow-xs shrink-0 border border-emerald-100/50">
+              <Shield className="w-6 h-6" />
             </div>
             <div className="min-w-0">
-                <h2 className="text-base md:text-xl font-black text-gray-900 truncate">
-                    {role ? 'Edit Role' : 'Create Role'}
-                </h2>
-                <p className="text-[9px] md:text-xs text-gray-400 font-bold uppercase tracking-widest truncate">Access Control System</p>
+              <h2 className="text-lg md:text-xl font-black text-slate-900 truncate">
+                {role ? 'Edit Role Configuration' : 'Create New Role'}
+              </h2>
+              <p className="text-[10px] md:text-xs text-slate-400 font-bold uppercase tracking-widest truncate">
+                Admin Management → Roles & RBAC Matrix
+              </p>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-xl transition-colors text-gray-400">
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-2 hover:bg-slate-100 rounded-xl transition-colors text-slate-400 hover:text-slate-700"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Navigation Tabs */}
-        <div className="px-4 md:px-6 pt-4 flex bg-white border-b border-gray-50 gap-4 md:gap-8 overflow-x-auto no-scrollbar">
-            <button 
-                onClick={() => setActiveTab('details')}
-                className={`pb-3 text-xs md:text-sm font-bold transition-all relative shrink-0 ${activeTab === 'details' ? 'text-emerald-600' : 'text-gray-400 hover:text-gray-600'}`}
+        {/* Navigation Tabs - Light Theme */}
+        <div className="px-6 pt-4 flex bg-white border-b border-slate-100 gap-6 md:gap-8 overflow-x-auto no-scrollbar">
+          <button
+            type="button"
+            onClick={() => setActiveTab('details')}
+            className={`pb-3 text-xs md:text-sm font-bold transition-all relative shrink-0 flex items-center gap-2 ${
+              activeTab === 'details' ? 'text-emerald-600 font-extrabold' : 'text-slate-400 hover:text-slate-700'
+            }`}
+          >
+            1. Role Identity
+            {errors.name && (
+              <span className="w-2 h-2 rounded-full bg-red-500 animate-ping absolute -top-1 -right-1" />
+            )}
+            {activeTab === 'details' && (
+              <motion.div
+                layoutId="tab-underline"
+                className="absolute bottom-0 left-0 right-0 h-1 bg-emerald-500 rounded-t-full"
+              />
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('permissions')}
+            className={`pb-3 text-xs md:text-sm font-bold transition-all relative shrink-0 flex items-center gap-2 ${
+              activeTab === 'permissions' ? 'text-emerald-600 font-extrabold' : 'text-slate-400 hover:text-slate-700'
+            }`}
+          >
+            2. Permissions Matrix
+            <span
+              className={`ml-1 text-[10px] ${
+                errors.permissions
+                  ? 'bg-red-100 text-red-600 animate-pulse'
+                  : 'bg-emerald-100 text-emerald-700 font-bold'
+              } px-2 py-0.5 rounded-full transition-colors`}
             >
-                1. Role Identity
-                {errors.name && <span className="ml-2 w-1.5 h-1.5 rounded-full bg-red-500 animate-ping absolute -top-1 -right-1" />}
-                {activeTab === 'details' && <motion.div layoutId="tab-underline" className="absolute bottom-0 left-0 right-0 h-1 bg-emerald-500 rounded-t-full" />}
-            </button>
-            <button 
-                onClick={() => setActiveTab('permissions')}
-                className={`pb-3 text-xs md:text-sm font-bold transition-all relative shrink-0 ${activeTab === 'permissions' ? 'text-emerald-600' : 'text-gray-400 hover:text-gray-600'}`}
-            >
-                2. Permissions
-                <span className={`ml-2 text-[9px] md:text-[10px] ${errors.permissions ? 'bg-red-100 text-red-600 animate-pulse' : 'bg-emerald-100 text-emerald-600'} px-1.5 py-0.5 rounded-full transition-colors`}>
-                    {selectedPermissions.length}
-                </span>
-                {activeTab === 'permissions' && <motion.div layoutId="tab-underline" className="absolute bottom-0 left-0 right-0 h-1 bg-emerald-500 rounded-t-full" />}
-            </button>
+              {selectedPermissions.length} selected
+            </span>
+            {activeTab === 'permissions' && (
+              <motion.div
+                layoutId="tab-underline"
+                className="absolute bottom-0 left-0 right-0 h-1 bg-emerald-500 rounded-t-full"
+              />
+            )}
+          </button>
         </div>
 
-        {/* Content Area */}
-        <div className="flex-1 overflow-hidden flex flex-col lg:flex-row">
-            <div className="flex-1 overflow-y-auto p-4 md:p-6 scroll-smooth custom-scrollbar">
-                <form id="role-form" onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-6 md:space-y-8">
-                    {/* Tab: Details */}
-                    {activeTab === 'details' && (
-                        <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="space-y-5 md:space-y-6">
-                            <div className="space-y-1.5">
-                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Role Name</label>
-                                <input 
-                                    {...register('name')} 
-                                    className={`w-full px-4 py-3 bg-gray-50 border rounded-2xl focus:bg-white outline-none transition-all font-bold text-gray-900 ${errors.name ? 'border-red-300 focus:border-red-500' : 'border-gray-50 focus:border-emerald-500'}`} 
-                                    placeholder="e.g. Regional Manager" 
-                                />
-                                {errors.name && <p className="text-[10px] text-red-500 font-bold ml-1">{errors.name.message}</p>}
-                            </div>
-
-                            <div className="space-y-1.5">
-                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Description</label>
-                                <textarea 
-                                    {...register('description')} 
-                                    rows={3}
-                                    className="w-full px-4 py-3 bg-gray-50 border border-gray-50 rounded-2xl focus:bg-white focus:border-emerald-500 outline-none transition-all text-sm font-medium" 
-                                    placeholder="Define the scope of this role..."
-                                />
-                            </div>
-
-                            <div className="flex items-center gap-4 p-4 bg-emerald-50/20 rounded-2xl border border-emerald-50/50">
-                                <Controller
-                                    name="status"
-                                    control={control}
-                                    render={({ field }) => (
-                                        <button 
-                                            type="button"
-                                            onClick={() => field.onChange(field.value === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE')}
-                                            className={`w-12 h-6 md:w-14 md:h-7 rounded-full transition-all relative flex items-center px-1 shrink-0 ${field.value === 'ACTIVE' ? 'bg-emerald-500 shadow-lg shadow-emerald-500/30' : 'bg-gray-300'}`}
-                                        >
-                                            <motion.div animate={{ x: field.value === 'ACTIVE' ? (window.innerWidth < 768 ? 24 : 28) : 0 }} className="w-4 h-4 md:w-5 md:h-5 bg-white rounded-full shadow-md shrink-0" />
-                                        </button>
-                                    )}
-                                />
-                                <div className="min-w-0">
-                                    <p className="text-xs md:text-sm font-black text-gray-900 leading-none">Status</p>
-                                    <p className="text-[10px] md:text-[11px] text-gray-400 font-bold mt-1">Role isActive</p>
-                                </div>
-                            </div>
-                        </motion.div>
+        {/* Content Body */}
+        <div className="flex-1 overflow-hidden flex flex-col lg:flex-row bg-white">
+          <div className="flex-1 overflow-y-auto p-5 md:p-6 scroll-smooth custom-scrollbar">
+            <form id="role-form" onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-6">
+              {/* Tab 1: Details */}
+              {activeTab === 'details' && (
+                <motion.div
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  className="space-y-5"
+                >
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                      Role Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      {...register('name')}
+                      className={`w-full px-4 py-3 bg-slate-50 border rounded-2xl focus:bg-white outline-none transition-all font-bold text-slate-900 text-sm ${
+                        errors.name
+                          ? 'border-red-300 focus:border-red-500'
+                          : 'border-slate-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10'
+                      }`}
+                      placeholder="e.g. Sales Manager, Regional Admin, Operations Lead"
+                    />
+                    {errors.name && (
+                      <p className="text-[10px] text-red-500 font-bold ml-1">{errors.name.message}</p>
                     )}
+                  </div>
 
-                    {/* Tab: Permissions */}
-                    {activeTab === 'permissions' && (
-                        <motion.div initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} className="space-y-6">
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2 text-emerald-600">
-                                    <LayoutDashboard className="w-4 h-4 shrink-0" />
-                                    <span className="text-[10px] font-black uppercase tracking-widest">Access Matrix</span>
-                                </div>
-                            </div>
-                            
-                            <Controller
-                                name="permissions"
-                                control={control}
-                                render={({ field }) => (
-                                    <PermissionTree 
-                                        selectedPermissions={field.value} 
-                                        onChange={field.onChange} 
-                                    />
-                                )}
-                            />
-                            {errors.permissions && <p className="text-[10px] text-red-500 font-bold">{errors.permissions.message}</p>}
-                        </motion.div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                      Description & Purpose
+                    </label>
+                    <textarea
+                      {...register('description')}
+                      rows={3}
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none transition-all text-sm font-medium text-slate-800"
+                      placeholder="Specify the operational responsibilities and scope of this role..."
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-200/80">
+                    <Controller
+                      name="status"
+                      control={control}
+                      render={({ field }) => (
+                        <button
+                          type="button"
+                          onClick={() => field.onChange(field.value === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE')}
+                          className={`w-14 h-7 rounded-full transition-all relative flex items-center px-1 shrink-0 ${
+                            field.value === 'ACTIVE'
+                              ? 'bg-emerald-500 shadow-md shadow-emerald-500/30'
+                              : 'bg-slate-300'
+                          }`}
+                        >
+                          <motion.div
+                            animate={{ x: field.value === 'ACTIVE' ? 28 : 0 }}
+                            className="w-5 h-5 bg-white rounded-full shadow-sm shrink-0"
+                          />
+                        </button>
+                      )}
+                    />
+                    <div className="min-w-0">
+                      <p className="text-xs md:text-sm font-black text-slate-900 leading-none">
+                        Role Status ({watch('status')})
+                      </p>
+                      <p className="text-[11px] text-slate-500 font-medium mt-1">
+                        Active roles can be assigned to users in workspace user management.
+                      </p>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Tab 2: Permissions Tree */}
+              {activeTab === 'permissions' && (
+                <motion.div
+                  initial={{ opacity: 0, x: 10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  className="space-y-4"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-emerald-600">
+                      <LayoutDashboard className="w-4 h-4 shrink-0" />
+                      <span className="text-[10px] font-black uppercase tracking-widest">
+                        Permission Tree Matrix
+                      </span>
+                    </div>
+                  </div>
+
+                  <Controller
+                    name="permissions"
+                    control={control}
+                    render={({ field }) => (
+                      <PermissionTree
+                        selectedPermissions={field.value}
+                        onChange={field.onChange}
+                      />
                     )}
-                </form>
-            </div>
+                  />
+                  {errors.permissions && (
+                    <p className="text-[10px] text-red-500 font-bold">{errors.permissions.message}</p>
+                  )}
+                </motion.div>
+              )}
+            </form>
+          </div>
 
-            {/* Sidebar / Summary Panel (Desktop Only) */}
-            <div className="hidden lg:flex w-72 bg-gray-50/50 border-l border-gray-50 flex-col p-6 space-y-6 overflow-y-auto">
-                <div className="space-y-4">
-                    <div className="space-y-3">
-                        <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Quick Templates</h3>
-                        <div className="space-y-2.5">
-                            {roleExamples.map((example) => {
-                                const isSelected = watch('name') === example.name;
-                                return (
-                                    <button
-                                        key={example.name}
-                                        type="button"
-                                        onClick={() => applyRoleExample(example)}
-                                        className={`flex w-full items-center justify-between rounded-2xl border px-3 py-3 text-left shadow-sm transition-all active:scale-[0.99] ${
-                                            isSelected
-                                                ? 'border-emerald-300 bg-emerald-50/60'
-                                                : 'border-gray-100 bg-white hover:border-emerald-200 hover:bg-emerald-50/30'
-                                        }`}
-                                    >
-                                        <div className="min-w-0">
-                                            <p className="text-xs font-black text-gray-900">{example.name}</p>
-                                        </div>
-                                        <Copy className="h-3.5 w-3.5 shrink-0 text-gray-300" />
-                                    </button>
-                                );
-                            })}
+          {/* Sidebar / Quick Templates (Desktop Only) - Light Theme */}
+          <div className="hidden lg:flex w-72 bg-slate-50/70 border-l border-slate-100 flex-col p-6 space-y-6 overflow-y-auto">
+            <div className="space-y-4">
+              <div className="space-y-3">
+                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
+                  Role Templates
+                </h3>
+                <div className="space-y-2.5">
+                  {roleExamples.map((example) => {
+                    const isSelected = watch('name') === example.name;
+                    return (
+                      <button
+                        key={example.name}
+                        type="button"
+                        onClick={() => applyRoleExample(example)}
+                        className={`flex w-full items-center justify-between rounded-2xl border px-3.5 py-3 text-left shadow-2xs transition-all active:scale-[0.99] ${
+                          isSelected
+                            ? 'border-emerald-300 bg-emerald-50/90 text-emerald-950 ring-1 ring-emerald-500/20'
+                            : 'border-slate-200/90 bg-white hover:border-emerald-300 hover:bg-emerald-50/30'
+                        }`}
+                      >
+                        <div className="min-w-0 pr-2">
+                          <p className="text-xs font-black text-slate-900">{example.name}</p>
+                          <p className="text-[10px] text-slate-500 font-medium truncate mt-0.5">
+                            {example.description}
+                          </p>
                         </div>
-                    </div>
-
-                    <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
-                        <p className="text-xs font-bold text-gray-700">
-                            Use examples for understanding, then configure access precisely.
-                        </p>
-                        <p className="mt-2 text-[11px] font-medium leading-5 text-gray-500">
-                            These quick templates help with role naming and scope. They do not auto-assign permissions, so the access matrix still stays fully intentional.
-                        </p>
-                        <ul className="mt-3 space-y-2 text-[11px] font-semibold text-gray-500">
-                            <li>Pick a template to prefill the role name and description.</li>
-                            <li>Assign only the permissions needed for that responsibility.</li>
-                            <li>Keep sensitive actions like delete, settings, and approvals tightly scoped.</li>
-                        </ul>
-                    </div>
+                        <Copy className="h-4 w-4 shrink-0 text-slate-400" />
+                      </button>
+                    );
+                  })}
                 </div>
+              </div>
 
-                <div className="flex-1" />
-
-                <div className="p-4 bg-white rounded-2xl border border-gray-100 shadow-sm space-y-3">
-                    <div className="flex items-center gap-2 text-emerald-600 mb-2">
-                        <Info className="w-4 h-4" />
-                        <span className="text-[10px] font-black uppercase tracking-widest">Summary</span>
-                    </div>
-                    <div className="flex justify-between items-center text-xs">
-                        <span className="text-gray-400 font-bold">Total Access</span>
-                        <span className="text-gray-900 font-black">{selectedPermissions.length}</span>
-                    </div>
-                    <div className="flex justify-between items-center text-xs">
-                        <span className="text-gray-400 font-bold">Status</span>
-                        <span className={`font-black ${watch('status') === 'ACTIVE' ? 'text-emerald-500' : 'text-amber-500'}`}>
-                            {watch('status')}
-                        </span>
-                    </div>
-                </div>
+              <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-2xs space-y-2">
+                <p className="text-xs font-bold text-slate-800">
+                  Granular Access Control
+                </p>
+                <p className="text-[11px] font-medium leading-relaxed text-slate-500">
+                  Select role templates to prefill configuration, then customize permissions manually in the expandable tree matrix.
+                </p>
+              </div>
             </div>
+
+            <div className="flex-1" />
+
+            <div className="p-4 bg-white rounded-2xl border border-slate-200/80 shadow-2xs space-y-3">
+              <div className="flex items-center gap-2 text-emerald-600 mb-1">
+                <Info className="w-4 h-4" />
+                <span className="text-[10px] font-black uppercase tracking-widest">Configuration Summary</span>
+              </div>
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-slate-500 font-bold">Permissions Selected</span>
+                <span className="text-slate-900 font-black">{selectedPermissions.length}</span>
+              </div>
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-slate-500 font-bold">Status</span>
+                <span
+                  className={`font-black ${
+                    watch('status') === 'ACTIVE' ? 'text-emerald-600' : 'text-amber-600'
+                  }`}
+                >
+                  {watch('status')}
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Footer */}
-        <div className="p-6 border-t border-gray-50 bg-white flex items-center justify-between gap-4 sticky bottom-0 z-20">
-          <button 
-            type="button" 
+        {/* Footer - Light Theme Sticky Bar */}
+        <div className="p-5 border-t border-slate-100 bg-white flex items-center justify-between gap-4 sticky bottom-0 z-20">
+          <button
+            type="button"
             onClick={() => {
-                if(role) {
-                    reset({
-                        name: role.name,
-                        status: role.status,
-                        description: role.description || '',
-                        permissions: fullRole?.permissions || role.permissions || [],
-                    });
-                } else {
-                    reset({ name: '', status: 'ACTIVE', description: '', permissions: [] });
-                }
-                toast.success('Changes reset to last save');
+              if (role) {
+                reset({
+                  name: role.name,
+                  status: role.status,
+                  description: role.description || '',
+                  permissions: fullRole?.permissions || role.permissions || [],
+                });
+              } else {
+                reset({ name: '', status: 'ACTIVE', description: '', permissions: [] });
+              }
+              toast.success('Reset form to saved values');
             }}
-            className="flex items-center gap-2 px-5 py-2.5 text-xs font-bold text-gray-500 hover:text-gray-900 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all active:scale-95"
+            className="flex items-center gap-2 px-4 py-2.5 text-xs font-bold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200/70 rounded-xl transition-all active:scale-95"
           >
             <RotateCcw className="w-3.5 h-3.5" />
-            Reset Changes
+            Reset
           </button>
 
           {role && onDelete && (
-            <button 
-              type="button" 
+            <button
+              type="button"
               onClick={() => {
                 if (!canDeleteRole) return;
                 onDelete(role.id, role.name);
@@ -434,7 +506,7 @@ const RoleModal: React.FC<RoleModalProps> = ({ isOpen, onClose, role, onDelete }
               }}
               disabled={!canDeleteRole}
               title={deleteTooltip}
-              className="flex items-center gap-2 px-5 py-2.5 text-xs font-bold text-red-500 hover:text-red-600 bg-red-50 hover:bg-red-100 rounded-xl transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-red-50 disabled:hover:text-red-500"
+              className="flex items-center gap-2 px-4 py-2.5 text-xs font-bold text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 rounded-xl transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <Trash2 className="w-3.5 h-3.5" />
               Delete Role
@@ -442,22 +514,26 @@ const RoleModal: React.FC<RoleModalProps> = ({ isOpen, onClose, role, onDelete }
           )}
 
           <div className="flex items-center gap-3">
-              <button 
-                type="button" 
-                onClick={onClose} 
-                className="px-6 py-2.5 text-xs font-bold text-gray-500 hover:bg-gray-50 rounded-xl transition-all active:scale-95"
-              >
-                Cancel
-              </button>
-              <button
-                form="role-form"
-                type="submit"
-                disabled={createRole.isPending || updateRole.isPending}
-                className="flex items-center justify-center gap-2 px-10 py-3 bg-emerald-500 hover:bg-emerald-600 disabled:bg-emerald-300 text-white rounded-2xl text-sm font-black transition-all shadow-xl shadow-emerald-500/20 active:scale-95"
-              >
-                {createRole.isPending || updateRole.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                <span>{role ? 'Update Configuration' : 'Establish Role'}</span>
-              </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-5 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition-all active:scale-95"
+            >
+              Cancel
+            </button>
+            <button
+              form="role-form"
+              type="submit"
+              disabled={createRole.isPending || updateRole.isPending}
+              className="flex items-center justify-center gap-2 px-8 py-2.5 bg-emerald-500 hover:bg-emerald-600 disabled:bg-emerald-300 text-white rounded-xl text-sm font-black transition-all shadow-lg shadow-emerald-500/20 active:scale-95"
+            >
+              {createRole.isPending || updateRole.isPending ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Save className="w-4 h-4" />
+              )}
+              <span>{role ? 'Update Role' : 'Save Role'}</span>
+            </button>
           </div>
         </div>
       </motion.div>

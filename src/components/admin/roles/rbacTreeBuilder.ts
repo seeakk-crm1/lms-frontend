@@ -45,6 +45,10 @@ const formatModuleName = (group: string): string => {
       return 'Attendance & Field Tracking';
     case 'SYSTEM_SETTINGS':
       return 'System Settings';
+    case 'OFFICE_LOCATION':
+      return 'Office Location';
+    case 'DASHBOARD':
+      return 'Dashboard';
     default:
       if (!g) return 'General';
       return g
@@ -62,7 +66,13 @@ const parsePermissionKey = (permission: Permission): { submoduleName: string; ac
   let submoduleName = '';
   let actionSuffix = '';
 
-  if (upperKey.startsWith('USERS_')) {
+  if (upperKey.startsWith('OFFICE_LOCATION_')) {
+    submoduleName = 'Office Location';
+    actionSuffix = upperKey.replace('OFFICE_LOCATION_', '');
+  } else if (upperKey.startsWith('DASHBOARD_')) {
+    submoduleName = 'Dashboard';
+    actionSuffix = upperKey.replace('DASHBOARD_', '');
+  } else if (upperKey.startsWith('USERS_')) {
     submoduleName = 'Users';
     actionSuffix = upperKey.replace('USERS_', '');
   } else if (upperKey.startsWith('ROLES_')) {
@@ -150,6 +160,13 @@ const parsePermissionKey = (permission: Permission): { submoduleName: string; ac
 
   const formatActionName = (suffix: string, fullKey: string, desc?: string | null): string => {
     const s = suffix.toUpperCase();
+
+    if (fullKey === 'DASHBOARD_VIEW_OWN') return 'View Own Dashboard';
+    if (fullKey === 'DASHBOARD_VIEW_ASSIGNED') return 'View Assigned Users Dashboard';
+    if (fullKey === 'DASHBOARD_VIEW_ALL') return 'View All Users Dashboard';
+    if (fullKey === 'DASHBOARD_VIEW_OWN_OFFICE') return 'View Own Office Dashboard';
+    if (fullKey === 'DASHBOARD_VIEW_ASSIGNED_OFFICES') return 'View Assigned Users Offices Dashboard';
+    if (fullKey === 'DASHBOARD_VIEW_ALL_OFFICES') return 'View All Offices Dashboard';
 
     switch (s) {
       case 'VIEW':
