@@ -373,15 +373,89 @@ const SheetsPage: React.FC = () => {
     });
   }, [columns, draft?.rows, filterText, sortState]);
 
-  const visibleRows = filteredSortedRows.slice(rowWindowStart, rowWindowStart + 200);
+  const WINDOW_SIZE = 100;
+  const OVERSCAN = 15;
 
-  // Exact height of grid based strictly on active visible rows without artificial blank space
-  const exactGridHeight = useMemo(() => {
-    if (!filteredSortedRows || filteredSortedRows.length === 0) {
-      return 128; // 32px header + 96px empty state row
+  const { visibleRows, topSpacerHeight, bottomSpacerHeight, startIndex } = useMemo(() => {
+    const totalRows = filteredSortedRows.length;
+    if (totalRows === 0) {
+      return { visibleRows: [], topSpacerHeight: 0, bottomSpacerHeight: 0, startIndex: 0 };
     }
-    return 32 + filteredSortedRows.length * 36;
-  }, [filteredSortedRows.length]);
+
+    if (totalRows <= WINDOW_SIZE) {
+      return {
+        visibleRows: filteredSortedRows,
+        topSpacerHeight: 0,
+        bottomSpacerHeight: 0,
+        startIndex: 0,
+      };
+    }
+
+    const start = Math.min(rowWindowStart, Math.max(0, totalRows - 1));
+    const end = Math.min(totalRows, start + WINDOW_SIZE);
+
+    const topSpacer = start * 36;
+    const bottomSpacer = Math.max(0, (totalRows - end) * 36);
+
+    return {
+      visibleRows: filteredSortedRows.slice(start, end),
+      topSpacerHeight: topSpacer,
+      bottomSpacerHeight: bottomSpacer,
+      startIndex: start,
+    };
+  }, [filteredSortedRows, rowWindowStart]);
+
+  const handleScroll = useCallback(
+    (event: React.UIEvent<HTMLDivElement>) => {
+      const totalRows = filteredSortedRows.length;
+      if (totalRows <= WINDOW_SIZE) {
+        if (rowWindowStart !== 0) setRowWindowStart(0);
+        return;
+      }
+
+      const top = event.currentTarget.scrollTop;
+      if (top <= 10) {
+        if (rowWindowStart !== 0) setRowWindowStart(0);
+        return;
+      }
+
+      const calculatedStart = Math.max(0, Math.floor(top / 36) - OVERSCAN);
+      const maxStart = Math.max(0, totalRows - WINDOW_SIZE);
+      const clampedStart = Math.min(calculatedStart, maxStart);
+
+      if (clampedStart === 0 || Math.abs(clampedStart - rowWindowStart) >= 3) {
+        setRowWindowStart(clampedStart);
+      }
+    },
+    [filteredSortedRows.length, rowWindowStart],
+  );
+
+  // Reset virtual scroll window to 0 when draft, filter, or sort changes
+  useEffect(() => {
+    setRowWindowStart(0);
+    if (gridViewportRef.current) {
+      gridViewportRef.current.scrollTop = 0;
+    }
+  }, [draft?.id, filterText, sortState]);
+
+  // Diagnostic logging in DEV mode for virtual scroll validation
+  useEffect(() => {
+    if (import.meta.env.DEV) {
+      const total = filteredSortedRows.length;
+      const firstRowIndex = visibleRows.length > 0 ? startIndex + 1 : 0;
+      const lastRowIndex = visibleRows.length > 0 ? startIndex + visibleRows.length : 0;
+      console.debug('[VirtualScroll Diagnostic]', {
+        scrollTop: gridViewportRef.current?.scrollTop || 0,
+        rowWindowStart: startIndex,
+        topSpacerHeight,
+        bottomSpacerHeight,
+        renderedRowCount: visibleRows.length,
+        renderedFirstRow: firstRowIndex,
+        renderedLastRow: lastRowIndex,
+        totalRows: total,
+      });
+    }
+  }, [filteredSortedRows.length, startIndex, visibleRows, topSpacerHeight, bottomSpacerHeight]);
 
   const remember = useCallback((next: Sheet) => {
     setDraft((current) => {
@@ -1545,24 +1619,18 @@ const SheetsPage: React.FC = () => {
                 ? 'bg-white scrollbar-thumb-slate-300 scrollbar-track-slate-100'
                 : 'bg-slate-950 scrollbar-thumb-slate-800 scrollbar-track-slate-950'
             }`}
-            onScroll={(event) => {
-              const top = event.currentTarget.scrollTop;
-              const nextStart = Math.max(0, Math.floor(top / 36) - 15);
-              if (Math.abs(nextStart - rowWindowStart) > 15) setRowWindowStart(nextStart);
-            }}
+            onScroll={handleScroll}
           >
             {!draft || sheetQuery.isLoading ? (
               <div className="grid h-full place-items-center text-sm font-bold text-slate-400">
                 Loading sheet data...
               </div>
             ) : (
-              <div style={{ height: exactGridHeight, position: 'relative' }}>
-                <table
-                  className={`absolute left-0 top-0 border-collapse text-xs w-max ${
-                    isLight ? 'bg-white text-slate-800' : 'bg-slate-900 text-slate-100'
-                  }`}
-                  style={{ top: rowWindowStart * 36 }}
-                >
+              <table
+                className={`border-collapse text-xs w-max min-w-full ${
+                  isLight ? 'bg-white text-slate-800' : 'bg-slate-900 text-slate-100'
+                }`}
+              >
                   <thead
                     className={`${isHeaderFrozen ? 'sticky top-0 z-20 shadow-xs' : ''} ${
                       isLight ? 'bg-slate-100 text-slate-700 border-slate-200' : 'bg-slate-800 text-slate-300 border-slate-700'
@@ -1618,11 +1686,17 @@ const SheetsPage: React.FC = () => {
                         </td>
                       </tr>
                     ) : (
-                      visibleRows.map((row, rowIndex) => {
-                      const actualRowIdx = rowWindowStart + rowIndex;
-                      return (
-                        <tr
-                          key={row.id}
+                      <>
+                        {topSpacerHeight > 0 && (
+                          <tr style={{ height: topSpacerHeight }} aria-hidden="true">
+                            <td colSpan={columns.length + 1} className="p-0 border-0" />
+                          </tr>
+                        )}
+                        {visibleRows.map((row, rowIndex) => {
+                          const actualRowIdx = startIndex + rowIndex;
+                          return (
+                            <tr
+                              key={row.id || `row_${actualRowIdx}`}
                           className={`h-9 border-b transition-colors ${
                             isLight
                               ? 'border-slate-200/80 hover:bg-slate-50'
@@ -1940,11 +2014,17 @@ const SheetsPage: React.FC = () => {
                           })}
                         </tr>
                       );
-                    }))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+                    })}
+                    {bottomSpacerHeight > 0 && (
+                      <tr style={{ height: bottomSpacerHeight }} aria-hidden="true">
+                        <td colSpan={columns.length + 1} className="p-0 border-0" />
+                      </tr>
+                    )}
+                  </>
+                )}
+              </tbody>
+            </table>
+          )}
           </div>
 
           {/* Version History Drawer */}
