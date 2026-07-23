@@ -375,9 +375,12 @@ const SheetsPage: React.FC = () => {
 
   const visibleRows = filteredSortedRows.slice(rowWindowStart, rowWindowStart + 200);
 
-  // Exact height of grid based on active rows to prevent empty whitespace scrolling
+  // Exact height of grid based strictly on active visible rows without artificial blank space
   const exactGridHeight = useMemo(() => {
-    return Math.max(360, filteredSortedRows.length * 36 + 32);
+    if (!filteredSortedRows || filteredSortedRows.length === 0) {
+      return 128; // 32px header + 96px empty state row
+    }
+    return 32 + filteredSortedRows.length * 36;
   }, [filteredSortedRows.length]);
 
   const remember = useCallback((next: Sheet) => {
@@ -1603,7 +1606,19 @@ const SheetsPage: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {visibleRows.map((row, rowIndex) => {
+                    {filteredSortedRows.length === 0 ? (
+                      <tr>
+                        <td
+                          colSpan={columns.length + 1}
+                          className={`h-24 text-center text-sm font-medium select-none ${
+                            isLight ? 'text-slate-400 bg-white' : 'text-slate-500 bg-slate-900'
+                          }`}
+                        >
+                          {filterText ? 'No matching rows found for filter.' : 'No rows available in this sheet.'}
+                        </td>
+                      </tr>
+                    ) : (
+                      visibleRows.map((row, rowIndex) => {
                       const actualRowIdx = rowWindowStart + rowIndex;
                       return (
                         <tr
@@ -1925,7 +1940,7 @@ const SheetsPage: React.FC = () => {
                           })}
                         </tr>
                       );
-                    })}
+                    }))}
                   </tbody>
                 </table>
               </div>
