@@ -457,6 +457,8 @@ const SheetsPage: React.FC = () => {
         formattedProductsText ||
         (Array.isArray(lead.products)
           ? lead.products.map((p: any) => `${p.productName || p.name || 'Product'} ×${p.quantity || 1}`).join(', ')
+          : typeof lead.products === 'string'
+          ? lead.products
           : '');
 
       const newCellsPatch: Record<string, any> = {};
@@ -464,23 +466,116 @@ const SheetsPage: React.FC = () => {
       columns.forEach((col) => {
         const colKey = (col.leadFieldKey || col.id || col.label).toLowerCase();
 
-        if (col.leadFieldKey === 'products' || colKey.includes('product')) {
-          newCellsPatch[col.id] = formattedProducts;
-        } else if (col.leadFieldKey === 'totalAmount' || colKey.includes('total amount')) {
-          newCellsPatch[col.id] = lead.totalAmount ?? 0;
-        } else if (col.leadFieldKey === 'balanceAmount' || colKey.includes('balance amount')) {
-          newCellsPatch[col.id] = lead.balanceAmount ?? 0;
-        } else if (
+        // Total Amount
+        if (col.leadFieldKey === 'totalAmount' || colKey.includes('total amount') || colKey === 'totalamount') {
+          if (lead.totalAmount !== undefined && lead.totalAmount !== null) {
+            newCellsPatch[col.id] = lead.totalAmount;
+          }
+        }
+        // Approved Advance Amount
+        else if (
           col.leadFieldKey === 'advanceAmount' ||
           col.leadFieldKey === 'approvedAdvanceAmount' ||
           colKey.includes('advance amount') ||
           colKey.includes('approved advance') ||
-          colKey.includes('advanceamount') ||
-          colKey.includes('approvedadvanceamount')
+          colKey === 'advanceamount' ||
+          colKey === 'approvedadvanceamount'
         ) {
-          newCellsPatch[col.id] = lead.advanceAmount ?? 0;
-        } else if (col.leadFieldKey === 'expectedRevenue' || colKey.includes('expected revenue')) {
-          newCellsPatch[col.id] = lead.expectedRevenue ?? lead.totalAmount ?? 0;
+          if (lead.advanceAmount !== undefined && lead.advanceAmount !== null) {
+            newCellsPatch[col.id] = lead.advanceAmount;
+          }
+        }
+        // Balance Amount
+        else if (col.leadFieldKey === 'balanceAmount' || colKey.includes('balance amount') || colKey === 'balanceamount') {
+          if (lead.balanceAmount !== undefined && lead.balanceAmount !== null) {
+            newCellsPatch[col.id] = lead.balanceAmount;
+          } else if (lead.totalAmount !== undefined) {
+            const tot = Number(lead.totalAmount || 0);
+            const adv = Number(lead.advanceAmount || 0);
+            newCellsPatch[col.id] = Math.max(0, tot - adv);
+          }
+        }
+        // Expected Revenue
+        else if (col.leadFieldKey === 'expectedRevenue' || colKey.includes('expected revenue') || colKey === 'expectedrevenue') {
+          if (lead.expectedRevenue !== undefined && lead.expectedRevenue !== null) {
+            newCellsPatch[col.id] = lead.expectedRevenue;
+          } else if (lead.totalAmount !== undefined) {
+            newCellsPatch[col.id] = lead.totalAmount;
+          }
+        }
+        // Products
+        else if (col.leadFieldKey === 'products' || colKey.includes('product')) {
+          newCellsPatch[col.id] = formattedProducts;
+        }
+        // Stage
+        else if (col.leadFieldKey === 'stageId' || colKey.includes('stage')) {
+          if (lead.stage?.name) {
+            newCellsPatch[col.id] = lead.stage.name;
+          } else if (lead.stageName) {
+            newCellsPatch[col.id] = lead.stageName;
+          }
+        }
+        // Source
+        else if (col.leadFieldKey === 'sourceId' || colKey.includes('source')) {
+          if (lead.source?.name) {
+            newCellsPatch[col.id] = lead.source.name;
+          } else if (lead.sourceName) {
+            newCellsPatch[col.id] = lead.sourceName;
+          }
+        }
+        // Lifecycle
+        else if (col.leadFieldKey === 'lifecycleId' || colKey.includes('lifecycle')) {
+          if (lead.lifecycle?.name) {
+            newCellsPatch[col.id] = lead.lifecycle.name;
+          } else if (lead.lifecycleName) {
+            newCellsPatch[col.id] = lead.lifecycleName;
+          }
+        }
+        // Assigned User
+        else if (col.leadFieldKey === 'assignedToId' || colKey.includes('assigned') || colKey.includes('user')) {
+          if (lead.assignedTo?.displayName) {
+            newCellsPatch[col.id] = lead.assignedTo.displayName;
+          } else if (lead.assignedTo?.name) {
+            newCellsPatch[col.id] = lead.assignedTo.name;
+          } else if (lead.assignedUser) {
+            newCellsPatch[col.id] = lead.assignedUser;
+          }
+        }
+        // Remarks
+        else if (col.leadFieldKey === 'remarks' || colKey.includes('remark')) {
+          if (lead.remarks !== undefined || lead.lastRemark !== undefined) {
+            newCellsPatch[col.id] = lead.remarks ?? lead.lastRemark ?? '';
+          }
+        }
+        // Follow-up Date
+        else if (
+          col.leadFieldKey === 'nextFollowUpAt' ||
+          col.leadFieldKey === 'nextFollowupDate' ||
+          colKey.includes('followup date') ||
+          colKey.includes('follow-up date') ||
+          colKey.includes('next follow up')
+        ) {
+          if (lead.nextFollowUpAt) {
+            newCellsPatch[col.id] = String(lead.nextFollowUpAt).split('T')[0];
+          }
+        }
+        // Name
+        else if (col.leadFieldKey === 'name' || colKey.includes('name')) {
+          if (lead.name) {
+            newCellsPatch[col.id] = lead.name;
+          }
+        }
+        // Email
+        else if (col.leadFieldKey === 'email' || colKey.includes('email')) {
+          if (lead.email !== undefined) {
+            newCellsPatch[col.id] = lead.email ?? '';
+          }
+        }
+        // Phone
+        else if (col.leadFieldKey === 'phone' || colKey.includes('phone') || colKey.includes('mobile')) {
+          if (lead.phone !== undefined) {
+            newCellsPatch[col.id] = lead.phone ?? '';
+          }
         }
       });
 
@@ -648,41 +743,133 @@ const SheetsPage: React.FC = () => {
           const updateRowWithLead = (changeItem: any) => {
             if (!changeItem.lead || !changeItem.rowId) return;
             const lead = changeItem.lead;
-            const rowIndex = newRows.findIndex(r => r.id === changeItem.rowId);
+            const rowIndex = newRows.findIndex((r) => r.id === changeItem.rowId);
             if (rowIndex === -1) return;
-            
+
             const rowToUpdate = { ...newRows[rowIndex], cells: { ...newRows[rowIndex].cells } };
-            
-            currentDraft.columns.forEach(col => {
+
+            currentDraft.columns.forEach((col) => {
               const colKey = (col.leadFieldKey || col.id || col.label).toLowerCase();
-              if (colKey.includes('total amount') || colKey === 'totalamount') {
-                rowToUpdate.cells[col.id] = lead.totalAmount ?? rowToUpdate.cells[col.id];
-              } else if (colKey.includes('advance amount') || colKey === 'advanceamount' || colKey === 'approved advance amount') {
-                rowToUpdate.cells[col.id] = lead.advanceAmount ?? rowToUpdate.cells[col.id];
-              } else if (colKey.includes('balance amount') || colKey === 'balanceamount') {
-                const total = lead.totalAmount || 0;
-                const adv = lead.advanceAmount || 0;
-                rowToUpdate.cells[col.id] = Math.max(0, total - adv);
-              } else if (colKey.includes('expected revenue') || colKey === 'expectedrevenue') {
-                rowToUpdate.cells[col.id] = lead.expectedRevenue ?? rowToUpdate.cells[col.id];
-              } else if (colKey.includes('revenue contribution') || colKey === 'revenuecontribution') {
-                rowToUpdate.cells[col.id] = lead.revenueContribution ?? rowToUpdate.cells[col.id];
-              } else if (col.leadFieldKey === 'products' || colKey.includes('product')) {
-                if (Array.isArray(lead.products)) {
-                  rowToUpdate.cells[col.id] = lead.products.map((p: any) => `${p.productName || 'Product'} ×${p.quantity || 1}`).join(', ');
+
+              // Total Amount
+              if (col.leadFieldKey === 'totalAmount' || colKey.includes('total amount') || colKey === 'totalamount') {
+                if (lead.totalAmount !== undefined && lead.totalAmount !== null) {
+                  rowToUpdate.cells[col.id] = lead.totalAmount;
                 }
-              } else if (col.leadFieldKey === 'stageId' || colKey.includes('stage')) {
+              }
+              // Approved Advance Amount
+              else if (
+                col.leadFieldKey === 'advanceAmount' ||
+                col.leadFieldKey === 'approvedAdvanceAmount' ||
+                colKey.includes('advance amount') ||
+                colKey.includes('approved advance') ||
+                colKey === 'advanceamount' ||
+                colKey === 'approvedadvanceamount'
+              ) {
+                if (lead.advanceAmount !== undefined && lead.advanceAmount !== null) {
+                  rowToUpdate.cells[col.id] = lead.advanceAmount;
+                }
+              }
+              // Balance Amount
+              else if (col.leadFieldKey === 'balanceAmount' || colKey.includes('balance amount') || colKey === 'balanceamount') {
+                if (lead.balanceAmount !== undefined && lead.balanceAmount !== null) {
+                  rowToUpdate.cells[col.id] = lead.balanceAmount;
+                } else if (lead.totalAmount !== undefined) {
+                  const tot = Number(lead.totalAmount || 0);
+                  const adv = Number(lead.advanceAmount || 0);
+                  rowToUpdate.cells[col.id] = Math.max(0, tot - adv);
+                }
+              }
+              // Expected Revenue
+              else if (col.leadFieldKey === 'expectedRevenue' || colKey.includes('expected revenue') || colKey === 'expectedrevenue') {
+                if (lead.expectedRevenue !== undefined && lead.expectedRevenue !== null) {
+                  rowToUpdate.cells[col.id] = lead.expectedRevenue;
+                } else if (lead.totalAmount !== undefined) {
+                  rowToUpdate.cells[col.id] = lead.totalAmount;
+                }
+              }
+              // Products
+              else if (col.leadFieldKey === 'products' || colKey.includes('product')) {
+                if (Array.isArray(lead.products)) {
+                  rowToUpdate.cells[col.id] = lead.products
+                    .map((p: any) => `${p.productName || p.name || 'Product'} ×${p.quantity || 1}`)
+                    .join(', ');
+                } else if (typeof lead.products === 'string') {
+                  rowToUpdate.cells[col.id] = lead.products;
+                }
+              }
+              // Stage
+              else if (col.leadFieldKey === 'stageId' || colKey.includes('stage')) {
                 if (lead.stage?.name) {
                   rowToUpdate.cells[col.id] = lead.stage.name;
+                } else if (lead.stageName) {
+                  rowToUpdate.cells[col.id] = lead.stageName;
                 }
-              } else if (colKey.includes('remarks') || colKey === 'lastremark') {
-                rowToUpdate.cells[col.id] = lead.lastRemark || lead.remarks || rowToUpdate.cells[col.id];
-              } else if (col.leadFieldKey === 'nextFollowUpAt' || colKey.includes('followup date') || colKey.includes('follow up date') || colKey.includes('next follow up')) {
+              }
+              // Source
+              else if (col.leadFieldKey === 'sourceId' || colKey.includes('source')) {
+                if (lead.source?.name) {
+                  rowToUpdate.cells[col.id] = lead.source.name;
+                } else if (lead.sourceName) {
+                  rowToUpdate.cells[col.id] = lead.sourceName;
+                }
+              }
+              // Lifecycle
+              else if (col.leadFieldKey === 'lifecycleId' || colKey.includes('lifecycle')) {
+                if (lead.lifecycle?.name) {
+                  rowToUpdate.cells[col.id] = lead.lifecycle.name;
+                } else if (lead.lifecycleName) {
+                  rowToUpdate.cells[col.id] = lead.lifecycleName;
+                }
+              }
+              // Assigned User
+              else if (col.leadFieldKey === 'assignedToId' || colKey.includes('assigned') || colKey.includes('user')) {
+                if (lead.assignedTo?.displayName) {
+                  rowToUpdate.cells[col.id] = lead.assignedTo.displayName;
+                } else if (lead.assignedTo?.name) {
+                  rowToUpdate.cells[col.id] = lead.assignedTo.name;
+                } else if (lead.assignedUser) {
+                  rowToUpdate.cells[col.id] = lead.assignedUser;
+                }
+              }
+              // Remarks
+              else if (col.leadFieldKey === 'remarks' || colKey.includes('remark')) {
+                if (lead.remarks !== undefined || lead.lastRemark !== undefined) {
+                  rowToUpdate.cells[col.id] = lead.remarks ?? lead.lastRemark ?? '';
+                }
+              }
+              // Follow-up Date
+              else if (
+                col.leadFieldKey === 'nextFollowUpAt' ||
+                col.leadFieldKey === 'nextFollowupDate' ||
+                colKey.includes('followup date') ||
+                colKey.includes('follow-up date') ||
+                colKey.includes('next follow up')
+              ) {
                 if (lead.nextFollowUpAt) {
-                  rowToUpdate.cells[col.id] = lead.nextFollowUpAt.split('T')[0];
+                  rowToUpdate.cells[col.id] = String(lead.nextFollowUpAt).split('T')[0];
+                }
+              }
+              // Name
+              else if (col.leadFieldKey === 'name' || colKey.includes('name')) {
+                if (lead.name) {
+                  rowToUpdate.cells[col.id] = lead.name;
+                }
+              }
+              // Email
+              else if (col.leadFieldKey === 'email' || colKey.includes('email')) {
+                if (lead.email !== undefined) {
+                  rowToUpdate.cells[col.id] = lead.email ?? '';
+                }
+              }
+              // Phone
+              else if (col.leadFieldKey === 'phone' || colKey.includes('phone') || colKey.includes('mobile')) {
+                if (lead.phone !== undefined) {
+                  rowToUpdate.cells[col.id] = lead.phone ?? '';
                 }
               }
             });
+
             newRows[rowIndex] = rowToUpdate;
           };
           
