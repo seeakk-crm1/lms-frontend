@@ -17,6 +17,7 @@ import DashboardLayout from '../../components/dashboard/DashboardLayout';
 import { getLeadStages } from '../../services/leadStage.api';
 import { getActiveLeadSources } from '../../services/leadSource.api';
 import { getUsers } from '../../services/users.api';
+import { getLeadById } from '../../services/leads.api';
 import {
   createSheet,
   deleteSheet,
@@ -446,6 +447,51 @@ const SheetsPage: React.FC = () => {
       });
     },
     [draft, editable, remember],
+  );
+
+  const updateSheetRowWithLead = useCallback(
+    (rowId: string, lead: any, formattedProductsText?: string) => {
+      if (!draft || !lead) return;
+
+      const formattedProducts =
+        formattedProductsText ||
+        (Array.isArray(lead.products)
+          ? lead.products.map((p: any) => `${p.productName || p.name || 'Product'} ×${p.quantity || 1}`).join(', ')
+          : '');
+
+      const newCellsPatch: Record<string, any> = {};
+
+      columns.forEach((col) => {
+        const colKey = (col.leadFieldKey || col.id || col.label).toLowerCase();
+
+        if (col.leadFieldKey === 'products' || colKey.includes('product')) {
+          newCellsPatch[col.id] = formattedProducts;
+        } else if (col.leadFieldKey === 'totalAmount' || colKey.includes('total amount')) {
+          newCellsPatch[col.id] = lead.totalAmount ?? 0;
+        } else if (col.leadFieldKey === 'balanceAmount' || colKey.includes('balance amount')) {
+          newCellsPatch[col.id] = lead.balanceAmount ?? 0;
+        } else if (
+          col.leadFieldKey === 'advanceAmount' ||
+          col.leadFieldKey === 'approvedAdvanceAmount' ||
+          colKey.includes('advance amount') ||
+          colKey.includes('approved advance') ||
+          colKey.includes('advanceamount') ||
+          colKey.includes('approvedadvanceamount')
+        ) {
+          newCellsPatch[col.id] = lead.advanceAmount ?? 0;
+        } else if (col.leadFieldKey === 'expectedRevenue' || colKey.includes('expected revenue')) {
+          newCellsPatch[col.id] = lead.expectedRevenue ?? lead.totalAmount ?? 0;
+        }
+      });
+
+      remember({
+        ...draft,
+        rows: draft.rows.map((row) =>
+          row.id === rowId ? { ...row, cells: { ...row.cells, ...newCellsPatch } } : row,
+        ),
+      });
+    },
+    [columns, draft, remember],
   );
 
   // Bulk formatting support across selection range
@@ -1786,26 +1832,21 @@ const SheetsPage: React.FC = () => {
           leadName={productModal.leadName}
           initialValue={productModal.initialValue}
           onClose={() => setProductModal((prev) => ({ ...prev, isOpen: false }))}
-          onSaved={(formattedProducts, newTotalAmount) => {
-            updateCell(productModal.rowId, productModal.columnId, formattedProducts);
-            const totalAmountCol = columns.find(
-              (c) => c.leadFieldKey === 'totalAmount' || (c.leadFieldKey || c.id || '').toLowerCase().includes('total amount'),
-            );
-            if (totalAmountCol) {
-              updateCell(productModal.rowId, totalAmountCol.id, newTotalAmount);
+          onSaved={async (formattedProducts, updatedLead) => {
+            let leadToUse = updatedLead;
+            if ((!leadToUse || leadToUse.totalAmount === undefined) && productModal.leadId) {
+              try {
+                const res = await getLeadById(productModal.leadId);
+                leadToUse = res?.data || res;
+              } catch (e) {
+                console.error('Failed to fetch lead after product update', e);
+              }
             }
-            const balanceAmountCol = columns.find(
-              (c) => c.leadFieldKey === 'balanceAmount' || (c.leadFieldKey || c.id || '').toLowerCase().includes('balance amount'),
-            );
-            if (balanceAmountCol) {
-              const advCol = columns.find(
-                (c) => c.leadFieldKey === 'advanceAmount' || (c.leadFieldKey || c.id || '').toLowerCase().includes('advance amount'),
-              );
-              const currentRow = draft?.rows.find((r) => r.id === productModal.rowId);
-              const advVal = advCol ? Number(currentRow?.cells?.[advCol.id] || 0) : 0;
-              const newBalance = Math.max(0, newTotalAmount - advVal);
-              updateCell(productModal.rowId, balanceAmountCol.id, newBalance);
+            if (productModal.rowId && leadToUse) {
+              updateSheetRowWithLead(productModal.rowId, leadToUse, formattedProducts);
             }
+            void queryClient.invalidateQueries({ queryKey: ['leads'] });
+            void queryClient.invalidateQueries({ queryKey: ['sheet', draft?.id] });
           }}
         />
 

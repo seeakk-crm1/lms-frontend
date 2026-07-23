@@ -12,7 +12,7 @@ interface SheetProductModalProps {
   leadName?: string;
   initialValue?: string | null;
   onClose: () => void;
-  onSaved: (formattedText: string, totalAmount: number) => void;
+  onSaved: (formattedText: string, updatedLead: any) => void;
 }
 
 interface SelectedItem {
@@ -142,9 +142,7 @@ const SheetProductModal: React.FC<SheetProductModalProps> = ({
         .join(', ');
 
       const nextLead = response?.approvalRequired ? response?.data?.lead : response?.data;
-      const calcTotal = nextLead?.totalAmount !== undefined ? Number(nextLead.totalAmount) : liveTotal;
-
-      onSaved(formatted, calcTotal);
+      onSaved(formatted, nextLead);
       toast.success('Products updated successfully');
       onClose();
     },
