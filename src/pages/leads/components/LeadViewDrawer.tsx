@@ -362,7 +362,14 @@ const LeadViewDrawer: React.FC<LeadViewDrawerProps> = ({
                             {resolvedLead.assignedTo && (
                               <div className="h-8 w-8 shrink-0 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-500 overflow-hidden">
                                 {resolvedLead.assignedTo.profileImageUrl ? (
-                                  <img src={getImageUrl(resolvedLead.assignedTo.profileImageUrl)} alt="Assigned" className="w-full h-full object-cover" />
+                                  <img
+                                    src={getImageUrl(resolvedLead.assignedTo.profileImageUrl)}
+                                    alt="Assigned"
+                                    className="w-full h-full object-cover"
+                                    onError={(e) => {
+                                      (e.currentTarget as HTMLElement).style.display = 'none';
+                                    }}
+                                  />
                                 ) : (
                                   (resolvedLead.assignedTo.displayName || resolvedLead.assignedTo.email || 'U').charAt(0).toUpperCase()
                                 )}

@@ -1095,6 +1095,20 @@ const SheetsPage: React.FC = () => {
     [assignedUsers],
   );
 
+  const hasUnsyncedChanges = useMemo(() => {
+    if (!draft) return false;
+    const originalRows = draft.originalSnapshot?.rows || [];
+    const originalByRow = new Map(originalRows.map((row) => [row.id, row]));
+    return draft.rows.some((row) => {
+      const original = originalByRow.get(row.id);
+      return draft.columns.some((column) => {
+        const oldValue = original?.cells?.[column.id];
+        const newValue = row.cells?.[column.id];
+        return String(oldValue ?? '') !== String(newValue ?? '');
+      });
+    });
+  }, [draft]);
+
   if (!canView) {
     return (
       <DashboardLayout>
@@ -1143,7 +1157,13 @@ const SheetsPage: React.FC = () => {
           hasFilterActive={Boolean(filterText.trim())}
           onToggleFreezeHeader={() => setIsHeaderFrozen(!isHeaderFrozen)}
           isHeaderFrozen={isHeaderFrozen}
-          onSyncLeads={() => syncMutation.mutate(undefined)}
+          onSyncLeads={() => {
+            if (!hasUnsyncedChanges) {
+              toast('No changes to sync.', { icon: 'ℹ️' });
+              return;
+            }
+            syncMutation.mutate(undefined);
+          }}
           isSyncingLeads={syncMutation.isPending}
           onOpenImport={() => fileInputRef.current?.click()}
           onExport={(format) => draft && exportSheet(draft.id, format)}
