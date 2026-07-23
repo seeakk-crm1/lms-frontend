@@ -1,16 +1,19 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  ChevronDown, 
-  ChevronRight, 
+import {
+  ChevronDown,
+  ChevronRight,
   Check,
   Search,
-  Filter,
+  Minus,
+  Maximize2,
+  Minimize2,
   CheckSquare,
-  Square
+  Square,
+  Info,
 } from 'lucide-react';
-import { Permission } from '../../../types/role.types';
 import useRoleStore from '../../../store/useRoleStore';
+import { buildRbacTree, ModuleNode, SubmoduleNode, ActionItem } from './rbacTreeBuilder';
 
 interface PermissionTreeProps {
   selectedPermissions: string[];
@@ -18,184 +21,440 @@ interface PermissionTreeProps {
 }
 
 const PermissionTree: React.FC<PermissionTreeProps> = ({ selectedPermissions, onChange }) => {
-  const { permissions, togglePermissionGroup, permissionUIState } = useRoleStore();
+  const { permissions } = useRoleStore();
   const [searchTerm, setSearchTerm] = useState('');
+  const [expandedModules, setExpandedModules] = useState<Record<string, boolean>>({});
+  const [expandedSubmodules, setExpandedSubmodules] = useState<Record<string, boolean>>({});
 
-  // Group permissions
-  const groupedPermissions = useMemo(() => {
-    const groups: Record<string, Permission[]> = {};
-    permissions.forEach((p) => {
-      if (!groups[p.group]) groups[p.group] = [];
-      groups[p.group].push(p);
-    });
-    return groups;
-  }, [permissions]);
+  // Build 3-level tree: Module -> Submodule -> Action
+  const { modules, diagnostics } = useMemo(() => buildRbacTree(permissions), [permissions]);
 
-  // Filter groups based on search
-  const filteredGroups = useMemo(() => {
-    if (!searchTerm) return groupedPermissions;
-    const filtered: Record<string, Permission[]> = {};
-    Object.entries(groupedPermissions).forEach(([group, perms]) => {
-      const matched = perms.filter(
-        (p) => 
-          p.key.toLowerCase().includes(searchTerm.toLowerCase()) || 
-          p.description?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-      if (matched.length > 0 || group.toLowerCase().includes(searchTerm.toLowerCase())) {
-        filtered[group] = matched.length > 0 ? matched : perms;
-      }
-    });
-    return filtered;
-  }, [groupedPermissions, searchTerm]);
-
-  const handleToggleGroup = (group: string, isChecked: boolean) => {
-    const groupPermKeys = groupedPermissions[group].map(p => p.key);
-    let newSelection = [...selectedPermissions];
-    
-    if (isChecked) {
-      // Add all from group if not already present
-      groupPermKeys.forEach(key => {
-        if (!newSelection.includes(key)) newSelection.push(key);
+  // Diagnostic logging requirement
+  useEffect(() => {
+    if (permissions && permissions.length > 0) {
+      console.info('[RBAC Permission Tree Diagnostics]', {
+        'Modules Loaded': diagnostics.modulesLoaded,
+        'Submodules Loaded': diagnostics.submodulesLoaded,
+        'Permissions Loaded': diagnostics.permissionsLoaded,
+        'Missing Permissions': diagnostics.missingPermissions,
+        'Duplicate Permissions': diagnostics.duplicatePermissions,
+        'Permission Mapping Completed': diagnostics.permissionMappingCompleted,
       });
-    } else {
-      // Remove all from group
-      newSelection = newSelection.filter(key => !groupPermKeys.includes(key));
     }
-    onChange(newSelection);
-  };
+  }, [diagnostics, permissions]);
 
-  const handleTogglePermission = (key: string) => {
-    let newSelection = [...selectedPermissions];
-    if (newSelection.includes(key)) {
-      newSelection = newSelection.filter(k => k !== key);
-    } else {
-      newSelection.push(key);
-      // Dependency Logic: If editing/deleting, must have View
-      if (key.endsWith('_EDIT') || key.endsWith('_DELETE') || key.endsWith('_CREATE')) {
-          const base = key.split('_').slice(0, -1).join('_');
-          const viewKey = `${base}_VIEW`;
-          const viewAllKey = `${base}_VIEW_ALL`;
-          // Find if a view permission exists in the set
-          if (permissions.some(p => p.key === viewKey) && !newSelection.includes(viewKey)) {
-              newSelection.push(viewKey);
-          } else if (permissions.some(p => p.key === viewAllKey) && !newSelection.includes(viewAllKey)) {
-            newSelection.push(viewAllKey);
-          }
-      }
+  // Initialize expanded state for modules & submodules
+  useEffect(() => {
+    if (modules.length > 0 && Object.keys(expandedModules).length === 0) {
+      const initModState: Record<string, boolean> = {};
+      const initSubState: Record<string, boolean> = {};
+      modules.forEach((mod) => {
+        initModState[mod.id] = true; // Default expand all modules
+        mod.submodules.forEach((sub) => {
+          initSubState[sub.id] = true; // Default expand all submodules
+        });
+      });
+      setExpandedModules(initModState);
+      setExpandedSubmodules(initSubState);
     }
-    onChange(newSelection);
-  };
+  }, [modules]);
 
-  const getGroupStats = (group: string) => {
-    const groupPerms = groupedPermissions[group] || [];
-    const selectedInGroup = groupPerms.filter(p => selectedPermissions.includes(p.key)).length;
+  // Filter modules/submodules/actions based on search term
+  const filteredModules = useMemo(() => {
+    if (!searchTerm.trim()) return modules;
+    const term = searchTerm.trim().toLowerCase();
+
+    return modules
+      .map((mod) => {
+        const modMatches = mod.name.toLowerCase().includes(term);
+        const matchingSubmodules = mod.submodules
+          .map((sub) => {
+            const subMatches = sub.name.toLowerCase().includes(term);
+            const matchingActions = sub.actions.filter(
+              (act) =>
+                act.key.toLowerCase().includes(term) ||
+                act.actionName.toLowerCase().includes(term) ||
+                act.description.toLowerCase().includes(term),
+            );
+
+            if (modMatches || subMatches || matchingActions.length > 0) {
+              return {
+                ...sub,
+                actions: subMatches || modMatches ? sub.actions : matchingActions,
+              };
+            }
+            return null;
+          })
+          .filter((s): s is SubmoduleNode => s !== null);
+
+        if (modMatches || matchingSubmodules.length > 0) {
+          return {
+            ...mod,
+            submodules: modMatches ? mod.submodules : matchingSubmodules,
+          };
+        }
+        return null;
+      })
+      .filter((m): m is ModuleNode => m !== null);
+  }, [modules, searchTerm]);
+
+  // Helper stats for module
+  const getModuleStats = (mod: ModuleNode) => {
+    let total = 0;
+    let selected = 0;
+    mod.submodules.forEach((sub) => {
+      sub.actions.forEach((act) => {
+        total++;
+        if (selectedPermissions.includes(act.key)) selected++;
+      });
+    });
     return {
-      total: groupPerms.length,
-      selected: selectedInGroup,
-      isAll: selectedInGroup === groupPerms.length && groupPerms.length > 0,
-      isSome: selectedInGroup > 0 && selectedInGroup < groupPerms.length
+      total,
+      selected,
+      isAll: selected === total && total > 0,
+      isSome: selected > 0 && selected < total,
     };
   };
 
+  // Helper stats for submodule
+  const getSubmoduleStats = (sub: SubmoduleNode) => {
+    const total = sub.actions.length;
+    const selected = sub.actions.filter((act) => selectedPermissions.includes(act.key)).length;
+    return {
+      total,
+      selected,
+      isAll: selected === total && total > 0,
+      isSome: selected > 0 && selected < total,
+    };
+  };
+
+  // Toggle single action permission key with view dependency check
+  const handleToggleAction = (actionKey: string, submoduleActions: ActionItem[]) => {
+    let newSelection = [...selectedPermissions];
+    if (newSelection.includes(actionKey)) {
+      newSelection = newSelection.filter((k) => k !== actionKey);
+    } else {
+      newSelection.push(actionKey);
+      // Auto-select VIEW permission if user checks EDIT/CREATE/DELETE/EXPORT/etc.
+      if (
+        actionKey.endsWith('_EDIT') ||
+        actionKey.endsWith('_CREATE') ||
+        actionKey.endsWith('_DELETE') ||
+        actionKey.endsWith('_EXPORT') ||
+        actionKey.endsWith('_APPROVE') ||
+        actionKey.endsWith('_ASSIGN')
+      ) {
+        const viewAction = submoduleActions.find(
+          (a) =>
+            a.key.endsWith('_VIEW') ||
+            a.key.endsWith('_VIEW_ALL') ||
+            a.key.toLowerCase().includes('view'),
+        );
+        if (viewAction && !newSelection.includes(viewAction.key)) {
+          newSelection.push(viewAction.key);
+        }
+      }
+    }
+    onChange(newSelection);
+  };
+
+  // Toggle Submodule (Select All / Deselect All within submodule)
+  const handleToggleSubmodule = (sub: SubmoduleNode, checkAll: boolean) => {
+    const subKeys = sub.actions.map((a) => a.key);
+    let newSelection = [...selectedPermissions];
+    if (checkAll) {
+      subKeys.forEach((key) => {
+        if (!newSelection.includes(key)) newSelection.push(key);
+      });
+    } else {
+      newSelection = newSelection.filter((key) => !subKeys.includes(key));
+    }
+    onChange(newSelection);
+  };
+
+  // Toggle Module (Select All / Deselect All within entire module)
+  const handleToggleModule = (mod: ModuleNode, checkAll: boolean) => {
+    const modKeys: string[] = [];
+    mod.submodules.forEach((sub) => sub.actions.forEach((a) => modKeys.push(a.key)));
+    let newSelection = [...selectedPermissions];
+
+    if (checkAll) {
+      modKeys.forEach((key) => {
+        if (!newSelection.includes(key)) newSelection.push(key);
+      });
+    } else {
+      newSelection = newSelection.filter((key) => !modKeys.includes(key));
+    }
+    onChange(newSelection);
+  };
+
+  const handleExpandAll = () => {
+    const nextMod: Record<string, boolean> = {};
+    const nextSub: Record<string, boolean> = {};
+    modules.forEach((m) => {
+      nextMod[m.id] = true;
+      m.submodules.forEach((s) => (nextSub[s.id] = true));
+    });
+    setExpandedModules(nextMod);
+    setExpandedSubmodules(nextSub);
+  };
+
+  const handleCollapseAll = () => {
+    setExpandedModules({});
+    setExpandedSubmodules({});
+  };
+
   return (
-    <div className="flex flex-col h-full">
-      {/* Search Header */}
-      <div className="flex items-center gap-4 mb-4">
-        <div className="relative flex-1 group">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-emerald-500 transition-colors" />
+    <div className="flex flex-col h-full space-y-3">
+      {/* Top Search & Actions Control Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-50 dark:bg-slate-900/60 p-3 rounded-xl border border-slate-200 dark:border-slate-800">
+        <div className="relative flex-1 min-w-[200px]">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input
             type="text"
-            placeholder="Search permissions..."
+            placeholder="Search module, submodule, or action permissions..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-100 rounded-xl focus:bg-white focus:border-emerald-500/30 focus:ring-4 focus:ring-emerald-500/5 outline-none transition-all text-sm"
+            className="w-full pl-9 pr-4 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs outline-hidden focus:ring-2 focus:ring-emerald-500/30 transition-all"
           />
         </div>
-        <div className="flex items-center gap-2">
-            <button 
-                onClick={() => onChange(permissions.map(p => p.key))}
-                className="px-3 py-1.5 bg-gray-50 hover:bg-emerald-50 text-gray-600 hover:text-emerald-600 rounded-lg text-xs font-bold transition-all border border-gray-100"
-            >
-                Select All
-            </button>
-            <button 
-                onClick={() => onChange([])}
-                className="px-3 py-1.5 bg-gray-50 hover:bg-red-50 text-gray-600 hover:text-red-500 rounded-lg text-xs font-bold transition-all border border-gray-100"
-            >
-                Clear
-            </button>
+
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={handleExpandAll}
+            className="px-2.5 py-1 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5"
+            title="Expand all modules & submodules"
+          >
+            <Maximize2 className="w-3.5 h-3.5 text-slate-400" />
+            Expand All
+          </button>
+          <button
+            type="button"
+            onClick={handleCollapseAll}
+            className="px-2.5 py-1 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5"
+            title="Collapse all modules & submodules"
+          >
+            <Minimize2 className="w-3.5 h-3.5 text-slate-400" />
+            Collapse All
+          </button>
+          <button
+            type="button"
+            onClick={() => onChange(permissions.map((p) => p.key))}
+            className="px-2.5 py-1 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-xs font-semibold transition-colors shadow-xs"
+          >
+            Select All
+          </button>
+          <button
+            type="button"
+            onClick={() => onChange([])}
+            className="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/50 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900/50 rounded-lg text-xs font-semibold transition-colors"
+          >
+            Clear All
+          </button>
         </div>
       </div>
 
-      {/* Permission Tree */}
-      <div className="flex-1 overflow-y-auto pr-2 space-y-2 max-h-[500px]">
-        {Object.entries(filteredGroups).map(([group, perms]) => {
-          const stats = getGroupStats(group);
-          const isExpanded = permissionUIState[group] ?? true;
+      {/* 3-Level Permission Tree */}
+      <div className="flex-1 overflow-y-auto pr-1 space-y-3 max-h-[520px] scrollbar-thin">
+        {filteredModules.length === 0 ? (
+          <div className="p-8 text-center text-xs font-medium text-slate-400 bg-slate-50 dark:bg-slate-900/40 rounded-xl border border-dashed border-slate-200 dark:border-slate-800">
+            No permissions matching "{searchTerm}".
+          </div>
+        ) : (
+          filteredModules.map((mod) => {
+            const modStats = getModuleStats(mod);
+            const isModExpanded = expandedModules[mod.id] ?? true;
 
-          return (
-            <div key={group} className="border border-gray-100 rounded-xl overflow-hidden bg-white shadow-sm">
-              <div 
-                className={`p-3 flex items-center justify-between cursor-pointer transition-colors ${stats.selected > 0 ? 'bg-emerald-50/30' : 'bg-gray-50/50 hover:bg-gray-50'}`}
-                onClick={() => togglePermissionGroup(group)}
+            return (
+              <div
+                key={mod.id}
+                className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-white dark:bg-slate-900 shadow-xs"
               >
-                <div className="flex items-center gap-3">
-                  <div 
-                    onClick={(e) => {
+                {/* Level 1: Module Header */}
+                <div
+                  className={`px-3.5 py-2.5 flex items-center justify-between cursor-pointer transition-colors border-b ${
+                    modStats.selected > 0
+                      ? 'bg-emerald-50/60 dark:bg-emerald-950/20 border-emerald-100 dark:border-emerald-900/30'
+                      : 'bg-slate-50/80 dark:bg-slate-800/50 border-slate-100 dark:border-slate-800 hover:bg-slate-100/60'
+                  }`}
+                  onClick={() =>
+                    setExpandedModules((prev) => ({ ...prev, [mod.id]: !isModExpanded }))
+                  }
+                >
+                  <div className="flex items-center gap-3">
+                    <div
+                      onClick={(e) => {
                         e.stopPropagation();
-                        handleToggleGroup(group, !stats.isAll);
-                    }}
-                    className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${stats.isAll ? 'bg-emerald-500 border-emerald-500' : stats.isSome ? 'bg-emerald-500/50 border-emerald-500/50' : 'bg-white border-gray-300 hover:border-emerald-500'}`}
-                  >
-                    {stats.isAll && <Check className="w-3.5 h-3.5 text-white" strokeWidth={3} />}
-                    {stats.isSome && !stats.isAll && <div className="w-2 h-0.5 bg-white rounded-full" />}
+                        handleToggleModule(mod, !modStats.isAll);
+                      }}
+                      className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${
+                        modStats.isAll
+                          ? 'bg-emerald-500 border-emerald-500 text-white'
+                          : modStats.isSome
+                            ? 'bg-emerald-500/30 border-emerald-500 text-emerald-600 dark:text-emerald-400'
+                            : 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 hover:border-emerald-500'
+                      }`}
+                    >
+                      {modStats.isAll && <Check className="w-3 h-3" strokeWidth={3} />}
+                      {modStats.isSome && !modStats.isAll && <Minus className="w-3 h-3" strokeWidth={3} />}
+                    </div>
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-100 tracking-wide">
+                      {mod.name}
+                    </span>
+                    <span
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                        modStats.selected > 0
+                          ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300'
+                          : 'bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
+                      }`}
+                    >
+                      {modStats.selected} / {modStats.total}
+                    </span>
                   </div>
-                  <span className="text-xs font-bold text-gray-700 uppercase tracking-wider">{group.replace('_', ' ')}</span>
-                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${stats.selected > 0 ? 'bg-emerald-100 text-emerald-600' : 'bg-gray-200 text-gray-500'}`}>
-                    {stats.selected} / {stats.total}
-                  </span>
-                </div>
-                {isExpanded ? <ChevronDown className="w-4 h-4 text-gray-400" /> : <ChevronRight className="w-4 h-4 text-gray-400" />}
-              </div>
 
-              <AnimatePresence>
-                {isExpanded && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 'auto', opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    className="overflow-hidden border-t border-gray-50"
-                  >
-                    <div className="p-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {perms.map((p) => {
-                        const isChecked = selectedPermissions.includes(p.key);
+                  <div className="flex items-center gap-2">
+                    {isModExpanded ? (
+                      <ChevronDown className="w-4 h-4 text-slate-400" />
+                    ) : (
+                      <ChevronRight className="w-4 h-4 text-slate-400" />
+                    )}
+                  </div>
+                </div>
+
+                {/* Level 2: Submodules Accordion Container */}
+                <AnimatePresence initial={false}>
+                  {isModExpanded && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="p-3 space-y-2.5 bg-slate-50/30 dark:bg-slate-950/30"
+                    >
+                      {mod.submodules.map((sub) => {
+                        const subStats = getSubmoduleStats(sub);
+                        const isSubExpanded = expandedSubmodules[sub.id] ?? true;
+
                         return (
-                          <div 
-                            key={p.key}
-                            onClick={() => handleTogglePermission(p.key)}
-                            className={`p-2 rounded-lg border flex items-start gap-3 cursor-pointer transition-all ${isChecked ? 'bg-emerald-50/50 border-emerald-100 ring-4 ring-emerald-500/5' : 'bg-white border-gray-50 hover:border-gray-100'}`}
+                          <div
+                            key={sub.id}
+                            className="border border-slate-200/80 dark:border-slate-800/80 rounded-lg overflow-hidden bg-white dark:bg-slate-900"
                           >
-                            <div className={`mt-0.5 w-4 h-4 rounded-md border flex items-center justify-center transition-all shrink-0 ${isChecked ? 'bg-emerald-500 border-emerald-500' : 'bg-white border-gray-300'}`}>
-                              {isChecked && <Check className="w-3 h-3 text-white" strokeWidth={4} />}
-                            </div>
-                            <div className="min-w-0">
-                              <div className={`text-xs font-bold leading-none mb-1 ${isChecked ? 'text-emerald-700' : 'text-gray-700'}`}>
-                                {p.key.split('_').pop()?.replace('VIEW', 'View').replace('CREATE', 'Create').replace('EDIT', 'Edit').replace('DELETE', 'Delete').replace('ALL', 'All').replace('OWN', 'Own').replace('TEAM', 'Team') || p.key}
+                            {/* Level 2: Submodule Header */}
+                            <div
+                              className={`px-3 py-2 flex items-center justify-between cursor-pointer transition-colors ${
+                                subStats.selected > 0
+                                  ? 'bg-emerald-50/40 dark:bg-emerald-950/20'
+                                  : 'bg-slate-50/50 dark:bg-slate-800/30 hover:bg-slate-100/50'
+                              }`}
+                              onClick={() =>
+                                setExpandedSubmodules((prev) => ({
+                                  ...prev,
+                                  [sub.id]: !isSubExpanded,
+                                }))
+                              }
+                            >
+                              <div className="flex items-center gap-2.5">
+                                <div
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleToggleSubmodule(sub, !subStats.isAll);
+                                  }}
+                                  className={`w-3.5 h-3.5 rounded border flex items-center justify-center transition-all ${
+                                    subStats.isAll
+                                      ? 'bg-emerald-500 border-emerald-500 text-white'
+                                      : subStats.isSome
+                                        ? 'bg-emerald-500/30 border-emerald-500 text-emerald-600 dark:text-emerald-400'
+                                        : 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 hover:border-emerald-500'
+                                  }`}
+                                >
+                                  {subStats.isAll && <Check className="w-2.5 h-2.5" strokeWidth={3} />}
+                                  {subStats.isSome && !subStats.isAll && (
+                                    <Minus className="w-2.5 h-2.5" strokeWidth={3} />
+                                  )}
+                                </div>
+                                <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-200">
+                                  {sub.name}
+                                </span>
+                                <span className="text-[10px] font-medium text-slate-400">
+                                  ({subStats.selected} / {subStats.total})
+                                </span>
                               </div>
-                              <div className="text-[10px] text-gray-400 font-medium truncate" title={p.description || ''}>
-                                {p.description || p.key}
-                              </div>
+
+                              {isSubExpanded ? (
+                                <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                              ) : (
+                                <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+                              )}
                             </div>
+
+                            {/* Level 3: Action Checkboxes Grid */}
+                            <AnimatePresence initial={false}>
+                              {isSubExpanded && (
+                                <motion.div
+                                  initial={{ height: 0, opacity: 0 }}
+                                  animate={{ height: 'auto', opacity: 1 }}
+                                  exit={{ height: 0, opacity: 0 }}
+                                  className="p-2.5 border-t border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-900"
+                                >
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                                    {sub.actions.map((act) => {
+                                      const isChecked = selectedPermissions.includes(act.key);
+
+                                      return (
+                                        <div
+                                          key={act.key}
+                                          onClick={() => handleToggleAction(act.key, sub.actions)}
+                                          className={`p-2 rounded-lg border flex items-start gap-2.5 cursor-pointer transition-all ${
+                                            isChecked
+                                              ? 'bg-emerald-50/70 border-emerald-200 dark:bg-emerald-950/40 dark:border-emerald-800 ring-1 ring-emerald-500/20'
+                                              : 'bg-slate-50/30 dark:bg-slate-800/20 border-slate-100 dark:border-slate-800/60 hover:border-slate-200 dark:hover:border-slate-700'
+                                          }`}
+                                        >
+                                          <div
+                                            className={`mt-0.5 w-3.5 h-3.5 rounded border flex items-center justify-center transition-all shrink-0 ${
+                                              isChecked
+                                                ? 'bg-emerald-500 border-emerald-500 text-white'
+                                                : 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600'
+                                            }`}
+                                          >
+                                            {isChecked && <Check className="w-2.5 h-2.5" strokeWidth={4} />}
+                                          </div>
+                                          <div className="min-w-0 flex-1">
+                                            <div
+                                              className={`text-xs font-bold leading-snug ${
+                                                isChecked
+                                                  ? 'text-emerald-700 dark:text-emerald-300'
+                                                  : 'text-slate-700 dark:text-slate-200'
+                                              }`}
+                                            >
+                                              {act.actionName}
+                                            </div>
+                                            <div
+                                              className="text-[10px] text-slate-400 font-medium truncate mt-0.5"
+                                              title={act.description}
+                                            >
+                                              {act.description}
+                                            </div>
+                                          </div>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
                           </div>
                         );
                       })}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          );
-        })}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            );
+          })
+        )}
       </div>
     </div>
   );
