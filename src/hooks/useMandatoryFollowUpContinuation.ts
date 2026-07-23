@@ -15,9 +15,7 @@ export const useMandatoryFollowUpContinuationQuery = (enabled = true) =>
   useQuery({
     queryKey: MANDATORY_FOLLOWUP_QUERY_KEY,
     queryFn: async () => {
-      console.log('Background Check Started');
       const res = await getMandatoryFollowUpContinuation();
-      console.log('Response Received');
       return res;
     },
     enabled,

@@ -125,12 +125,9 @@ onAccessTokenRefreshed((accessToken) => {
 const attachCoreSocketHandlers = (s: Socket, baseUrl: string): void => {
   s.on('connect', () => {
     consecutiveSocketAuthRecoveries = 0;
-    console.log('Connected');
-    console.info('[Socket.io] Connected', { origin: baseUrl });
   });
 
   s.on('connect_error', async (err: Error & { message?: string }) => {
-    console.log('Socket Error');
     const msg = err?.message || String(err);
     const kind = classifySocketErrorMessage(msg);
     console.warn('[Socket.io] connect_error:', msg);
@@ -259,7 +256,6 @@ export const connectRealtime = (): Socket | null => {
 
   const transports = resolveSocketTransports();
   const pollingOnly = transports.length === 1 && transports[0] === 'polling';
-  console.log('Connection Started');
   socket = io(baseUrl, {
     path: SOCKET_IO_CLIENT_PATH,
     transports,

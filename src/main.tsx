@@ -12,8 +12,6 @@ const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID?.trim()
 const rootElement = document.getElementById('root');
 if (!rootElement) throw new Error('Failed to find the root element');
 
-console.log('Application Started');
-
 if (!googleClientId) {
   throw new Error('VITE_GOOGLE_CLIENT_ID is required to enable Google Sign-In');
 }

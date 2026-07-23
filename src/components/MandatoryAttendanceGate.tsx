@@ -23,10 +23,8 @@ const MandatoryAttendanceGate: React.FC<Props> = ({ children }) => {
     }
 
     try {
-      console.log('Background Check Started');
       setLoading(true);
       const res = await getTodayStatus();
-      console.log('Attendance Status Received');
       if (res.success) {
         setStatus(res.data);
       }

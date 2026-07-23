@@ -59,22 +59,9 @@ export const ENV = {
 };
 
 const logEnv = (): void => {
-  const mode = import.meta.env.PROD ? 'production' : 'development';
-  console.info(`[ENV:${mode}] VITE_APP_URL → ${ENV.APP_URL}`);
-  console.info(`[ENV:${mode}] VITE_API_URL → ${ENV.API_URL}`);
-  console.info(`[ENV:${mode}] Socket.IO origin → ${ENV.SOCKET_URL}`, {
-    sources: {
-      VITE_SOCKET_URL: getOptionalEnv('VITE_SOCKET_URL') ? '(set)' : '(unset)',
-      VITE_BACKEND_URL: getOptionalEnv('VITE_BACKEND_URL') ? '(set)' : '(unset)',
-      derivedFromApi: !getOptionalEnv('VITE_SOCKET_URL') && !getOptionalEnv('VITE_BACKEND_URL'),
-    },
-  });
+  // Console logging disabled for production environment setup
 };
 
 if (import.meta.env.DEV) {
-  logEnv();
-}
-
-if (import.meta.env.PROD) {
-  logEnv();
+  // logEnv();
 }
