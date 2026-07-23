@@ -39,6 +39,7 @@ import { hasPermission } from '../../utils/permission.util';
 
 import SheetFollowUpModal from './components/SheetFollowUpModal';
 import SheetProductModal from './components/SheetProductModal';
+import AdvancePaymentModal from '../leads/components/AdvancePaymentModal';
 
 import { SheetsCellBar } from './components/SheetsCellBar';
 import { SheetsContextMenu } from './components/SheetsContextMenu';
@@ -250,6 +251,31 @@ const SheetsPage: React.FC = () => {
     [canSync],
   );
 
+  const [advanceModal, setAdvanceModal] = useState<{
+    isOpen: boolean;
+    rowId?: string;
+    columnId?: string;
+    leadId?: string;
+    leadName?: string;
+  }>({ isOpen: false });
+
+  const handleOpenAdvanceModal = useCallback(
+    (rowId: string, columnId: string, leadId?: string, leadName?: string) => {
+      if (!leadId) {
+        toast.error('This row is not linked to a CRM lead yet.');
+        return;
+      }
+      setAdvanceModal({
+        isOpen: true,
+        rowId,
+        columnId,
+        leadId,
+        leadName,
+      });
+    },
+    [],
+  );
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const gridViewportRef = useRef<HTMLDivElement>(null);
   const autoSaveTimerRef = useRef<number | null>(null);
@@ -396,6 +422,22 @@ const SheetsPage: React.FC = () => {
   const updateCell = useCallback(
     (rowId: string, columnId: string, value: unknown) => {
       if (!draft || !editable) return;
+      const targetCol = draft.columns.find((c) => c.id === columnId);
+      if (targetCol) {
+        const colKey = (targetCol.leadFieldKey || targetCol.id || targetCol.label).toLowerCase();
+        const isAdv =
+          targetCol.leadFieldKey === 'advanceAmount' ||
+          targetCol.leadFieldKey === 'approvedAdvanceAmount' ||
+          colKey.includes('advance amount') ||
+          colKey.includes('approved advance amount') ||
+          colKey.includes('advanceamount') ||
+          colKey.includes('approvedadvanceamount') ||
+          colKey.includes('approved advance') ||
+          colKey.includes('advance payment');
+        if (isAdv) {
+          return;
+        }
+      }
       remember({
         ...draft,
         rows: draft.rows.map((row) =>
@@ -948,10 +990,33 @@ const SheetsPage: React.FC = () => {
       } else if (e.key === 'Enter') {
         e.preventDefault();
         if (editable) {
-          const row = filteredSortedRows[rowIdx];
-          const val = String(row?.cells?.[columns[colIdx].id] ?? '');
-          setEditingCell(selectedCell);
-          setEditingValue(val);
+          const targetCol = columns[colIdx];
+          const targetColKey = (targetCol.leadFieldKey || targetCol.id || targetCol.label).toLowerCase();
+          const isAdv =
+            targetCol.leadFieldKey === 'advanceAmount' ||
+            targetCol.leadFieldKey === 'approvedAdvanceAmount' ||
+            targetColKey.includes('advance amount') ||
+            targetColKey.includes('approved advance amount') ||
+            targetColKey.includes('advanceamount') ||
+            targetColKey.includes('approvedadvanceamount') ||
+            targetColKey.includes('approved advance') ||
+            targetColKey.includes('advance payment');
+
+          if (isAdv) {
+            const row = filteredSortedRows[rowIdx];
+            const leadId = row?.metadata?.leadId;
+            handleOpenAdvanceModal(
+              row.id,
+              targetCol.id,
+              leadId || undefined,
+              row.metadata?.leadName || (row.cells?.name ? String(row.cells.name) : undefined),
+            );
+          } else {
+            const row = filteredSortedRows[rowIdx];
+            const val = String(row?.cells?.[columns[colIdx].id] ?? '');
+            setEditingCell(selectedCell);
+            setEditingValue(val);
+          }
         }
       } else if (e.key === 'Delete' || e.key === 'Backspace') {
         e.preventDefault();
@@ -1318,6 +1383,16 @@ const SheetsPage: React.FC = () => {
                               colKey.includes('nextfollowup') ||
                               colKey.includes('scheduled');
 
+                            const isAdvanceCol =
+                              column.leadFieldKey === 'advanceAmount' ||
+                              column.leadFieldKey === 'approvedAdvanceAmount' ||
+                              colKey.includes('advance amount') ||
+                              colKey.includes('approved advance amount') ||
+                              colKey.includes('advanceamount') ||
+                              colKey.includes('approvedadvanceamount') ||
+                              colKey.includes('approved advance') ||
+                              colKey.includes('advance payment');
+
                             const isNameCol = column.leadFieldKey === 'name' || colKey.includes('name');
                             const isPhoneCol = column.leadFieldKey === 'phone' || colKey.includes('phone') || colKey.includes('mobile');
                             const isEmailCol = column.leadFieldKey === 'email' || colKey.includes('email');
@@ -1361,6 +1436,13 @@ const SheetsPage: React.FC = () => {
                                         leadId || undefined,
                                         row.metadata?.leadName || (row.cells?.name ? String(row.cells.name) : undefined),
                                         valStr,
+                                      );
+                                    } else if (isAdvanceCol) {
+                                      handleOpenAdvanceModal(
+                                        row.id,
+                                        column.id,
+                                        leadId || undefined,
+                                        row.metadata?.leadName || (row.cells?.name ? String(row.cells.name) : undefined),
                                       );
                                     } else {
                                       setEditingCell({ rowIndex: actualRowIdx, colIndex: colIdx, rowId: row.id, columnId: column.id });
@@ -1544,6 +1626,24 @@ const SheetsPage: React.FC = () => {
                                    >
                                      {formatFollowupDisplay(valStr)}
                                    </button>
+                                 ) : isAdvanceCol ? (
+                                   <button
+                                     type="button"
+                                     onClick={(e) => {
+                                       e.stopPropagation();
+                                       handleOpenAdvanceModal(
+                                         row.id,
+                                         column.id,
+                                         leadId || undefined,
+                                         row.metadata?.leadName || (row.cells?.name ? String(row.cells.name) : undefined),
+                                       );
+                                     }}
+                                     className="w-full text-left truncate font-mono text-emerald-600 dark:text-emerald-400 font-semibold hover:underline cursor-pointer flex items-center justify-between"
+                                     title="Click to request advance payment approval"
+                                   >
+                                     <span className="truncate">{valStr || '0'}</span>
+                                     <ChevronDown className="w-3 h-3 opacity-60 ml-1 shrink-0" />
+                                   </button>
                                  ) : (
                                    <span className="truncate block max-w-full font-mono">{valStr}</span>
                                  )}
@@ -1706,6 +1806,20 @@ const SheetsPage: React.FC = () => {
               const newBalance = Math.max(0, newTotalAmount - advVal);
               updateCell(productModal.rowId, balanceAmountCol.id, newBalance);
             }
+          }}
+        />
+
+        {/* Advance Payment Modal — exact same popup as All Leads module */}
+        <AdvancePaymentModal
+          isOpen={advanceModal.isOpen}
+          leadId={advanceModal.leadId}
+          mode="edit"
+          currentUser={user}
+          onClose={() => setAdvanceModal((prev) => ({ ...prev, isOpen: false }))}
+          onSuccess={() => {
+            toast.success('Advance payment request submitted to supervisor for approval.');
+            void queryClient.invalidateQueries({ queryKey: ['leads'] });
+            void queryClient.invalidateQueries({ queryKey: ['sheet', draft?.id] });
           }}
         />
       </div>
