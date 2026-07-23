@@ -18,6 +18,7 @@ import { getLeadStages } from '../../services/leadStage.api';
 import { getActiveLeadSources } from '../../services/leadSource.api';
 import { getUsers } from '../../services/users.api';
 import { getLeadById } from '../../services/leads.api';
+import { getSocket } from '../../services/realtime';
 import {
   createSheet,
   deleteSheet,
@@ -588,6 +589,37 @@ const SheetsPage: React.FC = () => {
     },
     [columns, draft, remember],
   );
+
+  // Realtime Lead & Approval Update Listener for Automatic Row Sync
+  useEffect(() => {
+    const socket = getSocket();
+    if (!socket) return undefined;
+
+    const handleRealtimeLeadUpdate = async (data: any) => {
+      const targetLeadId = data?.leadId || data?.id;
+      if (!targetLeadId || !draft) return;
+      const targetRow = draft.rows.find((r) => r.metadata?.leadId === targetLeadId);
+      if (targetRow) {
+        try {
+          const res = await getLeadById(targetLeadId);
+          const refreshedLead = res?.data || res;
+          if (refreshedLead) {
+            updateSheetRowWithLead(targetRow.id, refreshedLead);
+          }
+        } catch (err) {
+          console.error('Failed to auto-refresh sheet row on realtime lead update:', err);
+        }
+      }
+    };
+
+    socket.on('lead_updated', handleRealtimeLeadUpdate);
+    socket.on('approval_updated', handleRealtimeLeadUpdate);
+
+    return () => {
+      socket.off('lead_updated', handleRealtimeLeadUpdate);
+      socket.off('approval_updated', handleRealtimeLeadUpdate);
+    };
+  }, [draft, updateSheetRowWithLead]);
 
   // Bulk formatting support across selection range
   const updateFormatting = useCallback(
@@ -2044,8 +2076,19 @@ const SheetsPage: React.FC = () => {
           mode="edit"
           currentUser={user}
           onClose={() => setAdvanceModal((prev) => ({ ...prev, isOpen: false }))}
-          onSuccess={() => {
+          onSuccess={async () => {
             toast.success('Advance payment request submitted to supervisor for approval.');
+            if (advanceModal.leadId && advanceModal.rowId) {
+              try {
+                const res = await getLeadById(advanceModal.leadId);
+                const refreshedLead = res?.data || res;
+                if (refreshedLead) {
+                  updateSheetRowWithLead(advanceModal.rowId, refreshedLead);
+                }
+              } catch (err) {
+                console.error('Failed to refresh lead after advance request:', err);
+              }
+            }
             void queryClient.invalidateQueries({ queryKey: ['leads'] });
             void queryClient.invalidateQueries({ queryKey: ['sheet', draft?.id] });
           }}

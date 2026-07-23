@@ -299,3 +299,5 @@ export const disconnectRealtime = (): void => {
   socket.disconnect();
   socket = null;
 };
+
+export const getSocket = (): Socket | null => socket;
