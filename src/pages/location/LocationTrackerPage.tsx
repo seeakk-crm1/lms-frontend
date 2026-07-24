@@ -40,7 +40,15 @@ const LocationTrackerPage: React.FC = () => {
 
   const { data: users = [], isLoading: loading, refetch: loadLive } = useQuery({
     queryKey: ['location-tracking', 'live'],
-    queryFn: () => getLiveLocations(),
+    queryFn: async () => {
+      console.info('[Tracking Page] Polling started');
+      const data = await getLiveLocations();
+      console.info('Live locations received:', {
+        Count: data.length,
+        Data: data,
+      });
+      return data;
+    },
     refetchInterval: 30000,
   });
 

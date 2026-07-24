@@ -7,7 +7,21 @@ import { getTodayStatus } from '../../services/attendance.api';
 import { pushLocationPoints, startLocationSession, type LocationPointPayload } from '../../services/locationTracking.api';
 import { idbGetQueue, idbSavePoints, idbClearQueue } from '../../utils/indexedDB';
 
-const FIELD_TRACKING_TERMS = ['field sales', 'sales executive', 'marketing executive', 'field staff'];
+const FIELD_TRACKING_TERMS = [
+  'field',
+  'sales',
+  'executive',
+  'bde',
+  'marketing',
+  'staff',
+  'admin',
+  'manager',
+  'superadmin',
+  'head',
+  'officer',
+  'representative',
+  'intern',
+];
 const TRACK_INTERVAL_MS = 30_000;
 const MIN_DISTANCE_METERS = 20;
 
@@ -17,8 +31,12 @@ const getRoleName = (user: any): string => {
   return [user.role?.name, user.designation, user.department?.name].filter(Boolean).join(' ');
 };
 
-const isFieldUser = (user: any): boolean =>
-  FIELD_TRACKING_TERMS.some((term) => getRoleName(user).toLowerCase().includes(term));
+const isFieldUser = (user: any): boolean => {
+  if (!user) return false;
+  const roleName = getRoleName(user).toLowerCase();
+  if (!roleName || roleName.trim().length === 0) return true;
+  return FIELD_TRACKING_TERMS.some((term) => roleName.includes(term));
+};
 
 const distanceMeters = (left: LocationPointPayload, right: LocationPointPayload): number => {
   const radians = (value: number) => (value * Math.PI) / 180;
@@ -55,16 +73,43 @@ const LocationTrackingClient = () => {
   const permissionRequestedRef = useRef(false);
 
   useEffect(() => {
-    if (!isAuthenticated || !user || !isFieldUser(user) || !('geolocation' in navigator)) return;
-
-    // Check if permission already granted or denied
-    navigator.permissions?.query({ name: 'geolocation' }).then((status) => {
-      if (status.state === 'prompt' && !permissionRequestedRef.current) {
-        setShowPermissionDialog(true);
-      } else if (status.state === 'granted') {
-        startEngine();
-      }
+    console.info('[Tracking] Client initialized check:', {
+      isAuthenticated,
+      userName: user?.name,
+      userRole: getRoleName(user),
+      isFieldUser: user ? isFieldUser(user) : false,
+      hasGeolocation: 'geolocation' in navigator,
     });
+
+    if (!isAuthenticated || !user || !isFieldUser(user) || !('geolocation' in navigator)) {
+      if (user && !isFieldUser(user)) {
+        console.warn('[Tracking] User not categorized as field candidate:', getRoleName(user));
+      }
+      return;
+    }
+
+    console.info('[Tracking] Client initialized for field candidate:', user.name);
+
+    if (navigator.permissions?.query) {
+      navigator.permissions
+        .query({ name: 'geolocation' })
+        .then((status) => {
+          console.info('[Tracking] GPS permission status:', status.state);
+          if (status.state === 'prompt' && !permissionRequestedRef.current) {
+            console.info('[Tracking] GPS permission requested');
+            setShowPermissionDialog(true);
+          } else if (status.state === 'granted') {
+            console.info('[Tracking] GPS permission granted');
+            startEngine();
+          } else if (status.state === 'denied') {
+            console.warn('[Tracking] GPS permission denied');
+            toast.error('Location tracking is blocked in your browser permissions.');
+          }
+        })
+        .catch(() => startEngine());
+    } else {
+      startEngine();
+    }
   }, [isAuthenticated, user]);
 
   const startEngine = () => {
@@ -78,6 +123,11 @@ const LocationTrackingClient = () => {
       const points = [...queued, ...(point ? [point] : [])];
       if (points.length === 0) return;
 
+      console.info('[Tracking] Sending location payload to backend...', {
+        count: points.length,
+        points,
+      });
+
       try {
         const response = await pushLocationPoints({
           sessionId: sessionIdRef.current,
@@ -86,7 +136,8 @@ const LocationTrackingClient = () => {
         });
         sessionIdRef.current = response?.data?.sessionId || sessionIdRef.current;
         await idbClearQueue();
-      } catch {
+      } catch (err: any) {
+        console.warn('[Tracking] Upload failed, queuing in IndexedDB:', err.message);
         if (point) await idbSavePoints([point]);
       }
     };
@@ -95,6 +146,15 @@ const LocationTrackingClient = () => {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const point = toPoint(position);
+          console.info('[Tracking] Position received:', {
+            Latitude: point.latitude,
+            Longitude: point.longitude,
+            Accuracy: point.accuracy,
+            Speed: point.speed,
+            Heading: point.heading,
+            Timestamp: point.recordedAt,
+          });
+
           const last = lastPointRef.current;
           
           let shouldUpload = true;
@@ -114,6 +174,7 @@ const LocationTrackingClient = () => {
         },
         (error) => {
           if (error.code === error.PERMISSION_DENIED) {
+            console.warn('[Tracking] GPS permission denied by user browser setting');
             toast.error('Location tracking is required for field attendance. Please enable GPS.');
           }
         },
@@ -128,7 +189,10 @@ const LocationTrackingClient = () => {
         const data = status?.data;
         const record = data?.record;
         const checkedIn = Boolean(record?.checkInTime && !data?.checkoutCompleted && !record?.checkOutTime);
-        if (!checkedIn) return;
+        if (!checkedIn) {
+          console.info('Tracking blocked: No active attendance.');
+          return;
+        }
         
         attendanceRecordIdRef.current = record?.id;
         const started = await startLocationSession({
@@ -140,8 +204,8 @@ const LocationTrackingClient = () => {
         await upload();
         captureAndUpload();
         intervalId = window.setInterval(captureAndUpload, TRACK_INTERVAL_MS);
-      } catch {
-        // tracking is best-effort
+      } catch (err: any) {
+        console.warn('[Tracking] Bootstrap error:', err?.message);
       }
     };
 
