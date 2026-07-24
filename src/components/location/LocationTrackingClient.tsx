@@ -74,36 +74,19 @@ const LocationTrackingClient = () => {
   const permissionRequestedRef = useRef(false);
 
   useEffect(() => {
-    console.info('[Tracking] Client initialized check:', {
-      isAuthenticated,
-      userName: user?.name,
-      userRole: getRoleName(user),
-      isFieldUser: user ? isFieldUser(user) : false,
-      hasGeolocation: 'geolocation' in navigator,
-    });
-
     if (!isAuthenticated || !user || !isFieldUser(user) || !('geolocation' in navigator)) {
-      if (user && !isFieldUser(user)) {
-        console.warn('[Tracking] User not categorized as field candidate:', getRoleName(user));
-      }
       return;
     }
-
-    console.info('[Tracking] Client initialized for field candidate:', user.name);
 
     if (navigator.permissions?.query) {
       navigator.permissions
         .query({ name: 'geolocation' })
         .then((status) => {
-          console.info('[Tracking] GPS permission status:', status.state);
           if (status.state === 'prompt' && !permissionRequestedRef.current) {
-            console.info('[Tracking] GPS permission requested');
             setShowPermissionDialog(true);
           } else if (status.state === 'granted') {
-            console.info('[Tracking] GPS permission granted');
             startEngine();
           } else if (status.state === 'denied') {
-            console.warn('[Tracking] GPS permission denied');
             toast.error('Location tracking is blocked in your browser permissions.');
           }
         })
@@ -128,13 +111,6 @@ const LocationTrackingClient = () => {
         const points = [...queued, ...(point ? [point] : [])];
         if (points.length === 0) return;
 
-        console.info('[Tracking] Sending location payload to backend...', {
-          count: points.length,
-          sessionId: sessionIdRef.current,
-          attendanceRecordId: attendanceRecordIdRef.current,
-          points,
-        });
-
         const response = await pushLocationPoints({
           sessionId: sessionIdRef.current,
           attendanceRecordId: attendanceRecordIdRef.current,
@@ -144,10 +120,7 @@ const LocationTrackingClient = () => {
         await idbClearQueue();
       } catch (err: any) {
         const statusCode = err?.response?.status;
-        console.warn('[Tracking] Upload failed:', { message: err?.message, status: statusCode });
-
         if (statusCode === 409 || statusCode === 403 || statusCode === 404 || statusCode === 400) {
-          console.warn(`[Tracking] Unrecoverable HTTP ${statusCode} error. Clearing stale queue and resetting session.`);
           await idbClearQueue();
           sessionIdRef.current = undefined;
           attendanceRecordIdRef.current = undefined;
@@ -163,15 +136,6 @@ const LocationTrackingClient = () => {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const point = toPoint(position);
-          console.info('[Tracking] Position received:', {
-            Latitude: point.latitude,
-            Longitude: point.longitude,
-            Accuracy: point.accuracy,
-            Speed: point.speed,
-            Heading: point.heading,
-            Timestamp: point.recordedAt,
-          });
-
           const last = lastPointRef.current;
 
           let shouldUpload = true;
@@ -190,7 +154,6 @@ const LocationTrackingClient = () => {
         },
         (error) => {
           if (error.code === error.PERMISSION_DENIED) {
-            console.warn('[Tracking] GPS permission denied by user browser setting');
             toast.error('Location tracking is required for field attendance. Please enable GPS.');
           }
         },
@@ -206,7 +169,6 @@ const LocationTrackingClient = () => {
         const record = data?.record;
         const checkedIn = Boolean(record?.checkInTime && !data?.checkoutCompleted && !record?.checkOutTime);
         if (!checkedIn) {
-          console.info('Tracking blocked: No active attendance.');
           return;
         }
 
@@ -217,12 +179,11 @@ const LocationTrackingClient = () => {
         });
         sessionIdRef.current = started?.data?.id || started?.data?.sessionId;
 
-        console.info('[Tracking] Bootstrap complete. Session ID:', sessionIdRef.current);
         await upload();
         captureAndUpload();
         intervalId = window.setInterval(captureAndUpload, TRACK_INTERVAL_MS);
-      } catch (err: any) {
-        console.warn('[Tracking] Bootstrap error:', err?.message);
+      } catch {
+        // tracking is best-effort
       }
     };
 

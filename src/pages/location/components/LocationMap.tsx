@@ -83,15 +83,6 @@ const LocationMap: React.FC<LocationMapProps> = ({
 }) => {
   const centerLat = latitude ?? 20.5937;
   const centerLng = longitude ?? 78.9629;
-
-  useEffect(() => {
-    if (allUsers.length > 0 || (latitude && longitude)) {
-      console.info('Rendering markers:', {
-        Count: allUsers.length,
-        'Lat/Lng': latitude && longitude ? `${latitude}, ${longitude}` : 'N/A',
-      });
-    }
-  }, [allUsers, latitude, longitude]);
   
   // Format positions for Polyline
   const polylinePositions: [number, number][] = useMemo(
