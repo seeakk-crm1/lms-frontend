@@ -68,7 +68,8 @@ const LocationTrackingClient = () => {
   const sessionIdRef = useRef<string | undefined>(undefined);
   const attendanceRecordIdRef = useRef<string | undefined>(undefined);
   const lastPointRef = useRef<LocationPointPayload | null>(null);
-  
+  const isUploadingRef = useRef(false);
+
   const [showPermissionDialog, setShowPermissionDialog] = useState(false);
   const permissionRequestedRef = useRef(false);
 
@@ -119,16 +120,21 @@ const LocationTrackingClient = () => {
     let intervalId: number | undefined;
 
     const upload = async (point?: LocationPointPayload) => {
-      const queued = await idbGetQueue();
-      const points = [...queued, ...(point ? [point] : [])];
-      if (points.length === 0) return;
-
-      console.info('[Tracking] Sending location payload to backend...', {
-        count: points.length,
-        points,
-      });
+      if (isUploadingRef.current) return;
+      isUploadingRef.current = true;
 
       try {
+        const queued = await idbGetQueue();
+        const points = [...queued, ...(point ? [point] : [])];
+        if (points.length === 0) return;
+
+        console.info('[Tracking] Sending location payload to backend...', {
+          count: points.length,
+          sessionId: sessionIdRef.current,
+          attendanceRecordId: attendanceRecordIdRef.current,
+          points,
+        });
+
         const response = await pushLocationPoints({
           sessionId: sessionIdRef.current,
           attendanceRecordId: attendanceRecordIdRef.current,
@@ -137,8 +143,19 @@ const LocationTrackingClient = () => {
         sessionIdRef.current = response?.data?.sessionId || sessionIdRef.current;
         await idbClearQueue();
       } catch (err: any) {
-        console.warn('[Tracking] Upload failed, queuing in IndexedDB:', err.message);
-        if (point) await idbSavePoints([point]);
+        const statusCode = err?.response?.status;
+        console.warn('[Tracking] Upload failed:', { message: err?.message, status: statusCode });
+
+        if (statusCode === 409 || statusCode === 403 || statusCode === 404 || statusCode === 400) {
+          console.warn(`[Tracking] Unrecoverable HTTP ${statusCode} error. Clearing stale queue and resetting session.`);
+          await idbClearQueue();
+          sessionIdRef.current = undefined;
+          attendanceRecordIdRef.current = undefined;
+        } else if (point) {
+          await idbSavePoints([point]);
+        }
+      } finally {
+        isUploadingRef.current = false;
       }
     };
 
@@ -156,12 +173,11 @@ const LocationTrackingClient = () => {
           });
 
           const last = lastPointRef.current;
-          
+
           let shouldUpload = true;
           if (last) {
             const dist = distanceMeters(last, point);
             const timeDiff = Math.abs(new Date(point.recordedAt).getTime() - new Date(last.recordedAt).getTime());
-            // Smart tracking: push if >20m moved OR >60s elapsed
             if (dist < MIN_DISTANCE_METERS && timeDiff < 60_000) {
               shouldUpload = false;
             }
@@ -193,14 +209,15 @@ const LocationTrackingClient = () => {
           console.info('Tracking blocked: No active attendance.');
           return;
         }
-        
+
         attendanceRecordIdRef.current = record?.id;
         const started = await startLocationSession({
           attendanceRecordId: record?.id,
           deviceType: /Mobi|Android|iPhone/i.test(navigator.userAgent) ? 'mobile-web' : 'web',
         });
         sessionIdRef.current = started?.data?.id || started?.data?.sessionId;
-        
+
+        console.info('[Tracking] Bootstrap complete. Session ID:', sessionIdRef.current);
         await upload();
         captureAndUpload();
         intervalId = window.setInterval(captureAndUpload, TRACK_INTERVAL_MS);
