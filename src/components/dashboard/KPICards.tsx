@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, Variants } from 'framer-motion';
 import { TrendingUp, Users, Target, CheckCircle2, IndianRupee, LucideIcon } from 'lucide-react';
 import useDashboardStore from '../../store/useDashboardStore';
@@ -28,7 +29,32 @@ const itemVariants: Variants = {
     }
 };
 
+const getKpiRoute = (title: string): string | null => {
+    const normalized = title.trim().toLowerCase();
+    if (normalized === 'closed leads') {
+        return '/leads/closed';
+    }
+    if (
+        normalized.includes('lead') ||
+        normalized.includes('revenue') ||
+        normalized === "today's leads" ||
+        normalized === 'total leads' ||
+        normalized === 'expected revenue' ||
+        normalized === 'revenue'
+    ) {
+        return '/leads';
+    }
+    if (
+        normalized.includes('user') ||
+        normalized === 'active users'
+    ) {
+        return '/admin/users';
+    }
+    return null;
+};
+
 const KPICards: React.FC = () => {
+    const navigate = useNavigate();
     const kpiData = useDashboardStore((state) => state.kpiData);
     const isLoading = useDashboardStore((state) => state.isLoading);
 
@@ -59,12 +85,34 @@ const KPICards: React.FC = () => {
         >
             {kpiData.map((kpi, idx) => {
                 const IconComponent = iconMap[kpi.iconName] || Target;
+                const route = getKpiRoute(kpi.title);
+                const isClickable = Boolean(route);
+
+                const handleClick = () => {
+                    if (route) {
+                        navigate(route);
+                    }
+                };
+
+                const handleKeyDown = (e: React.KeyboardEvent) => {
+                    if ((e.key === 'Enter' || e.key === ' ') && route) {
+                        e.preventDefault();
+                        navigate(route);
+                    }
+                };
+
                 return (
                     <motion.div
                         key={idx}
                         variants={itemVariants}
-                        whileHover={{ y: -4, boxShadow: '0 20px 40px -15px rgba(16,185,129,0.15)' }}
-                        className="bg-white rounded-2xl p-6 border border-gray-100/50 shadow-sm transition-all duration-300 relative overflow-hidden group"
+                        whileHover={isClickable ? { y: -4, boxShadow: '0 20px 40px -15px rgba(16,185,129,0.15)' } : undefined}
+                        onClick={handleClick}
+                        onKeyDown={handleKeyDown}
+                        role={isClickable ? 'button' : undefined}
+                        tabIndex={isClickable ? 0 : undefined}
+                        className={`bg-white rounded-2xl p-6 border border-gray-100/50 shadow-sm transition-all duration-300 relative overflow-hidden group outline-none ${
+                            isClickable ? 'cursor-pointer hover:border-emerald-300/80 focus-visible:ring-2 focus-visible:ring-emerald-500' : ''
+                        }`}
                     >
                         {/* Background Decorative Gradient */}
                         <div className="absolute -top-12 -right-12 w-32 h-32 bg-emerald-50 rounded-full blur-3xl group-hover:bg-emerald-100 transition-colors opacity-50 pointer-events-none"></div>

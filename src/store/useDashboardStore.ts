@@ -18,6 +18,8 @@ export interface LeadGrowthData {
 }
 
 export interface PipelineData {
+    id?: string;
+    stageId?: string;
     name: string;
     count: number;
     percent: number;

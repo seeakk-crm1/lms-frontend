@@ -9,7 +9,6 @@ import LOBAnalysisWidget from '../components/dashboard/LOBAnalysisWidget';
 import CalendarWidget from '../components/dashboard/CalendarWidget';
 import useDashboardStore from '../store/useDashboardStore';
 import useAuthStore from '../store/useAuthStore';
-import RevenueAnalytics from '../components/dashboard/RevenueAnalytics';
 import FollowUpCapacityWidget from '../components/dashboard/FollowUpCapacityWidget';
 import { hasAnyPermission, hasPermission } from '../utils/permission.util';
 import OfficeFilterSelect from '../components/OfficeFilterSelect';
@@ -116,19 +115,7 @@ const Dashboard: React.FC<DashboardProps> = ({ mode = 'operations' }) => {
         'LEADS_VIEW_TEAM',
         'SYSTEM_CONFIG',
     ]);
-    const getRoleName = (role: any): string => {
-        if (typeof role === 'object' && role !== null) {
-            return role.name || '';
-        }
-        return typeof role === 'string' ? role : '';
-    };
-    const roleName = getRoleName(user?.role).toLowerCase();
-    const isPrivileged = roleName === 'superadmin' || roleName === 'admin';
-    const canSeeRevenue = isPrivileged || hasAnyPermission(user?.permissions || [], [
-        'VIEW_TOTAL_REVENUE',
-        'VIEW_OWN_REVENUE',
-    ]);
-    const hasAnyDashboardSection = [canSeeMetrics, canSeeGrowth, canQuickAddLead, canSeeActivity, canSeeLOB, canSeeCalendar, canSeeRevenue].some(Boolean);
+    const hasAnyDashboardSection = [canSeeMetrics, canSeeGrowth, canQuickAddLead, canSeeActivity, canSeeLOB, canSeeCalendar].some(Boolean);
     const shouldFetchDashboardData = [canSeeMetrics, canSeeGrowth, canSeeActivity, canSeeLOB, canSeeCalendar].some(Boolean);
     const showOfficeFilter = canUseOfficeFilter(user);
     const showUserFilter = showOfficeFilter;
@@ -306,18 +293,6 @@ const Dashboard: React.FC<DashboardProps> = ({ mode = 'operations' }) => {
                         )}
 
                         {canSeeMetrics && <KPICards />}
-
-                        {canSeeRevenue && (
-                            <div className="pt-4 pb-2">
-                                <div className="mb-6 flex items-center justify-between">
-                                    <div>
-                                        <h2 className="text-2xl font-black text-gray-900 tracking-tight">Revenue Analytics Hub</h2>
-                                        <p className="text-xs font-semibold text-gray-400 mt-1">Real-time workspace closing values and revenue trends</p>
-                                    </div>
-                                </div>
-                                <RevenueAnalytics dashboardFilters={dashboardFilters} />
-                            </div>
-                        )}
 
                         {canSeeGrowth && (
                             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

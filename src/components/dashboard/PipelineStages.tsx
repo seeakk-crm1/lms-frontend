@@ -1,10 +1,36 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import useDashboardStore from '../../store/useDashboardStore';
+import useDashboardStore, { PipelineData } from '../../store/useDashboardStore';
+import { useLeadStore } from '../../store/leadStore';
+import useAuthStore from '../../store/useAuthStore';
+import { hasAnyPermission } from '../../utils/permission.util';
+import { toast } from 'react-hot-toast';
 
 const PipelineStages: React.FC = () => {
+    const navigate = useNavigate();
     const pipelineData = useDashboardStore((state) => state.pipelineData);
     const isLoading = useDashboardStore((state) => state.isLoading);
+    const user = useAuthStore((state) => state.user);
+
+    const canSeeLeads = hasAnyPermission(user?.permissions || [], [
+        'LEADS_VIEW_ALL',
+        'LEADS_VIEW_OWN',
+        'LEADS_VIEW_TEAM',
+    ]);
+
+    const handleStageClick = (stage: PipelineData) => {
+        if (!canSeeLeads) {
+            toast.error('You do not have permission to view leads.');
+            return;
+        }
+
+        const stageIdentifier = stage.id || stage.stageId || stage.name;
+        useLeadStore.getState().setFilters({ stage: stageIdentifier });
+        navigate(`/leads?stageId=${encodeURIComponent(stageIdentifier)}`, {
+            state: { stageId: stageIdentifier }
+        });
+    };
 
     if (isLoading) {
         return (
@@ -45,12 +71,24 @@ const PipelineStages: React.FC = () => {
                 </div>
             ) : (
             <div className="flex-1 flex flex-col gap-5 overflow-y-auto custom-scrollbar pr-1">
-                <div className="flex flex-col gap-5 my-auto">
+                <div className="flex flex-col gap-3 my-auto">
                     {pipelineData.map((stage, idx) => (
-                        <div key={idx} className="group cursor-pointer shrink-0">
+                        <div
+                            key={stage.id || stage.stageId || idx}
+                            onClick={() => handleStageClick(stage)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                    e.preventDefault();
+                                    handleStageClick(stage);
+                                }
+                            }}
+                            role="button"
+                            tabIndex={0}
+                            className="group cursor-pointer shrink-0 p-2.5 rounded-xl hover:bg-gray-50/80 transition-all outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+                        >
                             <div className="flex justify-between items-end mb-2">
                                 <span className="text-sm font-bold text-gray-700 group-hover:text-emerald-600 transition-colors uppercase tracking-wider">{stage.name}</span>
-                                <span className="text-xs font-black text-gray-900 bg-gray-50 px-2 py-1 rounded">{stage.count} Leads</span>
+                                <span className="text-xs font-black text-gray-900 bg-gray-50 group-hover:bg-emerald-50 group-hover:text-emerald-700 px-2 py-1 rounded transition-colors">{stage.count} Leads</span>
                             </div>
                             <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden shadow-inner">
                                 <motion.div

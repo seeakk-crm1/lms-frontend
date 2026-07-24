@@ -156,6 +156,16 @@ const LeadsPage: React.FC = () => {
   }, [location.pathname, location.state, navigate, openCreateDrawer]);
 
   useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const stageFromQuery = params.get('stageId') || params.get('stage');
+    const stageFromState = (location.state as { stageId?: string; stage?: string } | null)?.stageId || (location.state as { stageId?: string; stage?: string } | null)?.stage;
+    const targetStage = stageFromQuery || stageFromState;
+    if (targetStage && filters.stage !== targetStage) {
+      setFilters({ stage: targetStage });
+    }
+  }, [location.search, location.state, filters.stage, setFilters]);
+
+  useEffect(() => {
     const state = location.state as { fromQuickAdd?: boolean } | null;
     if (!state?.fromQuickAdd) return;
 
