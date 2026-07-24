@@ -2,6 +2,7 @@ import React, { useEffect, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Polyline, Popup, Circle, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { getImageUrl } from '../../../utils/getImageUrl';
 
 // Fix for default leaflet icons in React
 import icon from 'leaflet/dist/images/marker-icon.png';
@@ -165,12 +166,14 @@ const LocationMap: React.FC<LocationMapProps> = ({
         {!isReplaying && allUsers.map((u) => {
           if (!u.latitude || !u.longitude) return null;
           if (u.userId === selectedUserId) return null; // We already render the selected user
-          
+
           const statusColor = u.status === 'Moving' ? 'bg-emerald-500' : u.status === 'Offline' ? 'bg-gray-400' : 'bg-amber-500';
+          const avatarSrc = getImageUrl(u.user?.profileImageUrl || u.user?.avatarUrl || u.user?.profileImage);
+
           const icon = L.divIcon({
             className: 'custom-all-user-marker',
             html: `<div class="w-6 h-6 rounded-full border-2 border-white shadow-md bg-white overflow-hidden flex items-center justify-center">
-                     ${u.user.profileImage ? `<img src="${u.user.profileImage}" class="w-full h-full object-cover" />` : `<span class="text-[8px] font-bold text-gray-500">${u.user.name.charAt(0)}</span>`}
+                     ${avatarSrc ? `<img src="${avatarSrc}" class="w-full h-full object-cover" />` : `<span class="text-[8px] font-bold text-gray-500">${(u.user?.name || 'U').charAt(0)}</span>`}
                      <div class="absolute bottom-0 right-0 w-2 h-2 rounded-full border border-white ${statusColor}"></div>
                    </div>`,
             iconSize: [24, 24],

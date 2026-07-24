@@ -8,6 +8,7 @@ import DashboardLayout from '../../components/dashboard/DashboardLayout';
 import LocationMap from './components/LocationMap';
 import { getLiveLocations, getLocationRoute, type LiveLocationUser, type RouteResponse } from '../../services/locationTracking.api';
 import { motion, AnimatePresence } from 'framer-motion';
+import { getImageUrl } from '../../utils/getImageUrl';
 
 const formatDuration = (seconds = 0) => {
   const h = Math.floor(seconds / 3600);
@@ -172,6 +173,7 @@ const LocationTrackerPage: React.FC = () => {
                   {filteredUsers.map((u) => {
                     const isSelected = selectedUserId === u.user.id;
                     const statusColor = u.status === 'Moving' ? 'bg-emerald-500' : u.status === 'Offline' ? 'bg-gray-400' : 'bg-amber-500';
+                    const avatarSrc = getImageUrl((u.user as any).profileImageUrl || u.user.avatarUrl);
                     return (
                       <div
                         key={u.user.id}
@@ -181,10 +183,10 @@ const LocationTrackerPage: React.FC = () => {
                         }`}
                       >
                         <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full border border-gray-100 bg-gray-100">
-                          {u.user.avatarUrl ? (
-                            <img src={u.user.avatarUrl} className="h-full w-full object-cover" />
+                          {avatarSrc ? (
+                            <img src={avatarSrc} alt={u.user.name} className="h-full w-full object-cover" />
                           ) : (
-                            <div className="flex h-full w-full items-center justify-center font-bold text-gray-400">{u.user.name.charAt(0)}</div>
+                            <div className="flex h-full w-full items-center justify-center font-bold text-gray-400">{(u.user.name || 'U').charAt(0)}</div>
                           )}
                           <div className={`absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white ${statusColor}`}></div>
                         </div>
