@@ -18,7 +18,11 @@ export const getImageUrl = (url: string | null | undefined): string | undefined 
     return `${ENV.API_URL}${url}`;
   }
 
-  // Otherwise, assume it's a Wasabi storage key that needs to go through the upload proxy
+  // Otherwise, assume it's a storage key that needs to go through the upload proxy
   const cleanKey = url.startsWith('/') ? url.slice(1) : url;
-  return `${ENV.API_URL}/upload/${encodeURIComponent(cleanKey)}`;
+  const safePath = cleanKey
+    .split('/')
+    .map((part) => encodeURIComponent(part))
+    .join('/');
+  return `${ENV.API_URL}/upload/${safePath}`;
 };
