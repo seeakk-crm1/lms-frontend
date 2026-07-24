@@ -10,55 +10,76 @@ interface PhoneInputProps {
   disabled?: boolean;
 }
 
+const findCountryFromValue = (
+  val: string,
+  countryList: CountryPhoneData[]
+): { country: CountryPhoneData; nationalNumber: string } | null => {
+  if (!val || !val.startsWith('+')) return null;
+
+  const parsed = parsePhoneNumberFromString(val);
+  if (parsed && parsed.country) {
+    const matched = countryList.find(c => c.isoCode === parsed.country);
+    if (matched) {
+      return {
+        country: matched,
+        nationalNumber: parsed.nationalNumber
+      };
+    }
+  }
+
+  // Fallback: match by dial code prefix (longest match first)
+  const sortedCountries = [...countryList].sort((a, b) => b.dialCode.length - a.dialCode.length);
+  for (const c of sortedCountries) {
+    if (val.startsWith(c.dialCode)) {
+      return {
+        country: c,
+        nationalNumber: val.slice(c.dialCode.length).replace(/\D/g, '')
+      };
+    }
+  }
+
+  return null;
+};
+
 export default function PhoneInput({ value = '', onChange, error = false, disabled = false }: PhoneInputProps) {
   const countries = useMemo(() => getCountryDataList(), []);
+  const [selectedCountryIso, setSelectedCountryIso] = useState<string>('IN');
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
   const dropdownRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  // Parse value to find matching country and national number
-  const parsedState = useMemo(() => {
-    if (!value || !value.startsWith('+')) {
-      // Default to India
-      const defaultCountry = countries.find(c => c.isoCode === 'IN') || countries[0];
-      return {
-        country: defaultCountry,
-        nationalNumber: value.replace(/\D/g, '') // Keep digits if any
-      };
-    }
-
-    const parsed = parsePhoneNumberFromString(value);
-    if (parsed && parsed.country) {
-      const matched = countries.find(c => c.isoCode === parsed.country);
-      if (matched) {
-        return {
-          country: matched,
-          nationalNumber: parsed.nationalNumber
-        };
+  // Sync selectedCountryIso when value prop changes and contains a valid country dial code
+  useEffect(() => {
+    if (value && value.startsWith('+')) {
+      const match = findCountryFromValue(value, countries);
+      if (match) {
+        setSelectedCountryIso(match.country.isoCode);
       }
     }
-
-    // Fallback: match by dial code prefix
-    const sortedCountries = [...countries].sort((a, b) => b.dialCode.length - a.dialCode.length);
-    for (const c of sortedCountries) {
-      if (value.startsWith(c.dialCode)) {
-        return {
-          country: c,
-          nationalNumber: value.slice(c.dialCode.length)
-        };
-      }
-    }
-
-    const defaultCountry = countries.find(c => c.isoCode === 'IN') || countries[0];
-    return {
-      country: defaultCountry,
-      nationalNumber: value.replace(/\D/g, '')
-    };
   }, [value, countries]);
 
-  const selectedCountry = parsedState.country;
-  const nationalNumber = parsedState.nationalNumber;
+  // Selected country object
+  const selectedCountry = useMemo(() => {
+    return (
+      countries.find(c => c.isoCode === selectedCountryIso) ||
+      countries.find(c => c.isoCode === 'IN') ||
+      countries[0]
+    );
+  }, [countries, selectedCountryIso]);
+
+  // National number derived from value
+  const nationalNumber = useMemo(() => {
+    if (!value) return '';
+    if (value.startsWith('+')) {
+      const match = findCountryFromValue(value, countries);
+      if (match) {
+        return match.nationalNumber;
+      }
+      return value.replace(/\D/g, '');
+    }
+    return value.replace(/\D/g, '');
+  }, [value, countries]);
 
   // Handle outside click to close dropdown
   useEffect(() => {
@@ -90,6 +111,7 @@ export default function PhoneInput({ value = '', onChange, error = false, disabl
   }, [countries, search]);
 
   const handleCountrySelect = (country: CountryPhoneData) => {
+    setSelectedCountryIso(country.isoCode);
     const fullValue = nationalNumber ? `${country.dialCode}${nationalNumber}` : '';
     onChange(fullValue);
     setIsOpen(false);
@@ -102,8 +124,17 @@ export default function PhoneInput({ value = '', onChange, error = false, disabl
     onChange(fullValue);
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      setIsOpen(false);
+    } else if (e.key === 'Enter' && filteredCountries.length > 0) {
+      e.preventDefault();
+      handleCountrySelect(filteredCountries[0]);
+    }
+  };
+
   return (
-    <div className="relative w-full" ref={dropdownRef}>
+    <div className="relative w-full" ref={dropdownRef} onKeyDown={handleKeyDown}>
       <div
         className={`flex items-center w-full rounded-2xl border bg-gray-50 text-sm font-semibold transition-all focus-within:border-emerald-500 focus-within:bg-white focus-within:ring-4 focus-within:ring-emerald-500/10 ${
           error ? 'border-red-500 bg-red-50/50' : 'border-gray-200'
