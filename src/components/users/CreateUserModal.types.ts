@@ -9,5 +9,6 @@ export interface UserFormData {
   officeId: string;
   isActive: boolean;
   assignedTargetCycleId?: string;
+  monthlySalary?: number | null;
   profileImageUrl?: string;
 }

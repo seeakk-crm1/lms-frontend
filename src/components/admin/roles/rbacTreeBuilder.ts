@@ -51,6 +51,8 @@ const formatModuleName = (group: string): string => {
       return 'Dashboard';
     case 'ASSIGNED_USERS':
       return 'Assigned Users';
+    case 'SALARY_MANAGEMENT':
+      return 'Salary Management';
     default:
       if (!g) return 'General';
       return g
@@ -68,7 +70,16 @@ const parsePermissionKey = (permission: Permission): { submoduleName: string; ac
   let submoduleName = '';
   let actionSuffix = '';
 
-  if (upperKey.startsWith('ASSIGNED_USERS_')) {
+  if (upperKey.startsWith('SALARY_CALCULATION_')) {
+    submoduleName = 'Salary Calculation';
+    actionSuffix = upperKey.replace('SALARY_CALCULATION_', '');
+  } else if (upperKey.startsWith('SALARY_STAGES_')) {
+    submoduleName = 'Approval Stages';
+    actionSuffix = upperKey.replace('SALARY_STAGES_', '');
+  } else if (upperKey.startsWith('SALARY_APPROVALS_')) {
+    submoduleName = 'Pending Approvals';
+    actionSuffix = upperKey.replace('SALARY_APPROVALS_', '');
+  } else if (upperKey.startsWith('ASSIGNED_USERS_')) {
     submoduleName = 'Assigned Users';
     actionSuffix = upperKey.replace('ASSIGNED_USERS_', '');
   } else if (upperKey.startsWith('OFFICE_LOCATION_')) {

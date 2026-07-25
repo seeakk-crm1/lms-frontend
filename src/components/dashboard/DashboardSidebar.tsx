@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    LayoutDashboard, Users, Settings, FileText, Calendar as CalendarIcon,
+    LayoutDashboard, Users, Settings, FileText, Calendar as CalendarIcon, Wallet,
     Briefcase, FileBarChart, Table2, Unplug, ChevronDown, Activity, ChevronRight, LogOut, LucideIcon, X
 } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
@@ -60,6 +60,14 @@ const sidebarMenus: SidebarSection[] = [
                         ]
                     },
                     { label: 'Offices', path: '/admin/offices', requiredPermissions: ['SYSTEM_CONFIG'] }
+                ]
+            },
+            {
+                icon: Wallet, label: 'Salary Management',
+                subItems: [
+                    { label: 'Salary Calculation', path: '/salary/calculation', requiredPermissions: ['SALARY_CALCULATION_VIEW', 'SALARY_CALCULATION_GENERATE'] },
+                    { label: 'Approval Stages', path: '/salary/stages', requiredPermissions: ['SALARY_STAGES_VIEW', 'SALARY_STAGES_CREATE', 'SALARY_STAGES_EDIT'] },
+                    { label: 'Pending Approvals', path: '/salary/approvals', requiredPermissions: ['SALARY_APPROVALS_VIEW', 'SALARY_APPROVALS_APPROVE'] }
                 ]
             },
             {

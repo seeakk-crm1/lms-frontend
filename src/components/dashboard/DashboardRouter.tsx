@@ -14,7 +14,16 @@ const getDashboardMode = (): DashboardMode => {
   }
 
   if (
-    hasAnyPermission(user, ['USERS_VIEW', 'ASSIGNED_USERS_VIEW', 'ROLES_VIEW', 'DEPARTMENTS_VIEW', 'SYSTEM_CONFIG'])
+    hasAnyPermission(user, [
+      'USERS_VIEW',
+      'ASSIGNED_USERS_VIEW',
+      'ROLES_VIEW',
+      'DEPARTMENTS_VIEW',
+      'SYSTEM_CONFIG',
+      'SALARY_CALCULATION_VIEW',
+      'SALARY_STAGES_VIEW',
+      'SALARY_APPROVALS_VIEW',
+    ])
   ) {
     return 'admin';
   }

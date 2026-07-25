@@ -198,6 +198,32 @@ const CreateUserDetailsTab: React.FC<CreateUserDetailsTabProps> = ({
         </div>
       </div>
 
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-1.5">
+          <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Monthly Salary</label>
+          <div className="relative">
+            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-gray-400">₹</span>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              {...register('monthlySalary', {
+                valueAsNumber: true,
+                validate: (value) => {
+                  if (value !== undefined && value !== null && (value as any) === '') return true;
+                  if (value !== undefined && value !== null && Number(value) < 0) return 'Monthly salary cannot be negative.';
+                  return true;
+                },
+              })}
+              className={`${getFieldClassName(Boolean(errors.monthlySalary))} pl-8`}
+              placeholder="0.00"
+            />
+          </div>
+          <p className="text-[11px] font-semibold text-gray-400">Base monthly salary for HR payroll calculations.</p>
+          {renderFieldError(errors.monthlySalary?.message)}
+        </div>
+      </div>
+
     </div>
   );
 };

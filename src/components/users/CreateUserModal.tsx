@@ -161,7 +161,7 @@ const CreateUserModal: React.FC = () => {
     return next ? next : undefined;
   };
 
-  const toCreatePayload = (data: UserFormData): CreateUserPayload => ({
+  const toCreatePayload = (data: UserFormData): CreateUserPayload & { monthlySalary?: number } => ({
     name: data.name.trim(),
     email: data.email.trim(),
     username: toOptional(data.username),
@@ -170,6 +170,7 @@ const CreateUserModal: React.FC = () => {
     departmentId: toOptional(data.departmentId),
     supervisorId: toOptional(data.supervisorId),
     officeId: toOptional(data.officeId),
+    monthlySalary: data.monthlySalary ? Number(data.monthlySalary) : undefined,
     profileImageUrl: toOptional(data.profileImageUrl),
   });
 
@@ -186,6 +187,7 @@ const CreateUserModal: React.FC = () => {
       supervisorId: data.supervisorId.trim() ? data.supervisorId.trim() : null,
       officeId: toOptional(data.officeId),
       isActive: data.isActive,
+      monthlySalary: data.monthlySalary !== undefined && data.monthlySalary !== null && !isNaN(data.monthlySalary as any) ? Number(data.monthlySalary) : null,
       profileImageUrl: toOptional(data.profileImageUrl),
       ...(targetCycleChanged ? { assignedTargetCycleId: nextTargetCycleId } : {}),
     };
@@ -193,6 +195,7 @@ const CreateUserModal: React.FC = () => {
 
   const toCreatePayloadWithTargetCycle = (data: UserFormData): CreateUserPayload & {
     assignedTargetCycleId?: string | null;
+    monthlySalary?: number;
   } => ({
     ...toCreatePayload(data),
     assignedTargetCycleId: normalizeTargetCycleId(data.assignedTargetCycleId),
@@ -214,6 +217,7 @@ const CreateUserModal: React.FC = () => {
             : u.supervisor?.id || '',
         officeId: u.office?.id || '',
         isActive: u.isActive,
+        monthlySalary: (u as any).monthlySalary ?? undefined,
         assignedTargetCycleId: u.assignedTargetCycleId || u.assignedTargetCycle?.id || '',
         profileImageUrl: u.profileImageUrl || '',
       });
@@ -232,6 +236,7 @@ const CreateUserModal: React.FC = () => {
             supervisorId: '',
             officeId: '',
             isActive: true,
+            monthlySalary: undefined,
             assignedTargetCycleId: '',
             profileImageUrl: '',
         });

@@ -67,6 +67,9 @@ import FollowUpExtensionReasonsPage from './modules/followup-extension-reasons/p
 import AttendancePage from './pages/attendance/AttendancePage';
 import LocationTrackerPage from './pages/location/LocationTrackerPage';
 import SheetsPage from './pages/sheets/SheetsPage';
+import SalaryCalculationPage from './pages/salary/SalaryCalculationPage';
+import SalaryStagesPage from './pages/salary/SalaryStagesPage';
+import PendingApprovalsPage from './pages/salary/PendingApprovalsPage';
 
 interface RouteProps {
   children: ReactNode;
@@ -284,6 +287,22 @@ function App() {
         <Route path="/admin/departments" element={
           <PermissionRoute permissions={['DEPARTMENTS_VIEW']}>
             <AdminDepartmentsPage />
+          </PermissionRoute>
+        } />
+
+        <Route path="/salary/calculation" element={
+          <PermissionRoute permissions={['SALARY_CALCULATION_VIEW', 'SALARY_CALCULATION_GENERATE']}>
+            <SalaryCalculationPage />
+          </PermissionRoute>
+        } />
+        <Route path="/salary/stages" element={
+          <PermissionRoute permissions={['SALARY_STAGES_VIEW', 'SALARY_STAGES_CREATE', 'SALARY_STAGES_EDIT']}>
+            <SalaryStagesPage />
+          </PermissionRoute>
+        } />
+        <Route path="/salary/approvals" element={
+          <PermissionRoute permissions={['SALARY_APPROVALS_VIEW', 'SALARY_APPROVALS_APPROVE']}>
+            <PendingApprovalsPage />
           </PermissionRoute>
         } />
 
