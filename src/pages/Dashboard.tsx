@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { RotateCcw } from 'lucide-react';
 import DashboardLayout from '../components/dashboard/DashboardLayout';
 import KPICards from '../components/dashboard/KPICards';
 import LeadGrowthChart from '../components/dashboard/LeadGrowthChart';
@@ -75,6 +76,7 @@ const loadDashboardUserOptions = (officeId?: string): Promise<Option[]> => {
 
 const Dashboard: React.FC<DashboardProps> = ({ mode = 'operations' }) => {
     const fetchDashboardData = useDashboardStore((state) => state.fetchDashboardData);
+    const clearFilters = useDashboardStore((state) => state.clearFilters);
     const dashboardFilters = useDashboardStore((state) => state.filters);
     const selectedOfficeId = useDashboardStore((state) => state.selectedOfficeId);
     const error = useDashboardStore((state) => state.error);
@@ -83,6 +85,11 @@ const Dashboard: React.FC<DashboardProps> = ({ mode = 'operations' }) => {
     const [userOptions, setUserOptions] = useState<Option[]>([]);
     const [isLoadingUsers, setIsLoadingUsers] = useState(false);
     const selectedUserIdRef = useRef(dashboardFilters.userId);
+
+    const handleClearFilters = useCallback(() => {
+        selectedUserIdRef.current = undefined;
+        clearFilters();
+    }, [clearFilters]);
 
     const canSeeMetrics = hasAnyPermission(user?.permissions || [], [
         'LEADS_VIEW_ALL',
@@ -203,9 +210,19 @@ const Dashboard: React.FC<DashboardProps> = ({ mode = 'operations' }) => {
 
                         {hasAnyDashboardSection ? (
                             <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
-                                <div className="mb-4">
-                                    <p className="text-xs font-black uppercase tracking-[0.22em] text-emerald-500">Dashboard Filters</p>
-                                    <p className="mt-1 text-sm font-semibold text-gray-500">Metrics refresh for every selected reporting filter.</p>
+                                <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                                    <div>
+                                        <p className="text-xs font-black uppercase tracking-[0.22em] text-emerald-500">Dashboard Filters</p>
+                                        <p className="mt-1 text-sm font-semibold text-gray-500">Metrics refresh for every selected reporting filter.</p>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={handleClearFilters}
+                                        className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-gray-50/80 px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-emerald-50 hover:border-emerald-200 hover:text-emerald-700 transition-all self-start sm:self-auto shadow-sm active:scale-95 group"
+                                    >
+                                        <RotateCcw className="h-3.5 w-3.5 text-gray-500 group-hover:text-emerald-600 transition-colors" />
+                                        Clear Filters
+                                    </button>
                                 </div>
                                 <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-7">
                                     {showOfficeFilter ? (

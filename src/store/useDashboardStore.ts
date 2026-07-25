@@ -46,6 +46,7 @@ export interface Meeting {
     title: string;
     time: string;
     type: string;
+    scheduledAt?: string;
 }
 
 interface DashboardState {
@@ -63,6 +64,7 @@ interface DashboardState {
     meetings: Meeting[];
     error: string | null;
     reset: () => void;
+    clearFilters: () => void;
     setSelectedOfficeId: (officeId?: string) => void;
     setFilters: (filters: Partial<DashboardSummaryFilters>) => void;
     fetchDashboardData: (filters?: Partial<DashboardSummaryFilters>) => Promise<void>;
@@ -72,7 +74,7 @@ const initialFilters: DashboardSummaryFilters = {
     range: '7d',
 };
 
-const createInitialDashboardSlice = (): Omit<DashboardState, 'reset' | 'setSelectedOfficeId' | 'setFilters' | 'fetchDashboardData'> => ({
+const createInitialDashboardSlice = (): Omit<DashboardState, 'reset' | 'clearFilters' | 'setSelectedOfficeId' | 'setFilters' | 'fetchDashboardData'> => ({
     isLoading: true,
     isRefreshing: false,
     selectedRange: '7d',
@@ -103,6 +105,16 @@ const useDashboardStore = create<DashboardState>((set) => ({
     ...createInitialDashboardSlice(),
 
     reset: () => set(() => ({ ...createInitialDashboardSlice(), error: null })),
+    clearFilters: () => {
+        const defaultFilters: DashboardSummaryFilters = {
+            range: useDashboardStore.getState().selectedRange || '7d',
+        };
+        set({
+            selectedOfficeId: undefined,
+            filters: defaultFilters,
+        });
+        void useDashboardStore.getState().fetchDashboardData(defaultFilters);
+    },
     setSelectedOfficeId: (officeId) => set((state) => ({
         selectedOfficeId: officeId,
         filters: { ...state.filters, officeId },

@@ -1,11 +1,12 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { AnimatePresence, motion } from 'framer-motion';
 import { CalendarPlus, Loader2, Plus, X } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
+import { getFollowUpHistory, getTodayFollowUps } from '../../services/followupService';
 import SearchableSelect from '../../components/SearchableSelect';
 import DashboardLayout from '../../components/dashboard/DashboardLayout';
 import CalendarHeader from '../../components/calendar/CalendarHeader';
@@ -50,6 +51,8 @@ const CalendarPage: React.FC = () => {
   const [snoozeReasonId, setSnoozeReasonId] = useState('');
   const [reminderActionType, setReminderActionType] = useState<'SNOOZE' | 'REMIND_LATER'>('SNOOZE');
   const navigate = useNavigate();
+  const location = useLocation();
+  const openedHandledRef = useRef<string | null>(null);
 
   const {
     view,
@@ -65,6 +68,40 @@ const CalendarPage: React.FC = () => {
     openModal,
     closeModal,
   } = useFollowupStore();
+
+  useEffect(() => {
+    const state = location.state as { openFollowUpId?: string; scheduledAt?: string } | null;
+    if (!state?.openFollowUpId) return;
+    if (openedHandledRef.current === state.openFollowUpId) return;
+
+    openedHandledRef.current = state.openFollowUpId;
+
+    if (state.scheduledAt) {
+      setDate(new Date(state.scheduledAt).toISOString());
+    }
+
+    void (async () => {
+      try {
+        const todayRes = await getTodayFollowUps();
+        const items = todayRes?.data?.items || [];
+        let match = items.find((item: any) => item.id === state.openFollowUpId);
+
+        if (!match) {
+          const historyRes = await getFollowUpHistory({ status: undefined, limit: 100 });
+          const historyItems = historyRes?.data || [];
+          match = historyItems.find((item: any) => item.id === state.openFollowUpId);
+        }
+
+        if (match) {
+          setActionFollowUp(match);
+        } else {
+          toast.error('The selected follow-up details could not be found.');
+        }
+      } catch (err) {
+        toast.error('Unable to locate follow-up details.');
+      }
+    })();
+  }, [location.state, setDate]);
 
   const advancedSummaryQuery = useAdvancedCalendarSummaryQuery();
   const mandatoryContinuationQuery = useMandatoryFollowUpContinuationQuery();

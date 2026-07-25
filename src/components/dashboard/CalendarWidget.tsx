@@ -1,12 +1,34 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Calendar, Clock, Video, Phone } from 'lucide-react';
-import useDashboardStore from '../../store/useDashboardStore';
+import useDashboardStore, { type Meeting } from '../../store/useDashboardStore';
+import useAuthStore from '../../store/useAuthStore';
+import { hasAnyPermission } from '../../utils/permission.util';
 
 const CalendarWidget: React.FC = () => {
+    const navigate = useNavigate();
+    const user = useAuthStore((state) => state.user);
     const meetings = useDashboardStore((state) => state.meetings);
     const isLoading = useDashboardStore((state) => state.isLoading);
     const scheduleDateLabel = useDashboardStore((state) => state.scheduleDateLabel);
+
+    const canSeeCalendar = hasAnyPermission(user?.permissions || [], [
+        'LEADS_VIEW_ALL',
+        'LEADS_VIEW_OWN',
+        'LEADS_VIEW_TEAM',
+        'SYSTEM_CONFIG',
+    ]);
+
+    const handleItemClick = (meeting: Meeting) => {
+        if (!canSeeCalendar) return;
+        navigate('/calendar', {
+            state: {
+                openFollowUpId: meeting.id,
+                scheduledAt: meeting.scheduledAt,
+            },
+        });
+    };
 
     if (isLoading) {
         return (
@@ -64,12 +86,26 @@ const CalendarWidget: React.FC = () => {
             ) : (
             <div className="flex flex-col gap-4 flex-1">
                 {meetings.map((meeting, i) => (
-                    <div key={meeting.id} className="flex gap-4 group">
+                    <div
+                        key={meeting.id}
+                        role={canSeeCalendar ? 'button' : undefined}
+                        tabIndex={canSeeCalendar ? 0 : undefined}
+                        onClick={() => handleItemClick(meeting)}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                handleItemClick(meeting);
+                            }
+                        }}
+                        className={`flex gap-4 group transition-colors rounded-xl p-1.5 -mx-1.5 ${
+                            canSeeCalendar ? 'cursor-pointer hover:bg-emerald-50/50' : ''
+                        }`}
+                    >
                         <div className="flex flex-col items-center">
                             <div className="w-2 h-2 rounded-full bg-emerald-500 ring-4 ring-emerald-50 mt-1.5 group-hover:scale-125 group-hover:ring-emerald-100 transition-all"></div>
                             {i !== meetings.length - 1 && <div className="w-px h-full bg-gray-100 my-1 group-hover:bg-emerald-100 transition-colors"></div>}
                         </div>
-                        <div className="flex-1 pb-4">
+                        <div className="flex-1 pb-1">
                             <p className="text-sm font-bold text-gray-900 group-hover:text-emerald-600 transition-colors">{meeting.title}</p>
                             <div className="flex items-center gap-2 mt-1.5 text-[11px] font-bold text-gray-400">
                                 <Clock size={12} />
@@ -84,7 +120,10 @@ const CalendarWidget: React.FC = () => {
             )}
 
             <div className="mt-2 text-center pt-2">
-                <button className="text-xs font-bold text-gray-400 hover:text-gray-900 transition-colors uppercase tracking-widest">
+                <button
+                    onClick={() => canSeeCalendar && navigate('/calendar')}
+                    className="text-xs font-bold text-gray-400 hover:text-gray-900 transition-colors uppercase tracking-widest"
+                >
                     View Full Calendar →
                 </button>
             </div>
