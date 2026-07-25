@@ -15,11 +15,9 @@ interface ClosedLeadsTableProps {
   limit: number;
   total: number;
   totalPages: number;
-  canEditRevenue: boolean;
   canReopen: boolean;
   onPageChange: (page: number) => void;
   onView: (lead: LeadListItem, tab?: 'overview' | 'history') => void;
-  onEditRevenue: (lead: LeadListItem) => void;
   onReopen: (lead: LeadListItem) => void;
 }
 
@@ -36,11 +34,9 @@ const ClosedLeadsTable: React.FC<ClosedLeadsTableProps> = ({
   limit,
   total,
   totalPages,
-  canEditRevenue,
   canReopen,
   onPageChange,
   onView,
-  onEditRevenue,
   onReopen,
 }) => {
   const pageNumbers = useMemo(() => {
@@ -142,16 +138,6 @@ const ClosedLeadsTable: React.FC<ClosedLeadsTableProps> = ({
                           <RotateCcw className="h-4 w-4" />
                         </button>
                       ) : null}
-                      {canEditRevenue ? (
-                        <button
-                          type="button"
-                          onClick={() => onEditRevenue(lead)}
-                          className="rounded-2xl bg-emerald-50 p-2 text-emerald-600 transition-all hover:bg-emerald-100"
-                          aria-label={`Edit revenue for ${lead.name}`}
-                        >
-                          <Wallet className="h-4 w-4" />
-                        </button>
-                      ) : null}
                       <WhatsAppActionButton
                         phone={lead.phone}
                         variant="table"
@@ -212,7 +198,7 @@ const ClosedLeadsTable: React.FC<ClosedLeadsTableProps> = ({
 
                   <td className="px-6 py-5">
                     <div className={`text-base font-black ${lead.closureType === 'WON' ? 'text-emerald-600' : 'text-gray-900'}`}>
-                      {moneyFormatter.format(lead.generatedRevenue || 0)}
+                      {moneyFormatter.format(lead.totalAmount || lead.generatedRevenue || 0)}
                     </div>
                     <div className="mt-1 text-[11px] font-black uppercase tracking-[0.22em] text-gray-400">
                       {lead.closureType || 'Pending'}

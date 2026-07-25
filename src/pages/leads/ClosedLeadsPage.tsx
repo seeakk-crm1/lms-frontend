@@ -2,14 +2,13 @@ import React, { Suspense, useCallback, useEffect, useMemo, useState } from 'reac
 import { AnimatePresence, motion } from 'framer-motion';
 import { AlertTriangle, Download, Filter, RotateCcw, TrendingDown, WalletCards } from 'lucide-react';
 import DashboardLayout from '../../components/dashboard/DashboardLayout';
-import { useClosedLeadsQuery, useExportClosedLeads, useReopenLeadMutation, useUpdateRevenueMutation } from '../../hooks/useClosedLeads';
+import { useClosedLeadsQuery, useExportClosedLeads, useReopenLeadMutation } from '../../hooks/useClosedLeads';
 import { useLeadMetaQuery } from '../../hooks/useLeads';
 import useClosedLeadsStore from '../../store/closedLeadsStore';
 import useAuthStore from '../../store/useAuthStore';
 import type { LeadListItem } from '../../types/lead.types';
 import ClosedLeadFilters from './components/ClosedLeadFilters';
 import ClosedLeadsTable from './components/ClosedLeadsTable';
-import RevenueEditModal from './components/RevenueEditModal';
 import { ExportLeadsModal } from './components/ExportLeadsModal';
 import { lazyWithChunkRecovery } from '../../utils/chunkLoadRecovery';
 import { canUseOfficeFilter } from '../../utils/officeFilterAccess';
@@ -89,7 +88,6 @@ const ReopenLeadModal: React.FC<{
 const ClosedLeadsPage: React.FC = () => {
   const [showFilters, setShowFilters] = useState(true);
   const [searchDraft, setSearchDraft] = useState('');
-  const [revenueModalLead, setRevenueModalLead] = useState<LeadListItem | null>(null);
   const [reopenModalLead, setReopenModalLead] = useState<LeadListItem | null>(null);
   const [viewDrawer, setViewDrawer] = useState<{ lead: LeadListItem | null; tab: 'overview' | 'history' }>({
     lead: null,
@@ -112,7 +110,6 @@ const ClosedLeadsPage: React.FC = () => {
   const { data, isLoading, isFetching } = useClosedLeadsQuery();
   const { data: meta } = useLeadMetaQuery();
   const exportMutation = useExportClosedLeads();
-  const updateRevenueMutation = useUpdateRevenueMutation();
   const reopenLeadMutation = useReopenLeadMutation();
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
@@ -132,13 +129,12 @@ const ClosedLeadsPage: React.FC = () => {
   }, [data, setLeads, setPagination]);
 
   const roleKey = normalizeRole(user?.role);
-  const canEditRevenue = ['admin', 'superadmin'].includes(roleKey);
   const canReopen = ['admin', 'manager', 'superadmin'].includes(roleKey);
   const showOfficeFilter = canUseOfficeFilter(user);
 
   const totalClosed = data?.pagination?.total || 0;
   const wonRevenue = useMemo(
-    () => leads.filter((lead) => lead.closureType === 'WON').reduce((sum, lead) => sum + (lead.generatedRevenue || 0), 0),
+    () => leads.filter((lead) => lead.closureType === 'WON' || lead.isClosed).reduce((sum, lead) => sum + (lead.totalAmount || lead.generatedRevenue || 0), 0),
     [leads],
   );
   const lostCount = useMemo(() => leads.filter((lead) => lead.closureType === 'LOST').length, [leads]);
@@ -178,19 +174,6 @@ const ClosedLeadsPage: React.FC = () => {
     await reopenLeadMutation.mutateAsync(reopenModalLead.id);
     setReopenModalLead(null);
   }, [reopenLeadMutation, reopenModalLead]);
-
-  const handleSaveRevenue = useCallback(
-    async (payload: { generatedRevenue: number; closureType: 'WON' | 'LOST' | 'CANCELLED' }) => {
-      if (!revenueModalLead || updateRevenueMutation.isPending) return;
-      try {
-        await updateRevenueMutation.mutateAsync({ id: revenueModalLead.id, payload });
-        setRevenueModalLead(null);
-      } catch {
-        // Toast handled in mutation hook; keep modal open for correction.
-      }
-    },
-    [revenueModalLead, updateRevenueMutation],
-  );
 
   const stats = useMemo(
     () => [
@@ -301,23 +284,13 @@ const ClosedLeadsPage: React.FC = () => {
               limit={pagination.limit}
               total={pagination.total}
               totalPages={pagination.totalPages}
-              canEditRevenue={canEditRevenue}
               canReopen={canReopen}
               onPageChange={(value) => setPagination({ page: value })}
               onView={handleView}
-              onEditRevenue={setRevenueModalLead}
               onReopen={setReopenModalLead}
             />
           </div>
         </div>
-
-      <RevenueEditModal
-        isOpen={Boolean(revenueModalLead)}
-        lead={revenueModalLead}
-        isSubmitting={updateRevenueMutation.isPending}
-        onClose={() => setRevenueModalLead(null)}
-        onConfirm={handleSaveRevenue}
-      />
 
       <ReopenLeadModal
         isOpen={Boolean(reopenModalLead)}
