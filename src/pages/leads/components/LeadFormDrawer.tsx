@@ -521,14 +521,6 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
 
   const disabledStageIds = useMemo(() => new Set<string>(), []);
 
-  useEffect(() => {
-    if (!isOpen || formValues.products.length === 0) return;
-    const total = calculateProductTotal(formValues.products, productOptions);
-    setFormValues((current) => (
-      Number(current.totalAmount || 0) === total ? current : { ...current, totalAmount: total }
-    ));
-  }, [formValues.products, isOpen, productOptions]);
-
   const handleAddProductRow = () => {
     setValidationErrors((current) => {
       const next = { ...current };
@@ -798,12 +790,6 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
       }
     }
 
-    const hasAmountChanged = mode === 'edit' && paymentData && Number(formValues.totalAmount) !== Number(paymentData.totalAmount);
-    if (hasAmountChanged && !totalAmountReason.trim()) {
-      setTotalAmountReasonModalOpen(true);
-      return;
-    }
-
     const totalAmount = Number(formValues.totalAmount || 0);
     const safeProducts = formValues.products
       .filter((item) => item.productId && productOptions.some((product: any) => product.id === item.productId))
@@ -811,6 +797,16 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
         productId: item.productId,
         quantity: Math.max(1, Math.trunc(Number(item.quantity) || 1)),
       }));
+
+    const calculatedProductTotal = safeProducts.length ? calculateProductTotal(safeProducts, productOptions) : undefined;
+    const isAmountDifferentFromCalculated = calculatedProductTotal !== undefined && Math.abs(totalAmount - calculatedProductTotal) > 0.01;
+    const isAmountDifferentFromPrevious = mode === 'edit' && paymentData && Math.abs(totalAmount - Number(paymentData.totalAmount || 0)) > 0.01;
+
+    if ((isAmountDifferentFromCalculated || isAmountDifferentFromPrevious) && !totalAmountReason.trim()) {
+      setTotalAmountReasonModalOpen(true);
+      return;
+    }
+
     const safeAdvances = localAdvances
       .map((item) => {
         const amount = Number(item.amount);
@@ -844,6 +840,8 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
       remarks: optionalTrimmed(formValues.leadRemarks),
       lobRemarks: optionalTrimmed(formValues.remarks),
       totalAmount: Number.isFinite(totalAmount) ? totalAmount : 0,
+      totalAmountReason: optionalTrimmed(totalAmountReason),
+      reason: optionalTrimmed(totalAmountReason),
       products: safeProducts,
       ...(mode === 'create' ? { advancePayments: safeAdvances } : {}),
     });
@@ -1507,6 +1505,29 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
                             }`}
                           />
                           <ErrorText field="totalAmount" />
+                          {formValues.products.length > 0 && (() => {
+                            const safeProducts = formValues.products.filter((item) => item.productId && productOptions.some((product: any) => product.id === item.productId));
+                            const calcTotal = safeProducts.length ? calculateProductTotal(safeProducts, productOptions) : 0;
+                            const diff = Number(formValues.totalAmount || 0) - calcTotal;
+                            const isModified = Math.abs(diff) > 0.01;
+                            return (
+                              <div className="mt-2.5 rounded-2xl border border-gray-100 bg-gray-50 p-3 text-xs font-semibold text-gray-600 space-y-1">
+                                <div className="flex items-center justify-between gap-2 flex-wrap">
+                                  <span>Calculated Product Total: <strong className="text-gray-900 font-black">₹{calcTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></span>
+                                  {isModified && (
+                                    <span className={`rounded-lg px-2 py-0.5 font-black text-xs ${diff < 0 ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>
+                                      {diff < 0 ? `Discount Applied: -₹${Math.abs(diff).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `Price Override: +₹${diff.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                                    </span>
+                                  )}
+                                </div>
+                                {isModified && (
+                                  <p className="text-[11px] font-medium text-gray-500 italic">
+                                    Product selections and quantities remain unchanged. Final Amount will be saved as ₹{Number(formValues.totalAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}.
+                                  </p>
+                                )}
+                              </div>
+                            );
+                          })()}
                           {mode === 'edit' && paymentData?.amountHistory?.[0] && (
                             <div className="mt-2 text-xs font-semibold text-gray-500 flex flex-col gap-1">
                               <p>
@@ -1801,26 +1822,28 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
       {totalAmountReasonModalOpen && (
         <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
-            <h3 className="text-lg font-black text-gray-900 mb-2">Reason for Total Amount Modification</h3>
+            <h3 className="text-lg font-black text-gray-900 mb-2">Reason for Amount Modification</h3>
             <p className="text-xs font-semibold text-gray-500 mb-4">
-              You are updating the Total Amount from {(paymentData?.totalAmount || 0).toFixed(2)} to {Number(formValues.totalAmount).toFixed(2)}. Please provide a reason.
+              {(() => {
+                const safeProducts = formValues.products.filter((item) => item.productId && productOptions.some((product: any) => product.id === item.productId));
+                const calcTotal = safeProducts.length ? calculateProductTotal(safeProducts, productOptions) : undefined;
+                if (calcTotal !== undefined && Math.abs(Number(formValues.totalAmount || 0) - calcTotal) > 0.01) {
+                  return `You are setting the Final Amount to ₹${Number(formValues.totalAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (Calculated Product Total: ₹${calcTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}). Please provide a reason for this price adjustment / discount.`;
+                }
+                return `You are updating the Total Amount from ₹${(paymentData?.totalAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} to ₹${Number(formValues.totalAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}. Please provide a reason.`;
+              })()}
             </p>
             <textarea
               className={inputClassName}
               rows={3}
               value={totalAmountReason}
               onChange={(e) => setTotalAmountReason(e.target.value)}
-              placeholder="e.g. Added contract scope or discount applied"
+              placeholder="e.g. Approved discount, negotiated deal, or special management pricing"
             />
             <div className="mt-4 flex justify-end gap-3">
               <button
                 type="button"
                 onClick={() => {
-                  setFormValues((prev) => ({
-                    ...prev,
-                    totalAmount: paymentData?.totalAmount || 0,
-                  }));
-                  setTotalAmountReason('');
                   setTotalAmountReasonModalOpen(false);
                 }}
                 className="rounded-2xl border border-gray-200 px-4 py-2.5 text-sm font-black text-gray-500 hover:bg-gray-50"
@@ -1829,11 +1852,17 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
               </button>
               <button
                 type="button"
-                disabled={isSubmittingTotalAmountReason || !totalAmountReason.trim()}
-                onClick={handleSaveTotalAmountReason}
+                disabled={!totalAmountReason.trim()}
+                onClick={() => {
+                  if (!totalAmountReason.trim()) {
+                    toast.error('Reason is required');
+                    return;
+                  }
+                  setTotalAmountReasonModalOpen(false);
+                }}
                 className="rounded-2xl bg-emerald-500 px-5 py-2.5 text-sm font-black text-white hover:bg-emerald-600 shadow-lg shadow-emerald-500/20 disabled:opacity-50"
               >
-                {isSubmittingTotalAmountReason ? 'Saving…' : 'Submit Reason'}
+                Confirm Reason
               </button>
             </div>
           </div>
