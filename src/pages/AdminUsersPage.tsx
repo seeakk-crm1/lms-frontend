@@ -6,6 +6,8 @@ import UsersTable from '../components/users/UsersTable';
 import CreateUserModal from '../components/users/CreateUserModal';
 import { useUsersQuery } from '../hooks/useUsersQuery';
 import { useUsersStore } from '../store/useUsersStore';
+import useAuthStore from '../store/useAuthStore';
+import { hasAnyPermission } from '../utils/permissions';
 
 interface StatItem {
   label: string;
@@ -30,6 +32,9 @@ const AdminUsersPage: React.FC = () => {
     { label: 'Active Agents', value: activeUsers, icon: UserCheck, color: 'blue' },
   ];
 
+  const currentUser = useAuthStore((state) => state.user);
+  const canCreate = hasAnyPermission(currentUser, ['USERS_CREATE']);
+
   return (
     <DashboardLayout>
       <div className="flex-1 overflow-x-hidden overflow-y-auto custom-scrollbar relative p-4 md:p-8">
@@ -50,15 +55,17 @@ const AdminUsersPage: React.FC = () => {
                <p className="text-sm text-gray-500 max-w-lg mt-1">Manage your team members, roles, and performance target compliance.</p>
              </motion.div>
 
-             <motion.button
-               initial={{ opacity: 0, scale: 0.9 }}
-               animate={{ opacity: 1, scale: 1 }}
-               onClick={() => openCreateModal()}
-               className="md:hidden flex items-center justify-center gap-2 px-6 py-3 bg-emerald-500 text-white rounded-2xl text-sm font-bold shadow-lg shadow-emerald-500/20 active:scale-95"
-             >
-               <Users className="w-4 h-4" />
-               <span>Onboard New User</span>
-             </motion.button>
+             {canCreate && (
+               <motion.button
+                 initial={{ opacity: 0, scale: 0.9 }}
+                 animate={{ opacity: 1, scale: 1 }}
+                 onClick={() => openCreateModal()}
+                 className="md:hidden flex items-center justify-center gap-2 px-6 py-3 bg-emerald-500 text-white rounded-2xl text-sm font-bold shadow-lg shadow-emerald-500/20 active:scale-95"
+               >
+                 <Users className="w-4 h-4" />
+                 <span>Onboard New User</span>
+               </motion.button>
+             )}
            </div>
 
            {/* Stats Row */}

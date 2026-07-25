@@ -35,6 +35,7 @@ import WhatsAppActionButton from '../common/WhatsAppActionButton';
 import { USER_WHATSAPP_PERMISSIONS } from '../../constants/whatsappPermissions';
 import OfficeFilterSelect from '../OfficeFilterSelect';
 import useAuthStore from '../../store/useAuthStore';
+import { hasAnyPermission } from '../../utils/permissions';
 import { canUseOfficeFilter } from '../../utils/officeFilterAccess';
 import { getImageUrl } from '../../utils/getImageUrl';
 
@@ -43,6 +44,9 @@ const UsersTable: React.FC = () => {
   const { data: usersData, isLoading } = useUsersQuery();
   const currentUser = useAuthStore((state) => state.user);
   const showOfficeFilter = canUseOfficeFilter(currentUser);
+  const canCreate = hasAnyPermission(currentUser, ['USERS_CREATE']);
+  const canEdit = hasAnyPermission(currentUser, ['USERS_EDIT', 'ASSIGNED_USERS_EDIT']);
+  const canDelete = hasAnyPermission(currentUser, ['USERS_DELETE', 'ASSIGNED_USERS_DELETE']);
   
   const updateStatus = useUpdateStatusMutation();
   const unlockUser = useUnlockUserMutation();
@@ -286,12 +290,6 @@ const UsersTable: React.FC = () => {
               All
             </button>
             <button
-              onClick={() => setFilters({ ...filters, isActive: true })}
-              className={`flex-1 sm:flex-none px-3 py-1.5 text-[10px] sm:text-xs font-bold rounded-lg transition-all ${filters.isActive === true ? 'bg-white shadow-sm text-emerald-600' : 'text-gray-500 hover:text-gray-700'}`}
-            >
-              Active
-            </button>
-            <button
               onClick={() => setFilters({ ...filters, isActive: false })}
               className={`flex-1 sm:flex-none px-3 py-1.5 text-[10px] sm:text-xs font-bold rounded-lg transition-all ${filters.isActive === false ? 'bg-white shadow-sm text-amber-600' : 'text-gray-500 hover:text-gray-700'}`}
             >
@@ -299,14 +297,16 @@ const UsersTable: React.FC = () => {
             </button>
           </div>
 
-          <button
-            onClick={() => openCreateModal()}
-            className="flex items-center justify-center gap-2 p-2 sm:px-4 sm:py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl transition-all shadow-lg shadow-emerald-500/20 active:scale-95 shrink-0"
-            title="Add New User"
-          >
-            <UserPlus className="w-4 h-4 sm:w-5 sm:h-5" />
-            <span className="hidden xs:inline text-xs sm:text-sm font-bold">Add</span>
-          </button>
+          {canCreate && (
+            <button
+              onClick={() => openCreateModal()}
+              className="flex items-center justify-center gap-2 p-2 sm:px-4 sm:py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl transition-all shadow-lg shadow-emerald-500/20 active:scale-95 shrink-0"
+              title="Add New User"
+            >
+              <UserPlus className="w-4 h-4 sm:w-5 sm:h-5" />
+              <span className="hidden xs:inline text-xs sm:text-sm font-bold">Add</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -350,13 +350,14 @@ const UsersTable: React.FC = () => {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   onClick={(e) => {
+                    if (!canEdit) return;
                     const target = e.target as HTMLElement;
                     // Only open modal if clicking the row background or cells, not buttons/links
                     if (target.tagName === 'TD' || target.classList.contains('group')) {
                       openCreateModal(user.id);
                     }
                   }}
-                  className="hover:bg-gray-50/50 transition-colors group cursor-pointer"
+                  className={`hover:bg-gray-50/50 transition-colors group ${canEdit ? 'cursor-pointer' : ''}`}
                 >
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
@@ -422,38 +423,46 @@ const UsersTable: React.FC = () => {
                           entityName: user.name || user.email,
                         }}
                       />
-                      <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); handleResetPassword(user.id, user.email); }}
-                        className="shrink-0 p-1.5 text-amber-500 hover:bg-amber-50 rounded-lg transition-colors"
-                        title="Send Reset Password Link"
-                      >
-                        <Key className="w-4 h-4" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); openCreateModal(user.id); }}
-                        className="shrink-0 p-1.5 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
-                        title="Edit User"
-                      >
-                        <Pencil className="w-4 h-4" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); handleDelete(user.id, user.name || user.email); }}
-                        className="shrink-0 p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                        title="Delete User"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); handleStatusToggle(user.id, !!user.isActive); }}
-                        className={`shrink-0 p-1.5 rounded-lg transition-colors ${user.isActive ? 'text-orange-500 hover:bg-orange-50' : 'text-emerald-500 hover:bg-emerald-50'}`}
-                        title={user.isActive ? 'Deactivate' : 'Activate'}
-                      >
-                        {user.isActive ? <UserX className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}
-                      </button>
+                      {canEdit && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); handleResetPassword(user.id, user.email); }}
+                            className="shrink-0 p-1.5 text-amber-500 hover:bg-amber-50 rounded-lg transition-colors"
+                            title="Send Reset Password Link"
+                          >
+                            <Key className="w-4 h-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); openCreateModal(user.id); }}
+                            className="shrink-0 p-1.5 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
+                            title="Edit User"
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </button>
+                        </>
+                      )}
+                      {canDelete && (
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); handleDelete(user.id, user.name || user.email); }}
+                          className="shrink-0 p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Delete User"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                      {canEdit && (
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); handleStatusToggle(user.id, !!user.isActive); }}
+                          className={`shrink-0 p-1.5 rounded-lg transition-colors ${user.isActive ? 'text-orange-500 hover:bg-orange-50' : 'text-emerald-500 hover:bg-emerald-50'}`}
+                          title={user.isActive ? 'Deactivate' : 'Activate'}
+                        >
+                          {user.isActive ? <UserX className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}
+                        </button>
+                      )}
                       {renderAccessLinkButton(user, { stopRowClick: true })}
                     </motion.div>
                   </td>

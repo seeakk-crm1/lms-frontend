@@ -109,6 +109,7 @@ const Dashboard: React.FC<DashboardProps> = ({ mode = 'operations' }) => {
         'REPORTS_VIEW',
         'LOB_ANALYSIS_VIEW',
         'USERS_VIEW',
+        'ASSIGNED_USERS_VIEW',
         'SYSTEM_CONFIG',
         'DASHBOARD_VIEW_OWN',
         'DASHBOARD_VIEW_ASSIGNED',

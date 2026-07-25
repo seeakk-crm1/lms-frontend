@@ -42,11 +42,11 @@ const sidebarMenus: SidebarSection[] = [
             {
                 icon: Users, label: 'Admin Management',
                 subItems: [
-                    { label: 'Users', path: '/admin/users', requiredPermissions: ['USERS_VIEW'] },
+                    { label: 'Users', path: '/admin/users', requiredPermissions: ['USERS_VIEW', 'ASSIGNED_USERS_VIEW'] },
                     { label: 'Roles', path: '/admin/roles', requiredPermissions: ['ROLES_VIEW'] },
                     { label: 'Departments', path: '/admin/departments', requiredPermissions: ['DEPARTMENTS_VIEW'] },
-                    { label: 'Organization Chart', path: '/admin/organisation-chart', requiredPermissions: ['USERS_VIEW', 'DEPARTMENTS_VIEW'] },
-                    { label: 'Roster Sheet', path: '/admin/roster', requiredPermissions: ['USERS_VIEW', 'SYSTEM_CONFIG'] },
+                    { label: 'Organization Chart', path: '/admin/organisation-chart', requiredPermissions: ['USERS_VIEW', 'ASSIGNED_USERS_VIEW', 'DEPARTMENTS_VIEW'] },
+                    { label: 'Roster Sheet', path: '/admin/roster', requiredPermissions: ['USERS_VIEW', 'ASSIGNED_USERS_VIEW', 'SYSTEM_CONFIG'] },
                     {
                         label: 'Location Tracker',
                         path: '/location-tracker',

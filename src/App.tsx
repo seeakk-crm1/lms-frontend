@@ -264,7 +264,7 @@ function App() {
         } />
 
         <Route path="/admin/users" element={
-          <PermissionRoute permissions={['USERS_VIEW']}>
+          <PermissionRoute permissions={['USERS_VIEW', 'ASSIGNED_USERS_VIEW']}>
             <AdminUsersPage />
           </PermissionRoute>
         } />

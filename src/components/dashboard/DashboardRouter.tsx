@@ -14,7 +14,7 @@ const getDashboardMode = (): DashboardMode => {
   }
 
   if (
-    hasAnyPermission(user, ['USERS_VIEW', 'ROLES_VIEW', 'DEPARTMENTS_VIEW', 'SYSTEM_CONFIG'])
+    hasAnyPermission(user, ['USERS_VIEW', 'ASSIGNED_USERS_VIEW', 'ROLES_VIEW', 'DEPARTMENTS_VIEW', 'SYSTEM_CONFIG'])
   ) {
     return 'admin';
   }
