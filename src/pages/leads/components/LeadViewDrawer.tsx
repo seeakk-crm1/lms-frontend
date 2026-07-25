@@ -418,7 +418,7 @@ const LeadViewDrawer: React.FC<LeadViewDrawerProps> = ({
                             resolvedLead.closureType === 'WON' ? 'text-emerald-600' : 'text-gray-900'
                           }`}
                         >
-                          {moneyFormatter.format(resolvedLead.generatedRevenue || 0)}
+                          {moneyFormatter.format(resolvedLead.totalAmount || resolvedLead.generatedRevenue || 0)}
                         </p>
                         <p className="mt-1 text-xs font-semibold text-gray-500">
                           Closure: {resolvedLead.closureType || '—'}

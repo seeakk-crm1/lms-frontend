@@ -242,7 +242,7 @@ const ApprovalModal: React.FC<ApprovalModalProps> = ({
                   <div className="text-[11px] font-black uppercase tracking-[0.2em] text-emerald-800">Approved Closure Revenue</div>
                   <div className="mt-2 text-lg font-black text-emerald-950">
                     ${new Intl.NumberFormat('en-US', { minimumFractionDigits: 2 }).format(
-                      Number((approval.lead as any)?.generatedRevenue || (approval.lead as any)?.earnedRevenue || 0)
+                      Number((approval.lead as any)?.totalAmount || (approval.lead as any)?.generatedRevenue || (approval.lead as any)?.earnedRevenue || 0)
                     )}
                   </div>
                 </div>
