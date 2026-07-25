@@ -137,13 +137,34 @@ const Dashboard: React.FC<DashboardProps> = ({ mode = 'operations' }) => {
         'LEADS_VIEW_TEAM',
         'USERS_VIEW',
         'REPORTS_VIEW',
+        'DASHBOARD_VIEW_OWN',
+        'DASHBOARD_VIEW_ASSIGNED',
+        'DASHBOARD_VIEW_ALL',
+        'DASHBOARD_VIEW_OWN_OFFICE',
+        'DASHBOARD_VIEW_ASSIGNED_OFFICES',
+        'DASHBOARD_VIEW_ALL_OFFICES',
     ]);
-    const canSeeLOB = hasAnyPermission(user?.permissions || [], ['LOB_ANALYSIS_VIEW', 'REPORTS_VIEW']);
+    const canSeeLOB = hasAnyPermission(user?.permissions || [], [
+        'LOB_ANALYSIS_VIEW',
+        'REPORTS_VIEW',
+        'DASHBOARD_VIEW_OWN',
+        'DASHBOARD_VIEW_ASSIGNED',
+        'DASHBOARD_VIEW_ALL',
+        'DASHBOARD_VIEW_OWN_OFFICE',
+        'DASHBOARD_VIEW_ASSIGNED_OFFICES',
+        'DASHBOARD_VIEW_ALL_OFFICES',
+    ]);
     const canSeeCalendar = hasAnyPermission(user?.permissions || [], [
         'LEADS_VIEW_ALL',
         'LEADS_VIEW_OWN',
         'LEADS_VIEW_TEAM',
         'SYSTEM_CONFIG',
+        'DASHBOARD_VIEW_OWN',
+        'DASHBOARD_VIEW_ASSIGNED',
+        'DASHBOARD_VIEW_ALL',
+        'DASHBOARD_VIEW_OWN_OFFICE',
+        'DASHBOARD_VIEW_ASSIGNED_OFFICES',
+        'DASHBOARD_VIEW_ALL_OFFICES',
     ]);
     const hasAnyDashboardSection = [canSeeMetrics, canSeeGrowth, canQuickAddLead, canSeeActivity, canSeeLOB, canSeeCalendar].some(Boolean);
     const shouldFetchDashboardData = [canSeeMetrics, canSeeGrowth, canSeeActivity, canSeeLOB, canSeeCalendar].some(Boolean);
