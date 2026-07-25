@@ -49,6 +49,8 @@ const formatModuleName = (group: string): string => {
       return 'Office Location';
     case 'DASHBOARD':
       return 'Dashboard';
+    case 'ASSIGNED_USERS':
+      return 'Assigned Users';
     default:
       if (!g) return 'General';
       return g
@@ -66,7 +68,10 @@ const parsePermissionKey = (permission: Permission): { submoduleName: string; ac
   let submoduleName = '';
   let actionSuffix = '';
 
-  if (upperKey.startsWith('OFFICE_LOCATION_')) {
+  if (upperKey.startsWith('ASSIGNED_USERS_')) {
+    submoduleName = 'Assigned Users';
+    actionSuffix = upperKey.replace('ASSIGNED_USERS_', '');
+  } else if (upperKey.startsWith('OFFICE_LOCATION_')) {
     submoduleName = 'Office Location';
     actionSuffix = upperKey.replace('OFFICE_LOCATION_', '');
   } else if (upperKey.startsWith('DASHBOARD_')) {
@@ -161,6 +166,9 @@ const parsePermissionKey = (permission: Permission): { submoduleName: string; ac
   const formatActionName = (suffix: string, fullKey: string, desc?: string | null): string => {
     const s = suffix.toUpperCase();
 
+    if (fullKey === 'ASSIGNED_USERS_VIEW') return 'View Assigned Users';
+    if (fullKey === 'ASSIGNED_USERS_EDIT') return 'Edit Assigned Users';
+    if (fullKey === 'ASSIGNED_USERS_DELETE') return 'Delete Assigned Users';
     if (fullKey === 'DASHBOARD_VIEW_OWN') return 'View Own Dashboard';
     if (fullKey === 'DASHBOARD_VIEW_ASSIGNED') return 'View Assigned Users Dashboard';
     if (fullKey === 'DASHBOARD_VIEW_ALL') return 'View All Users Dashboard';

@@ -15,7 +15,7 @@ import { hasAnyPermission, hasPermission } from '../utils/permission.util';
 import OfficeFilterSelect from '../components/OfficeFilterSelect';
 import { canUseOfficeFilter } from '../utils/officeFilterAccess';
 import SearchableSelect, { type Option } from '../components/SearchableSelect';
-import { getLeadMeta } from '../services/leads.api';
+import { getLeadMeta, getLeadAssignees } from '../services/leads.api';
 import { getUsers } from '../services/users.api';
 import type { DashboardSummaryFilters, DashboardStatusFilter } from '../services/dashboard.api';
 
@@ -51,21 +51,32 @@ const loadDashboardUserOptions = (officeId?: string): Promise<Option[]> => {
     const existing = userOptionsRequests.get(key);
     if (existing) return existing;
 
-    const request = getUsers({
-        page: 1,
-        limit: 500,
-        isActive: true,
-        officeId,
-    })
+    const request = getLeadAssignees()
         .then((payload) => {
-            const users = payload?.users || [];
-            return users
+            const rawUsers = payload?.data || payload?.users || (Array.isArray(payload) ? payload : []);
+            return rawUsers
                 .filter((item: any) => item?.isActive !== false)
                 .map((item: any) => ({
                     value: item.id,
                     label: item.name || item.username || item.email,
                 }));
         })
+        .catch(() =>
+            getUsers({
+                page: 1,
+                limit: 500,
+                isActive: true,
+                officeId,
+            }).then((payload) => {
+                const users = payload?.users || [];
+                return users
+                    .filter((item: any) => item?.isActive !== false)
+                    .map((item: any) => ({
+                        value: item.id,
+                        label: item.name || item.username || item.email,
+                    }));
+            })
+        )
         .finally(() => {
             userOptionsRequests.delete(key);
         });
@@ -99,6 +110,12 @@ const Dashboard: React.FC<DashboardProps> = ({ mode = 'operations' }) => {
         'LOB_ANALYSIS_VIEW',
         'USERS_VIEW',
         'SYSTEM_CONFIG',
+        'DASHBOARD_VIEW_OWN',
+        'DASHBOARD_VIEW_ASSIGNED',
+        'DASHBOARD_VIEW_ALL',
+        'DASHBOARD_VIEW_OWN_OFFICE',
+        'DASHBOARD_VIEW_ASSIGNED_OFFICES',
+        'DASHBOARD_VIEW_ALL_OFFICES',
     ]);
     const canSeeGrowth = hasAnyPermission(user?.permissions || [], [
         'LEADS_VIEW_ALL',
@@ -106,6 +123,12 @@ const Dashboard: React.FC<DashboardProps> = ({ mode = 'operations' }) => {
         'LEADS_VIEW_TEAM',
         'REPORTS_VIEW',
         'LOB_ANALYSIS_VIEW',
+        'DASHBOARD_VIEW_OWN',
+        'DASHBOARD_VIEW_ASSIGNED',
+        'DASHBOARD_VIEW_ALL',
+        'DASHBOARD_VIEW_OWN_OFFICE',
+        'DASHBOARD_VIEW_ASSIGNED_OFFICES',
+        'DASHBOARD_VIEW_ALL_OFFICES',
     ]);
     const canQuickAddLead = hasPermission(user?.permissions || [], 'LEADS_CREATE');
     const canSeeActivity = hasAnyPermission(user?.permissions || [], [
