@@ -566,16 +566,56 @@ const PendingApprovalsPage: React.FC = () => {
                       ))}
                     </div>
 
-                    <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Edits & Events</h4>
-                    <div className="space-y-2">
-                      {historyData.histories?.map((h: any) => (
-                        <div key={h.id} className="p-3 bg-gray-50 rounded-2xl text-xs space-y-1">
-                          <div className="flex justify-between items-center">
-                            <span className="font-bold text-gray-900">{h.action}</span>
-                            <span className="text-[10px] text-gray-400">{new Date(h.createdAt).toLocaleString()}</span>
+                    <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Salary Edit & Change History</h4>
+                    <div className="space-y-3 mb-5">
+                      {historyData.histories && historyData.histories.length > 0 ? (
+                        historyData.histories.map((h: any) => (
+                          <div key={h.id} className="p-4 bg-gradient-to-br from-gray-50 to-emerald-50/30 border border-gray-100 rounded-2xl text-xs space-y-2">
+                            <div className="flex justify-between items-center border-b border-gray-100 pb-2">
+                              <span className="font-black text-gray-900">{h.action} {h.stageOrder ? `(Stage Level ${h.stageOrder})` : ''}</span>
+                              <span className="text-[10px] text-gray-400 font-semibold">{new Date(h.createdAt).toLocaleString()}</span>
+                            </div>
+
+                            {h.previousSalary !== null && h.previousSalary !== undefined && h.updatedSalary !== null && (
+                              <div className="grid grid-cols-3 gap-2 bg-white p-3 rounded-xl border border-gray-100 text-center my-2 shadow-xs">
+                                <div>
+                                  <p className="text-[10px] font-bold text-gray-400 uppercase">Original Salary</p>
+                                  <p className="text-sm font-black text-gray-700">₹{Number(h.previousSalary).toLocaleString('en-IN')}</p>
+                                </div>
+                                <div>
+                                  <p className="text-[10px] font-bold text-gray-400 uppercase">Updated Salary</p>
+                                  <p className="text-sm font-black text-emerald-600">₹{Number(h.updatedSalary).toLocaleString('en-IN')}</p>
+                                </div>
+                                <div>
+                                  <p className="text-[10px] font-bold text-gray-400 uppercase">Difference</p>
+                                  <p className={`text-sm font-black ${Number(h.difference) < 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
+                                    {Number(h.difference) > 0 ? `+₹${Number(h.difference).toLocaleString('en-IN')}` : `₹${Number(h.difference || 0).toLocaleString('en-IN')}`}
+                                  </p>
+                                </div>
+                              </div>
+                            )}
+
+                            <div className="text-gray-700 font-medium space-y-1">
+                              <p>Edited By: <strong className="text-gray-900">{h.editedBy?.name || 'System'}</strong> {h.editedBy?.role?.name ? `(${h.editedBy.role.name})` : ''}</p>
+                              {h.reason && <p className="text-gray-600 italic bg-white/70 p-2 rounded-lg border border-gray-100">"{h.reason}"</p>}
+                            </div>
                           </div>
-                          <p className="text-gray-600">By {h.editedBy?.name || 'System'}</p>
-                          {h.reason && <p className="text-gray-500 italic">"{h.reason}"</p>}
+                        ))
+                      ) : (
+                        <p className="text-xs font-semibold text-gray-400 italic">No manual salary adjustments recorded for this payroll cycle.</p>
+                      )}
+                    </div>
+
+                    <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Stage Approval Log</h4>
+                    <div className="space-y-2">
+                      {historyData.approvals?.map((ap: any) => (
+                        <div key={ap.id} className="p-3 bg-gray-50 rounded-2xl text-xs flex justify-between items-center">
+                          <div>
+                            <p className="font-bold text-gray-900">Stage L{ap.stageOrder}: {ap.action}</p>
+                            <p className="text-gray-500">By {ap.approverUser?.name || 'Approver'}</p>
+                            {ap.remarks && <p className="text-gray-400 italic">"{ap.remarks}"</p>}
+                          </div>
+                          <span className="text-[10px] text-gray-400">{new Date(ap.createdAt).toLocaleString()}</span>
                         </div>
                       ))}
                     </div>

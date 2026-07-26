@@ -19,6 +19,15 @@ export const useUsersQuery = () => {
   });
 };
 
+export const useActiveUsersQuery = () => {
+  return useQuery({
+    queryKey: ['active-users-list'],
+    queryFn: () => usersApi.getUsers({ limit: 1000, isActive: true }),
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+  });
+};
+
 export const useUserDetailQuery = (userId: string | null) => {
   return useQuery({
     queryKey: ['user', userId],

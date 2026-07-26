@@ -18,7 +18,8 @@ import {
 import DashboardLayout from '../../components/dashboard/DashboardLayout';
 import { salaryApi } from '../../services/salary.api';
 import { SalaryApprovalStage } from '../../types/salary.types';
-import { useSupervisorsQuery } from '../../hooks/useUsersQuery';
+import { useActiveUsersQuery } from '../../hooks/useUsersQuery';
+import { SearchableCombobox, ComboboxItem } from '../../components/common/SearchableCombobox';
 import useAuthStore from '../../store/useAuthStore';
 import { hasAnyPermission } from '../../utils/permissions';
 
@@ -28,7 +29,25 @@ const SalaryStagesPage: React.FC = () => {
   const canEdit = hasAnyPermission(currentUser, ['SALARY_STAGES_EDIT']);
   const canDelete = hasAnyPermission(currentUser, ['SALARY_STAGES_DELETE']);
 
-  const { data: usersData } = useSupervisorsQuery();
+  const { data: usersData } = useActiveUsersQuery();
+
+  const userList = Array.isArray((usersData as any)?.users)
+    ? (usersData as any).users
+    : Array.isArray((usersData as any)?.data)
+    ? (usersData as any).data
+    : Array.isArray(usersData)
+    ? usersData
+    : [];
+
+  const activeUsers = userList.filter((u: any) => u.isActive !== false);
+
+  const userComboboxItems: ComboboxItem[] = activeUsers.map((u: any) => ({
+    id: u.id,
+    name: u.name || u.username || u.email,
+    subtext: [u.department?.name, u.office?.name].filter(Boolean).join(' • ') || undefined,
+    avatarUrl: u.profileImageUrl,
+    searchString: `${u.name || ''} ${u.username || ''} ${u.email || ''} ${u.employeeCode || ''}`,
+  }));
 
   const [stages, setStages] = useState<SalaryApprovalStage[]>([]);
   const [salaryReleaseDay, setSalaryReleaseDay] = useState<number>(25);
@@ -38,6 +57,7 @@ const SalaryStagesPage: React.FC = () => {
   const [showModal, setShowModal] = useState<boolean>(false);
   const [editStageId, setEditStageId] = useState<string | null>(null);
   const [stageName, setStageName] = useState<string>('');
+  const [sortOrderInput, setSortOrderInput] = useState<string>('');
   const [approverUserId, setApproverUserId] = useState<string>('');
   const [designation, setDesignation] = useState<string>('');
   const [isMandatory, setIsMandatory] = useState<boolean>(true);
@@ -76,6 +96,7 @@ const SalaryStagesPage: React.FC = () => {
   const handleOpenCreateModal = () => {
     setEditStageId(null);
     setStageName(`Approval Level ${stages.length + 1}`);
+    setSortOrderInput('');
     setApproverUserId('');
     setDesignation('');
     setIsMandatory(true);
@@ -85,6 +106,7 @@ const SalaryStagesPage: React.FC = () => {
   const handleOpenEditModal = (st: SalaryApprovalStage) => {
     setEditStageId(st.id);
     setStageName(st.name);
+    setSortOrderInput(String(st.order));
     setApproverUserId(st.approverUserId);
     setDesignation(st.designation || '');
     setIsMandatory(st.isMandatory);
@@ -99,9 +121,11 @@ const SalaryStagesPage: React.FC = () => {
     }
     setIsSubmitting(true);
     try {
+      const orderPayload = sortOrderInput ? Number(sortOrderInput) : undefined;
       if (editStageId) {
         await salaryApi.updateStage(editStageId, {
           name: stageName,
+          order: orderPayload,
           approverUserId,
           designation,
           isMandatory,
@@ -110,7 +134,7 @@ const SalaryStagesPage: React.FC = () => {
       } else {
         await salaryApi.createStage({
           name: stageName,
-          order: stages.length + 1,
+          order: orderPayload,
           approverUserId,
           designation,
           isMandatory,
@@ -120,7 +144,12 @@ const SalaryStagesPage: React.FC = () => {
       setShowModal(false);
       fetchStages();
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || 'Failed to save approval stage.');
+      const errorMsg = err?.response?.data?.message || err?.message;
+      if (errorMsg && errorMsg.includes('Sort Order already exists')) {
+        toast.error('Sort Order already exists.');
+      } else {
+        toast.error(errorMsg || 'Failed to save approval stage.');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -350,20 +379,29 @@ const SalaryStagesPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 block">Approver User</label>
-                  <select
-                    value={approverUserId}
-                    onChange={(e) => setApproverUserId(e.target.value)}
-                    required
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 block">Sort Order (Optional)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={sortOrderInput}
+                    onChange={(e) => setSortOrderInput(e.target.value)}
+                    placeholder="e.g. 1, 2, 3 (Auto-appended if blank)"
                     className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-100 rounded-xl text-sm font-semibold text-gray-900"
-                  >
-                    <option value="">Select Approver</option>
-                    {usersData?.data?.map((u: any) => (
-                      <option key={u.id} value={u.id}>
-                        {u.name || u.email} ({u.role?.name || 'User'})
-                      </option>
-                    ))}
-                  </select>
+                  />
+                  <p className="text-[11px] font-medium text-gray-400 mt-1">If left blank, automatically placed after highest existing sort order.</p>
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 block">Approver User</label>
+                  <SearchableCombobox
+                    items={userComboboxItems}
+                    value={approverUserId}
+                    onChange={(id) => setApproverUserId(id)}
+                    placeholder="Select Approver User..."
+                    searchPlaceholder="Search by name, username, email, employee code..."
+                    emptyText="No active users found"
+                    icon={<User className="w-4 h-4 text-emerald-600" />}
+                  />
                 </div>
 
                 <div>

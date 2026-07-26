@@ -53,7 +53,7 @@ export const salaryApi = {
 
   createStage: async (data: {
     name: string;
-    order: number;
+    order?: number;
     approverUserId: string;
     designation?: string;
     isMandatory?: boolean;
