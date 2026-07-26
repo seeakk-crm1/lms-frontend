@@ -102,7 +102,10 @@ export interface SalaryApprovalStage {
 export interface GenerateSalaryParams {
   month: number;
   year: number;
-  scope: 'SINGLE' | 'DEPARTMENT' | 'OFFICE' | 'COMPANY';
+  scope: 'SINGLE' | 'DEPARTMENT' | 'OFFICE' | 'COMPANY' | 'employee' | 'department' | 'office' | 'company';
   targetId?: string;
+  userId?: string;
+  departmentId?: string;
+  officeId?: string;
   workingDays?: number;
 }
