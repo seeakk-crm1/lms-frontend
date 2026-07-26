@@ -62,11 +62,15 @@ export interface SalaryRecord {
   finalSalary: number;
   status: SalaryRecordStatus;
   currentStageOrder: number;
+  currentApprovalStageId?: string | null;
+  currentApproverUserId?: string | null;
   remarks: string | null;
   generatedById: string;
   createdAt: string;
   updatedAt: string;
   user?: SalaryRecordUser;
+  currentApproverUser?: { id: string; name?: string | null; email?: string } | null;
+  currentApprovalStage?: { id: string; name?: string; order?: number } | null;
   generatedBy?: {
     id: string;
     name: string | null;

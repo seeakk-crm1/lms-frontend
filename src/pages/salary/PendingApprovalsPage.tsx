@@ -300,9 +300,16 @@ const PendingApprovalsPage: React.FC = () => {
                           ₹{rec.finalSalary.toLocaleString('en-IN')}
                         </td>
                         <td className="px-4 py-4">
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-bold">
-                            Stage L{rec.currentStageOrder} Approval
-                          </span>
+                          <div className="space-y-0.5">
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-bold">
+                              Stage L{rec.currentStageOrder} Approval
+                            </span>
+                            {rec.currentApproverUser?.name && (
+                              <p className="text-[11px] font-semibold text-gray-500">
+                                Approver: <span className="font-bold text-gray-800">{rec.currentApproverUser.name}</span>
+                              </p>
+                            )}
+                          </div>
                         </td>
                         <td className="px-4 py-4 text-right">
                           <div className="flex items-center justify-end gap-1.5">
@@ -314,45 +321,51 @@ const PendingApprovalsPage: React.FC = () => {
                               <History className="w-4 h-4" />
                             </button>
 
-                            {canEditBeforeApproval && (
-                              <button
-                                onClick={() => handleOpenEditModal(rec)}
-                                className="px-2.5 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-xl font-bold text-xs"
-                                title="Edit Salary"
-                              >
-                                <Pencil className="w-3.5 h-3.5 inline mr-1" />
-                                Edit
-                              </button>
-                            )}
+                            {(!rec.currentApproverUserId || rec.currentApproverUserId === currentUser?.id) ? (
+                              <>
+                                {canEditBeforeApproval && (
+                                  <button
+                                    onClick={() => handleOpenEditModal(rec)}
+                                    className="px-2.5 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-xl font-bold text-xs"
+                                    title="Edit Salary"
+                                  >
+                                    <Pencil className="w-3.5 h-3.5 inline mr-1" />
+                                    Edit
+                                  </button>
+                                )}
 
-                            {canReturn && (
-                              <button
-                                onClick={() => setActionModal({ open: true, type: 'RETURN', record: rec, remarks: '' })}
-                                className="px-2.5 py-1.5 bg-purple-50 text-purple-600 hover:bg-purple-100 rounded-xl font-bold text-xs"
-                              >
-                                <RotateCcw className="w-3.5 h-3.5 inline mr-1" />
-                                Return
-                              </button>
-                            )}
+                                {canReturn && (
+                                  <button
+                                    onClick={() => setActionModal({ open: true, type: 'RETURN', record: rec, remarks: '' })}
+                                    className="px-2.5 py-1.5 bg-purple-50 text-purple-600 hover:bg-purple-100 rounded-xl font-bold text-xs"
+                                  >
+                                    <RotateCcw className="w-3.5 h-3.5 inline mr-1" />
+                                    Return
+                                  </button>
+                                )}
 
-                            {canReject && (
-                              <button
-                                onClick={() => setActionModal({ open: true, type: 'REJECT', record: rec, remarks: '' })}
-                                className="px-2.5 py-1.5 bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-xl font-bold text-xs"
-                              >
-                                <XCircle className="w-3.5 h-3.5 inline mr-1" />
-                                Reject
-                              </button>
-                            )}
+                                {canReject && (
+                                  <button
+                                    onClick={() => setActionModal({ open: true, type: 'REJECT', record: rec, remarks: '' })}
+                                    className="px-2.5 py-1.5 bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-xl font-bold text-xs"
+                                  >
+                                    <XCircle className="w-3.5 h-3.5 inline mr-1" />
+                                    Reject
+                                  </button>
+                                )}
 
-                            {canApprove && (
-                              <button
-                                onClick={() => setActionModal({ open: true, type: 'APPROVE', record: rec, remarks: '' })}
-                                className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs rounded-xl shadow-md shadow-emerald-500/20"
-                              >
-                                <CheckCircle2 className="w-3.5 h-3.5 inline mr-1" />
-                                Approve
-                              </button>
+                                {canApprove && (
+                                  <button
+                                    onClick={() => setActionModal({ open: true, type: 'APPROVE', record: rec, remarks: '' })}
+                                    className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs rounded-xl shadow-md shadow-emerald-500/20"
+                                  >
+                                    <CheckCircle2 className="w-3.5 h-3.5 inline mr-1" />
+                                    Approve
+                                  </button>
+                                )}
+                              </>
+                            ) : (
+                              <span className="text-[11px] font-bold text-gray-400 italic">Awaiting Stage Approver</span>
                             )}
                           </div>
                         </td>
