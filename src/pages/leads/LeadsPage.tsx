@@ -163,13 +163,7 @@ const LeadsPage: React.FC = () => {
     if (targetStage && filters.stage !== targetStage) {
       setFilters({ stage: targetStage });
     }
-
-    const searchQuery = params.get('search') || params.get('product') || params.get('productName');
-    if (searchQuery && search !== searchQuery) {
-      setSearch(searchQuery);
-      setSearchDraft(searchQuery);
-    }
-  }, [location.search, location.state, filters.stage, search, setFilters, setSearch]);
+  }, [location.search, location.state, filters.stage, setFilters]);
 
   useEffect(() => {
     const state = location.state as { fromQuickAdd?: boolean } | null;
