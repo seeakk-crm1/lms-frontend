@@ -143,3 +143,85 @@ export const getRevenueAnalytics = async (filters: RevenueAnalyticsFilters): Pro
     inFlightRevenueRequests.delete(key);
   }
 };
+
+export interface ProductAnalyticsFilters {
+  range?: DashboardRange;
+  dateFrom?: string;
+  dateTo?: string;
+  userId?: string;
+  supervisorId?: string;
+  officeId?: string;
+  stageId?: string;
+  sourceId?: string;
+  status?: DashboardStatusFilter;
+}
+
+export interface ProductPerformanceItem {
+  id: string;
+  name: string;
+  code: string | null;
+  quantitySold: number;
+  revenue: number;
+  averageSale: number;
+  closedLeads: number;
+  openLeads: number;
+  totalLeads: number;
+  conversionRate: number;
+}
+
+export interface ProductAnalyticsResponse {
+  success: boolean;
+  data: {
+    hasProducts: boolean;
+    totalProducts: number;
+    productsSold: number;
+    totalRevenue: number;
+    bestSellingProduct: {
+      id: string;
+      name: string;
+      quantitySold: number;
+      revenue: number;
+    } | null;
+    lowestSellingProduct: {
+      id: string;
+      name: string;
+      quantitySold: number;
+      revenue: number;
+    } | null;
+    averageProductValue: number;
+    ranking: ProductPerformanceItem[];
+    revenueContribution: Array<{
+      id: string;
+      name: string;
+      revenue: number;
+      percentage: number;
+    }>;
+    revenueTrend: Array<{
+      name: string;
+      revenue: number;
+      units: number;
+    }>;
+    performanceTable: ProductPerformanceItem[];
+  };
+}
+
+const inFlightProductRequests = new Map<string, Promise<ProductAnalyticsResponse>>();
+
+export const getProductAnalytics = async (filters: ProductAnalyticsFilters): Promise<ProductAnalyticsResponse> => {
+  const key = buildRequestKey(filters);
+  const existing = inFlightProductRequests.get(key);
+  if (existing) return existing;
+
+  const request = api
+    .get('/dashboard/product-analytics', {
+      params: filters,
+    })
+    .then((response) => response.data);
+
+  inFlightProductRequests.set(key, request);
+  try {
+    return await request;
+  } finally {
+    inFlightProductRequests.delete(key);
+  }
+};

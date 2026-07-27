@@ -8,6 +8,7 @@ import QuickLeadWidget from '../components/dashboard/QuickLeadWidget';
 import RecentActivityWidget from '../components/dashboard/RecentActivityWidget';
 import LOBAnalysisWidget from '../components/dashboard/LOBAnalysisWidget';
 import CalendarWidget from '../components/dashboard/CalendarWidget';
+import ProductAnalyticsWidget from '../components/dashboard/ProductAnalyticsWidget';
 import useDashboardStore from '../store/useDashboardStore';
 import useAuthStore from '../store/useAuthStore';
 import FollowUpCapacityWidget from '../components/dashboard/FollowUpCapacityWidget';
@@ -362,6 +363,8 @@ const Dashboard: React.FC<DashboardProps> = ({ mode = 'operations' }) => {
                                 <PipelineStages />
                             </div>
                         )}
+
+                        {canSeeMetrics && <ProductAnalyticsWidget />}
 
                         {(canQuickAddLead || canSeeActivity || canSeeLOB || canSeeCalendar) && (
                             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
