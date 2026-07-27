@@ -1,13 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from '../../../services/api';
-const formatCurrency = (val: number) => {
-  return new Intl.NumberFormat('en-IN', {
-    style: 'currency',
-    currency: 'INR',
-    maximumFractionDigits: 0,
-  }).format(val);
-};
+import { formatCurrency } from '../../../utils/currency';
 import type { LeadListItem } from '../../../types/lead.types';
 import { UploadCloud, FileText, CheckCircle, XCircle, Clock, Check, X } from 'lucide-react';
 import { toast } from 'react-hot-toast';

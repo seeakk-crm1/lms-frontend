@@ -21,11 +21,7 @@ interface ClosedLeadsTableProps {
   onReopen: (lead: LeadListItem) => void;
 }
 
-const moneyFormatter = new Intl.NumberFormat('en-IN', {
-  style: 'currency',
-  currency: 'INR',
-  maximumFractionDigits: 0,
-});
+import { formatCurrency } from '../../../utils/currency';
 
 const ClosedLeadsTable: React.FC<ClosedLeadsTableProps> = ({
   items,
@@ -193,12 +189,12 @@ const ClosedLeadsTable: React.FC<ClosedLeadsTableProps> = ({
                   <td className="px-6 py-5 text-sm font-semibold text-gray-600">{lead.source?.name || 'Unknown'}</td>
 
                   <td className="px-6 py-5 text-sm font-bold text-gray-400">
-                    {moneyFormatter.format(lead.expectedRevenue || 0)}
+                    {formatCurrency(lead.expectedRevenue || 0)}
                   </td>
 
                   <td className="px-6 py-5">
                     <div className={`text-base font-black ${lead.closureType === 'WON' ? 'text-emerald-600' : 'text-gray-900'}`}>
-                      {moneyFormatter.format(lead.totalAmount || lead.generatedRevenue || 0)}
+                      {formatCurrency(lead.totalAmount || lead.generatedRevenue || 0)}
                     </div>
                     <div className="mt-1 text-[11px] font-black uppercase tracking-[0.22em] text-gray-400">
                       {lead.closureType || 'Pending'}

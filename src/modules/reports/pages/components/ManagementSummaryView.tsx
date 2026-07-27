@@ -10,6 +10,7 @@ import {
 } from '../../../../services/summaryReports.api';
 import FollowupLatestNotesSection from '../../summary/components/FollowupLatestNotesSection';
 import FollowupPerformanceSection from '../../summary/components/FollowupPerformanceSection';
+import { formatCurrency } from '../../../../utils/currency';
 
 interface ManagementSummaryViewProps {
   filters: SummaryFilters;
@@ -43,7 +44,7 @@ const ManagementSummaryView: React.FC<ManagementSummaryViewProps> = ({ filters, 
 
   const insight =
     overview?.aiInsight ||
-    `${userName} created ${overview?.leadsCreated || 0} leads and generated ₹${(overview?.revenueGenerated || 0).toLocaleString()} revenue during the selected period.`;
+    `${userName} created ${overview?.leadsCreated || 0} leads and generated ${formatCurrency(overview?.revenueGenerated || 0)} revenue during the selected period.`;
 
   return (
     <div className="space-y-6 rounded-3xl border border-gray-200 bg-white p-6 shadow-sm print:shadow-none">
@@ -85,7 +86,7 @@ const ManagementSummaryView: React.FC<ManagementSummaryViewProps> = ({ filters, 
         <FollowupPerformanceSection filters={filters} />
         <FollowupLatestNotesSection filters={filters} />
 
-        <p><strong>Revenue Generated:</strong> ₹{(overview?.revenueGenerated || 0).toLocaleString()}</p>
+        <p><strong>Revenue Generated:</strong> {formatCurrency(overview?.revenueGenerated || 0)}</p>
         <p><strong>Attendance:</strong> {attendance?.status || 'Not recorded'}</p>
         {attendance?.checkInTime ? (
           <p>

@@ -6,7 +6,7 @@ import DashboardLayout from '../components/dashboard/DashboardLayout';
 import { createProduct, deleteProduct, getProducts, toggleProductStatus, updateProduct } from '../services/products.api';
 import type { Product, ProductInput, ProductStatus } from '../types/product.types';
 
-const money = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 2 });
+import { formatCurrency } from '../utils/currency';
 
 const emptyForm: ProductInput = {
   name: '',
@@ -162,7 +162,7 @@ const ProductListPage: React.FC = () => {
                       <td className="px-5 py-4 text-sm font-black text-gray-900">{product.name}</td>
                       <td className="px-5 py-4 text-sm font-semibold text-gray-600">{product.code || '-'}</td>
                       <td className="px-5 py-4 text-sm font-semibold text-gray-600">{product.category || '-'}</td>
-                      <td className="px-5 py-4 text-sm font-black text-gray-900">{money.format(product.unitPrice)}</td>
+                      <td className="px-5 py-4 text-sm font-black text-gray-900">{formatCurrency(product.unitPrice)}</td>
                       <td className="px-5 py-4">
                         <span className={`rounded-full px-3 py-1 text-xs font-black ${product.status === 'ACTIVE' ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>
                           {product.status}

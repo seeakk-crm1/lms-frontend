@@ -28,6 +28,7 @@ import { useMutation } from '@tanstack/react-query';
 import { LeadListItem } from '../../types/lead.types';
 import { lazyWithChunkRecovery } from '../../utils/chunkLoadRecovery';
 import useAuthStore from '../../store/useAuthStore';
+import { formatCurrency } from '../../utils/currency';
 import { canUseOfficeFilter } from '../../utils/officeFilterAccess';
 
 const LeadFormDrawer = lazyWithChunkRecovery(() => import('./components/LeadFormDrawer'));
@@ -400,7 +401,7 @@ const LeadsPage: React.FC = () => {
       { label: 'Due Today', value: dueTodayCount, accent: 'from-amber-500 to-orange-500' },
       {
         label: 'Expected Revenue',
-        value: expectedRevenue.toLocaleString('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }),
+        value: formatCurrency(expectedRevenue),
         accent: 'from-violet-500 to-fuchsia-600',
       },
     ],

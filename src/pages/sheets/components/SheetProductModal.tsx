@@ -6,6 +6,8 @@ import { toast } from 'react-hot-toast';
 import { useLeadMetaQuery } from '../../../hooks/useLeads';
 import { updateLead } from '../../../services/leads.api';
 
+import { formatCurrency } from '../../../utils/currency';
+
 interface SheetProductModalProps {
   isOpen: boolean;
   leadId?: string;
@@ -235,7 +237,7 @@ const SheetProductModal: React.FC<SheetProductModalProps> = ({
                           <div className="min-w-0">
                             <p className="text-sm font-bold text-gray-800 truncate">{product.name}</p>
                             <p className="text-xs font-medium text-gray-400">
-                              ₹{price.toLocaleString('en-IN')} {product.code ? `• ${product.code}` : ''}
+                              {formatCurrency(price)} {product.code ? `• ${product.code}` : ''}
                             </p>
                           </div>
                         </label>
@@ -279,7 +281,7 @@ const SheetProductModal: React.FC<SheetProductModalProps> = ({
                 </div>
                 <div className="text-right">
                   <p className="text-[11px] font-black uppercase tracking-wider text-gray-400">Live Total Amount</p>
-                  <p className="text-base font-black text-emerald-600">₹{liveTotal.toLocaleString('en-IN')}</p>
+                  <p className="text-base font-black text-emerald-600">{formatCurrency(liveTotal)}</p>
                 </div>
               </div>
             </div>

@@ -46,8 +46,11 @@ const WorkspaceSetup = () => {
 
     useEffect(() => {
         const fetchMeta = async () => {
+            console.log('[DEBUG] Loading Workspace Configuration');
             try {
+                console.log('[DEBUG] Workspace Config Request Started');
                 const response = await api.get('/workspace/config-meta');
+                console.log('[DEBUG] Workspace Config Response Received', response.data);
                 const { lists, defaults } = response.data;
 
                 setMetaLists(lists);
@@ -58,8 +61,9 @@ const WorkspaceSetup = () => {
                     language: defaults.language || 'en-US',
                     currencyLocale: defaults.currencyLocale || 'USD'
                 }));
+                console.log('[DEBUG] Workspace Config Loaded Successfully');
             } catch (err) {
-                console.error("Failed to load workspace configuration metadata", err);
+                console.error('[DEBUG] Workspace Config Failed', err);
                 toast.error("Failed to load global configurations.");
             }
         };

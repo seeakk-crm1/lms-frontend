@@ -15,11 +15,7 @@ import { canUseOfficeFilter } from '../../utils/officeFilterAccess';
 
 const LeadViewDrawer = lazyWithChunkRecovery(() => import('./components/LeadViewDrawer'));
 
-const moneyFormatter = new Intl.NumberFormat('en-IN', {
-  style: 'currency',
-  currency: 'INR',
-  maximumFractionDigits: 0,
-});
+import { formatCurrency } from '../../utils/currency';
 
 const normalizeRole = (role: unknown) =>
   String(typeof role === 'object' && role !== null ? (role as { name?: string }).name || '' : role || '')
@@ -178,7 +174,7 @@ const ClosedLeadsPage: React.FC = () => {
   const stats = useMemo(
     () => [
       { label: 'Closed Leads', value: totalClosed, accent: 'from-slate-500 to-slate-700' },
-      { label: 'Won Revenue', value: moneyFormatter.format(wonRevenue), accent: 'from-emerald-500 to-emerald-600' },
+      { label: 'Won Revenue', value: formatCurrency(wonRevenue), accent: 'from-emerald-500 to-emerald-600' },
       { label: 'Lost Deals', value: lostCount, accent: 'from-rose-500 to-rose-600' },
     ],
     [lostCount, totalClosed, wonRevenue],

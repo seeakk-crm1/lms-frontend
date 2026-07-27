@@ -18,6 +18,7 @@ import {
 import DashboardLayout from '../../components/dashboard/DashboardLayout';
 import { salaryApi } from '../../services/salary.api';
 import { SalaryRecord } from '../../types/salary.types';
+import { formatCurrency, getWorkspaceCurrencySymbol } from '../../utils/currency';
 import { getImageUrl } from '../../utils/getImageUrl';
 import useAuthStore from '../../store/useAuthStore';
 import { hasAnyPermission } from '../../utils/permissions';
@@ -290,14 +291,14 @@ const PendingApprovalsPage: React.FC = () => {
                           {MONTHS.find(m => m.value === rec.month)?.label} {rec.year}
                         </td>
                         <td className="px-4 py-4 text-sm font-bold text-gray-900">
-                          ₹{rec.monthlySalary.toLocaleString('en-IN')}
+                          {formatCurrency(rec.monthlySalary)}
                         </td>
                         <td className="px-4 py-4 text-xs font-semibold text-gray-700">
                           <p><span className="text-emerald-600 font-bold">{rec.attendanceDays}</span> / {rec.workingDays} Days</p>
                           {rec.lopDays > 0 && <p className="text-rose-600 font-bold text-[11px]">{rec.lopDays} LOP Days</p>}
                         </td>
                         <td className="px-4 py-4 text-base font-black text-emerald-600">
-                          ₹{rec.finalSalary.toLocaleString('en-IN')}
+                          {formatCurrency(rec.finalSalary)}
                         </td>
                         <td className="px-4 py-4">
                           <div className="space-y-0.5">
@@ -395,7 +396,7 @@ const PendingApprovalsPage: React.FC = () => {
                 {actionModal.type === 'RETURN' && 'Return Salary for Correction'}
               </h3>
               <p className="text-xs text-gray-500 font-medium mb-4">
-                Target: <span className="font-bold text-gray-800">{actionModal.record.user?.name}</span> • Final Salary: <span className="font-bold text-emerald-600">₹{actionModal.record.finalSalary.toLocaleString('en-IN')}</span>
+                Target: <span className="font-bold text-gray-800">{actionModal.record.user?.name}</span> • Final Salary: <span className="font-bold text-emerald-600">{formatCurrency(actionModal.record.finalSalary)}</span>
               </p>
 
               <form onSubmit={handleActionSubmit} className="space-y-4">
@@ -453,7 +454,7 @@ const PendingApprovalsPage: React.FC = () => {
               <form onSubmit={handleEditSubmit} className="space-y-4">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 block">Bonus (₹)</label>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 block">Bonus ({getWorkspaceCurrencySymbol()})</label>
                     <input
                       type="number"
                       step="0.01"
@@ -465,7 +466,7 @@ const PendingApprovalsPage: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 block">Deduction (₹)</label>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 block">Deduction ({getWorkspaceCurrencySymbol()})</label>
                     <input
                       type="number"
                       step="0.01"
@@ -479,7 +480,7 @@ const PendingApprovalsPage: React.FC = () => {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 block">Advance Deduction (₹)</label>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 block">Advance Deduction ({getWorkspaceCurrencySymbol()})</label>
                     <input
                       type="number"
                       step="0.01"
@@ -491,7 +492,7 @@ const PendingApprovalsPage: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 block">Final Net Salary (₹)</label>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 block">Final Net Salary ({getWorkspaceCurrencySymbol()})</label>
                     <input
                       type="number"
                       step="0.01"
@@ -593,16 +594,16 @@ const PendingApprovalsPage: React.FC = () => {
                               <div className="grid grid-cols-3 gap-2 bg-white p-3 rounded-xl border border-gray-100 text-center my-2 shadow-xs">
                                 <div>
                                   <p className="text-[10px] font-bold text-gray-400 uppercase">Original Salary</p>
-                                  <p className="text-sm font-black text-gray-700">₹{Number(h.previousSalary).toLocaleString('en-IN')}</p>
+                                  <p className="text-sm font-black text-gray-700">{formatCurrency(h.previousSalary)}</p>
                                 </div>
                                 <div>
                                   <p className="text-[10px] font-bold text-gray-400 uppercase">Updated Salary</p>
-                                  <p className="text-sm font-black text-emerald-600">₹{Number(h.updatedSalary).toLocaleString('en-IN')}</p>
+                                  <p className="text-sm font-black text-emerald-600">{formatCurrency(h.updatedSalary)}</p>
                                 </div>
                                 <div>
                                   <p className="text-[10px] font-bold text-gray-400 uppercase">Difference</p>
                                   <p className={`text-sm font-black ${Number(h.difference) < 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
-                                    {Number(h.difference) > 0 ? `+₹${Number(h.difference).toLocaleString('en-IN')}` : `₹${Number(h.difference || 0).toLocaleString('en-IN')}`}
+                                    {Number(h.difference) > 0 ? `+${formatCurrency(h.difference)}` : formatCurrency(h.difference || 0)}
                                   </p>
                                 </div>
                               </div>

@@ -28,6 +28,7 @@ import { getLeadPayments, updateLeadTotalAmount, requestAdvancePayment, uploadLe
 import LeadAvatar from './LeadAvatar';
 import type { ListLeadsResponse } from '../../../types/lead.types';
 import { getImageUrl } from '../../../utils/getImageUrl';
+import { formatCurrency } from '../../../utils/currency';
 
 interface LeadFormDrawerProps {
   isOpen: boolean;
@@ -1434,7 +1435,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
                                   <option value="">Select product</option>
                                   {productOptions.map((product: any) => (
                                     <option key={product.id} value={product.id}>
-                                      {product.name} - {Number(product.unitPrice || 0).toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}
+                                      {product.name} - {formatCurrency(product.unitPrice || 0)}
                                     </option>
                                   ))}
                                 </select>
@@ -1449,14 +1450,14 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
                                 <input
                                   type="text"
                                   readOnly
-                                  value={unitPrice.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}
+                                  value={formatCurrency(unitPrice)}
                                   className={`${inputClassName} bg-white text-gray-500`}
                                   aria-label="Unit price"
                                 />
                                 <input
                                   type="text"
                                   readOnly
-                                  value={lineTotal.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}
+                                  value={formatCurrency(lineTotal)}
                                   className={`${inputClassName} bg-white font-black`}
                                   aria-label="Line total"
                                 />
@@ -1513,16 +1514,16 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
                             return (
                               <div className="mt-2.5 rounded-2xl border border-gray-100 bg-gray-50 p-3 text-xs font-semibold text-gray-600 space-y-1">
                                 <div className="flex items-center justify-between gap-2 flex-wrap">
-                                  <span>Calculated Product Total: <strong className="text-gray-900 font-black">₹{calcTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></span>
+                                  <span>Calculated Product Total: <strong className="text-gray-900 font-black">{formatCurrency(calcTotal)}</strong></span>
                                   {isModified && (
                                     <span className={`rounded-lg px-2 py-0.5 font-black text-xs ${diff < 0 ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>
-                                      {diff < 0 ? `Discount Applied: -₹${Math.abs(diff).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `Price Override: +₹${diff.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                                      {diff < 0 ? `Discount Applied: -${formatCurrency(Math.abs(diff))}` : `Price Override: +${formatCurrency(diff)}`}
                                     </span>
                                   )}
                                 </div>
                                 {isModified && (
                                   <p className="text-[11px] font-medium text-gray-500 italic">
-                                    Product selections and quantities remain unchanged. Final Amount will be saved as ₹{Number(formValues.totalAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}.
+                                    Product selections and quantities remain unchanged. Final Amount will be saved as {formatCurrency(formValues.totalAmount || 0)}.
                                   </p>
                                 )}
                               </div>
@@ -1828,9 +1829,9 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
                 const safeProducts = formValues.products.filter((item) => item.productId && productOptions.some((product: any) => product.id === item.productId));
                 const calcTotal = safeProducts.length ? calculateProductTotal(safeProducts, productOptions) : undefined;
                 if (calcTotal !== undefined && Math.abs(Number(formValues.totalAmount || 0) - calcTotal) > 0.01) {
-                  return `You are setting the Final Amount to ₹${Number(formValues.totalAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (Calculated Product Total: ₹${calcTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}). Please provide a reason for this price adjustment / discount.`;
+                  return `You are setting the Final Amount to ${formatCurrency(formValues.totalAmount || 0)} (Calculated Product Total: ${formatCurrency(calcTotal)}). Please provide a reason for this price adjustment / discount.`;
                 }
-                return `You are updating the Total Amount from ₹${(paymentData?.totalAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} to ₹${Number(formValues.totalAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}. Please provide a reason.`;
+                return `You are updating the Total Amount from ${formatCurrency(paymentData?.totalAmount || 0)} to ${formatCurrency(formValues.totalAmount || 0)}. Please provide a reason.`;
               })()}
             </p>
             <textarea

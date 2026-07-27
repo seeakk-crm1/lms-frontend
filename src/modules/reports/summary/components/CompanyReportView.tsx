@@ -2,6 +2,7 @@ import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { fetchCompanySummary, SummaryFilters } from '../../../../services/summaryReports.api';
 import { Building2, Trophy, ArrowUpRight } from 'lucide-react';
+import { formatCurrency } from '../../../../utils/currency';
 
 interface CompanyReportViewProps {
   filters: SummaryFilters;
@@ -31,7 +32,7 @@ const CompanyReportView: React.FC<CompanyReportViewProps> = ({ filters }) => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="bg-gradient-to-br from-indigo-50 to-blue-50 p-6 rounded-2xl border border-indigo-100">
           <p className="text-sm font-bold text-indigo-900 mb-1">Total Revenue Generated</p>
-          <p className="text-4xl font-black text-indigo-700">₹{totalRevenue.toLocaleString()}</p>
+          <p className="text-4xl font-black text-indigo-700">{formatCurrency(totalRevenue)}</p>
         </div>
         <div className="bg-gradient-to-br from-emerald-50 to-teal-50 p-6 rounded-2xl border border-emerald-100">
           <p className="text-sm font-bold text-emerald-900 mb-1">Total Leads Created</p>
@@ -64,7 +65,7 @@ const CompanyReportView: React.FC<CompanyReportViewProps> = ({ filters }) => {
                   <td className="px-6 py-4">{user.role}</td>
                   <td className="px-6 py-4">{user.branch}</td>
                   <td className="px-6 py-4 text-center font-bold">{user.leadsCreated}</td>
-                  <td className="px-6 py-4 text-right font-black text-emerald-600">₹{user.revenueGenerated.toLocaleString()}</td>
+                  <td className="px-6 py-4 text-right font-black text-emerald-600">{formatCurrency(user.revenueGenerated)}</td>
                 </tr>
               ))}
             </tbody>

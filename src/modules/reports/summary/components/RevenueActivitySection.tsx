@@ -2,6 +2,7 @@ import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { fetchRevenueSummary, SummaryFilters } from '../../../../services/summaryReports.api';
 import { IndianRupee } from 'lucide-react';
+import { formatCurrency } from '../../../../utils/currency';
 import { format } from 'date-fns';
 
 interface RevenueActivitySectionProps {
@@ -37,7 +38,7 @@ const RevenueActivitySection: React.FC<RevenueActivitySectionProps> = ({ filters
               {data.data.map((rev: any) => (
                 <tr key={rev.id} className="border-b border-gray-50 hover:bg-gray-50">
                   <td className="px-6 py-4 font-bold text-gray-900">{rev.lead?.name || '-'}</td>
-                  <td className="px-6 py-4 font-bold text-emerald-600">₹{rev.amount.toLocaleString()}</td>
+                  <td className="px-6 py-4 font-bold text-emerald-600">{formatCurrency(rev.amount)}</td>
                   <td className="px-6 py-4">{rev.createdBy?.name || '-'}</td>
                   <td className="px-6 py-4">{format(new Date(rev.createdAt), 'dd MMM yyyy')}</td>
                 </tr>

@@ -5,6 +5,8 @@ import PhoneInput from '../common/PhoneInput';
 import { validatePhoneStr } from '../../utils/phoneUtils';
 import type { UserFormData } from './CreateUserModal.types';
 
+import { getWorkspaceCurrencySymbol } from '../../utils/currency';
+
 interface CreateUserDetailsTabProps {
   selectedUserId: string | null | undefined;
   detailsTabErrorCount: number;
@@ -202,7 +204,7 @@ const CreateUserDetailsTab: React.FC<CreateUserDetailsTabProps> = ({
         <div className="space-y-1.5">
           <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Monthly Salary</label>
           <div className="relative">
-            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-gray-400">₹</span>
+            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-gray-400">{getWorkspaceCurrencySymbol()}</span>
             <input
               type="number"
               step="0.01"

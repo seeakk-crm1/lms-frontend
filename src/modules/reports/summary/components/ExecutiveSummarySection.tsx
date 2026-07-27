@@ -2,6 +2,7 @@ import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { fetchOverviewCard, SummaryFilters } from '../../../../services/summaryReports.api';
 import { Briefcase, CheckCircle, IndianRupee, Sparkles } from 'lucide-react';
+import { formatCurrency } from '../../../../utils/currency';
 
 interface ExecutiveSummarySectionProps {
   filters: SummaryFilters;
@@ -51,7 +52,7 @@ const ExecutiveSummarySection: React.FC<ExecutiveSummarySectionProps> = ({ filte
           <div className="bg-amber-50 p-4 rounded-xl text-amber-600"><IndianRupee size={24} /></div>
           <div>
             <p className="text-sm text-gray-500 font-bold mb-1">Revenue Generated</p>
-            <p className="text-2xl font-black text-gray-900">₹{data.revenueGenerated.toLocaleString()}</p>
+            <p className="text-2xl font-black text-gray-900">{formatCurrency(data.revenueGenerated)}</p>
           </div>
         </div>
       </div>

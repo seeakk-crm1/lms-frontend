@@ -32,6 +32,7 @@ import { SearchableCombobox, ComboboxItem } from '../../components/common/Search
 import { salaryApi } from '../../services/salary.api';
 import * as usersApi from '../../services/users.api';
 import { SalaryRecord, SalaryRecordStatus } from '../../types/salary.types';
+import { formatCurrency, getWorkspaceCurrencySymbol } from '../../utils/currency';
 import { getImageUrl } from '../../utils/getImageUrl';
 import useAuthStore from '../../store/useAuthStore';
 import { hasAnyPermission } from '../../utils/permissions';
@@ -362,11 +363,11 @@ const SalaryCalculationPage: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="bg-white rounded-2xl border border-gray-100 p-4 flex items-center gap-4 shadow-sm">
               <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
-                ₹
+                {getWorkspaceCurrencySymbol()}
               </div>
               <div>
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Net Payable</p>
-                <h3 className="text-xl font-black text-gray-900">₹{totalNet.toLocaleString('en-IN')}</h3>
+                <h3 className="text-xl font-black text-gray-900">{formatCurrency(totalNet)}</h3>
               </div>
             </div>
 
@@ -382,11 +383,11 @@ const SalaryCalculationPage: React.FC = () => {
 
             <div className="bg-white rounded-2xl border border-gray-100 p-4 flex items-center gap-4 shadow-sm">
               <div className="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center font-bold">
-                ₹
+                {getWorkspaceCurrencySymbol()}
               </div>
               <div>
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Gross Base Salary</p>
-                <h3 className="text-xl font-black text-gray-900">₹{totalBase.toLocaleString('en-IN')}</h3>
+                <h3 className="text-xl font-black text-gray-900">{formatCurrency(totalBase)}</h3>
               </div>
             </div>
 
@@ -549,7 +550,7 @@ const SalaryCalculationPage: React.FC = () => {
                           {MONTHS.find(m => m.value === rec.month)?.label} {rec.year}
                         </td>
                         <td className="px-4 py-4 text-sm font-bold text-gray-900">
-                          ₹{rec.monthlySalary.toLocaleString('en-IN')}
+                          {formatCurrency(rec.monthlySalary)}
                         </td>
                         <td className="px-4 py-4">
                           <div className="text-xs font-semibold text-gray-700 space-y-0.5">
@@ -559,14 +560,14 @@ const SalaryCalculationPage: React.FC = () => {
                         </td>
                         <td className="px-4 py-4">
                           <div className="text-xs font-semibold text-gray-700 space-y-0.5">
-                            {rec.bonus > 0 && <p className="text-emerald-600">+₹{rec.bonus} Bonus</p>}
-                            {rec.deduction > 0 && <p className="text-rose-600">-₹{rec.deduction} Deduct</p>}
-                            {rec.advanceAmount > 0 && <p className="text-amber-600">-₹{rec.advanceAmount} Advance</p>}
+                            {rec.bonus > 0 && <p className="text-emerald-600">+{formatCurrency(rec.bonus)} Bonus</p>}
+                            {rec.deduction > 0 && <p className="text-rose-600">-{formatCurrency(rec.deduction)} Deduct</p>}
+                            {rec.advanceAmount > 0 && <p className="text-amber-600">-{formatCurrency(rec.advanceAmount)} Advance</p>}
                             {rec.bonus === 0 && rec.deduction === 0 && rec.advanceAmount === 0 && <p className="text-gray-400">None</p>}
                           </div>
                         </td>
                         <td className="px-4 py-4 text-base font-black text-emerald-600">
-                          ₹{rec.finalSalary.toLocaleString('en-IN')}
+                          {formatCurrency(rec.finalSalary)}
                         </td>
                         <td className="px-4 py-4">
                           {getStatusBadge(rec.status)}
@@ -762,7 +763,7 @@ const SalaryCalculationPage: React.FC = () => {
 
               <form onSubmit={handleSaveEdit} className="space-y-4">
                 <div>
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 block">Bonus Amount (₹)</label>
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 block">Bonus Amount ({getWorkspaceCurrencySymbol()})</label>
                   <input
                     type="number"
                     step="0.01"
@@ -774,7 +775,7 @@ const SalaryCalculationPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 block">Other Deductions (₹)</label>
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 block">Other Deductions ({getWorkspaceCurrencySymbol()})</label>
                   <input
                     type="number"
                     step="0.01"
@@ -786,7 +787,7 @@ const SalaryCalculationPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 block">Advance Payment Deduction (₹)</label>
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 block">Advance Payment Deduction ({getWorkspaceCurrencySymbol()})</label>
                   <input
                     type="number"
                     step="0.01"

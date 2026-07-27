@@ -11,14 +11,7 @@ import { DEFAULT_STAGE_COLOR } from '../../utils/leadStageColor';
 import { LEAD_STAGE_UPDATED_EVENT, type LeadStageColorPatch } from '../../utils/syncLeadStageColor';
 import type { DashboardSummaryFilters } from '../../services/dashboard.api';
 
-const formatCurrency = (val: number) => {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  }).format(val);
-};
+import { formatCurrency } from '../../utils/currency';
 
 type RevenueAnalyticsProps = {
   dashboardFilters?: DashboardSummaryFilters;
