@@ -74,7 +74,8 @@ const LocationTrackingClient = () => {
   const permissionRequestedRef = useRef(false);
 
   useEffect(() => {
-    if (!isAuthenticated || !user || !isFieldUser(user) || !('geolocation' in navigator)) {
+    const hasToken = Boolean(localStorage.getItem('accessToken'));
+    if (!isAuthenticated || !user || !hasToken || !isFieldUser(user) || !('geolocation' in navigator)) {
       return;
     }
 
@@ -104,6 +105,13 @@ const LocationTrackingClient = () => {
 
     const upload = async (point?: LocationPointPayload) => {
       if (isUploadingRef.current) return;
+
+      const hasToken = Boolean(localStorage.getItem('accessToken'));
+      if (!hasToken) {
+        console.warn('[Location Tracking] Aborting upload: No access token available.');
+        return;
+      }
+
       isUploadingRef.current = true;
 
       try {
@@ -111,16 +119,35 @@ const LocationTrackingClient = () => {
         const points = [...queued, ...(point ? [point] : [])];
         if (points.length === 0) return;
 
+        console.log('[Location Tracking] Location Tracking Request Started');
+        console.log('[Location Tracking] Authorization Token Found: true');
+        console.log(`[Location Tracking] Sending Request (points: ${points.length})...`);
+
         const response = await pushLocationPoints({
           sessionId: sessionIdRef.current,
           attendanceRecordId: attendanceRecordIdRef.current,
           points,
         });
+
+        console.log('[Location Tracking] Response Received -> Status Code: 201');
+        console.log('[Location Tracking] Request Completed');
+
         sessionIdRef.current = response?.data?.sessionId || sessionIdRef.current;
         await idbClearQueue();
       } catch (err: any) {
         const statusCode = err?.response?.status;
-        if (statusCode === 409 || statusCode === 403 || statusCode === 404 || statusCode === 400) {
+        console.warn(`[Location Tracking] Response Received -> Status Code: ${statusCode || 'Error'}`);
+
+        if (statusCode === 401) {
+          console.error('[Location Tracking] Authentication failed (401 Unauthorized). Stopping location tracking retry loop.');
+          if (intervalId) window.clearInterval(intervalId);
+        } else if (statusCode === 403) {
+          toast.error('You do not have permission to access Location Tracking.');
+          await idbClearQueue();
+          sessionIdRef.current = undefined;
+          attendanceRecordIdRef.current = undefined;
+          if (intervalId) window.clearInterval(intervalId);
+        } else if (statusCode === 409 || statusCode === 404 || statusCode === 400) {
           await idbClearQueue();
           sessionIdRef.current = undefined;
           attendanceRecordIdRef.current = undefined;
