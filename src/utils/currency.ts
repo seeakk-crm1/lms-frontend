@@ -103,4 +103,18 @@ export const formatCurrency = (
   }
 };
 
+/**
+ * React Hook that subscribes to workspace currency changes,
+ * ensuring any component using it automatically re-renders ON THE SPOT when currency updates!
+ */
+export const useCurrency = () => {
+  const currencyLocale = useWorkspaceStore((state) => state.currencyLocale);
+  return {
+    currencyLocale,
+    formatCurrency: (val: number | string | null | undefined, options?: FormatCurrencyOptions) =>
+      formatCurrency(val, options),
+    symbol: getWorkspaceCurrencySymbol(),
+  };
+};
+
 export default formatCurrency;

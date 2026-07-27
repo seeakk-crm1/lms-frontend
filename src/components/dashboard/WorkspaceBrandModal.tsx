@@ -19,6 +19,8 @@ import useAuthStore from '../../store/useAuthStore';
 import useWorkspaceStore from '../../store/useWorkspaceStore';
 import { updateWorkspaceProfile } from '../../services/workspace.api';
 import api from '../../services/api';
+import { queryClient } from '../../lib/queryClient';
+import useDashboardStore from '../../store/useDashboardStore';
 import { getApiErrorMessage } from '../../utils/apiValidation';
 import { hasPermission } from '../../utils/permissions';
 import SearchableSelect from '../SearchableSelect';
@@ -272,6 +274,12 @@ const WorkspaceBrandModal: React.FC<WorkspaceBrandModalProps> = ({ open, onClose
         currencyLocale: response.workspace.currencyLocale || 'USD',
         loadSampleData: Boolean(response.workspace.loadSampleData),
       });
+
+      // 3. Invalidate React Query active queries so all views re-render instantly on the spot
+      void queryClient.invalidateQueries();
+
+      // 4. Trigger dashboard re-fetch so KPI cards re-format in the new currency instantly
+      void useDashboardStore.getState().fetchDashboardData();
 
       toast.success(response.message || 'Workspace updated successfully.');
       onClose();
