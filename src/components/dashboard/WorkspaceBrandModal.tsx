@@ -1,33 +1,133 @@
 import React, { ChangeEvent, useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Building2, ImagePlus, Loader2, PencilLine, ShieldCheck, Upload, X } from 'lucide-react';
+import {
+  Building2,
+  CheckCircle2,
+  Coins,
+  Database,
+  Globe2,
+  ImagePlus,
+  Languages,
+  Loader2,
+  ShieldAlert,
+  Users,
+  X,
+} from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import useAuthStore from '../../store/useAuthStore';
-import { updateWorkspaceBranding } from '../../services/workspace.api';
+import useWorkspaceStore from '../../store/useWorkspaceStore';
+import { updateWorkspaceProfile } from '../../services/workspace.api';
+import api from '../../services/api';
 import { getApiErrorMessage } from '../../utils/apiValidation';
+import { hasPermission } from '../../utils/permissions';
+import SearchableSelect from '../SearchableSelect';
 
 interface WorkspaceBrandModalProps {
   open: boolean;
   onClose: () => void;
 }
 
-const MAX_LOGO_FILE_BYTES = 1024 * 1024;
+interface WorkspaceMetaLists {
+  timeZones: string[];
+  languages: { code: string; label?: string; name?: string }[];
+  currencies: { code: string; label?: string; name?: string }[];
+}
+
+const MAX_LOGO_FILE_BYTES = 1024 * 1024; // 1MB
+
+const EMPLOYEE_COUNT_OPTIONS = [
+  { value: '1-10', label: '1 - 10 employees' },
+  { value: '11-50', label: '11 - 50 employees' },
+  { value: '51-200', label: '51 - 200 employees' },
+  { value: '201-500', label: '201 - 500 employees' },
+  { value: '500+', label: '500+ employees' },
+];
 
 const WorkspaceBrandModal: React.FC<WorkspaceBrandModalProps> = ({ open, onClose }) => {
   const user = useAuthStore((state) => state.user);
   const updateUser = useAuthStore((state) => state.updateUser);
+  const workspaceStore = useWorkspaceStore();
 
-  const [companyName, setCompanyName] = useState('');
-  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const canEditWorkspace = hasPermission(user, 'SYSTEM_CONFIG');
+
+  const [metaLists, setMetaLists] = useState<WorkspaceMetaLists>({
+    timeZones: [],
+    languages: [],
+    currencies: [],
+  });
+  const [isLoadingMeta, setIsLoadingMeta] = useState(false);
+
+  // Initial reference values to calculate deltas
+  const [initialFormState, setInitialFormState] = useState({
+    companyName: '',
+    logoUrl: null as string | null,
+    employeeCount: '1-10',
+    timeZone: 'UTC',
+    language: 'en-US',
+    currencyLocale: 'USD',
+  });
+
+  // Current working form state
+  const [formData, setFormData] = useState({
+    companyName: '',
+    logoUrl: null as string | null,
+    employeeCount: '1-10',
+    timeZone: 'UTC',
+    language: 'en-US',
+    currencyLocale: 'USD',
+  });
+
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Fetch configuration metadata options (timezones, languages, currencies)
   useEffect(() => {
     if (!open) return;
-    setCompanyName(user?.workspace?.companyName || '');
-    setLogoUrl(user?.workspace?.logoUrl || null);
-  }, [open, user?.workspace?.companyName, user?.workspace?.logoUrl]);
 
+    const fetchMeta = async () => {
+      setIsLoadingMeta(true);
+      try {
+        const response = await api.get('/workspace/config-meta');
+        const { lists } = response.data || {};
+        if (lists) {
+          setMetaLists(lists);
+        }
+      } catch (err) {
+        console.warn('[WorkspaceSettings] Could not load config-meta options:', err);
+      } finally {
+        setIsLoadingMeta(false);
+      }
+    };
+
+    void fetchMeta();
+  }, [open]);
+
+  // Synchronize form state with user & workspace store on open
+  useEffect(() => {
+    if (!open) return;
+
+    const w = user?.workspace;
+    const currentName = w?.companyName || workspaceStore.companyName || '';
+    const currentLogo = w?.logoUrl || workspaceStore.logoUrl || null;
+    const currentEmp = w?.employeeCount || workspaceStore.employeeCount || '1-10';
+    const currentTz = w?.timeZone || workspaceStore.timeZone || 'UTC';
+    const currentLang = w?.language || workspaceStore.language || 'en-US';
+    const currentCur = w?.currencyLocale || workspaceStore.currencyLocale || 'USD';
+
+    const stateObj = {
+      companyName: currentName,
+      logoUrl: currentLogo,
+      employeeCount: currentEmp,
+      timeZone: currentTz,
+      language: currentLang,
+      currencyLocale: currentCur,
+    };
+
+    setInitialFormState(stateObj);
+    setFormData(stateObj);
+  }, [open, user?.workspace, workspaceStore]);
+
+  // Lock body scroll while modal is open
   useEffect(() => {
     if (!open || typeof document === 'undefined') return undefined;
 
@@ -40,7 +140,7 @@ const WorkspaceBrandModal: React.FC<WorkspaceBrandModalProps> = ({ open, onClose
   }, [open]);
 
   const workspaceInitials = useMemo(() => {
-    const source = companyName.trim() || user?.workspace?.companyName || 'Workspace';
+    const source = formData.companyName.trim() || 'Workspace';
     return (
       source
         .split(/\s+/)
@@ -50,7 +150,34 @@ const WorkspaceBrandModal: React.FC<WorkspaceBrandModalProps> = ({ open, onClose
         .slice(0, 2)
         .toUpperCase() || 'WS'
     );
-  }, [companyName, user?.workspace?.companyName]);
+  }, [formData.companyName]);
+
+  const timeZoneOptions = useMemo(
+    () =>
+      metaLists.timeZones.map((tz) => ({
+        value: tz,
+        label: tz.replace(/_/g, ' '),
+      })),
+    [metaLists.timeZones],
+  );
+
+  const languageOptions = useMemo(
+    () =>
+      metaLists.languages.map((lng) => ({
+        value: lng.code,
+        label: lng.label || lng.name || lng.code,
+      })),
+    [metaLists.languages],
+  );
+
+  const currencyOptions = useMemo(
+    () =>
+      metaLists.currencies.map((cur) => ({
+        value: cur.code,
+        label: cur.label || cur.name || cur.code,
+      })),
+    [metaLists.currencies],
+  );
 
   const handleLogoSelect = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -71,42 +198,91 @@ const WorkspaceBrandModal: React.FC<WorkspaceBrandModalProps> = ({ open, onClose
     const reader = new FileReader();
     reader.onload = () => {
       const result = typeof reader.result === 'string' ? reader.result : '';
-      setLogoUrl(result || null);
+      setFormData((prev) => ({ ...prev, logoUrl: result || null }));
     };
     reader.readAsDataURL(file);
     event.target.value = '';
   };
 
+  // Compute delta object of only modified fields
+  const getModifiedPayload = () => {
+    const payload: Record<string, any> = {};
+
+    if (formData.companyName.trim() !== initialFormState.companyName.trim()) {
+      payload.companyName = formData.companyName.trim();
+    }
+    if (formData.logoUrl !== initialFormState.logoUrl) {
+      payload.logoUrl = formData.logoUrl || '';
+    }
+    if (formData.employeeCount !== initialFormState.employeeCount) {
+      payload.employeeCount = formData.employeeCount;
+    }
+    if (formData.timeZone !== initialFormState.timeZone) {
+      payload.timeZone = formData.timeZone;
+    }
+    if (formData.language !== initialFormState.language) {
+      payload.language = formData.language;
+    }
+    if (formData.currencyLocale !== initialFormState.currencyLocale) {
+      payload.currencyLocale = formData.currencyLocale;
+    }
+
+    return payload;
+  };
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    const trimmedCompanyName = companyName.trim();
-    if (!trimmedCompanyName) {
+    if (!canEditWorkspace) {
+      toast.error('You do not have permission to update workspace settings.');
+      return;
+    }
+
+    if (!formData.companyName.trim()) {
       toast.error('Company name is required.');
+      return;
+    }
+
+    const payload = getModifiedPayload();
+    if (Object.keys(payload).length === 0) {
+      toast.success('No changes to save.');
+      onClose();
       return;
     }
 
     setIsSubmitting(true);
     try {
-      const response = await updateWorkspaceBranding({
-        companyName: trimmedCompanyName,
-        logoUrl: logoUrl || '',
-      });
+      const response = await updateWorkspaceProfile(payload);
 
+      // 1. Update active user state in auth store
       updateUser({
-        workspace: response.workspace,
+        workspace: {
+          ...user?.workspace,
+          ...response.workspace,
+        },
       });
 
-      toast.success(response.message || 'Company branding updated successfully.');
+      // 2. Refresh global workspace context store (updates currency & timezone app-wide)
+      useWorkspaceStore.getState().setWorkspaceConfig({
+        companyName: response.workspace.companyName,
+        logoUrl: response.workspace.logoUrl || null,
+        employeeCount: response.workspace.employeeCount || null,
+        timeZone: response.workspace.timeZone || 'UTC',
+        language: response.workspace.language || 'en-US',
+        currencyLocale: response.workspace.currencyLocale || 'USD',
+        loadSampleData: Boolean(response.workspace.loadSampleData),
+      });
+
+      toast.success(response.message || 'Workspace updated successfully.');
       onClose();
     } catch (error) {
-      toast.error(getApiErrorMessage(error, 'Failed to update company branding.'));
+      toast.error(getApiErrorMessage(error, 'Unable to save workspace settings. Please try again.'));
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const currentWorkspaceName = companyName.trim() || user?.workspace?.companyName || 'Workspace';
+  const sampleDataLoaded = Boolean(user?.workspace?.loadSampleData || workspaceStore.loadSampleData);
 
   const modal = (
     <AnimatePresence>
@@ -116,178 +292,275 @@ const WorkspaceBrandModal: React.FC<WorkspaceBrandModalProps> = ({ open, onClose
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.18, ease: 'easeOut' }}
-          className="fixed inset-0 z-[95] flex items-center justify-center bg-slate-950/35 p-4 backdrop-blur-md"
+          className="fixed inset-0 z-[95] flex items-center justify-center bg-slate-950/40 p-4 backdrop-blur-md"
           onClick={onClose}
         >
           <motion.div
-            initial={{ opacity: 0, y: 20, scale: 0.97 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 20, scale: 0.97 }}
-            transition={{ type: 'spring', stiffness: 320, damping: 30, mass: 0.9 }}
-            className="relative flex w-full max-w-2xl max-h-[calc(100vh-2rem)] flex-col overflow-hidden rounded-[28px] border border-white/80 bg-white shadow-[0_40px_120px_-40px_rgba(15,23,42,0.45)]"
-            onClick={(event) => event.stopPropagation()}
+            initial={{ opacity: 0, scale: 0.96, y: 12 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.96, y: 12 }}
+            transition={{ type: 'spring', stiffness: 360, damping: 28 }}
+            onClick={(e) => e.stopPropagation()}
+            className="relative flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-[32px] border border-gray-100 bg-white shadow-2xl"
           >
-            <button
-              type="button"
-              onClick={onClose}
-              className="absolute right-4 top-4 z-20 rounded-full border border-white/70 bg-white/90 p-2 text-gray-400 shadow-sm transition-all hover:text-gray-700"
-              aria-label="Close company branding modal"
-            >
-              <X className="h-4 w-4" />
-            </button>
-
-            <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
-              <div className="border-b border-gray-100 bg-[radial-gradient(circle_at_top,_rgba(16,185,129,0.10),_transparent_38%)] px-5 py-5 sm:px-7 sm:py-6">
-                <div className="pr-10">
-                  <p className="text-[11px] font-black uppercase tracking-[0.24em] text-emerald-500">
-                    Workspace branding
-                  </p>
-                  <h2 className="mt-2 text-2xl font-black tracking-tight text-gray-900">
-                    Edit company branding
-                  </h2>
-                  <p className="mt-2 max-w-2xl text-sm font-medium leading-6 text-gray-500">
-                    Update the company name and logo used in the sidebar with a cleaner, minimal branding setup.
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-gray-100 bg-gradient-to-r from-emerald-50/60 via-white to-white px-6 py-5">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
+                  <Building2 size={22} />
+                </div>
+                <div>
+                  <h2 className="text-xl font-black text-gray-900">Workspace Settings</h2>
+                  <p className="text-xs font-semibold text-gray-500">
+                    Manage branding, regional preferences, and team configuration.
                   </p>
                 </div>
+              </div>
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex h-9 w-9 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+              >
+                <X size={18} />
+              </button>
+            </div>
 
-                <div className="mt-5 rounded-[24px] border border-gray-200 bg-white/95 p-4 shadow-[0_20px_60px_-42px_rgba(15,23,42,0.22)]">
-                  <div className="flex items-center gap-4">
-                    {logoUrl ? (
-                      <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-[20px] border border-gray-200 bg-white p-2 shadow-sm">
-                        <img src={logoUrl} alt={currentWorkspaceName} className="h-full w-full object-contain" />
-                      </div>
-                    ) : (
-                      <div className="flex h-16 w-16 items-center justify-center rounded-[20px] bg-gradient-to-br from-emerald-500 to-emerald-600 text-xl font-black text-white shadow-sm">
-                        {workspaceInitials}
-                      </div>
-                    )}
+            {/* Read-only permission alert */}
+            {!canEditWorkspace && (
+              <div className="mx-6 mt-4 flex items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-semibold text-amber-800">
+                <ShieldAlert size={18} className="shrink-0 text-amber-600" />
+                <span>You have view-only access. Only workspace administrators can edit settings.</span>
+              </div>
+            )}
 
-                    <div className="min-w-0 flex-1">
-                      <h3 className="truncate text-lg font-black text-gray-900">{currentWorkspaceName}</h3>
-                      <p className="mt-1 text-sm font-medium text-gray-500">Company Workspace</p>
-                      <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1 text-[11px] font-black uppercase tracking-[0.2em] text-emerald-700">
-                        <ShieldCheck size={12} />
-                        Live branding
-                      </div>
+            {/* Form Body */}
+            <form onSubmit={handleSubmit} className="custom-scrollbar flex-1 overflow-y-auto p-6 space-y-6">
+              {/* Section 1: Workspace Branding */}
+              <section className="space-y-4 rounded-2xl border border-gray-100 bg-slate-50/50 p-5">
+                <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-emerald-600">
+                  <Building2 size={15} />
+                  <span>Workspace Branding</span>
+                </div>
+
+                <div className="grid gap-5 md:grid-cols-2">
+                  <div>
+                    <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-gray-700">
+                      Company Name <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.companyName}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, companyName: e.target.value }))}
+                      disabled={!canEditWorkspace || isSubmitting}
+                      placeholder="e.g. Acme Corporation"
+                      className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-900 outline-none transition-all placeholder:text-gray-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 disabled:opacity-60"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-gray-700">
+                      Company Logo
+                    </label>
+                    <div className="flex items-center gap-3">
+                      {formData.logoUrl ? (
+                        <div className="relative flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl border border-gray-200 bg-white p-1 shadow-sm">
+                          <img src={formData.logoUrl} alt="Logo preview" className="h-full w-full object-contain" />
+                        </div>
+                      ) : (
+                        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600 text-base font-black text-white shadow-sm">
+                          {workspaceInitials}
+                        </div>
+                      )}
+
+                      {canEditWorkspace && (
+                        <div className="flex flex-wrap items-center gap-2">
+                          <label className="cursor-pointer inline-flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-bold text-gray-700 shadow-sm transition hover:border-gray-300 hover:bg-gray-50">
+                            <ImagePlus size={14} className="text-emerald-600" />
+                            <span>Upload</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={handleLogoSelect}
+                              disabled={isSubmitting}
+                              className="hidden"
+                            />
+                          </label>
+                          {formData.logoUrl && (
+                            <button
+                              type="button"
+                              onClick={() => setFormData((prev) => ({ ...prev, logoUrl: null }))}
+                              disabled={isSubmitting}
+                              className="inline-flex items-center gap-1 rounded-xl border border-rose-200 bg-rose-50 px-2.5 py-2 text-xs font-bold text-rose-600 transition hover:bg-rose-100"
+                            >
+                              Remove
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
-              </div>
+              </section>
 
-              <div className="flex-1 overflow-y-auto px-5 py-5 custom-scrollbar sm:px-7 sm:py-6">
-                <div className="grid gap-5">
-                  <section className="rounded-[24px] border border-gray-200 bg-white p-5 shadow-[0_20px_60px_-42px_rgba(15,23,42,0.16)]">
-                    <p className="text-[11px] font-black uppercase tracking-[0.24em] text-emerald-500">
-                      Company details
-                    </p>
-                    <div className="mt-5 space-y-4">
-                      <div className="space-y-2">
-                        <label className="text-[11px] font-black uppercase tracking-[0.22em] text-gray-400">
-                          Company name
-                        </label>
-                        <div className="group flex items-center gap-3 rounded-2xl border border-gray-200 bg-gray-50/70 px-4 py-3 transition-all focus-within:border-emerald-300 focus-within:bg-white focus-within:shadow-[0_0_0_4px_rgba(16,185,129,0.08)]">
-                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white text-gray-400 ring-1 ring-gray-200">
-                            <Building2 className="h-4 w-4" />
-                          </div>
-                          <input
-                            value={companyName}
-                            onChange={(event) => setCompanyName(event.target.value)}
-                            type="text"
-                            placeholder="Enter your company name"
-                            className="w-full border-0 bg-transparent p-0 text-sm font-semibold text-gray-900 outline-none placeholder:text-gray-400"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </section>
-
-                  <section className="rounded-[24px] border border-gray-200 bg-white p-5 shadow-[0_20px_60px_-42px_rgba(15,23,42,0.16)]">
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                      <div>
-                        <p className="text-[11px] font-black uppercase tracking-[0.24em] text-emerald-500">
-                          Company logo
-                        </p>
-                        <p className="mt-2 text-sm font-medium leading-6 text-gray-500">
-                          Keep the logo clean and simple for the best sidebar presentation.
-                        </p>
-                      </div>
-                      <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-[22px] border border-gray-200 bg-gray-50">
-                        {logoUrl ? (
-                          <img
-                            src={logoUrl}
-                            alt="Company logo preview"
-                            className="h-full w-full object-contain p-2"
-                          />
-                        ) : (
-                          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-emerald-500 to-emerald-600 text-lg font-black text-white">
-                            {workspaceInitials}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="mt-5 flex flex-wrap gap-2">
-                      <label className="inline-flex cursor-pointer items-center gap-2 rounded-2xl bg-emerald-500 px-4 py-2.5 text-sm font-black text-white shadow-[0_12px_30px_-12px_rgba(16,185,129,0.65)] transition-all hover:bg-emerald-600">
-                        <Upload className="h-4 w-4" />
-                        Upload logo
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleLogoSelect}
-                          className="hidden"
-                        />
-                      </label>
-                      {logoUrl ? (
-                        <button
-                          type="button"
-                          onClick={() => setLogoUrl(null)}
-                          className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-bold text-gray-600 transition-all hover:bg-gray-50"
-                        >
-                          <X className="h-4 w-4" />
-                          Remove logo
-                        </button>
-                      ) : null}
-                    </div>
-
-                    <p className="mt-4 text-sm font-medium leading-6 text-gray-500">
-                      Use PNG, JPG, or WebP up to 1MB. Transparent logos usually look best in the sidebar.
-                    </p>
-                  </section>
-
-                  <section className="rounded-[24px] border border-gray-200 bg-gray-50/80 p-5">
-                    <div className="flex items-start gap-3">
-                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white text-emerald-600 ring-1 ring-gray-200">
-                        <PencilLine className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-black text-gray-900">Professional branding note</p>
-                        <p className="mt-2 text-sm font-medium leading-6 text-gray-600">
-                          Short company names and logos with balanced padding create a much cleaner navigation layout.
-                        </p>
-                      </div>
-                    </div>
-                  </section>
+              {/* Section 2: Regional Settings */}
+              <section className="space-y-4 rounded-2xl border border-gray-100 bg-slate-50/50 p-5">
+                <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-emerald-600">
+                  <Globe2 size={15} />
+                  <span>Regional Settings</span>
                 </div>
-              </div>
 
-              <div className="border-t border-gray-100 bg-white px-5 py-4 sm:px-7">
-                <div className="flex flex-col-reverse gap-2.5 sm:flex-row sm:items-center sm:justify-end">
-                  <button
-                    type="button"
-                    onClick={onClose}
-                    className="rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-bold text-gray-600 transition-all hover:bg-gray-50"
+                <div className="grid gap-4 md:grid-cols-3">
+                  <div>
+                    <label className="mb-2 flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-gray-700">
+                      <Globe2 size={13} className="text-gray-400" />
+                      Time Zone
+                    </label>
+                    {timeZoneOptions.length > 0 ? (
+                      <SearchableSelect
+                        options={timeZoneOptions}
+                        value={formData.timeZone}
+                        name="timeZone"
+                        placeholder="Select Timezone"
+                        onChange={(e) => setFormData((prev) => ({ ...prev, timeZone: e.target.value }))}
+                      />
+                    ) : (
+                      <input
+                        type="text"
+                        value={formData.timeZone}
+                        onChange={(e) => setFormData((prev) => ({ ...prev, timeZone: e.target.value }))}
+                        disabled={!canEditWorkspace || isSubmitting}
+                        className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-900 outline-none focus:border-emerald-500"
+                      />
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="mb-2 flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-gray-700">
+                      <Languages size={13} className="text-gray-400" />
+                      Language
+                    </label>
+                    {languageOptions.length > 0 ? (
+                      <SearchableSelect
+                        options={languageOptions}
+                        value={formData.language}
+                        name="language"
+                        placeholder="Select Language"
+                        onChange={(e) => setFormData((prev) => ({ ...prev, language: e.target.value }))}
+                      />
+                    ) : (
+                      <input
+                        type="text"
+                        value={formData.language}
+                        onChange={(e) => setFormData((prev) => ({ ...prev, language: e.target.value }))}
+                        disabled={!canEditWorkspace || isSubmitting}
+                        className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-900 outline-none focus:border-emerald-500"
+                      />
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="mb-2 flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-gray-700">
+                      <Coins size={13} className="text-gray-400" />
+                      Currency
+                    </label>
+                    {currencyOptions.length > 0 ? (
+                      <SearchableSelect
+                        options={currencyOptions}
+                        value={formData.currencyLocale}
+                        name="currencyLocale"
+                        placeholder="Select Currency"
+                        onChange={(e) => setFormData((prev) => ({ ...prev, currencyLocale: e.target.value }))}
+                      />
+                    ) : (
+                      <input
+                        type="text"
+                        value={formData.currencyLocale}
+                        onChange={(e) => setFormData((prev) => ({ ...prev, currencyLocale: e.target.value }))}
+                        disabled={!canEditWorkspace || isSubmitting}
+                        className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-900 outline-none focus:border-emerald-500"
+                      />
+                    )}
+                  </div>
+                </div>
+              </section>
+
+              {/* Section 3: Organization */}
+              <section className="space-y-4 rounded-2xl border border-gray-100 bg-slate-50/50 p-5">
+                <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-emerald-600">
+                  <Users size={15} />
+                  <span>Organization</span>
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-gray-700">
+                    Employee Count
+                  </label>
+                  <select
+                    value={formData.employeeCount}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, employeeCount: e.target.value }))}
+                    disabled={!canEditWorkspace || isSubmitting}
+                    className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-900 outline-none transition-all focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 disabled:opacity-60"
                   >
-                    Cancel
-                  </button>
+                    {EMPLOYEE_COUNT_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </section>
+
+              {/* Section 4: Workspace Options (Read-only) */}
+              <section className="space-y-3 rounded-2xl border border-gray-100 bg-slate-50/50 p-5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-emerald-600">
+                    <Database size={15} />
+                    <span>Workspace Options</span>
+                  </div>
+                  <span
+                    className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold ${
+                      sampleDataLoaded
+                        ? 'bg-emerald-100 text-emerald-800'
+                        : 'bg-slate-200 text-slate-700'
+                    }`}
+                  >
+                    <CheckCircle2 size={13} />
+                    {sampleDataLoaded ? 'Sample Data Loaded' : 'Sample Data Not Loaded'}
+                  </span>
+                </div>
+                <p className="text-xs font-semibold text-gray-500">
+                  Sample data initialization is specified during workspace setup and is read-only.
+                </p>
+              </section>
+
+              {/* Footer Buttons */}
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  disabled={isSubmitting}
+                  className="rounded-2xl border border-gray-200 bg-white px-5 py-2.5 text-sm font-bold text-gray-700 shadow-sm transition hover:bg-gray-50 active:scale-95 disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+
+                {canEditWorkspace && (
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-500 px-5 py-3 text-sm font-black text-white shadow-[0_12px_30px_-12px_rgba(16,185,129,0.65)] transition-all hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600 px-6 py-2.5 text-sm font-bold text-white shadow-lg shadow-emerald-500/25 transition hover:brightness-105 active:scale-95 disabled:opacity-50"
                   >
-                    {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImagePlus className="h-4 w-4" />}
-                    {isSubmitting ? 'Saving changes...' : 'Save company branding'}
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 size={16} className="animate-spin" />
+                        <span>Saving...</span>
+                      </>
+                    ) : (
+                      <span>Save Workspace Settings</span>
+                    )}
                   </button>
-                </div>
+                )}
               </div>
             </form>
           </motion.div>
@@ -296,7 +569,8 @@ const WorkspaceBrandModal: React.FC<WorkspaceBrandModalProps> = ({ open, onClose
     </AnimatePresence>
   );
 
-  return typeof document !== 'undefined' ? createPortal(modal, document.body) : modal;
+  if (typeof document === 'undefined') return null;
+  return createPortal(modal, document.body);
 };
 
 export default WorkspaceBrandModal;

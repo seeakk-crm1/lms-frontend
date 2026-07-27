@@ -21,6 +21,11 @@ export interface User {
     id: string;
     companyName: string;
     logoUrl?: string | null;
+    employeeCount?: string | null;
+    timeZone?: string | null;
+    language?: string | null;
+    currencyLocale?: string | null;
+    loadSampleData?: boolean;
   } | null;
   receivedInvites?: Array<{
     id: string;

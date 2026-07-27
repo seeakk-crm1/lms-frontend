@@ -163,9 +163,9 @@ const WorkspaceBrandMenu: React.FC<WorkspaceBrandMenuProps> = ({ isCollapsed, is
                     <PencilLine size={17} />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-black text-gray-900">Edit company branding</p>
+                    <p className="text-sm font-black text-gray-900">Workspace settings</p>
                     <p className="mt-1 text-sm font-medium text-gray-500">
-                      Update company name and workspace logo from one place.
+                      Manage branding, timezone, currency, and team configuration.
                     </p>
                   </div>
                   <ChevronRight size={16} className="shrink-0 text-gray-300" />

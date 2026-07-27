@@ -7,6 +7,8 @@ export interface WorkspaceConfigState {
   language: string;
   companyName: string | null;
   logoUrl: string | null;
+  employeeCount: string | null;
+  loadSampleData: boolean;
   isLoaded: boolean;
   isLoading: boolean;
   error: string | null;
@@ -18,6 +20,8 @@ export interface WorkspaceConfigState {
     language?: string;
     companyName?: string | null;
     logoUrl?: string | null;
+    employeeCount?: string | null;
+    loadSampleData?: boolean;
   }) => void;
 }
 
@@ -31,6 +35,8 @@ export const useWorkspaceStore = create<WorkspaceConfigState>((set, get) => ({
   language: DEFAULT_LANGUAGE,
   companyName: null,
   logoUrl: null,
+  employeeCount: null,
+  loadSampleData: false,
   isLoaded: false,
   isLoading: false,
   error: null,
@@ -50,6 +56,8 @@ export const useWorkspaceStore = create<WorkspaceConfigState>((set, get) => ({
       const language = workspace?.language || defaults?.language || DEFAULT_LANGUAGE;
       const companyName = workspace?.companyName || null;
       const logoUrl = workspace?.logoUrl || null;
+      const employeeCount = workspace?.employeeCount || null;
+      const loadSampleData = Boolean(workspace?.loadSampleData);
 
       set({
         currencyLocale,
@@ -57,6 +65,8 @@ export const useWorkspaceStore = create<WorkspaceConfigState>((set, get) => ({
         language,
         companyName,
         logoUrl,
+        employeeCount,
+        loadSampleData,
         isLoaded: true,
         isLoading: false,
         error: null,
