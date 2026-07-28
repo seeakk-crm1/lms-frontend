@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from "react";
-import { fetchImportStatus, ImportStatusResponse } from "./import.service";
-import { CheckCircle2, XCircle, Loader2, Download, AlertTriangle } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { fetchImportStatus, ImportStatusResponse } from './import.service';
+import { CheckCircle2, XCircle, Loader2, Download, AlertTriangle, ShieldCheck, DollarSign, ChevronDown, ChevronUp } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 
@@ -23,6 +23,9 @@ const formatDateTime = (value: string): string =>
     hour12: true,
   }).format(new Date(value));
 
+const formatCurrency = (val: number): string =>
+  new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(val);
+
 export default function ProgressTracker({
   jobId,
   onClear,
@@ -36,6 +39,8 @@ export default function ProgressTracker({
   const [error, setError] = useState<string | null>(null);
   const [cacheSynced, setCacheSynced] = useState(false);
   const [completionToastShown, setCompletionToastShown] = useState(false);
+  const [showWarnings, setShowWarnings] = useState(true);
+  const [showApprovals, setShowApprovals] = useState(true);
 
   useEffect(() => {
     setCacheSynced(false);
@@ -54,14 +59,14 @@ export default function ProgressTracker({
         setProgress(res.data);
         onProgressChange?.(res.data);
 
-        if (res.data.status === "COMPLETED" || res.data.status === "FAILED") {
+        if (res.data.status === 'COMPLETED' || res.data.status === 'FAILED') {
           return true;
         }
         return false;
       } catch (err: any) {
         if (!isMounted) return false;
-        console.error("Polling error", err);
-        setError("Failed to fetch progress update.");
+        console.error('Polling error', err);
+        setError('Failed to fetch progress update.');
         return true;
       }
     };
@@ -87,6 +92,7 @@ export default function ProgressTracker({
     queryClient.invalidateQueries({ queryKey: ['leads'] });
     queryClient.invalidateQueries({ queryKey: ['lead-meta'] });
     queryClient.invalidateQueries({ queryKey: ['lead-sources'] });
+    queryClient.invalidateQueries({ queryKey: ['dashboard'] });
     setCacheSynced(true);
   }, [cacheSynced, progress, queryClient]);
 
@@ -100,7 +106,7 @@ export default function ProgressTracker({
     }
 
     if (progress.status === 'COMPLETED' && progress.failed > 0) {
-      toast('Import completed with errors.', { icon: '!' });
+      toast('Import completed with errors/warnings.', { icon: '!' });
       setCompletionToastShown(true);
       return;
     }
@@ -118,7 +124,9 @@ export default function ProgressTracker({
         <div>
           <h3 className="font-semibold text-red-700">Tracking Error</h3>
           <p className="text-red-600 text-sm mt-1">{error}</p>
-          <button onClick={onClear} className="mt-3 text-sm text-red-700 font-medium hover:underline">Dismiss</button>
+          <button onClick={onClear} className="mt-3 text-sm text-red-700 font-medium hover:underline">
+            Dismiss
+          </button>
         </div>
       </div>
     );
@@ -133,7 +141,7 @@ export default function ProgressTracker({
     );
   }
 
-  const isComplete = progress.status === "COMPLETED" || progress.status === "FAILED";
+  const isComplete = progress.status === 'COMPLETED' || progress.status === 'FAILED';
   const processed = progress.processed || 0;
   const total = progress.total || 0;
   const percentage = total > 0 ? Math.min(Math.round((processed / total) * 100), 100) : progress.status === 'COMPLETED' ? 100 : 0;
@@ -161,7 +169,7 @@ export default function ProgressTracker({
           <div className="flex items-start gap-3">
             <AlertTriangle className="mt-0.5 h-6 w-6 flex-shrink-0 text-amber-600" />
             <div className="min-w-0">
-              <p className="text-sm font-black uppercase tracking-[0.2em] text-amber-800">Import Completed With Errors</p>
+              <p className="text-sm font-black uppercase tracking-[0.2em] text-amber-800">Import Completed With Warnings/Errors</p>
               <p className="mt-2 text-xl font-black text-amber-900">{progress.success} Leads Imported Successfully</p>
               <p className="mt-1 text-sm font-semibold text-amber-700">{progress.failed} Failed Records</p>
             </div>
@@ -179,11 +187,17 @@ export default function ProgressTracker({
             Import Progress
           </h3>
 
-          <span className={`text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wider
-            ${progress.status === 'COMPLETED' ? 'bg-green-100 text-green-700' :
-              progress.status === 'FAILED' ? 'bg-red-100 text-red-700' :
-              progress.status === 'PROCESSING' ? 'bg-blue-100 text-blue-700' :
-              'bg-gray-100 text-gray-700'}`}>
+          <span
+            className={`text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wider ${
+              progress.status === 'COMPLETED'
+                ? 'bg-green-100 text-green-700'
+                : progress.status === 'FAILED'
+                  ? 'bg-red-100 text-red-700'
+                  : progress.status === 'PROCESSING'
+                    ? 'bg-blue-100 text-blue-700'
+                    : 'bg-gray-100 text-gray-700'
+            }`}
+          >
             {progress.status}
           </span>
         </div>
@@ -193,15 +207,19 @@ export default function ProgressTracker({
             <>
               <div className="flex justify-between text-sm font-medium text-gray-600 mb-2">
                 <span>{percentage}% Complete</span>
-                <span>{processed} / {total || "?"} rows</span>
+                <span>
+                  {processed} / {total || '?'} rows
+                </span>
               </div>
 
               <div className="w-full bg-gray-100 h-2.5 rounded-full overflow-hidden mb-6 relative">
                 <div
                   className={`h-full rounded-full transition-all duration-500 ease-out ${
-                    progress.status === 'FAILED' ? 'bg-red-500' :
-                    progress.status === 'COMPLETED' ? 'bg-green-500' :
-                    'bg-blue-500'
+                    progress.status === 'FAILED'
+                      ? 'bg-red-500'
+                      : progress.status === 'COMPLETED'
+                        ? 'bg-green-500'
+                        : 'bg-blue-500'
                   }`}
                   style={{ width: `${percentage}%` }}
                 >
@@ -216,45 +234,39 @@ export default function ProgressTracker({
           )}
 
           {isComplete && (
-            <div className={`mb-6 rounded-2xl border px-4 py-4 ${
-              isSuccessfulCompletion
-                ? 'border-emerald-200 bg-emerald-50'
-                : isCompletedWithErrors
-                  ? 'border-amber-200 bg-amber-50'
-                  : 'border-rose-200 bg-rose-50'
-            }`}>
-              <p className={`text-lg font-black ${
+            <div
+              className={`mb-6 rounded-2xl border px-4 py-4 ${
                 isSuccessfulCompletion
-                  ? 'text-emerald-900'
+                  ? 'border-emerald-200 bg-emerald-50'
                   : isCompletedWithErrors
-                    ? 'text-amber-900'
-                    : 'text-rose-900'
-              }`}>
+                    ? 'border-amber-200 bg-amber-50'
+                    : 'border-rose-200 bg-rose-50'
+              }`}
+            >
+              <p
+                className={`text-lg font-black ${
+                  isSuccessfulCompletion ? 'text-emerald-900' : isCompletedWithErrors ? 'text-amber-900' : 'text-rose-900'
+                }`}
+              >
                 {isSuccessfulCompletion && 'Import Completed Successfully'}
                 {isCompletedWithErrors && 'Import Completed With Errors'}
                 {progress.status === 'FAILED' && 'Import Failed'}
               </p>
-              <p className={`mt-2 text-sm font-semibold ${
-                isSuccessfulCompletion
-                  ? 'text-emerald-700'
-                  : isCompletedWithErrors
-                    ? 'text-amber-700'
-                    : 'text-rose-700'
-              }`}>
+              <p
+                className={`mt-2 text-sm font-semibold ${
+                  isSuccessfulCompletion ? 'text-emerald-700' : isCompletedWithErrors ? 'text-amber-700' : 'text-rose-700'
+                }`}
+              >
                 {progress.success} leads imported successfully.
               </p>
-              <p className={`mt-1 text-sm font-semibold ${
-                isSuccessfulCompletion
-                  ? 'text-emerald-700'
-                  : isCompletedWithErrors
-                    ? 'text-amber-700'
-                    : 'text-rose-700'
-              }`}>
+              <p
+                className={`mt-1 text-sm font-semibold ${
+                  isSuccessfulCompletion ? 'text-emerald-700' : isCompletedWithErrors ? 'text-amber-700' : 'text-rose-700'
+                }`}
+              >
                 Failed Records: {progress.failed}
               </p>
-              {completionLabel && (
-                <p className="mt-1 text-sm font-semibold text-gray-700">Import finished on: {completionLabel}</p>
-              )}
+              {completionLabel && <p className="mt-1 text-sm font-semibold text-gray-700">Import finished on: {completionLabel}</p>}
             </div>
           )}
 
@@ -283,38 +295,107 @@ export default function ProgressTracker({
           {isComplete && (
             <div className="mt-6 rounded-2xl border border-gray-200 bg-gray-50 p-4">
               <h4 className="text-sm font-black uppercase tracking-[0.18em] text-gray-900">Import Summary</h4>
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 <div className="rounded-xl border border-gray-200 bg-white px-4 py-3">
-                  <p className="text-xs font-bold uppercase tracking-wide text-gray-500">Total Records Processed</p>
+                  <p className="text-xs font-bold uppercase tracking-wide text-gray-500">Total Rows Found</p>
                   <p className="mt-1 text-lg font-black text-gray-900">{processed}</p>
                 </div>
                 <div className="rounded-xl border border-gray-200 bg-white px-4 py-3">
-                  <p className="text-xs font-bold uppercase tracking-wide text-gray-500">Successfully Imported</p>
+                  <p className="text-xs font-bold uppercase tracking-wide text-emerald-600">Successfully Imported</p>
                   <p className="mt-1 text-lg font-black text-emerald-700">{progress.success}</p>
                 </div>
                 <div className="rounded-xl border border-gray-200 bg-white px-4 py-3">
-                  <p className="text-xs font-bold uppercase tracking-wide text-gray-500">Failed Records</p>
+                  <p className="text-xs font-bold uppercase tracking-wide text-amber-600">Imported With Warnings</p>
+                  <p className="mt-1 text-lg font-black text-amber-700">{progress.warningCount || 0}</p>
+                </div>
+                <div className="rounded-xl border border-gray-200 bg-white px-4 py-3">
+                  <p className="text-xs font-bold uppercase tracking-wide text-rose-600">Failed Rows</p>
                   <p className="mt-1 text-lg font-black text-rose-700">{progress.failed}</p>
                 </div>
-                {completionLabel && (
-                  <div className="rounded-xl border border-gray-200 bg-white px-4 py-3">
-                    <p className="text-xs font-bold uppercase tracking-wide text-gray-500">Import Completion Time</p>
-                    <p className="mt-1 text-lg font-black text-gray-900">{completionLabel}</p>
-                  </div>
-                )}
-                {importedBy && (
-                  <div className="rounded-xl border border-gray-200 bg-white px-4 py-3">
-                    <p className="text-xs font-bold uppercase tracking-wide text-gray-500">Imported By</p>
-                    <p className="mt-1 text-lg font-black text-gray-900">{importedBy}</p>
-                  </div>
-                )}
-                {fileName && (
-                  <div className="rounded-xl border border-gray-200 bg-white px-4 py-3">
-                    <p className="text-xs font-bold uppercase tracking-wide text-gray-500">Source File</p>
-                    <p className="mt-1 truncate text-lg font-black text-gray-900">{fileName}</p>
-                  </div>
-                )}
+                <div className="rounded-xl border border-blue-200 bg-blue-50/50 px-4 py-3">
+                  <p className="text-xs font-bold uppercase tracking-wide text-blue-700 flex items-center gap-1">
+                    <ShieldCheck className="w-3.5 h-3.5 text-blue-600" /> Approvals Created
+                  </p>
+                  <p className="mt-1 text-lg font-black text-blue-900">{progress.approvalRequestsCount || 0}</p>
+                </div>
+                <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 px-4 py-3">
+                  <p className="text-xs font-bold uppercase tracking-wide text-emerald-700 flex items-center gap-1">
+                    <DollarSign className="w-3.5 h-3.5 text-emerald-600" /> Revenue Imported
+                  </p>
+                  <p className="mt-1 text-lg font-black text-emerald-900">{formatCurrency(progress.totalRevenueImported || 0)}</p>
+                </div>
               </div>
+            </div>
+          )}
+
+          {/* Stage Approval Import Result Section */}
+          {isComplete && progress.approvals && progress.approvals.length > 0 && (
+            <div className="mt-6 rounded-2xl border border-blue-200 bg-blue-50/40 p-4">
+              <button
+                onClick={() => setShowApprovals(!showApprovals)}
+                className="w-full flex items-center justify-between font-black text-sm uppercase tracking-wider text-blue-900"
+              >
+                <span className="flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-blue-600" />
+                  Approval Import Results ({progress.approvals.length} Stage Pending Approvals)
+                </span>
+                {showApprovals ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              </button>
+
+              {showApprovals && (
+                <div className="mt-3 space-y-2">
+                  {progress.approvals.map((item, idx) => (
+                    <div key={idx} className="rounded-xl border border-blue-100 bg-white p-3 text-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                      <div>
+                        <p className="font-bold text-gray-900">
+                          Row {item.row}: {item.leadName}
+                        </p>
+                        <p className="text-xs font-semibold text-blue-700 mt-0.5">
+                          Target Stage: <span className="font-bold">{item.stage}</span> | Supervisor: <span className="font-bold">{item.supervisor}</span>
+                        </p>
+                      </div>
+                      <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-blue-100 text-blue-800">
+                        {item.status}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Warning Details Section */}
+          {isComplete && progress.warnings && progress.warnings.length > 0 && (
+            <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50/40 p-4">
+              <button
+                onClick={() => setShowWarnings(!showWarnings)}
+                className="w-full flex items-center justify-between font-black text-sm uppercase tracking-wider text-amber-900"
+              >
+                <span className="flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 text-amber-600" />
+                  Warning Details ({progress.warnings.length} Field Warnings)
+                </span>
+                {showWarnings ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              </button>
+
+              {showWarnings && (
+                <div className="mt-3 space-y-2 max-h-60 overflow-y-auto pr-1">
+                  {progress.warnings.map((warn, idx) => (
+                    <div key={idx} className="rounded-xl border border-amber-100 bg-white p-3 text-sm">
+                      <div className="flex justify-between items-center">
+                        <span className="font-black text-amber-900">Row {warn.row}</span>
+                        <span className="font-bold text-xs uppercase px-2 py-0.5 bg-amber-100 text-amber-800 rounded">
+                          {warn.field}
+                        </span>
+                      </div>
+                      <p className="mt-1 text-xs text-gray-600">
+                        Provided value: <span className="font-mono font-semibold text-gray-900">"{warn.value}"</span>
+                      </p>
+                      <p className="mt-0.5 text-xs font-semibold text-amber-800">{warn.reason}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
@@ -327,14 +408,14 @@ export default function ProgressTracker({
                 Start New Import
               </button>
 
-              {(progress.error_file_url && progress.failed > 0) && (
+              {progress.error_file_url && (progress.failed > 0 || (progress.warnings && progress.warnings.length > 0)) && (
                 <a
                   href={`data:text/json;charset=utf-8,${encodeURIComponent(progress.error_file_url)}`}
-                  download="import_errors.json"
-                  className="text-sm font-medium text-red-700 bg-red-50 hover:bg-red-100 px-4 py-2 rounded-lg flex items-center gap-2 border border-red-200 transition-colors"
+                  download="import_summary_report.json"
+                  className="text-sm font-medium text-amber-700 bg-amber-50 hover:bg-amber-100 px-4 py-2 rounded-lg flex items-center gap-2 border border-amber-200 transition-colors"
                 >
                   <Download className="w-4 h-4" />
-                  Download Error Log
+                  Download Complete Summary Log
                 </a>
               )}
             </div>
