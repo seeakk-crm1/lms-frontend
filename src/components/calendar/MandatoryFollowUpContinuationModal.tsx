@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { CalendarClock, Loader2, User, Phone, CheckCircle, Flame, MessageSquare, Clipboard } from 'lucide-react';
+import { CalendarClock, Loader2, User, Phone, CheckCircle, Flame, MessageSquare, Clipboard, ArrowRight } from 'lucide-react';
+import { useFollowupWorkflowStore } from '../../store/followupWorkflowStore';
 import { formatFollowUpTypeLabel } from '../../modules/followups/followUpTypeUi';
 import type { MandatoryFollowUpContinuationItem } from '../../types/mandatoryFollowup.types';
 import type { FollowUpType } from '../../types/followup.types';
@@ -263,20 +264,32 @@ const MandatoryFollowUpContinuationModal: React.FC<Props> = ({
               />
             </div>
 
-            <button
-              type="submit"
-              disabled={isSubmitting || !scheduledAt || lifecycleExhausted}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 hover:bg-emerald-700 px-5 py-3.5 text-xs font-extrabold text-white shadow-md active:scale-98 transition disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>Saving details...</span>
-                </>
-              ) : (
-                <span>Schedule &amp; Continue</span>
-              )}
-            </button>
+            <div className="flex flex-col sm:flex-row gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  useFollowupWorkflowStore.getState().openLeadFromFollowup({ leadId: item.leadId, leadName: item.leadName }, 'MANDATORY');
+                }}
+                className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl bg-gray-900 py-3.5 text-xs font-extrabold text-white hover:bg-gray-800 transition-colors"
+              >
+                <ArrowRight className="h-4 w-4" />
+                Open Lead
+              </button>
+              <button
+                type="submit"
+                disabled={isSubmitting || !scheduledAt || lifecycleExhausted}
+                className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl bg-emerald-600 hover:bg-emerald-700 py-3.5 text-xs font-extrabold text-white shadow-md active:scale-98 transition disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>Saving details...</span>
+                  </>
+                ) : (
+                  <span>Schedule &amp; Continue</span>
+                )}
+              </button>
+            </div>
           </form>
         </div>
       </motion.div>

@@ -1,9 +1,32 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, lazy, Suspense } from 'react';
 import MandatoryOverdueFollowUpGate from './calendar/MandatoryOverdueFollowUpGate';
 import MandatoryFollowUpContinuationGate from './calendar/MandatoryFollowUpContinuationGate';
 import MandatoryAttendanceGate from './MandatoryAttendanceGate';
 import { useAuthenticatedWorkflowEnabled } from '../hooks/useAuthenticatedWorkflowEnabled';
 import useWorkspaceStore from '../store/useWorkspaceStore';
+import FollowupPostActionConfirmationModal from './followup/FollowupPostActionConfirmationModal';
+import { useFollowupWorkflowStore } from '../store/followupWorkflowStore';
+
+const LeadFormDrawer = lazy(() => import('../pages/leads/components/LeadFormDrawer'));
+
+const GlobalFollowupWorkflowListener: React.FC = () => {
+  const isEditingFromFollowup = useFollowupWorkflowStore((state) => state.isEditingFromFollowup);
+  const openedLead = useFollowupWorkflowStore((state) => state.openedLead);
+  const handleLeadCancel = useFollowupWorkflowStore((state) => state.handleLeadCancel);
+
+  if (!isEditingFromFollowup || !openedLead) return null;
+
+  return (
+    <Suspense fallback={null}>
+      <LeadFormDrawer
+        isOpen={true}
+        mode="edit"
+        lead={openedLead}
+        onClose={() => handleLeadCancel()}
+      />
+    </Suspense>
+  );
+};
 
 interface Props {
   children: React.ReactNode;
@@ -30,7 +53,11 @@ const AuthenticatedWorkflowGates: React.FC<Props> = ({ children }) => {
   return (
     <MandatoryOverdueFollowUpGate>
       <MandatoryFollowUpContinuationGate>
-        <MandatoryAttendanceGate>{children}</MandatoryAttendanceGate>
+        <MandatoryAttendanceGate>
+          {children}
+          <FollowupPostActionConfirmationModal />
+          <GlobalFollowupWorkflowListener />
+        </MandatoryAttendanceGate>
       </MandatoryFollowUpContinuationGate>
     </MandatoryOverdueFollowUpGate>
   );

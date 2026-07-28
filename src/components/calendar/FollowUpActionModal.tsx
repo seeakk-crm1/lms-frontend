@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { CheckCircle2, Clock3, X, User, PhoneCall, Building2, Calendar, Tag, AlertCircle, FileText, ArrowRight } from 'lucide-react';
+import { CheckCircle2, Clock3, X, PhoneCall, Building2, Calendar, Tag, AlertCircle, FileText, ArrowRight } from 'lucide-react';
 import { format } from 'date-fns';
 import { formatFollowUpTypeLabel } from '../../modules/followups/followUpTypeUi';
 import type { FollowUp } from '../../types/followup.types';
@@ -8,8 +8,8 @@ import WhatsAppActionButton from '../common/WhatsAppActionButton';
 import { LEAD_WHATSAPP_PERMISSIONS } from '../../constants/whatsappPermissions';
 import { formatPhoneWithFlag } from '../../utils/phoneUtils';
 import LeadAvatar from '../../pages/leads/components/LeadAvatar';
-import { getImageUrl } from '../../utils/getImageUrl';
 import FollowUpContextCard from './FollowUpContextCard';
+import { useFollowupWorkflowStore } from '../../store/followupWorkflowStore';
 
 interface Props {
   isOpen: boolean;
@@ -224,21 +224,25 @@ const FollowUpActionModal: React.FC<Props> = ({ isOpen, followUp, onClose, onOpe
                 </div>
               </div>
             </div>
-          </div>
 
             <div className="px-5 mt-2 mb-4">
               <FollowUpContextCard leadId={leadId} />
             </div>
+          </div>
+
           {/* Bottom Actions */}
           <div className="shrink-0 border-t border-gray-200 bg-white px-5 py-4 sticky bottom-0 z-10">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <button
                 type="button"
-                onClick={() => onOpenLead(followUp)}
+                onClick={() => {
+                  useFollowupWorkflowStore.getState().openLeadFromFollowup(followUp, 'CALENDAR');
+                  onOpenLead(followUp);
+                }}
                 className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gray-100 px-4 py-3 text-sm font-bold text-gray-700 hover:bg-gray-200 transition-colors"
               >
                 <ArrowRight className="h-4 w-4" />
-                View Lead
+                Open Lead
               </button>
               
               {!isCompleted ? (

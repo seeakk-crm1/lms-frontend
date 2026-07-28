@@ -1,4 +1,4 @@
-import React, { memo, useEffect, useMemo, useRef, useState } from 'react';
+import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AlertCircle, CalendarClock, Save, Sparkles, X, Banknote, PlusCircle, FileText, History, Trash2, Eye, UploadCloud } from 'lucide-react';
@@ -8,6 +8,7 @@ import PhoneInput from '../../../components/common/PhoneInput';
 import { useChangeLeadStageMutation, useCreateLeadMutation, useLeadDetailQuery, useLeadMetaQuery, useUpdateLeadMutation, useLeadRemarksQuery } from '../../../hooks/useLeads';
 import type { LeadDynamicField } from '../../../modules/admin/lead-dynamics/types';
 import { useLeadStore, createEmptyLeadFormValues } from '../../../store/leadStore';
+import { useFollowupWorkflowStore } from '../../../store/followupWorkflowStore';
 import type { FollowUpType } from '../../../types/followup.types';
 import { FOLLOW_UP_TYPE_OPTIONS } from '../../../modules/followups/followUpTypeUi';
 import type { LeadFormValues, LeadListItem, LeadOption } from '../../../types/lead.types';
@@ -238,6 +239,18 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
   const changeStageMutation = useChangeLeadStageMutation();
   const currentUser = useAuthStore((state) => state.user);
   const { confirmIfWeeklyOff, WeeklyOffScheduleModal } = useWeeklyOffScheduleGuard();
+
+  const isEditingFromFollowup = useFollowupWorkflowStore((state) => state.isEditingFromFollowup);
+  const currentFollowup = useFollowupWorkflowStore((state) => state.currentFollowup);
+  const handleLeadSaveSuccess = useFollowupWorkflowStore((state) => state.handleLeadSaveSuccess);
+  const handleLeadCancel = useFollowupWorkflowStore((state) => state.handleLeadCancel);
+
+  const handleDrawerClose = useCallback(() => {
+    if (isEditingFromFollowup) {
+      handleLeadCancel();
+    }
+    onClose();
+  }, [isEditingFromFollowup, handleLeadCancel, onClose]);
 
   const [formValues, setFormValues] = useState<LeadFormValues>(createEmptyLeadFormValues());
   const [lobModalOpen, setLobModalOpen] = useState(false);
@@ -748,6 +761,46 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
       return;
     }
 
+    if (isEditingFromFollowup) {
+      console.log('[Frontend] Follow-up Validation Started', {
+        currentScheduledAt: currentFollowup?.scheduledAt || currentFollowup?.scheduledDate,
+        newNextFollowUpAt: formValues.nextFollowUpAt,
+        stageId: formValues.stageId,
+      });
+
+      const selectedStage = stageOptions.find((item) => item.id === formValues.stageId);
+      const isLob = isLobStageOption(selectedStage) || Boolean(selectedStage?.isLOB) || Boolean((selectedStage as any)?.isLob);
+
+      if (isLob) {
+        console.log('[Frontend] LOB Detected', { stageId: formValues.stageId });
+        console.log('[Frontend] Follow-up Validation Passed');
+      } else {
+        const currentScheduledTime = currentFollowup?.scheduledAt || currentFollowup?.scheduledDate || currentFollowup?.nextFollowUpAt;
+        const newScheduledTime = formValues.nextFollowUpAt;
+
+        let isValidExtension = false;
+        if (newScheduledTime && currentScheduledTime) {
+          const currentTimeMs = new Date(currentScheduledTime).getTime();
+          const newTimeMs = new Date(newScheduledTime).getTime();
+          if (newTimeMs > currentTimeMs) {
+            isValidExtension = true;
+          }
+        } else if (newScheduledTime && !currentScheduledTime) {
+          isValidExtension = new Date(newScheduledTime).getTime() > Date.now();
+        }
+
+        if (!isValidExtension) {
+          console.log('[Frontend] Follow-up Validation Failed', {
+            currentScheduledTime,
+            newScheduledTime,
+          });
+          toast.error('Please extend the next follow-up before saving this lead.');
+          return;
+        }
+        console.log('[Frontend] Follow-up Validation Passed');
+      }
+    }
+
     if (formValues.nextFollowUpAt) {
       const nextDate = new Date(formValues.nextFollowUpAt);
       if (nextDate.getTime() <= Date.now()) {
@@ -939,6 +992,9 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
         }
       }
 
+      if (isEditingFromFollowup) {
+        handleLeadSaveSuccess();
+      }
       onClose();
     } catch (error: any) {
       const status = error?.response?.status;
@@ -971,7 +1027,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={onClose}
+              onClick={handleDrawerClose}
               className="absolute inset-0 bg-gray-900/40 backdrop-blur-sm"
               aria-label="Close lead drawer overlay"
             />
@@ -999,7 +1055,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
                   </div>
                   <button
                     type="button"
-                    onClick={onClose}
+                    onClick={handleDrawerClose}
                     className="rounded-2xl border border-gray-200 p-2 text-gray-400 transition-colors hover:bg-gray-50"
                     aria-label="Close lead drawer"
                   >
@@ -1720,7 +1776,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
                       <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
                         <button
                           type="button"
-                          onClick={onClose}
+                          onClick={handleDrawerClose}
                           className="rounded-2xl border border-gray-200 px-4 py-3 text-sm font-black text-gray-500 transition-colors hover:bg-gray-50"
                         >
                           Cancel

@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { format } from 'date-fns';
-import { AlertTriangle, Loader2, PhoneCall } from 'lucide-react';
+import { AlertTriangle, Loader2, PhoneCall, ArrowRight } from 'lucide-react';
+import { useFollowupWorkflowStore } from '../../store/followupWorkflowStore';
 import {
   useOverdueMandatoryBlocked,
   useInvalidateOverdueMandatory,
@@ -262,99 +263,106 @@ const MandatoryOverdueFollowUpGate: React.FC<Props> = ({ children }) => {
                                     ? activeItem.customerName.trim()
                                     : null);
 
-                                return validPhone ? (
-                                  <div className="flex items-center gap-2 shrink-0">
-                                    <a
-                                      href={`tel:${validPhone.replace(/[^0-9+]/g, '')}`}
-                                      className="inline-flex items-center justify-center gap-1.5 rounded-full bg-blue-50 px-3.5 py-1.5 text-xs font-bold text-blue-600 hover:bg-blue-100 transition-colors ring-1 ring-blue-100"
-                                    >
-                                      <PhoneCall className="h-3.5 w-3.5" />
-                                      Call
-                                    </a>
-                                    <WhatsAppActionButton
-                                      phone={validPhone}
-                                      variant="cta"
-                                      stopPropagation={false}
-                                      requiredPermissions={LEAD_WHATSAPP_PERMISSIONS}
-                                      title="WhatsApp"
-                                      audit={{
-                                        entityType: 'FollowUp',
-                                        entityId: activeItem.id,
-                                        entityName: activeItem.leadName,
-                                      }}
-                                    />
-                                  </div>
-                                ) : (
-                                  <div className="flex items-center gap-2 shrink-0">
-                                    <button
-                                      disabled
-                                      type="button"
-                                      title="No phone number available"
-                                      className="inline-flex items-center justify-center gap-1.5 rounded-full bg-gray-100 px-3.5 py-1.5 text-xs font-bold text-gray-400 cursor-not-allowed opacity-60 ring-1 ring-gray-200"
-                                    >
-                                      <PhoneCall className="h-3.5 w-3.5" />
-                                      Call
-                                    </button>
-                                    <button
-                                      disabled
-                                      type="button"
-                                      title="No phone number available"
-                                      className="inline-flex items-center justify-center gap-1.5 rounded-full bg-gray-100 px-3.5 py-1.5 text-xs font-bold text-gray-400 cursor-not-allowed opacity-60 ring-1 ring-gray-200"
-                                    >
-                                      <span>💬</span>
-                                      WhatsApp
-                                    </button>
-                                  </div>
-                                );
-                              })()}
+                                  return (
+                                    <div className="flex items-center gap-2 shrink-0">
+                                      {validPhone ? (
+                                        <>
+                                          <a
+                                            href={`tel:${validPhone.replace(/[^0-9+]/g, '')}`}
+                                            className="inline-flex items-center justify-center gap-1.5 rounded-full bg-blue-50 px-3.5 py-1.5 text-xs font-bold text-blue-600 hover:bg-blue-100 transition-colors ring-1 ring-blue-100"
+                                          >
+                                            <PhoneCall className="h-3.5 w-3.5" />
+                                            Call
+                                          </a>
+                                          <WhatsAppActionButton
+                                            phone={validPhone}
+                                            variant="cta"
+                                            stopPropagation={false}
+                                            requiredPermissions={LEAD_WHATSAPP_PERMISSIONS}
+                                            title="WhatsApp"
+                                            audit={{
+                                              entityType: 'FollowUp',
+                                              entityId: activeItem.id,
+                                              entityName: activeItem.leadName,
+                                            }}
+                                          />
+                                        </>
+                                      ) : null}
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          const followup = mapItemToFollowUp(activeItem);
+                                          useFollowupWorkflowStore.getState().startWorkflow(items.map(mapItemToFollowUp), 'MANDATORY', queueIndex);
+                                          useFollowupWorkflowStore.getState().openLeadFromFollowup(followup, 'MANDATORY');
+                                        }}
+                                        className="inline-flex items-center justify-center gap-1.5 rounded-full bg-gray-900 px-3.5 py-1.5 text-xs font-bold text-white hover:bg-gray-800 transition-colors shadow-xs"
+                                      >
+                                        <ArrowRight className="h-3.5 w-3.5" />
+                                        Open Lead
+                                      </button>
+                                    </div>
+                                  );
+                                })()}
+                              </div>
                             </div>
+
+                            {/* Context Card: Latest Follow-up Note & Latest Lead Remark */}
+                            <FollowUpContextCard leadId={activeItem.leadId} />
                           </div>
-
-                          {/* Context Card: Latest Follow-up Note & Latest Lead Remark */}
-                          <FollowUpContextCard leadId={activeItem.leadId} />
-                        </div>
-                      )}
-
-                      <div className="mt-5 flex flex-col gap-2 sm:flex-row">
-                        {hasBulkAccess && items.length > 1 ? (
-                          <button
-                            type="button"
-                            disabled={selectedBulkItems.length === 0}
-                            onClick={() => {
-                              setBulkTargetDate('');
-                              setBulkReasonId('');
-                              setBulkDescription('');
-                              setBulkAutoDistribute(false);
-                              setBulkModalOpen(true);
-                            }}
-                            className="flex-1 rounded-2xl bg-amber-500 py-3 text-sm font-black text-white hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            Bulk Extend Selected ({selectedBulkItems.length})
-                          </button>
-                        ) : (
-                          <>
-                            <button
-                              type="button"
-                              onClick={() => setCompleteTarget(mapItemToFollowUp(activeItem))}
-                              className="flex-1 rounded-2xl bg-emerald-500 py-3 text-sm font-black text-white hover:bg-emerald-600"
-                            >
-                              Complete Follow-Up
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setSnoozeTarget(mapItemToFollowUp(activeItem));
-                                setSnoozeDateTime('');
-                                setRecentDescription('');
-                                setSnoozeReasonId('');
-                              }}
-                              className="flex-1 rounded-2xl border border-amber-200 bg-amber-50 py-3 text-sm font-black text-amber-800 hover:bg-amber-100"
-                            >
-                              Extend Follow-Up
-                            </button>
-                          </>
                         )}
-                      </div>
+
+                        <div className="mt-5 flex flex-col gap-2 sm:flex-row">
+                          {hasBulkAccess && items.length > 1 ? (
+                            <button
+                              type="button"
+                              disabled={selectedBulkItems.length === 0}
+                              onClick={() => {
+                                setBulkTargetDate('');
+                                setBulkReasonId('');
+                                setBulkDescription('');
+                                setBulkAutoDistribute(false);
+                                setBulkModalOpen(true);
+                              }}
+                              className="flex-1 rounded-2xl bg-amber-500 py-3 text-sm font-black text-white hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              Bulk Extend Selected ({selectedBulkItems.length})
+                            </button>
+                          ) : (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const followup = mapItemToFollowUp(activeItem);
+                                  useFollowupWorkflowStore.getState().startWorkflow(items.map(mapItemToFollowUp), 'MANDATORY', queueIndex);
+                                  useFollowupWorkflowStore.getState().openLeadFromFollowup(followup, 'MANDATORY');
+                                }}
+                                className="inline-flex items-center justify-center gap-2 flex-1 rounded-2xl bg-gray-900 py-3 text-sm font-black text-white hover:bg-gray-800 transition-colors"
+                              >
+                                <ArrowRight className="h-4 w-4" />
+                                Open Lead
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setCompleteTarget(mapItemToFollowUp(activeItem))}
+                                className="flex-1 rounded-2xl bg-emerald-500 py-3 text-sm font-black text-white hover:bg-emerald-600"
+                              >
+                                Complete Follow-Up
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSnoozeTarget(mapItemToFollowUp(activeItem));
+                                  setSnoozeDateTime('');
+                                  setRecentDescription('');
+                                  setSnoozeReasonId('');
+                                }}
+                                className="flex-1 rounded-2xl border border-amber-200 bg-amber-50 py-3 text-sm font-black text-amber-800 hover:bg-amber-100"
+                              >
+                                Extend Follow-Up
+                              </button>
+                            </>
+                          )}
+                        </div>
                     </div>
                   ) : null}
                 </div>,
