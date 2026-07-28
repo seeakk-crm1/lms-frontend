@@ -23,6 +23,8 @@ import useAuthStore from '../../../store/useAuthStore';
 import { useActiveLOBReasonOptions } from '../../../hooks/useActiveLOBReasonOptions';
 import { useWeeklyOffScheduleGuard } from '../../../hooks/useWeeklyOffScheduleGuard';
 import WhatsAppActionButton from '../../../components/common/WhatsAppActionButton';
+import { OVERDUE_MANDATORY_QUERY_KEY } from '../../../hooks/useOverdueMandatoryFollowUps';
+import { MANDATORY_FOLLOWUP_QUERY_KEY } from '../../../constants/mandatoryFollowup.constants';
 import { LEAD_WHATSAPP_PERMISSIONS } from '../../../constants/whatsappPermissions';
 import AdvancePaymentModal from './AdvancePaymentModal';
 import { getLeadPayments, updateLeadTotalAmount, requestAdvancePayment, uploadLeadProfileImage, removeLeadProfileImage } from '../../../services/leads.api';
@@ -810,6 +812,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setValidationErrors({});
+    console.log('[Frontend] Save Clicked');
 
     if (!formValues.name.trim()) {
       toast.error('Lead name is required');
@@ -849,7 +852,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
             currentScheduledTime,
             newScheduledTime,
           });
-          toast.error('Please extend the next follow-up before saving this lead.');
+          toast.error('Please extend the next follow-up before saving this lead.', { id: 'followup-extension-required' });
           return;
         }
         console.log('[Frontend] Follow-up Validation Passed');
@@ -876,6 +879,8 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
       toast.error('Remarks cannot contain HTML or script content.');
       return;
     }
+
+    console.log('[Frontend] Lead Validation Passed');
 
     const selectedStage = stageOptions.find((item) => item.id === formValues.stageId);
     
@@ -917,18 +922,14 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
     }
 
     const safeAdvances = localAdvances
-      .map((item) => {
-        const amount = Number(item.amount);
-        const paymentDate = toIsoOrUndefined(item.paymentDate);
-        if (!Number.isFinite(amount) || amount <= 0 || !paymentDate) return null;
-        return compactObject({
-          amount,
-          paymentDate,
-          remarks: optionalTrimmed(item.remarks),
-          proofUrl: optionalTrimmed(item.proofUrl),
-        });
-      })
-      .filter(Boolean);
+      .filter((adv) => Number(adv.amount) > 0 && adv.paymentDate)
+      .map((adv) => ({
+        amount: Number(adv.amount),
+        paymentDate: adv.paymentDate,
+        paymentMethod: adv.paymentMethod || 'OTHER',
+        referenceNumber: optionalTrimmed(adv.referenceNumber),
+        notes: optionalTrimmed(adv.notes),
+      }));
 
     const payload = compactObject({
       name: formValues.name.trim(),
@@ -1045,12 +1046,31 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
             },
           });
         }
+
+        console.log('[Frontend] Lead Update Success', { id: lead.id });
+        console.log('[Frontend] Refreshing Follow-up Cache');
+        console.log('[Frontend] Refreshing Dashboard');
+
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ['lead', lead.id] }),
+          queryClient.invalidateQueries({ queryKey: ['leads'] }),
+          queryClient.invalidateQueries({ queryKey: ['followups'] }),
+          queryClient.invalidateQueries({ queryKey: OVERDUE_MANDATORY_QUERY_KEY }),
+          queryClient.invalidateQueries({ queryKey: MANDATORY_FOLLOWUP_QUERY_KEY }),
+          queryClient.invalidateQueries({ queryKey: ['dashboard'] }),
+        ]);
+
+        console.log('[Frontend] Checking Overdue');
+        const overdueQueryData = queryClient.getQueryData<any>(OVERDUE_MANDATORY_QUERY_KEY);
+        const remainingCount = overdueQueryData?.data?.items?.length ?? 0;
+        console.log('[Frontend] Overdue Result', { remainingOverdueCount: remainingCount });
       }
 
       if (isEditingFromFollowup) {
         handleLeadSaveSuccess();
       }
       onClose();
+      console.log('[Frontend] Popup Closed');
     } catch (error: any) {
       const status = error?.response?.status;
       const responseErrors = error?.response?.data?.errors;
