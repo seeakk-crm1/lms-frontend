@@ -26,7 +26,9 @@ export default function UploadSection({ onUploadStart, importState, importSummar
   const { getRootProps, getInputProps, isDragActive } = useDropzone({ 
     onDrop,
     accept: {
-      'text/csv': ['.csv']
+      'text/csv': ['.csv'],
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
+      'application/vnd.ms-excel': ['.xls'],
     },
     maxFiles: 1
   });

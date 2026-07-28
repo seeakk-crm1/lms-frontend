@@ -1,1 +1,2 @@
-Lead Name,Mobile,Email,Address,Company Name,Source
+Lead Name,Mobile,Email,Address,Company Name,Source,Expected Revenue,Remarks,Next Followup At,Followup Note,Lead Stage,LOB Reason
+John Doe,9876543210,john@example.com,123 Main St,Acme Corp,Website,50000,Interested in premium package,02/27/25 10:00 am,Call customer regarding quotation,Qualified,Customer Requested Callback
