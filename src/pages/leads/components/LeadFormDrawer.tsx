@@ -252,6 +252,21 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
     onClose();
   }, [isEditingFromFollowup, handleLeadCancel, onClose]);
 
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        handleDrawerClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown, true);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown, true);
+    };
+  }, [isOpen, handleDrawerClose]);
+
   const [formValues, setFormValues] = useState<LeadFormValues>(createEmptyLeadFormValues());
   const [lobModalOpen, setLobModalOpen] = useState(false);
   const [lobExitModalOpen, setLobExitModalOpen] = useState(false);
@@ -1022,7 +1037,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
     <>
       <AnimatePresence>
         {isOpen ? (
-          <div className="fixed inset-0 z-[120]">
+          <div className="fixed inset-0 z-[10200]">
             <motion.button
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}

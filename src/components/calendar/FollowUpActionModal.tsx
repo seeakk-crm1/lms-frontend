@@ -38,10 +38,11 @@ const getStatusColor = (status: string) => {
 };
 
 const FollowUpActionModal: React.FC<Props> = ({ isOpen, followUp, onClose, onOpenLead, onMarkCompleted, onSnooze }) => {
+  const isEditingFromFollowup = useFollowupWorkflowStore((state) => state.isEditingFromFollowup);
   const typeLabel = useMemo(() => (followUp ? formatFollowUpTypeLabel(followUp.type) : ''), [followUp]);
   const isCompleted = followUp?.status === 'COMPLETED';
 
-  if (!isOpen || !followUp) return null;
+  if (!isOpen || !followUp || isEditingFromFollowup) return null;
 
   // Extract fields whether it's FollowUp or FollowUpReminderItem
   const leadId = followUp.lead?.id || followUp.leadId;

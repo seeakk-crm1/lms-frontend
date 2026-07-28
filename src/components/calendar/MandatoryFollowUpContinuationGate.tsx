@@ -11,6 +11,7 @@ import MandatoryFollowUpContinuationModal from './MandatoryFollowUpContinuationM
 import { useWeeklyOffScheduleGuard } from '../../hooks/useWeeklyOffScheduleGuard';
 import { MANDATORY_FOLLOWUP_QUERY_KEY } from '../../constants/mandatoryFollowup.constants';
 import { useInvalidateOverdueMandatory } from '../../hooks/useOverdueMandatoryFollowUps';
+import { useFollowupWorkflowStore } from '../../store/followupWorkflowStore';
 
 interface Props {
   children: React.ReactNode;
@@ -38,6 +39,8 @@ const MandatoryFollowUpContinuationGate: React.FC<Props> = ({ children }) => {
   const invalidateOverdue = useInvalidateOverdueMandatory();
   const { confirmIfWeeklyOff, WeeklyOffScheduleModal } = useWeeklyOffScheduleGuard();
   const [queueIndex, setQueueIndex] = useState(0);
+
+  const isEditingFromFollowup = useFollowupWorkflowStore((state) => state.isEditingFromFollowup);
 
   const activeItem = useMemo(() => items[queueIndex] ?? items[0] ?? null, [items, queueIndex]);
 
@@ -86,10 +89,10 @@ const MandatoryFollowUpContinuationGate: React.FC<Props> = ({ children }) => {
     setQueueIndex(0);
   }, [items.length, items[0]?.leadId]);
 
-  useMandatoryNavigationLock(blocked);
+  useMandatoryNavigationLock(blocked && !isEditingFromFollowup);
 
   useEffect(() => {
-    if (!blocked) return undefined;
+    if (!blocked || isEditingFromFollowup) return undefined;
 
     const blockKeys = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
@@ -114,10 +117,10 @@ const MandatoryFollowUpContinuationGate: React.FC<Props> = ({ children }) => {
       window.removeEventListener('popstate', blockBackButton);
       document.body.style.overflow = previousOverflow;
     };
-  }, [blocked]);
+  }, [blocked, isEditingFromFollowup]);
 
   const modal =
-    blocked && activeItem ? (
+    blocked && activeItem && !isEditingFromFollowup ? (
       <MandatoryFollowUpContinuationModal
         item={activeItem}
         queuePosition={queueIndex + 1}

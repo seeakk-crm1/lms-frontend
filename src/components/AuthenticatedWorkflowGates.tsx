@@ -1,4 +1,5 @@
 import React, { useEffect, lazy, Suspense } from 'react';
+import { createPortal } from 'react-dom';
 import MandatoryOverdueFollowUpGate from './calendar/MandatoryOverdueFollowUpGate';
 import MandatoryFollowUpContinuationGate from './calendar/MandatoryFollowUpContinuationGate';
 import MandatoryAttendanceGate from './MandatoryAttendanceGate';
@@ -16,7 +17,7 @@ const GlobalFollowupWorkflowListener: React.FC = () => {
 
   if (!isEditingFromFollowup || !openedLead) return null;
 
-  return (
+  const content = (
     <Suspense fallback={null}>
       <LeadFormDrawer
         isOpen={true}
@@ -26,6 +27,8 @@ const GlobalFollowupWorkflowListener: React.FC = () => {
       />
     </Suspense>
   );
+
+  return typeof document !== 'undefined' ? createPortal(content, document.body) : content;
 };
 
 interface Props {

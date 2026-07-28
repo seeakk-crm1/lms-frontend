@@ -57,10 +57,12 @@ const MandatoryOverdueFollowUpGate: React.FC<Props> = ({ children }) => {
 
   const hasBulkAccess = user?.permissions?.includes('bulk_extend_followups');
 
+  const isEditingFromFollowup = useFollowupWorkflowStore((state) => state.isEditingFromFollowup);
+
   const activeItem = useMemo(() => items[queueIndex] ?? items[0] ?? null, [items, queueIndex]);
   const actionModalOpen = Boolean(completeTarget || snoozeTarget || bulkModalOpen);
 
-  useMandatoryNavigationLock(blocked && enabled && !actionModalOpen);
+  useMandatoryNavigationLock(blocked && enabled && !actionModalOpen && !isEditingFromFollowup);
 
   useEffect(() => {
     setQueueIndex(0);
@@ -99,7 +101,7 @@ const MandatoryOverdueFollowUpGate: React.FC<Props> = ({ children }) => {
   };
 
   useEffect(() => {
-    if (!blocked) return undefined;
+    if (!blocked || isEditingFromFollowup) return undefined;
 
     const blockKeys = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
@@ -116,7 +118,7 @@ const MandatoryOverdueFollowUpGate: React.FC<Props> = ({ children }) => {
       document.removeEventListener('keydown', blockKeys, true);
       document.body.style.overflow = previousOverflow;
     };
-  }, [blocked]);
+  }, [blocked, isEditingFromFollowup]);
 
   const mapItemToFollowUp = (item: (typeof items)[number]): FollowUp => ({
     id: item.id,
@@ -155,7 +157,7 @@ const MandatoryOverdueFollowUpGate: React.FC<Props> = ({ children }) => {
     <>
       {children}
 
-      {blocked && !actionModalOpen ? (
+      {blocked && !actionModalOpen && !isEditingFromFollowup ? (
         <>
           <div className="fixed inset-0 z-[9997] bg-slate-950/70 backdrop-blur-md" />
           {typeof document !== 'undefined'
