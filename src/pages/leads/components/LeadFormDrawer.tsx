@@ -495,8 +495,13 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
     setDynamicFields(meta.dynamicFields);
   }, [meta?.dynamicFields, setDynamicFields]);
 
+  const initializedLeadKeyRef = useRef<string | null>(null);
+  const hasLoggedDrawerReadyRef = useRef<boolean>(false);
+
   useEffect(() => {
     if (!isOpen) {
+      initializedLeadKeyRef.current = null;
+      hasLoggedDrawerReadyRef.current = false;
       clearSelectedProfileImage();
       setValidationErrors({});
       setStageRulesModalOpen(false);
@@ -508,14 +513,19 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
       return;
     }
 
-    console.log('[Frontend] Initializing Form', { mode, isOpen, leadId: lead?.id });
-
     if (mode === 'edit') {
       const leadToUse = leadDetails || (lead as LeadListItem);
       if (leadDetails) {
         if (revertFormBeforeRulesRef.current || pendingStageId || pendingTransitionStageId) {
           return;
         }
+        const detailedKey = `edit-detailed:${leadDetails.id}`;
+        if (initializedLeadKeyRef.current === detailedKey) {
+          return;
+        }
+        initializedLeadKeyRef.current = detailedKey;
+
+        console.log('[Frontend] Initializing Form', { mode, isOpen, leadId: leadDetails.id });
         console.log('[Frontend] Lead Loaded Successfully', { leadId: leadDetails.id, leadName: leadDetails.name });
         console.log('[Frontend] Form Populated', {
           id: leadDetails.id,
@@ -531,6 +541,13 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
         if (revertFormBeforeRulesRef.current || pendingStageId || pendingTransitionStageId) {
           return;
         }
+        const propKey = `edit-prop:${leadToUse.id}`;
+        if (initializedLeadKeyRef.current === propKey) {
+          return;
+        }
+        initializedLeadKeyRef.current = propKey;
+
+        console.log('[Frontend] Initializing Form', { mode, isOpen, leadId: leadToUse.id });
         console.log('[Frontend] Lead Loaded Successfully (from prop)', { leadId: leadToUse.id, leadName: leadToUse.name });
         console.log('[Frontend] Form Populated', {
           id: leadToUse.id,
@@ -543,12 +560,22 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
         setFormValues(fromLeadToForm(leadToUse));
         setPreviousStageId(leadToUse.stageId || '');
       } else {
-        console.log('[Frontend] Loading Lead', { leadId: lead?.id, leadLoading });
+        if (!initializedLeadKeyRef.current) {
+          console.log('[Frontend] Initializing Form', { mode, isOpen, leadId: lead?.id });
+          console.log('[Frontend] Loading Lead', { leadId: lead?.id, leadLoading });
+        }
       }
       return;
     }
 
     if (mode === 'create') {
+      const createKey = 'create';
+      if (initializedLeadKeyRef.current === createKey) {
+        return;
+      }
+      initializedLeadKeyRef.current = createKey;
+
+      console.log('[Frontend] Initializing Form', { mode, isOpen });
       console.log('[Frontend] Form Initialized for Create');
       setFormValues({
         ...createEmptyLeadFormValues(),
@@ -579,8 +606,9 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
     changeStageMutation.isPending;
 
   useEffect(() => {
-    if (isOpen && mode === 'edit' && !isLeadLoading && (leadDetails || lead)) {
-      console.log('[Frontend] Edit Drawer Ready', { leadId: lead?.id });
+    if (isOpen && mode === 'edit' && !isLeadLoading && (leadDetails || lead) && !hasLoggedDrawerReadyRef.current) {
+      hasLoggedDrawerReadyRef.current = true;
+      console.log('[Frontend] Edit Drawer Ready', { leadId: leadDetails?.id || lead?.id });
     }
   }, [isOpen, mode, isLeadLoading, leadDetails, lead]);
 
@@ -1068,8 +1096,9 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
 
       if (isEditingFromFollowup) {
         handleLeadSaveSuccess();
+      } else {
+        onClose();
       }
-      onClose();
       console.log('[Frontend] Popup Closed');
     } catch (error: any) {
       const status = error?.response?.status;

@@ -147,6 +147,11 @@ const LocationTrackingClient = () => {
           sessionIdRef.current = undefined;
           attendanceRecordIdRef.current = undefined;
           if (intervalId) window.clearInterval(intervalId);
+        } else if (statusCode === 423) {
+          console.warn('[Location Tracking] 423 Received -> Handled: Overdue follow-up lock active.');
+          await idbClearQueue();
+          sessionIdRef.current = undefined;
+          attendanceRecordIdRef.current = undefined;
         } else if (statusCode === 409 || statusCode === 404 || statusCode === 400) {
           await idbClearQueue();
           sessionIdRef.current = undefined;

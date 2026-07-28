@@ -23,7 +23,11 @@ const GlobalFollowupWorkflowListener: React.FC = () => {
         isOpen={true}
         mode="edit"
         lead={openedLead}
-        onClose={() => handleLeadCancel()}
+        onClose={() => {
+          if (useFollowupWorkflowStore.getState().isEditingFromFollowup) {
+            handleLeadCancel();
+          }
+        }}
       />
     </Suspense>
   );
