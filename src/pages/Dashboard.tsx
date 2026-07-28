@@ -11,6 +11,7 @@ import CalendarWidget from '../components/dashboard/CalendarWidget';
 import useDashboardStore from '../store/useDashboardStore';
 import useAuthStore from '../store/useAuthStore';
 import FollowUpCapacityWidget from '../components/dashboard/FollowUpCapacityWidget';
+import ProductPerformanceWidget from '../components/dashboard/ProductPerformanceWidget';
 import { hasAnyPermission, hasPermission } from '../utils/permission.util';
 import OfficeFilterSelect from '../components/OfficeFilterSelect';
 import { canUseOfficeFilter } from '../utils/officeFilterAccess';
@@ -360,6 +361,12 @@ const Dashboard: React.FC<DashboardProps> = ({ mode = 'operations' }) => {
                             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                                 <LeadGrowthChart />
                                 <PipelineStages />
+                            </div>
+                        )}
+
+                        {canSeeMetrics && (
+                            <div className="mb-6">
+                                <ProductPerformanceWidget />
                             </div>
                         )}
 
