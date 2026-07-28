@@ -506,23 +506,56 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
       return;
     }
 
-    if (mode === 'edit' && hydratedLead && !isBusy) {
-      if (revertFormBeforeRulesRef.current || pendingStageId || pendingTransitionStageId) {
-        return;
+    console.log('[Frontend] Initializing Form', { mode, isOpen, leadId: lead?.id });
+
+    if (mode === 'edit') {
+      const leadToUse = leadDetails || (lead as LeadListItem);
+      if (leadDetails) {
+        if (revertFormBeforeRulesRef.current || pendingStageId || pendingTransitionStageId) {
+          return;
+        }
+        console.log('[Frontend] Lead Loaded Successfully', { leadId: leadDetails.id, leadName: leadDetails.name });
+        console.log('[Frontend] Form Populated', {
+          id: leadDetails.id,
+          name: leadDetails.name,
+          email: leadDetails.email,
+          phone: leadDetails.phone,
+          companyName: leadDetails.companyName,
+        });
+        setValidationErrors({});
+        setFormValues(fromLeadToForm(leadDetails));
+        setPreviousStageId(leadDetails.stageId || '');
+      } else if (leadToUse && !leadLoading) {
+        if (revertFormBeforeRulesRef.current || pendingStageId || pendingTransitionStageId) {
+          return;
+        }
+        console.log('[Frontend] Lead Loaded Successfully (from prop)', { leadId: leadToUse.id, leadName: leadToUse.name });
+        console.log('[Frontend] Form Populated', {
+          id: leadToUse.id,
+          name: leadToUse.name,
+          email: leadToUse.email,
+          phone: leadToUse.phone,
+          companyName: leadToUse.companyName,
+        });
+        setValidationErrors({});
+        setFormValues(fromLeadToForm(leadToUse));
+        setPreviousStageId(leadToUse.stageId || '');
+      } else {
+        console.log('[Frontend] Loading Lead', { leadId: lead?.id, leadLoading });
       }
-      setValidationErrors({});
-      setFormValues(fromLeadToForm(hydratedLead));
-      setPreviousStageId(hydratedLead.stageId || '');
       return;
     }
 
-    setFormValues({
-      ...createEmptyLeadFormValues(),
-      assignedToId: currentUser?.id || '',
-    });
-    setValidationErrors({});
-    setPreviousStageId('');
-  }, [hydratedLead, isOpen, mode]);
+    if (mode === 'create') {
+      console.log('[Frontend] Form Initialized for Create');
+      setFormValues({
+        ...createEmptyLeadFormValues(),
+        assignedToId: currentUser?.id || '',
+      });
+      setValidationErrors({});
+      setPreviousStageId('');
+    }
+  }, [isOpen, mode, leadDetails, lead, leadLoading, currentUser?.id]);
 
   const lifeCycleOptions = meta?.lifeCycles || [];
   const dynamicFields = (meta?.dynamicFields as LeadDynamicField[]) || [];
@@ -535,12 +568,19 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
   const selectedFormStage = stageOptions.find((item) => item.id === formValues.stageId);
   const showLobContext = Boolean(isLobStageOption(selectedFormStage) && (formValues.reasonId || formValues.remarks));
 
+  const isLeadLoading = metaLoading || (mode === 'edit' && leadLoading && !leadDetails);
+
   const isBusy =
-    metaLoading ||
-    (mode === 'edit' && leadLoading) ||
+    isLeadLoading ||
     createMutation.isPending ||
     updateMutation.isPending ||
     changeStageMutation.isPending;
+
+  useEffect(() => {
+    if (isOpen && mode === 'edit' && !isLeadLoading && (leadDetails || lead)) {
+      console.log('[Frontend] Edit Drawer Ready', { leadId: lead?.id });
+    }
+  }, [isOpen, mode, isLeadLoading, leadDetails, lead]);
 
   // Apply lifecycle transition constraints only when user explicitly selects a lifecycle.
   const activeLifeCycle = lifeCycleOptions.find((item) => item.id === formValues.lifecycleId);
@@ -1080,7 +1120,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
               </div>
 
               <div className="flex-1 overflow-y-auto px-5 py-5 sm:px-6">
-                {isBusy && metaLoading ? (
+                {isLeadLoading ? (
                   <div className="space-y-4 animate-pulse">
                     <div className="h-20 rounded-3xl shimmer-bg" />
                     <div className="h-44 rounded-3xl shimmer-bg" />

@@ -73,8 +73,9 @@ export const useFollowupWorkflowStore = create<FollowupWorkflowState>((set, get)
   openLeadFromFollowup: (followUp, source) => {
     const leadId = followUp?.lead?.id || followUp?.leadId || followUp?.id;
     const activeSource = source || get().popupSource || 'OTHER';
-    console.log('[Frontend] Open Lead Clicked', { leadId, source: activeSource });
-    console.log('[Frontend] Lead Editor Opened', { leadId, isEditingFromFollowup: true });
+    console.log('[Frontend] Follow-up Open Lead Clicked', { followUpId: followUp?.id, leadId, source: activeSource });
+    console.log('[Frontend] Lead ID Received', { leadId });
+    console.log('[Frontend] Opening Edit Drawer', { mode: 'edit', leadId, isEditingFromFollowup: true });
 
     set({
       isEditingFromFollowup: true,
