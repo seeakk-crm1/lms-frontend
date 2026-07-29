@@ -1,18 +1,18 @@
 import React, { useState, useEffect, ReactNode } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// Components
-import Navbar from './components/Navbar';
-import Hero from './components/Hero';
-import Features from './components/Features';
-import AccountabilityHook from './components/AccountabilityHook';
-import WhySeeakk from './components/WhySeeakk';
-import AttendanceSection from './components/AttendanceSection';
-import TargetLockingSection from './components/TargetLockingSection';
-import Productivity from './components/Productivity';
-import Pricing from './components/Pricing';
-import CTA from './components/CTA';
-import Footer from './components/Footer';
+// Landing Page Redesign Components
+import LandingNavbar from './components/landing/LandingNavbar';
+import LandingHero from './components/landing/LandingHero';
+import EmotionalHook from './components/landing/EmotionalHook';
+import AccountabilityBridge from './components/landing/AccountabilityBridge';
+import InteractiveShowcase from './components/landing/InteractiveShowcase';
+import FeaturesGrid from './components/landing/FeaturesGrid';
+import ComparisonSection from './components/landing/ComparisonSection';
+import EnterpriseTrust from './components/landing/EnterpriseTrust';
+import PricingSection from './components/landing/PricingSection';
+import LandingCTA from './components/landing/LandingCTA';
+import LandingFooter from './components/landing/LandingFooter';
 
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
@@ -220,20 +220,20 @@ function App() {
       {workflowEnabled ? <LocationTrackingClient /> : null}
       <Routes>
         <Route path="/" element={
-          <div className="min-h-screen bg-white font-sans selection:bg-emerald-200 selection:text-emerald-900 overflow-x-hidden">
-            <Navbar />
+          <div className="min-h-screen bg-gray-950 font-sans text-white selection:bg-emerald-500 selection:text-gray-950 overflow-x-hidden">
+            <LandingNavbar />
             <main>
-              <Hero />
-              <AccountabilityHook />
-              <Features />
-              <WhySeeakk />
-              <AttendanceSection />
-              <TargetLockingSection />
-              <Productivity />
-              <Pricing />
-              <CTA />
+              <LandingHero />
+              <EmotionalHook />
+              <AccountabilityBridge />
+              <InteractiveShowcase />
+              <FeaturesGrid />
+              <ComparisonSection />
+              <EnterpriseTrust />
+              <PricingSection />
+              <LandingCTA />
             </main>
-            <Footer />
+            <LandingFooter />
           </div>
         } />
 
