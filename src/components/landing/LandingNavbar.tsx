@@ -128,7 +128,7 @@ const LandingNavbar: React.FC = () => {
                     onClick={toggleMenu}
                     className="w-full text-center text-slate-700 font-bold text-sm py-3 rounded-2xl bg-slate-100/80 border border-slate-200/80 shadow-sm"
                   >
-                    Log In to Workspace
+                    Log In To Workspace
                   </Link>
                   <Link
                     to="/login"

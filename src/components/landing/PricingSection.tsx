@@ -6,15 +6,15 @@ import { Link } from 'react-router-dom';
 const pricingTiers = [
   {
     name: 'Growth',
-    tagline: 'Ideal for growing sales teams & boutique agencies.',
+    tagline: 'Ideal For Growing Sales Teams & Boutique Agencies.',
     monthlyPrice: 49,
     annualPrice: 39,
     popular: false,
     features: [
       'Up to 10 Sales Advisors',
       'Full Lead Custody & Assignment',
-      'Loss of Business (LOB) Prevention',
-      'Mandatory Follow-up SLA Clocks',
+      'Loss Of Business (LOB) Prevention',
+      'Mandatory Follow-Up SLA Clocks',
       'WhatsApp Direct Integration',
       'Target Cycle Tracking',
       'Single Office Location',
@@ -23,7 +23,7 @@ const pricingTiers = [
   },
   {
     name: 'Scale Enterprise',
-    tagline: 'For multi-branch teams requiring target locking & LOB audit control.',
+    tagline: 'For Multi-Branch Teams Requiring Target Locking & LOB Audit Control.',
     monthlyPrice: 129,
     annualPrice: 99,
     popular: true,
@@ -31,7 +31,7 @@ const pricingTiers = [
       'Up to 50 Sales Advisors & Staff',
       'Automated Target Enforced Locking',
       'Multi-Office & Branch Isolation',
-      'Loss of Business (LOB) Analytics',
+      'Loss Of Business (LOB) Analytics',
       'Geo-Fenced Attendance & Rosters',
       'Dynamic Stage Rules & Proofs',
       'Advance Payment & Receipt Logging',
@@ -42,16 +42,16 @@ const pricingTiers = [
   },
   {
     name: 'Custom Corporate',
-    tagline: 'Custom deployment for enterprise networks & agency partners.',
+    tagline: 'Custom Deployment For Enterprise Networks & Agency Partners.',
     monthlyPrice: 'Custom',
     annualPrice: 'Custom',
     popular: false,
     features: [
       'Unlimited Users & Offices',
-      'Dedicated Instance / On-Premise option',
+      'Dedicated Instance / On-Premise Option',
       'Custom ERP & CRM Webhooks',
-      'Loss of Business (LOB) Custom Reports',
-      'White-label Agency Portal',
+      'Loss Of Business (LOB) Custom Reports',
+      'White-Label Agency Portal',
       'SLA & Uptime Guarantees',
       'Dedicated Success Manager',
       'Custom Staff Training',
@@ -82,14 +82,14 @@ const PricingSection: React.FC = () => {
           </div>
 
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight leading-tight mb-6">
-            Invest in Accountability.{' '}
+            Invest In Accountability.{' '}
             <span className="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 bg-clip-text text-transparent">
-              Stop Loss of Business (LOB).
+              Stop Loss Of Business (LOB).
             </span>
           </h2>
 
           <p className="text-base sm:text-lg text-slate-600 leading-relaxed">
-            Simple, predictable pricing with zero hidden fees. Every plan includes full access to the Seeakk Loss of Business (LOB) prevention engine.
+            Simple, Predictable Pricing With Zero Hidden Fees. Every Plan Includes Full Access To The Seeakk Loss Of Business (LOB) Prevention Engine.
           </p>
 
           {/* Billing Toggle */}

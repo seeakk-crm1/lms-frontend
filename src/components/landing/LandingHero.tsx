@@ -23,7 +23,7 @@ const simulatorSteps = [
     stage: 'Lead Received & Tagged',
     actor: 'Agency / Campaign Import',
     title: 'Lead Ingested & Timestamped',
-    details: 'Lead #8492 (Premium Client) received from marketing ad campaign webhook / CSV import.',
+    details: 'Lead #8492 (Premium Client) Received From Marketing Ad Campaign Webhook / CSV Import.',
     status: 'Verified & Logged',
     statusColor: 'bg-blue-50 text-blue-700 border-blue-200',
     icon: Sparkles,
@@ -33,17 +33,17 @@ const simulatorSteps = [
     stage: 'Accountability Assignment',
     actor: 'Seeakk Distribution Engine',
     title: 'Geo & Office Assignment',
-    details: 'Routed to Branch: Financial District. Assigned to: Rahul (Senior Sales Rep).',
+    details: 'Routed To Branch: Financial District. Assigned To: Rahul (Senior Sales Rep).',
     status: 'Assigned',
     statusColor: 'bg-amber-50 text-amber-700 border-amber-200',
     icon: Building2,
   },
   {
     id: 'step-3',
-    stage: 'Mandatory Follow-up',
+    stage: 'Mandatory Follow-Up',
     actor: 'Assigned Sales Rep',
-    title: 'Follow-up SLA Initiated',
-    details: 'Strict 15-minute SLA clock active. Follow-up locked in calendar to prevent Loss of Business (LOB).',
+    title: 'Follow-Up SLA Initiated',
+    details: 'Strict 15-Minute SLA Clock Active. Follow-Up Locked In Calendar To Prevent Loss Of Business (LOB).',
     status: 'SLA Active',
     statusColor: 'bg-emerald-50 text-emerald-700 border-emerald-200',
     icon: Clock,
@@ -53,7 +53,7 @@ const simulatorSteps = [
     stage: 'Supervisor Audit',
     actor: 'Branch Manager',
     title: 'Stage Rule Verification',
-    details: 'Advance payment receipt & required dynamic stage rules verified by supervisor.',
+    details: 'Advance Payment Receipt & Required Dynamic Stage Rules Verified By Supervisor.',
     status: 'Audited',
     statusColor: 'bg-purple-50 text-purple-700 border-purple-200',
     icon: ShieldCheck,
@@ -63,7 +63,7 @@ const simulatorSteps = [
     stage: 'Revenue Realized',
     actor: 'Executive Dashboard',
     title: 'Deal Converted & Tracked',
-    details: '$45,000 Contract signed. Full agency-to-business audit trail locked.',
+    details: '$45,000 Contract Signed. Full Agency-To-Business Audit Trail Locked.',
     status: 'Converted',
     statusColor: 'bg-emerald-500 text-white font-bold border-emerald-600',
     icon: TrendingUp,
@@ -108,28 +108,28 @@ const LandingHero: React.FC = () => {
             {/* Enterprise Tag */}
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-100/80 border border-emerald-200 text-emerald-800 text-xs font-bold uppercase tracking-widest mb-6 shadow-sm">
               <ShieldCheck className="w-4 h-4 text-emerald-600" />
-              <span>Enterprise Lead Performance & Loss of Business (LOB) Prevention</span>
+              <span>Enterprise Lead Performance & Loss Of Business (LOB) Prevention</span>
             </div>
 
             {/* Core Headline */}
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-slate-900 leading-[1.08] mb-6">
-              Your leads aren't the problem.{' '}
+              Your Leads Aren't The Problem.{' '}
               <span className="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 bg-clip-text text-transparent">
-                The missing accountability is.
+                The Missing Accountability Is.
               </span>
             </h1>
 
             {/* Core Subtitle */}
             <p className="text-base sm:text-lg text-slate-600 mb-8 leading-relaxed max-w-2xl mx-auto lg:mx-0 font-normal">
-              Seeakk manages, tracks, monitors, verifies, and audits leads imported or received from marketing campaigns and agencies. Enforcing lead custody, mandatory follow-up SLA clocks, and performance-based locks to prevent <strong>Loss of Business (LOB)</strong>.
+              Seeakk Manages, Tracks, Monitors, Verifies, And Audits Leads Imported Or Received From Marketing Campaigns And Agencies. Enforcing Lead Custody, Mandatory Follow-Up SLA Clocks, And Performance-Based Locks To Prevent <strong>Loss Of Business (LOB)</strong>.
             </p>
 
             {/* Feature Pills */}
             <div className="flex flex-wrap gap-2.5 justify-center lg:justify-start mb-10">
               {[
                 '100% Lead Traceability',
-                'Loss of Business (LOB) Prevention',
-                'Mandatory Follow-up Gates',
+                'Loss Of Business (LOB) Prevention',
+                'Mandatory Follow-Up Gates',
                 'Performance Target Locking',
                 'Geo-Fenced Attendance',
               ].map((pill) => (
@@ -149,7 +149,7 @@ const LandingHero: React.FC = () => {
                 to="/login"
                 className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-emerald-500 via-emerald-600 to-teal-700 hover:from-emerald-600 hover:to-teal-800 text-white rounded-full font-bold text-base transition-all duration-300 shadow-xl shadow-emerald-500/20 flex items-center justify-center gap-3 group active:scale-95"
               >
-                <span>Deploy Seeakk Free for 30 Days</span>
+                <span>Deploy Seeakk Free For 30 Days</span>
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Link>
 
@@ -174,7 +174,7 @@ const LandingHero: React.FC = () => {
               </div>
               <div>
                 <p className="text-2xl sm:text-3xl font-black text-emerald-600">4.2x</p>
-                <p className="text-xs font-medium text-slate-500 mt-1">Faster SLA Follow-up Velocity</p>
+                <p className="text-xs font-medium text-slate-500 mt-1">Faster SLA Follow-Up Velocity</p>
               </div>
             </div>
           </motion.div>
@@ -194,7 +194,7 @@ const LandingHero: React.FC = () => {
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse" />
                     <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                      Live Chain of Custody Simulator
+                      Live Chain Of Custody Simulator
                     </span>
                   </div>
 
@@ -283,7 +283,7 @@ const LandingHero: React.FC = () => {
                   <div className="flex items-center gap-2">
                     <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
                     <span className="text-xs text-emerald-900 font-medium">
-                      Loss of Business (LOB) Prevention Active
+                      Loss Of Business (LOB) Prevention Active
                     </span>
                   </div>
                   <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded uppercase">
@@ -303,8 +303,8 @@ const LandingHero: React.FC = () => {
                 <AlertTriangle className="w-4 h-4" />
               </div>
               <div>
-                <p className="text-[10px] text-slate-500 font-semibold uppercase">Loss of Business (LOB) Alert</p>
-                <p className="text-xs font-bold text-emerald-700">Prevented by Seeakk</p>
+                <p className="text-[10px] text-slate-500 font-semibold uppercase">Loss Of Business (LOB) Alert</p>
+                <p className="text-xs font-bold text-emerald-700">Prevented By Seeakk</p>
               </div>
             </motion.div>
 

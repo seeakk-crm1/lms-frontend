@@ -21,7 +21,7 @@ const bridgeStages = [
     step: '01',
     name: 'Lead Ingested',
     owner: 'Agency / Campaign Import',
-    desc: 'Lead data received from marketing ad campaign webhooks, APIs, or Excel (.xlsx / CSV) bulk imports.',
+    desc: 'Lead Data Received From Marketing Ad Campaign Webhooks, APIs, Or Excel (.xlsx / CSV) Bulk Imports.',
     icon: Sparkles,
     badge: '100% Ingested',
   },
@@ -29,15 +29,15 @@ const bridgeStages = [
     step: '02',
     name: 'Accountability Routing',
     owner: 'Seeakk Distribution Engine',
-    desc: 'Structured assignment based on Office Branch, Loss of Business (LOB) prevention rules, user availability, and load balancing.',
+    desc: 'Structured Assignment Based On Office Branch, Loss Of Business (LOB) Prevention Rules, User Availability, And Load Balancing.',
     icon: Building2,
     badge: 'Zero Delay',
   },
   {
     step: '03',
-    name: 'Mandatory Follow-up',
+    name: 'Mandatory Follow-Up',
     owner: 'Assigned Sales Advisor',
-    desc: 'Strict SLA countdown clock. Next follow-up date and contact method locked in the calendar.',
+    desc: 'Strict SLA Countdown Clock. Next Follow-Up Date And Contact Method Locked In The Calendar.',
     icon: Clock,
     badge: 'SLA Enforced',
   },
@@ -45,7 +45,7 @@ const bridgeStages = [
     step: '04',
     name: 'Stage Transition Rules',
     owner: 'Sales & System',
-    desc: 'Stage cannot be changed without satisfying required dynamic stage rule fields and mandatory remark inputs.',
+    desc: 'Stage Cannot Be Changed Without Satisfying Required Dynamic Stage Rule Fields And Mandatory Remark Inputs.',
     icon: FileCheck,
     badge: 'Rule Validated',
   },
@@ -53,7 +53,7 @@ const bridgeStages = [
     step: '05',
     name: 'Supervisor Audit',
     owner: 'Branch Supervisor',
-    desc: 'Overdue follow-ups or special stage transitions require supervisor override approvals.',
+    desc: 'Overdue Follow-Ups Or Special Stage Transitions Require Supervisor Override Approvals.',
     icon: ShieldCheck,
     badge: 'Verified',
   },
@@ -61,7 +61,7 @@ const bridgeStages = [
     step: '06',
     name: 'Advance Payment',
     owner: 'Finance & Sales',
-    desc: 'Advance deposits, receipt proof uploads, and total revenue recorded with audit justification.',
+    desc: 'Advance Deposits, Receipt Proof Uploads, And Total Revenue Recorded With Audit Justification.',
     icon: DollarSign,
     badge: 'Payment Locked',
   },
@@ -69,7 +69,7 @@ const bridgeStages = [
     step: '07',
     name: 'Target Cycle Evaluation',
     owner: 'Performance Engine',
-    desc: 'System continuously evaluates staff performance against assigned weekly/monthly target cycles.',
+    desc: 'System Continuously Evaluates Staff Performance Against Assigned Weekly/Monthly Target Cycles.',
     icon: TrendingUp,
     badge: 'Target Checked',
   },
@@ -77,7 +77,7 @@ const bridgeStages = [
     step: '08',
     name: 'Target Enforced Lock',
     owner: 'Compliance System',
-    desc: 'Failing mandatory targets or accumulating overdue follow-ups locks system access until unlocked.',
+    desc: 'Failing Mandatory Targets Or Accumulating Overdue Follow-Ups Locks System Access Until Unlocked.',
     icon: Lock,
     badge: 'Enforced Lock',
   },
@@ -85,7 +85,7 @@ const bridgeStages = [
     step: '09',
     name: 'Executive Revenue Trail',
     owner: 'CEO & Enterprise Board',
-    desc: 'Complete immutable audit history from ad-dollar spend to bank account deposit.',
+    desc: 'Complete Immutable Audit History From Ad-Dollar Spend To Bank Account Deposit.',
     icon: CheckCircle2,
     badge: 'Full Custody',
   },
@@ -112,18 +112,18 @@ const AccountabilityBridge: React.FC = () => {
         >
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-100 border border-emerald-200 text-emerald-800 text-xs font-bold uppercase tracking-widest mb-4 shadow-sm">
             <GitCommit className="w-4 h-4 text-emerald-600" />
-            <span>The 9-Stage Chain of Custody</span>
+            <span>The 9-Stage Chain Of Custody</span>
           </div>
 
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight leading-tight mb-6">
             The Accountability Chain:{' '}
             <span className="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 bg-clip-text text-transparent">
-              From Ad Lead to Closed Revenue.
+              From Ad Lead To Closed Revenue.
             </span>
           </h2>
 
           <p className="text-base sm:text-lg text-slate-600 leading-relaxed">
-            Seeakk replaces loose manual processes with a rigid 9-stage chain of custody. Every single lead action is timestamped, audited, and protected by Loss of Business (LOB) prevention gates.
+            Seeakk Replaces Loose Manual Processes With A Rigid 9-Stage Chain Of Custody. Every Single Lead Action Is Timestamped, Audited, And Protected By Loss Of Business (LOB) Prevention Gates.
           </p>
         </motion.div>
 
@@ -141,7 +141,7 @@ const AccountabilityBridge: React.FC = () => {
                 "No Performance = No System Access"
               </h3>
               <p className="text-xs text-slate-600 mt-1 max-w-xl">
-                Users with overdue mandatory follow-ups or unfulfilled target quotas are automatically locked from proceeding until supervisors approve resolution, preventing Loss of Business (LOB).
+                Users With Overdue Mandatory Follow-Ups Or Unfulfilled Target Quotas Are Automatically Locked From Proceeding Until Supervisors Approve Resolution, Preventing Loss Of Business (LOB).
               </p>
             </div>
           </div>
@@ -199,7 +199,7 @@ const AccountabilityBridge: React.FC = () => {
                   </div>
                   <div>
                     <span className="text-xs font-mono text-emerald-700 uppercase tracking-widest font-bold">
-                      Stage {activeStage.step} of 09
+                      Stage {activeStage.step} Of 09
                     </span>
                     <h3 className="text-2xl font-black text-slate-900">{activeStage.name}</h3>
                   </div>

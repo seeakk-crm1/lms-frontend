@@ -20,16 +20,16 @@ const showcaseTabs = [
     id: 'target-locking',
     label: 'Target Locking Engine',
     icon: Lock,
-    headline: 'Automatic Staff Locking When Targets or SLA Follow-ups Miss Quota',
-    desc: 'When sales representatives fail to meet target cycles or accumulate overdue mandatory follow-ups, Seeakk automatically locks CRM actions until supervisors review and unlock them, preventing Loss of Business (LOB).',
+    headline: 'Automatic Staff Locking When Targets Or SLA Follow-Ups Miss Quota',
+    desc: 'When Sales Representatives Fail To Meet Target Cycles Or Accumulate Overdue Mandatory Follow-Ups, Seeakk Automatically Locks CRM Actions Until Supervisors Review And Unlock Them, Preventing Loss Of Business (LOB).',
     previewType: 'lock',
   },
   {
     id: 'followups',
-    label: 'Smart Follow-up SLA',
+    label: 'Smart Follow-Up SLA',
     icon: CalendarCheck,
-    headline: 'Zero Lead Abandonment With Mandatory Follow-up Gates',
-    desc: 'Mandatory follow-up reminders enforce strict response clocks. Reps cannot browse away or skip scheduling without completing active lead follow-up notes.',
+    headline: 'Zero Lead Abandonment With Mandatory Follow-Up Gates',
+    desc: 'Mandatory Follow-Up Reminders Enforce Strict Response Clocks. Reps Cannot Browse Away Or Skip Scheduling Without Completing Active Lead Follow-Up Notes.',
     previewType: 'followup',
   },
   {
@@ -37,15 +37,15 @@ const showcaseTabs = [
     label: 'Geo-Attendance & Roster',
     icon: MapPin,
     headline: 'Office Geofenced Attendance & Shift Roster Control',
-    desc: 'Verify field and office staff attendance with GPS geofencing, office IP locks, shift rosters, and supervisor approval gates.',
+    desc: 'Verify Field And Office Staff Attendance With GPS Geofencing, Office IP Locks, Shift Rosters, And Supervisor Approval Gates.',
     previewType: 'attendance',
   },
   {
     id: 'analytics',
-    label: 'Loss of Business (LOB) Analytics',
+    label: 'Loss Of Business (LOB) Analytics',
     icon: BarChart3,
-    headline: 'Real-Time Branch Performance & Loss of Business (LOB) Tracking',
-    desc: 'Compare branch performance, Loss of Business (LOB) conversion velocity, employee attendance, and revenue totals from an executive dashboard.',
+    headline: 'Real-Time Branch Performance & Loss Of Business (LOB) Tracking',
+    desc: 'Compare Branch Performance, Loss Of Business (LOB) Conversion Velocity, Employee Attendance, And Revenue Totals From An Executive Dashboard.',
     previewType: 'analytics',
   },
 ];
@@ -83,7 +83,7 @@ const InteractiveShowcase: React.FC = () => {
           </h2>
 
           <p className="text-base sm:text-lg text-slate-600 leading-relaxed">
-            Experience the core workflow engines that eliminate Loss of Business (LOB), automate target accountability, and give leadership 100% control.
+            Experience The Core Workflow Engines That Eliminate Loss Of Business (LOB), Automate Target Accountability, And Give Leadership 100% Control.
           </p>
         </motion.div>
 
@@ -146,9 +146,9 @@ const InteractiveShowcase: React.FC = () => {
 
                   <div className="space-y-2.5 pt-2">
                     {[
-                      'Automated real-time background evaluation',
-                      'Role-based supervisor override workflow',
-                      'Loss of Business (LOB) prevention tracking',
+                      'Automated Real-Time Background Evaluation',
+                      'Role-Based Supervisor Override Workflow',
+                      'Loss Of Business (LOB) Prevention Tracking',
                     ].map((feature) => (
                       <div key={feature} className="flex items-center gap-2 text-xs text-slate-700 font-semibold">
                         <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
@@ -182,7 +182,7 @@ const InteractiveShowcase: React.FC = () => {
                           </div>
                           <div>
                             <p className="text-xs font-bold text-slate-900">Staff Rep: Rahul Sharma</p>
-                            <p className="text-[11px] text-red-700 font-semibold">Status: Enforced System Lock (3 Overdue Follow-ups)</p>
+                            <p className="text-[11px] text-red-700 font-semibold">Status: Enforced System Lock (3 Overdue Follow-Ups)</p>
                           </div>
                         </div>
                         <span className="text-[10px] font-bold px-2.5 py-1 rounded bg-red-600 text-white uppercase shadow-sm">
@@ -193,7 +193,7 @@ const InteractiveShowcase: React.FC = () => {
                       <div className="bg-white p-4 rounded-xl border border-slate-200 space-y-2 shadow-sm">
                         <p className="text-xs font-bold text-slate-800">Supervisor Unlock Request</p>
                         <p className="text-[11px] text-slate-600 font-mono">
-                          Justification: "Target extended by Regional Director. Follow-up calls completed."
+                          Justification: "Target Extended By Regional Director. Follow-Up Calls Completed."
                         </p>
                         <div className="flex gap-2 pt-2">
                           <button className="px-3 py-1.5 bg-emerald-600 text-white font-bold text-xs rounded-lg shadow-sm">
@@ -216,7 +216,7 @@ const InteractiveShowcase: React.FC = () => {
                           </div>
                           <div>
                             <p className="text-xs font-bold text-slate-900">Lead: AcroTech Enterprise</p>
-                            <p className="text-[11px] text-emerald-800 font-semibold">Follow-up SLA: 14 Mins Remaining</p>
+                            <p className="text-[11px] text-emerald-800 font-semibold">Follow-Up SLA: 14 Mins Remaining</p>
                           </div>
                         </div>
                         <span className="text-[10px] font-bold px-2.5 py-1 rounded bg-emerald-600 text-white uppercase shadow-sm">
@@ -281,7 +281,7 @@ const InteractiveShowcase: React.FC = () => {
                       </div>
 
                       <div className="bg-emerald-50 p-3 rounded-xl border border-emerald-200 text-xs flex items-center justify-between shadow-sm">
-                        <span className="text-slate-800 font-semibold">Loss of Business (LOB) Reduction:</span>
+                        <span className="text-slate-800 font-semibold">Loss Of Business (LOB) Reduction:</span>
                         <span className="text-emerald-700 font-bold">-84% Lost Prospects</span>
                       </div>
                     </div>

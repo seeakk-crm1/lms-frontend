@@ -26,7 +26,7 @@ const viewTabs = [
 
 const eventCategories = [
   { label: 'Lead Creation & Assignment', color: 'bg-emerald-500 text-white', badgeBg: 'bg-emerald-50 text-emerald-800 border-emerald-200' },
-  { label: 'Mandatory SLA Follow-ups', color: 'bg-amber-500 text-white', badgeBg: 'bg-amber-50 text-amber-800 border-amber-200' },
+  { label: 'Mandatory SLA Follow-Ups', color: 'bg-amber-500 text-white', badgeBg: 'bg-amber-50 text-amber-800 border-amber-200' },
   { label: 'Product Demos & Calls', color: 'bg-blue-500 text-white', badgeBg: 'bg-blue-50 text-blue-800 border-blue-200' },
   { label: 'Won Deals & Closures', color: 'bg-teal-600 text-white', badgeBg: 'bg-teal-50 text-teal-800 border-teal-200' },
   { label: 'Stage Movement History', color: 'bg-indigo-500 text-white', badgeBg: 'bg-indigo-50 text-indigo-800 border-indigo-200' },
@@ -42,7 +42,7 @@ const mockCalendarDays = [
   { day: 31, isCurrentMonth: false, events: [] },
   { day: 1, isCurrentMonth: true, events: [{ title: 'Q4 Target Cycle Start', cat: 'Milestone', type: 'indigo' }] },
   { day: 2, isCurrentMonth: true, events: [] },
-  { day: 3, isCurrentMonth: true, events: [{ title: 'AcroTech SLA Follow-up', cat: 'SLA', type: 'amber' }] },
+  { day: 3, isCurrentMonth: true, events: [{ title: 'AcroTech SLA Follow-Up', cat: 'SLA', type: 'amber' }] },
   { day: 4, isCurrentMonth: true, events: [] },
   { day: 5, isCurrentMonth: true, events: [{ title: 'Apex Enterprise Demo', cat: 'Demo', type: 'blue' }] },
   { day: 6, isCurrentMonth: true, events: [] },
@@ -50,7 +50,7 @@ const mockCalendarDays = [
   { day: 8, isCurrentMonth: true, events: [] },
   { day: 9, isCurrentMonth: true, events: [{ title: 'Metro Global - $45k Won', cat: 'Won Deal', type: 'teal' }] },
   { day: 10, isCurrentMonth: true, events: [] },
-  { day: 11, isCurrentMonth: true, events: [{ title: 'Vanguard - SLA Follow-up', cat: 'SLA', type: 'amber' }] },
+  { day: 11, isCurrentMonth: true, events: [{ title: 'Vanguard - SLA Follow-Up', cat: 'SLA', type: 'amber' }] },
   { day: 12, isCurrentMonth: true, events: [] },
   { day: 13, isCurrentMonth: true, events: [] },
   { day: 14, isCurrentMonth: true, events: [{ title: 'Stage -> Proposal Review', cat: 'Stage', type: 'indigo' }] },
@@ -76,37 +76,37 @@ const featureHighlights = [
   {
     icon: TimelineIcon,
     title: 'Visual Lead Timeline',
-    desc: 'Chronological tracking of every customer touchpoint, lead assignment, and stage transition on a single visual grid.',
+    desc: 'Chronological Tracking Of Every Customer Touchpoint, Lead Assignment, And Stage Transition On A Single Visual Grid.',
     color: 'emerald',
   },
   {
     icon: Clock,
-    title: 'Follow-up SLA Velocity',
-    desc: 'Never miss a customer contact with live countdown timers and automated notifications for upcoming or overdue follow-ups.',
+    title: 'Follow-Up SLA Velocity',
+    desc: 'Never Miss A Customer Contact With Live Countdown Timers And Automated Notifications For Upcoming Or Overdue Follow-Ups.',
     color: 'amber',
   },
   {
     icon: TrendingUp,
     title: 'Stage Movement History',
-    desc: 'Complete audit visibility into deal progression, mandatory stage rules, and revenue milestones as leads advance.',
+    desc: 'Complete Audit Visibility Into Deal Progression, Mandatory Stage Rules, And Revenue Milestones As Leads Advance.',
     color: 'indigo',
   },
   {
     icon: Eye,
     title: '3-Second Manager Audit',
-    desc: 'Evaluate representative workload, follow-up consistency, and sales discipline at a single glance without opening reports.',
+    desc: 'Evaluate Representative Workload, Follow-Up Consistency, And Sales Discipline At A Single Glance Without Opening Reports.',
     color: 'teal',
   },
   {
     icon: Award,
     title: 'Closed Deal & Revenue Badges',
-    desc: 'Celebrate won leads and track revenue milestone velocity directly on the calendar interface.',
+    desc: 'Celebrate Won Leads And Track Revenue Milestone Velocity Directly On The Calendar Interface.',
     color: 'emerald',
   },
   {
     icon: Zap,
     title: 'Daily Action Agenda',
-    desc: 'Prioritized daily workload view giving sales advisors instant clarity on urgent customer engagements.',
+    desc: 'Prioritized Daily Workload View Giving Sales Advisors Instant Clarity On Urgent Customer Engagements.',
     color: 'blue',
   },
 ];
@@ -138,14 +138,14 @@ const CalendarShowcase: React.FC = () => {
           </div>
 
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight leading-tight mb-6">
-            Understand Any Employee's Sales Activity in{' '}
+            Understand Any Employee's Sales Activity In{' '}
             <span className="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 bg-clip-text text-transparent">
-              As Little as 3 Seconds.
+              As Little As 3 Seconds.
             </span>
           </h2>
 
           <p className="text-base sm:text-lg text-slate-600 leading-relaxed">
-            One glance at the Lead Operations Calendar instantly reveals follow-up consistency, customer engagement, sales representative discipline, and deal progression—eliminating the need to open multiple reports.
+            One Glance At The Lead Operations Calendar Instantly Reveals Follow-Up Consistency, Customer Engagement, Sales Representative Discipline, And Deal Progression—Eliminating The Need To Open Multiple Reports.
           </p>
         </motion.div>
 
@@ -169,7 +169,7 @@ const CalendarShowcase: React.FC = () => {
                 Instant Sales Representative Activity & Discipline Intelligence
               </h3>
               <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                Managers no longer need to open multiple static reports to evaluate user performance. One glance at the calendar instantly reveals upcoming follow-ups, overdue alerts, customer engagement density, and stage progress.
+                Managers No Longer Need To Open Multiple Static Reports To Evaluate User Performance. One Glance At The Calendar Instantly Reveals Upcoming Follow-Ups, Overdue Alerts, Customer Engagement Density, And Stage Progress.
               </p>
             </div>
           </div>
@@ -204,7 +204,7 @@ const CalendarShowcase: React.FC = () => {
               </div>
               <div>
                 <h3 className="text-lg font-black text-slate-900">Lead Operations Calendar — Sales Activity View</h3>
-                <p className="text-xs text-slate-500 font-medium">Real-Time Lead Journey, SLA Follow-up & Revenue Milestone Synchronization</p>
+                <p className="text-xs text-slate-500 font-medium">Real-Time Lead Journey, SLA Follow-Up & Revenue Milestone Synchronization</p>
               </div>
             </div>
 
@@ -318,7 +318,7 @@ const CalendarShowcase: React.FC = () => {
                 </div>
                 <div className="grid grid-cols-2 gap-2 pt-1">
                   <div className="bg-slate-800/80 p-2.5 rounded-xl border border-slate-700">
-                    <span className="text-[10px] text-slate-400 block font-semibold">Follow-up Streak</span>
+                    <span className="text-[10px] text-slate-400 block font-semibold">Follow-Up Streak</span>
                     <span className="text-sm font-black text-emerald-400">14 Days Active</span>
                   </div>
                   <div className="bg-slate-800/80 p-2.5 rounded-xl border border-slate-700">
@@ -348,7 +348,7 @@ const CalendarShowcase: React.FC = () => {
                         SLA Active
                       </span>
                     </div>
-                    <p className="text-[11px] text-emerald-700 font-medium">Assigned: Rahul (15m SLA timer running)</p>
+                    <p className="text-[11px] text-emerald-700 font-medium">Assigned: Rahul (15m SLA Timer Running)</p>
                   </div>
 
                   <div className="bg-blue-50 p-3 rounded-xl border border-blue-200 space-y-1">
@@ -378,7 +378,7 @@ const CalendarShowcase: React.FC = () => {
                         Overdue Alert
                       </span>
                     </div>
-                    <p className="text-[11px] text-rose-700 font-medium">Follow-up SLA clock expired</p>
+                    <p className="text-[11px] text-rose-700 font-medium">Follow-Up SLA Clock Expired</p>
                   </div>
                 </div>
               </div>
@@ -390,7 +390,7 @@ const CalendarShowcase: React.FC = () => {
                   <span>Lead Operations Control</span>
                 </div>
                 <p className="text-xs text-slate-300 leading-relaxed font-normal">
-                  Connects seamlessly with Lead Assignment, SLA Follow-up Clocks, Stage Transition Rules, and Target Cycles.
+                  Connects Seamlessly With Lead Assignment, SLA Follow-Up Clocks, Stage Transition Rules, And Target Cycles.
                 </p>
                 <Link
                   to="/login"

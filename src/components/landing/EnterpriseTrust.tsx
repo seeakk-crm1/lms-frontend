@@ -6,32 +6,32 @@ const trustPillars = [
   {
     icon: ShieldCheck,
     title: 'Role-Based Access Control (RBAC)',
-    desc: 'Fine-grained permission matrices for Super Admins, Branch Managers, Supervisors, and Sales Advisors with strict data isolation.',
+    desc: 'Fine-Grained Permission Matrices For Super Admins, Branch Managers, Supervisors, And Sales Advisors With Strict Data Isolation.',
   },
   {
     icon: FileKey2,
     title: 'Immutable Forensic Audit Logs',
-    desc: 'Every single lead assignment, status transition, payment edit, and supervisor unlock request is cryptographically recorded.',
+    desc: 'Every Single Lead Assignment, Status Transition, Payment Edit, And Supervisor Unlock Request Is Cryptographically Recorded.',
   },
   {
     icon: Building,
     title: 'Multi-Office Branch Hierarchy',
-    desc: 'Support complex multi-regional office structures, Loss of Business (LOB) splits, and department-wise reporting boundaries.',
+    desc: 'Support Complex Multi-Regional Office Structures, Loss Of Business (LOB) Splits, And Department-Wise Reporting Boundaries.',
   },
   {
     icon: Cpu,
     title: 'PWA & Offline Queue Sync',
-    desc: 'Progressive Web App (PWA) architecture allowing sales reps to capture notes offline and auto-sync upon reconnection.',
+    desc: 'Progressive Web App (PWA) Architecture Allowing Sales Reps To Capture Notes Offline And Auto-Sync Upon Reconnection.',
   },
   {
     icon: Lock,
     title: 'Bank-Grade Data Encryption',
-    desc: 'AES-256 encrypted storage, TLS 1.3 in transit, and JWT token rotation for maximum data security.',
+    desc: 'AES-256 Encrypted Storage, TLS 1.3 In Transit, And JWT Token Rotation For Maximum Data Security.',
   },
   {
     icon: Globe2,
     title: 'Real-Time WebSocket Infrastructure',
-    desc: 'Low-latency real-time event broadcasting for instant follow-up reminders, lead transfers, and supervisor notifications.',
+    desc: 'Low-Latency Real-Time Event Broadcasting For Instant Follow-Up Reminders, Lead Transfers, And Supervisor Notifications.',
   },
 ];
 
@@ -56,14 +56,14 @@ const EnterpriseTrust: React.FC = () => {
           </div>
 
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight leading-tight mb-6">
-            Built for High-Growth Enterprises{' '}
+            Built For High-Growth Enterprises{' '}
             <span className="bg-gradient-to-r from-blue-600 via-teal-600 to-emerald-700 bg-clip-text text-transparent">
               & Multi-Branch Operations.
             </span>
           </h2>
 
           <p className="text-base sm:text-lg text-slate-600 leading-relaxed">
-            Seeakk complies with strict enterprise security, multi-office data boundaries, Loss of Business (LOB) monitoring, and forensic audit logging standards out of the box.
+            Seeakk Complies With Strict Enterprise Security, Multi-Office Data Boundaries, Loss Of Business (LOB) Monitoring, And Forensic Audit Logging Standards Out Of The Box.
           </p>
         </motion.div>
 

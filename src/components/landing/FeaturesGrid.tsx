@@ -32,91 +32,91 @@ const featuresList = [
   {
     category: 'leads',
     title: 'Lead Management & Distribution',
-    desc: 'Manage leads received from your marketing campaigns, agencies, imports, or external integrations with structured assignment, accountability tracking, and Loss of Business (LOB) monitoring.',
+    desc: 'Manage Leads Received From Your Marketing Campaigns, Agencies, Imports, Or External Integrations With Structured Assignment, Accountability Tracking, And Loss Of Business (LOB) Monitoring.',
     icon: Zap,
     badge: 'Lead Custody',
   },
   {
     category: 'accountability',
     title: 'Target Cycles & Performance Locking',
-    desc: 'Automated target evaluation cycles that lock non-performing users until supervisor resolution, preventing Loss of Business (LOB).',
+    desc: 'Automated Target Evaluation Cycles That Lock Non-Performing Users Until Supervisor Resolution, Preventing Loss Of Business (LOB).',
     icon: Lock,
     badge: 'Core Engine',
   },
   {
     category: 'leads',
     title: 'Unified Operations Calendar',
-    desc: 'One intelligent command center connecting every lead follow-up, meeting, site visit, shift roster, target milestone, and leave schedule across your enterprise.',
+    desc: 'One Intelligent Command Center Connecting Every Lead Follow-Up, Meeting, Site Visit, Shift Roster, Target Milestone, And Leave Schedule Across Your Enterprise.',
     icon: Calendar,
     badge: 'Operations Hub',
   },
   {
     category: 'leads',
-    title: 'Mandatory Follow-up SLA Clocks',
-    desc: 'Enforced reminder gates and WhatsApp integrations ensuring no follow-up is skipped or forgotten.',
+    title: 'Mandatory Follow-Up SLA Clocks',
+    desc: 'Enforced Reminder Gates And WhatsApp Integrations Ensuring No Follow-Up Is Skipped Or Forgotten.',
     icon: Clock,
     badge: 'Zero Leakage',
   },
   {
     category: 'office',
     title: 'Geo-Fenced Attendance Tracking',
-    desc: 'GPS location verification, IP boundary restrictions, and office check-in/out gates.',
+    desc: 'GPS Location Verification, IP Boundary Restrictions, And Office Check-In/Out Gates.',
     icon: MapPin,
     badge: 'GPS Verified',
   },
   {
     category: 'office',
     title: 'Multi-Office & Branch Isolation',
-    desc: 'Hierarchical organization chart, multi-branch data isolation, and supervisor permission scopes.',
+    desc: 'Hierarchical Organization Chart, Multi-Branch Data Isolation, And Supervisor Permission Scopes.',
     icon: Building2,
     badge: 'Multi-Branch',
   },
   {
     category: 'enterprise',
     title: 'Dynamic Stage Rules & Fields',
-    desc: 'Custom stage transition requirements preventing reps from moving leads without required proof.',
+    desc: 'Custom Stage Transition Requirements Preventing Reps From Moving Leads Without Required Proof.',
     icon: SlidersHorizontal,
     badge: 'Custom Rules',
   },
   {
     category: 'enterprise',
     title: 'Advance Payment & Financial Logging',
-    desc: 'Track advance deposits, total revenue amounts, receipt attachments, and change justifications.',
+    desc: 'Track Advance Deposits, Total Revenue Amounts, Receipt Attachments, And Change Justifications.',
     icon: DollarSign,
     badge: 'Revenue Audit',
   },
   {
     category: 'enterprise',
     title: 'Immutable Activity Audit Logs',
-    desc: 'Full forensic timeline recording every single lead edit, stage move, assignment, and unlock request.',
+    desc: 'Full Forensic Timeline Recording Every Single Lead Edit, Stage Move, Assignment, And Unlock Request.',
     icon: History,
     badge: 'Audit Trail',
   },
   {
     category: 'leads',
     title: 'Excel & CSV Bulk Import/Export',
-    desc: 'Seamless import parser supporting Excel (.xlsx) and CSV with intelligent date normalization.',
+    desc: 'Seamless Import Parser Supporting Excel (.xlsx) And CSV With Intelligent Date Normalization.',
     icon: FileSpreadsheet,
     badge: 'XLSX / CSV',
   },
   {
     category: 'office',
     title: 'Employee Roster & Shift Planning',
-    desc: 'Weekly off schedule controls, roster planning, and holiday calendar management.',
+    desc: 'Weekly Off Schedule Controls, Roster Planning, And Holiday Calendar Management.',
     icon: Calendar,
     badge: 'Roster Control',
   },
   {
     category: 'enterprise',
     title: 'Supervisor Approval Workflows',
-    desc: 'Override queues for stage transitions, target unlocks, and special permission requests.',
+    desc: 'Override Queues For Stage Transitions, Target Unlocks, And Special Permission Requests.',
     icon: UserCheck,
     badge: 'Approvals',
   },
   {
     category: 'office',
     title: 'Mobile PWA & Real-Time Sync',
-    desc: 'Native progressive web app (PWA) with offline queued syncing and socket-driven live updates.',
+    desc: 'Native Progressive Web App (PWA) With Offline Queued Syncing And Socket-Driven Live Updates.',
     icon: Smartphone,
     badge: 'PWA Ready',
   },
@@ -157,7 +157,7 @@ const FeaturesGrid: React.FC = () => {
           </h2>
 
           <p className="text-base sm:text-lg text-slate-600 leading-relaxed">
-            Every feature in Seeakk is engineered around a single mandate: zero lead leakage, Loss of Business (LOB) prevention, and total operational accountability.
+            Every Feature In Seeakk Is Engineered Around A Single Mandate: Zero Lead Leakage, Loss Of Business (LOB) Prevention, And Total Operational Accountability.
           </p>
         </motion.div>
 
@@ -223,7 +223,7 @@ const FeaturesGrid: React.FC = () => {
             to="/login"
             className="inline-flex items-center gap-2 px-8 py-4 rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold text-sm shadow-xl shadow-emerald-500/20 transition-all"
           >
-            <span>Explore All 35+ Capabilities in Workspace</span>
+            <span>Explore All 35+ Capabilities In Workspace</span>
             <ChevronRight className="w-4 h-4" />
           </Link>
         </div>

@@ -16,36 +16,36 @@ const personas = [
   {
     id: 'agency',
     role: 'Lead Generation Agency',
-    quote: '"We delivered 3,500 qualified campaign leads last month. The client says none converted, but they never even called 60% of them."',
-    pain: 'Agencies get blamed for "poor lead quality" when the client sales team fails to follow up in time.',
-    solution: 'Seeakk gives agencies immutable proof of lead delivery, instant assignment, and SLA call compliance.',
+    quote: '"We Delivered 3,500 Qualified Campaign Leads Last Month. The Client Says None Converted, But They Never Even Called 60% Of Them."',
+    pain: 'Agencies Get Blamed For "Poor Lead Quality" When The Client Sales Team Fails To Follow Up In Time.',
+    solution: 'Seeakk Gives Agencies Immutable Proof Of Lead Delivery, Instant Assignment, And SLA Call Compliance.',
     icon: Flame,
     color: 'bg-amber-50/80 border-amber-200 text-amber-900',
   },
   {
     id: 'ceo',
     role: 'Business Owner & CEO',
-    quote: '"We spend $40,000 monthly on lead acquisition, but revenue stays flat. I have zero visibility into where the money goes or how much is Loss of Business (LOB)."',
-    pain: 'Zero cross-department transparency means ad spend is wasted without sales revenue attribution.',
-    solution: 'Seeakk connects ad spend directly to closed revenue, staff activity, and Loss of Business (LOB) prevention.',
+    quote: '"We Spend $40,000 Monthly On Lead Acquisition, But Revenue Stays Flat. I Have Zero Visibility Into Where The Money Goes Or How Much Is Loss Of Business (LOB)."',
+    pain: 'Zero Cross-Department Transparency Means Ad Spend Is Wasted Without Sales Revenue Attribution.',
+    solution: 'Seeakk Connects Ad Spend Directly To Closed Revenue, Staff Activity, And Loss Of Business (LOB) Prevention.',
     icon: TrendingDown,
     color: 'bg-red-50/80 border-red-200 text-red-900',
   },
   {
     id: 'sales-head',
     role: 'Head of Sales',
-    quote: '"My team claims they called every lead. But without automated SLA tracking, follow-ups slip through the cracks every single day."',
-    pain: 'Manual logging leads to forgotten follow-ups, uncontacted leads, and massive Loss of Business (LOB).',
-    solution: 'Seeakk locks staff out of non-compliant actions until mandatory follow-ups and stage rules are completed.',
+    quote: '"My Team Claims They Called Every Lead. But Without Automated SLA Tracking, Follow-Ups Slip Through The Cracks Every Single Day."',
+    pain: 'Manual Logging Leads To Forgotten Follow-Ups, Uncontacted Leads, And Massive Loss Of Business (LOB).',
+    solution: 'Seeakk Locks Staff Out Of Non-Compliant Actions Until Mandatory Follow-Ups And Stage Rules Are Completed.',
     icon: UserX,
     color: 'bg-orange-50/80 border-orange-200 text-orange-900',
   },
   {
     id: 'branch-mgr',
     role: 'Branch & Regional Manager',
-    quote: '"Managing 12 branch offices across regions is guesswork. I don\'t know which staff are actually working or locked out."',
-    pain: 'Lack of multi-office oversight, attendance verification, and target locking controls.',
-    solution: 'Seeakk provides real-time geo-attendance, target locking workflows, and office-wise audit logs.',
+    quote: '"Managing 12 Branch Offices Across Regions Is Guesswork. I Don\'t Know Which Staff Are Actually Working Or Locked Out."',
+    pain: 'Lack Of Multi-Office Oversight, Attendance Verification, And Target Locking Controls.',
+    solution: 'Seeakk Provides Real-Time Geo-Attendance, Target Locking Workflows, And Office-Wise Audit Logs.',
     icon: Building,
     color: 'bg-emerald-50/80 border-emerald-200 text-emerald-900',
   },
@@ -77,15 +77,15 @@ const EmotionalHook: React.FC = () => {
           </div>
 
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight leading-tight mb-6">
-            Marketing delivered 5,000 leads.{' '}
+            Marketing Delivered 5,000 Leads.{' '}
             <span className="text-red-600 underline decoration-red-300 underline-offset-8">
-              Sales converted only 37.
+              Sales Converted Only 37.
             </span>{' '}
-            Nobody knows why.
+            Nobody Knows Why.
           </h2>
 
           <p className="text-base sm:text-lg text-slate-600 leading-relaxed">
-            Agencies blame sales. Sales blames lead quality. Executives bleed cash from <strong>Loss of Business (LOB)</strong>. Without a centralized accountability bridge, every uncontacted lead becomes a permanent revenue loss.
+            Agencies Blame Sales. Sales Blames Lead Quality. Executives Bleed Cash From <strong>Loss Of Business (LOB)</strong>. Without A Centralized Accountability Bridge, Every Uncontacted Lead Becomes A Permanent Revenue Loss.
           </p>
         </motion.div>
 
@@ -136,7 +136,7 @@ const EmotionalHook: React.FC = () => {
 
                   <div className="pt-2">
                     <span className="text-xs font-semibold px-3 py-1 rounded-full bg-white text-red-700 border border-red-200 shadow-sm">
-                      Impact: High Loss of Business (LOB)
+                      Impact: High Loss Of Business (LOB)
                     </span>
                   </div>
                 </div>
@@ -169,22 +169,22 @@ const EmotionalHook: React.FC = () => {
             {
               metric: '71%',
               label: 'Leads Never Contacted',
-              desc: 'Without automated follow-up SLA gates, 7 out of 10 ad leads are never called within 24 hours.',
+              desc: 'Without Automated SLA Follow-Up Gates, 7 Out Of 10 Ad Leads Are Never Called Within 24 Hours.',
             },
             {
               metric: '44%',
-              label: 'Follow-up Abandonment',
-              desc: 'Sales reps give up after a single call attempt, causing massive Loss of Business (LOB).',
+              label: 'Follow-Up Abandonment',
+              desc: 'Sales Reps Give Up After A Single Call Attempt, Causing Massive Loss Of Business (LOB).',
             },
             {
               metric: '0 Audit Trail',
               label: 'Agency vs. Sales Friction',
-              desc: 'Agencies have zero visibility into whether leads were actually called or ignored.',
+              desc: 'Agencies Have Zero Visibility Into Whether Leads Were Actually Called Or Ignored.',
             },
             {
               metric: '100% Solved',
               label: 'Seeakk LOB Prevention',
-              desc: 'Every lead is assigned, tracked, audited, and protected by strict workflow locks.',
+              desc: 'Every Lead Is Assigned, Tracked, Audited, And Protected By Strict Workflow Locks.',
             },
           ].map((card, idx) => (
             <motion.div
@@ -210,7 +210,7 @@ const EmotionalHook: React.FC = () => {
             to="/login"
             className="inline-flex items-center gap-2 text-sm font-bold text-emerald-700 hover:text-emerald-800 transition-colors bg-emerald-50 px-6 py-3 rounded-full border border-emerald-200 shadow-sm"
           >
-            <span>Bridge the Gap Between Marketing Agencies & Sales Operations</span>
+            <span>Bridge The Gap Between Marketing Agencies & Sales Operations</span>
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>

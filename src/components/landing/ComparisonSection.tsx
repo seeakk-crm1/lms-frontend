@@ -6,38 +6,38 @@ import { Link } from 'react-router-dom';
 const comparisonRows = [
   {
     feature: 'Lead Custody & Retention',
-    without: 'Up to 40% of leads lost or uncontacted due to lack of SLA tracking.',
-    with: '100% timestamped lead custody from campaign import to sales contact.',
+    without: 'Up To 40% Of Leads Lost Or Uncontacted Due To Lack Of SLA Tracking.',
+    with: '100% Timestamped Lead Custody From Campaign Import To Sales Contact.',
   },
   {
     feature: 'Agency & Sales Relationship',
-    without: 'Constant finger-pointing over lead quality and contact attempts.',
-    with: 'Immutable proof of delivery, contact SLA, and conversion audit trail.',
+    without: 'Constant Finger-Pointing Over Lead Quality And Contact Attempts.',
+    with: 'Immutable Proof Of Delivery, Contact SLA, And Conversion Audit Trail.',
   },
   {
-    feature: 'Follow-up Discipline',
-    without: 'Forgotten reminders, manual Excel notes, and sales representatives abandoning leads after a single attempt.',
-    with: 'Mandatory follow-up gates & WhatsApp reminders lock screen until completed.',
+    feature: 'Follow-Up Discipline',
+    without: 'Forgotten Reminders, Manual Excel Notes, And Sales Representatives Abandoning Leads After A Single Attempt.',
+    with: 'Mandatory Follow-Up Gates & WhatsApp Reminders Lock Screen Until Completed.',
   },
   {
-    feature: 'Loss of Business (LOB) Control',
-    without: 'High Loss of Business (LOB) caused by unassigned & ignored leads.',
-    with: 'Loss of Business (LOB) prevention engine monitors every lost opportunity.',
+    feature: 'Loss Of Business (LOB) Control',
+    without: 'High Loss Of Business (LOB) Caused By Unassigned & Ignored Leads.',
+    with: 'Loss Of Business (LOB) Prevention Engine Monitors Every Lost Opportunity.',
   },
   {
     feature: 'Staff Performance Control',
-    without: 'Non-performing staff continue receiving leads without consequences.',
-    with: 'Target Enforced Locks suspend system access until targets/follow-ups resolve.',
+    without: 'Non-Performing Staff Continue Receiving Leads Without Consequences.',
+    with: 'Target Enforced Locks Suspend System Access Until Targets/Follow-Ups Resolve.',
   },
   {
     feature: 'Attendance & Office Oversight',
-    without: 'No verification of office presence or shift roster compliance.',
-    with: 'GPS Geofencing, IP lock gates, shift rosters, & supervisor verification.',
+    without: 'No Verification Of Office Presence Or Shift Roster Compliance.',
+    with: 'GPS Geofencing, IP Lock Gates, Shift Rosters, & Supervisor Verification.',
   },
   {
     feature: 'Revenue & Advance Tracking',
-    without: 'Revenue figures guessed; no proof of advance payment receipts.',
-    with: 'Mandatory receipt proof upload & total revenue edit audit trail.',
+    without: 'Revenue Figures Guessed; No Proof Of Advance Payment Receipts.',
+    with: 'Mandatory Receipt Proof Upload & Total Revenue Edit Audit Trail.',
   },
 ];
 
@@ -58,7 +58,7 @@ const ComparisonSection: React.FC = () => {
         >
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-100 border border-emerald-200 text-emerald-800 text-xs font-bold uppercase tracking-widest mb-4 shadow-sm">
             <Scale className="w-4 h-4 text-emerald-600" />
-            <span>Loss of Business (LOB) Comparison</span>
+            <span>Loss Of Business (LOB) Comparison</span>
           </div>
 
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight leading-tight mb-6">
@@ -69,7 +69,7 @@ const ComparisonSection: React.FC = () => {
           </h2>
 
           <p className="text-base sm:text-lg text-slate-600 leading-relaxed">
-            Generic CRMs store contact details. Seeakk enforces operational discipline and stops Loss of Business (LOB) across your sales team.
+            Generic CRMs Store Contact Details. Seeakk Enforces Operational Discipline And Stops Loss Of Business (LOB) Across Your Sales Team.
           </p>
         </motion.div>
 
@@ -119,7 +119,7 @@ const ComparisonSection: React.FC = () => {
             to="/login"
             className="inline-flex items-center gap-2 text-sm font-bold text-emerald-700 hover:text-emerald-800 transition-colors bg-emerald-50 px-6 py-3 rounded-full border border-emerald-200 shadow-sm"
           >
-            <span>Stop Loss of Business (LOB) in Your Operations Today</span>
+            <span>Stop Loss Of Business (LOB) In Your Operations Today</span>
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>

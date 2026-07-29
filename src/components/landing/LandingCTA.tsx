@@ -24,14 +24,14 @@ const LandingCTA: React.FC = () => {
           </div>
 
           <h2 className="text-3xl sm:text-4xl lg:text-6xl font-black text-white tracking-tight leading-tight max-w-4xl mx-auto mb-6">
-            Stop Loss of Business (LOB).{' '}
+            Stop Loss Of Business (LOB).{' '}
             <span className="bg-gradient-to-r from-emerald-300 via-emerald-400 to-teal-200 bg-clip-text text-transparent">
               Bridge Your Accountability Gap.
             </span>
           </h2>
 
           <p className="text-base sm:text-lg text-slate-300 max-w-2xl mx-auto mb-10 leading-relaxed font-normal">
-            Join enterprise sales teams, agencies, and regional branch networks using Seeakk to track 100% of managed leads, enforce follow-up SLAs, and eliminate Loss of Business (LOB).
+            Join Enterprise Sales Teams, Agencies, And Regional Branch Networks Using Seeakk To Track 100% Of Managed Leads, Enforce Follow-Up SLAs, And Eliminate Loss Of Business (LOB).
           </p>
 
           <div className="flex flex-col sm:flex-row items-center gap-4 justify-center mb-10">
@@ -58,7 +58,7 @@ const LandingCTA: React.FC = () => {
             </div>
             <div className="flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-              <span>Instant Setup in Minutes</span>
+              <span>Instant Setup In Minutes</span>
             </div>
             <div className="flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-emerald-400" />
