@@ -1,7 +1,7 @@
 import React, { useState, useEffect, ReactNode } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// Landing Page Redesign Components
+import ScrollProgressBar from './components/landing/ScrollProgressBar';
 import LandingNavbar from './components/landing/LandingNavbar';
 import LandingHero from './components/landing/LandingHero';
 import EmotionalHook from './components/landing/EmotionalHook';
@@ -222,6 +222,7 @@ function App() {
       <Routes>
         <Route path="/" element={
           <div className="min-h-screen bg-white font-sans text-slate-900 selection:bg-emerald-200 selection:text-emerald-900 overflow-x-hidden">
+            <ScrollProgressBar />
             <LandingNavbar />
             <main>
               <LandingHero />

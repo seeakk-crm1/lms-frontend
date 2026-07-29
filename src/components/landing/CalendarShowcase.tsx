@@ -123,7 +123,13 @@ const CalendarShowcase: React.FC = () => {
         </div>
 
         {/* Calendar Interactive Dashboard Mockup Card */}
-        <div className="max-w-6xl mx-auto bg-slate-50/90 rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-2xl relative">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-60px' }}
+          transition={{ duration: 0.6, ease: [0.21, 0.47, 0.32, 0.98] }}
+          className="max-w-6xl mx-auto bg-slate-50/90 rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-2xl relative"
+        >
           {/* Header Bar */}
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-6 mb-6 border-b border-slate-200">
             <div className="flex items-center gap-3">
@@ -293,7 +299,7 @@ const CalendarShowcase: React.FC = () => {
               </div>
             </div>
           </div>
-        </div>
+        </motion.div>
       </div>
     </section>
   );
