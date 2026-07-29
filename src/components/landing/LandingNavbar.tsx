@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, ArrowRight, ChevronRight } from 'lucide-react';
+import { Menu, X, ArrowRight, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import BrandLogo from '../BrandLogo';
 
@@ -29,112 +29,111 @@ const LandingNavbar: React.FC = () => {
   const toggleMenu = () => setIsMobileMenuOpen((open) => !open);
 
   return (
-    <header className="fixed top-0 left-0 w-full z-50 transition-all duration-300">
-      {/* Main Navbar Sitting Flush at Top */}
+    <header className="fixed top-0 left-0 w-full z-50 transition-all duration-300 pt-3 md:pt-4 px-4 sm:px-6 lg:px-8">
+      {/* Liquid Glass Capsule Floating Container */}
       <nav
-        className={`w-full transition-all duration-300 ${
+        className={`max-w-7xl mx-auto rounded-full transition-all duration-300 border backdrop-blur-2xl backdrop-saturate-200 ${
           isScrolled
-            ? 'bg-white/90 backdrop-blur-xl border-b border-gray-200/80 shadow-md shadow-slate-950/5 py-3'
-            : 'bg-white/80 backdrop-blur-md border-b border-gray-100 py-4'
+            ? 'bg-white/85 border-white/90 shadow-[0_12px_40px_0_rgba(16,185,129,0.12),0_1px_3px_0_rgba(0,0,0,0.05),inset_0_1px_1px_0_rgba(255,255,255,1)] py-2 px-5'
+            : 'bg-white/65 border-white/80 shadow-[0_8px_32px_0_rgba(16,185,129,0.08),0_1px_2px_0_rgba(0,0,0,0.04),inset_0_1px_1px_0_rgba(255,255,255,0.9)] py-2.5 px-6'
         }`}
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center">
-            {/* Brand Logo */}
-            <a href="/" className="flex items-center gap-3 group">
-              <div className="relative p-1 bg-emerald-50 rounded-xl border border-emerald-100 group-hover:border-emerald-300 transition-colors">
-                <BrandLogo alt="Seeakk" width={130} height={36} />
-              </div>
-            </a>
-
-            {/* Desktop Navigation Links */}
-            <div className="hidden lg:flex items-center space-x-1 bg-slate-100/80 p-1.5 rounded-full border border-slate-200/80 backdrop-blur-lg">
-              {navLinks.map((link) => (
-                <a
-                  key={link.href}
-                  href={link.href}
-                  className="text-slate-600 hover:text-emerald-700 hover:bg-white px-3.5 py-2 rounded-full text-xs font-semibold tracking-wide transition-all shadow-none hover:shadow-sm"
-                >
-                  {link.label}
-                </a>
-              ))}
+        <div className="flex justify-between items-center">
+          {/* Brand Logo Container with Liquid Gloss Refraction */}
+          <a href="/" className="flex items-center gap-3 group">
+            <div className="relative p-1 bg-gradient-to-br from-emerald-500/10 via-white/80 to-emerald-100/40 rounded-xl border border-emerald-500/20 shadow-[inset_0_1px_1px_0_rgba(255,255,255,0.9)] group-hover:border-emerald-400/40 group-hover:shadow-[0_0_12px_0_rgba(16,185,129,0.2)] transition-all">
+              <BrandLogo alt="Seeakk" width={125} height={34} />
             </div>
+          </a>
 
-            {/* Desktop Actions */}
-            <div className="hidden lg:flex items-center space-x-4">
-              <Link
-                to="/login"
-                className="text-slate-700 hover:text-emerald-700 font-bold text-xs px-4 py-2 transition-colors"
+          {/* Inner Liquid Nav Links Track */}
+          <div className="hidden lg:flex items-center space-x-1 bg-slate-100/60 p-1.5 rounded-full border border-slate-200/50 backdrop-blur-md shadow-[inset_0_1px_2px_0_rgba(0,0,0,0.03)]">
+            {navLinks.map((link) => (
+              <a
+                key={link.href}
+                href={link.href}
+                className="text-slate-600 hover:text-emerald-700 hover:bg-white/95 px-3.5 py-1.5 rounded-full text-xs font-bold tracking-wide transition-all duration-200 shadow-none hover:shadow-[0_2px_8px_0_rgba(0,0,0,0.04)]"
               >
-                Log In
-              </Link>
-              <Link
-                to="/login"
-                className="relative inline-flex items-center justify-center p-0.5 overflow-hidden text-xs font-bold text-white rounded-full group bg-gradient-to-r from-emerald-500 via-emerald-600 to-teal-700 hover:from-emerald-600 hover:to-teal-800 shadow-lg shadow-emerald-500/20 transition-all duration-300 active:scale-95"
-              >
-                <span className="relative px-5 py-2.5 transition-all ease-in duration-75 bg-transparent rounded-full flex items-center gap-2">
-                  <span>Start Free Trial</span>
-                  <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-                </span>
-              </Link>
-            </div>
+                {link.label}
+              </a>
+            ))}
+          </div>
 
-            {/* Mobile Menu Button */}
-            <div className="lg:hidden flex items-center space-x-3">
-              <Link
-                to="/login"
-                className="text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200"
-              >
-                Sign In
-              </Link>
-              <button
-                type="button"
-                onClick={toggleMenu}
-                className="p-2 text-slate-700 hover:text-slate-900 focus:outline-none bg-slate-100 rounded-xl border border-slate-200"
-                aria-label="Toggle Navigation"
-              >
-                {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
-              </button>
-            </div>
+          {/* Liquid Glass Action Buttons */}
+          <div className="hidden lg:flex items-center space-x-3">
+            <Link
+              to="/login"
+              className="text-slate-700 hover:text-emerald-700 font-bold text-xs px-4 py-2 rounded-full hover:bg-white/80 transition-all"
+            >
+              Log In
+            </Link>
+            <Link
+              to="/login"
+              className="relative inline-flex items-center justify-center text-xs font-bold text-white rounded-full bg-gradient-to-r from-emerald-500 via-emerald-600 to-teal-600 hover:from-emerald-600 hover:to-teal-700 px-5 py-2.5 shadow-[0_4px_16px_0_rgba(16,185,129,0.35),inset_0_1px_1px_0_rgba(255,255,255,0.4)] hover:shadow-[0_6px_24px_0_rgba(16,185,129,0.45)] border border-emerald-400/40 transition-all duration-300 active:scale-95 group"
+            >
+              <span className="flex items-center gap-2">
+                <span>Start Free Trial</span>
+                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+              </span>
+            </Link>
+          </div>
+
+          {/* Mobile Liquid Menu Trigger */}
+          <div className="lg:hidden flex items-center space-x-2.5">
+            <Link
+              to="/login"
+              className="text-xs font-bold text-emerald-700 bg-emerald-50/80 hover:bg-emerald-100/90 px-3 py-1.5 rounded-full border border-emerald-200/80 shadow-sm"
+            >
+              Sign In
+            </Link>
+            <button
+              type="button"
+              onClick={toggleMenu}
+              className="p-2 text-slate-700 hover:text-slate-900 focus:outline-none bg-white/80 hover:bg-white rounded-full border border-slate-200/80 shadow-sm transition-all"
+              aria-label="Toggle Navigation"
+            >
+              {isMobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
+            </button>
           </div>
         </div>
 
-        {/* Mobile Navigation Drawer */}
+        {/* Mobile Navigation Drawer with Liquid Glass Panel */}
         <AnimatePresence>
           {isMobileMenuOpen && (
             <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.3, ease: 'easeInOut' }}
-              className="lg:hidden bg-white/95 border-b border-gray-200 backdrop-blur-2xl overflow-hidden shadow-xl"
+              initial={{ opacity: 0, scale: 0.96, y: -10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.96, y: -10 }}
+              transition={{ duration: 0.25, ease: 'easeInOut' }}
+              className="lg:hidden mt-3 bg-white/90 backdrop-blur-3xl border border-white/90 shadow-[0_20px_60px_0_rgba(0,0,0,0.1),inset_0_1px_1px_0_rgba(255,255,255,1)] rounded-3xl overflow-hidden p-6"
             >
-              <div className="px-6 py-6 space-y-4">
-                <div className="flex flex-col space-y-2">
+              <div className="space-y-4">
+                <div className="flex flex-col space-y-1">
                   {navLinks.map((link) => (
                     <a
                       key={link.href}
                       href={link.href}
                       onClick={toggleMenu}
-                      className="text-slate-700 hover:text-emerald-600 font-semibold text-sm py-2 px-3 rounded-lg hover:bg-slate-50 transition-all"
+                      className="text-slate-700 hover:text-emerald-600 font-bold text-sm py-2.5 px-4 rounded-xl hover:bg-slate-100/70 transition-all flex items-center justify-between"
                     >
-                      {link.label}
+                      <span>{link.label}</span>
+                      <Sparkles className="w-3.5 h-3.5 text-emerald-500 opacity-60" />
                     </a>
                   ))}
                 </div>
 
-                <div className="pt-4 border-t border-gray-100 flex flex-col gap-3">
+                <div className="pt-4 border-t border-slate-200/60 flex flex-col gap-3">
                   <Link
                     to="/login"
                     onClick={toggleMenu}
-                    className="w-full text-center text-slate-700 font-semibold text-sm py-2.5 rounded-xl bg-slate-100 border border-slate-200"
+                    className="w-full text-center text-slate-700 font-bold text-sm py-3 rounded-2xl bg-slate-100/80 border border-slate-200/80 shadow-sm"
                   >
                     Log In to Workspace
                   </Link>
                   <Link
                     to="/login"
                     onClick={toggleMenu}
-                    className="w-full text-center bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-bold text-sm py-3 rounded-xl shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2"
+                    className="w-full text-center bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-bold text-sm py-3.5 rounded-2xl shadow-lg shadow-emerald-500/25 flex items-center justify-center gap-2"
                   >
                     <span>Start Free 30-Day Trial</span>
                     <ArrowRight className="w-4 h-4" />
