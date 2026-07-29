@@ -87,7 +87,7 @@ const LandingHero: React.FC = () => {
   return (
     <section
       id="positioning"
-      className="relative pt-36 pb-24 lg:pt-44 lg:pb-32 bg-gradient-to-b from-emerald-50/70 via-slate-50/40 to-white text-slate-900 overflow-hidden"
+      className="relative pt-28 pb-24 lg:pt-36 lg:pb-32 bg-gradient-to-b from-emerald-50/70 via-slate-50/40 to-white text-slate-900 overflow-hidden"
     >
       {/* Soft Ambient Background Blur Circles */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-emerald-200/40 via-emerald-100/20 to-transparent blur-3xl pointer-events-none" />

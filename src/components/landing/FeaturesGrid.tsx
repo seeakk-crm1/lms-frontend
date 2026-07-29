@@ -45,6 +45,13 @@ const featuresList = [
   },
   {
     category: 'leads',
+    title: 'Unified Operations Calendar',
+    desc: 'One intelligent command center connecting every lead follow-up, meeting, site visit, shift roster, target milestone, and leave schedule across your enterprise.',
+    icon: Calendar,
+    badge: 'Operations Hub',
+  },
+  {
+    category: 'leads',
     title: 'Mandatory Follow-up SLA Clocks',
     desc: 'Enforced reminder gates and WhatsApp integrations ensuring no follow-up is skipped or forgotten.',
     icon: Clock,

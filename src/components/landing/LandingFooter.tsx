@@ -27,6 +27,7 @@ const LandingFooter: React.FC = () => {
             <p className="text-white font-bold uppercase tracking-wider text-[11px] mb-4">Platform</p>
             <ul className="space-y-2.5">
               <li><a href="#bridge" className="hover:text-white transition-colors">Chain of Custody</a></li>
+              <li><a href="#calendar" className="hover:text-white transition-colors">Operations Calendar</a></li>
               <li><a href="#showcase" className="hover:text-white transition-colors">Target Locking Engine</a></li>
               <li><a href="#showcase" className="hover:text-white transition-colors">Mandatory Follow-up SLA</a></li>
               <li><a href="#showcase" className="hover:text-white transition-colors">Geo-Attendance & Roster</a></li>

@@ -7,6 +7,7 @@ import LandingHero from './components/landing/LandingHero';
 import EmotionalHook from './components/landing/EmotionalHook';
 import AccountabilityBridge from './components/landing/AccountabilityBridge';
 import InteractiveShowcase from './components/landing/InteractiveShowcase';
+import CalendarShowcase from './components/landing/CalendarShowcase';
 import FeaturesGrid from './components/landing/FeaturesGrid';
 import ComparisonSection from './components/landing/ComparisonSection';
 import EnterpriseTrust from './components/landing/EnterpriseTrust';
@@ -227,6 +228,7 @@ function App() {
               <EmotionalHook />
               <AccountabilityBridge />
               <InteractiveShowcase />
+              <CalendarShowcase />
               <FeaturesGrid />
               <ComparisonSection />
               <EnterpriseTrust />

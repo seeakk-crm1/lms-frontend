@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, ArrowRight, ShieldCheck, ChevronRight } from 'lucide-react';
+import { Menu, X, ArrowRight, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import BrandLogo from '../BrandLogo';
 
@@ -8,6 +8,7 @@ const navLinks = [
   { href: '#positioning', label: 'Positioning' },
   { href: '#bridge', label: 'Accountability Chain' },
   { href: '#showcase', label: 'Interactive Tour' },
+  { href: '#calendar', label: 'Operations Calendar' },
   { href: '#features', label: 'Capabilities' },
   { href: '#comparison', label: 'LOB Prevention' },
   { href: '#pricing', label: 'Pricing' },
@@ -29,38 +30,12 @@ const LandingNavbar: React.FC = () => {
 
   return (
     <header className="fixed top-0 left-0 w-full z-50 transition-all duration-300">
-      {/* Announcement Top Bar */}
-      <div className="bg-slate-900 text-white text-xs py-2 px-4 border-b border-emerald-500/20">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2 mx-auto sm:mx-0">
-            <span className="flex h-2 w-2 relative">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
-            </span>
-            <span className="font-bold text-emerald-400 uppercase tracking-widest text-[10px]">
-              V2.0 Loss of Business (LOB) Prevention Engine
-            </span>
-            <span className="text-slate-500 hidden md:inline">|</span>
-            <span className="text-slate-300 hidden md:inline">
-              Bridging Lead Accountability Between Marketing Agencies & Enterprise Sales Teams
-            </span>
-          </div>
-          <Link
-            to="/login"
-            className="hidden sm:flex items-center gap-1 text-emerald-400 hover:text-emerald-300 font-semibold transition-colors"
-          >
-            <span>Log In to Workspace</span>
-            <ChevronRight className="h-3 w-3" />
-          </Link>
-        </div>
-      </div>
-
-      {/* Main Navbar */}
+      {/* Main Navbar Sitting Flush at Top */}
       <nav
         className={`w-full transition-all duration-300 ${
           isScrolled
             ? 'bg-white/90 backdrop-blur-xl border-b border-gray-200/80 shadow-md shadow-slate-950/5 py-3'
-            : 'bg-white/75 backdrop-blur-md border-b border-gray-100 py-4'
+            : 'bg-white/80 backdrop-blur-md border-b border-gray-100 py-4'
         }`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -78,7 +53,7 @@ const LandingNavbar: React.FC = () => {
                 <a
                   key={link.href}
                   href={link.href}
-                  className="text-slate-600 hover:text-emerald-700 hover:bg-white px-4 py-2 rounded-full text-xs font-semibold tracking-wide transition-all shadow-none hover:shadow-sm"
+                  className="text-slate-600 hover:text-emerald-700 hover:bg-white px-3.5 py-2 rounded-full text-xs font-semibold tracking-wide transition-all shadow-none hover:shadow-sm"
                 >
                   {link.label}
                 </a>
