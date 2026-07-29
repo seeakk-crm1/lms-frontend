@@ -16,7 +16,7 @@ const comparisonRows = [
   },
   {
     feature: 'Follow-up Discipline',
-    without: 'Forgotten reminders, manual Excel notes, Reps abandon after 1 attempt.',
+    without: 'Forgotten reminders, manual Excel notes, and sales representatives abandoning leads after a single attempt.',
     with: 'Mandatory follow-up gates & WhatsApp reminders lock screen until completed.',
   },
   {

@@ -30,7 +30,7 @@ const trustPillars = [
   },
   {
     icon: Globe2,
-    title: 'Real-time WebSocket Infrastructure',
+    title: 'Real-Time WebSocket Infrastructure',
     desc: 'Low-latency real-time event broadcasting for instant follow-up reminders, lead transfers, and supervisor notifications.',
   },
 ];

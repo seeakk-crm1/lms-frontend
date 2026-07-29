@@ -115,7 +115,7 @@ const featuresList = [
   },
   {
     category: 'office',
-    title: 'Mobile PWA & Real-time Sync',
+    title: 'Mobile PWA & Real-Time Sync',
     desc: 'Native progressive web app (PWA) with offline queued syncing and socket-driven live updates.',
     icon: Smartphone,
     badge: 'PWA Ready',
