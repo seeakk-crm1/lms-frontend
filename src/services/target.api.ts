@@ -10,8 +10,8 @@ export const getTargetPerformanceReport = async () => {
   return response.data;
 };
 
-export const listLockedStaff = async () => {
-  const response = await api.get('/targets/locked-staff');
+export const listLockedStaff = async (params?: { officeId?: string }) => {
+  const response = await api.get('/targets/locked-staff', { params });
   return response.data;
 };
 

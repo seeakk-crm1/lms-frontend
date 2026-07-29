@@ -1,21 +1,36 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { Loader2, ShieldOff, Timer } from 'lucide-react';
 import toast from 'react-hot-toast';
 import DashboardLayout from '../../components/dashboard/DashboardLayout';
 import { extendTargetGrace, listLockedStaff, unlockTargetStaff } from '../../services/target.api';
+import { getOffices } from '../../services/users.api';
+import type { Office } from '../../types/admin/office/office.types';
 
 const UnlockStaffPage: React.FC = () => {
   const queryClient = useQueryClient();
   const [graceUserId, setGraceUserId] = useState<string | null>(null);
   const [graceDate, setGraceDate] = useState('');
   const [reason, setReason] = useState('');
-  const [filter, setFilter] = useState<'ALL' | 'TARGET' | 'ESCALATED' | 'SELF_UNLOCK' | 'ADMIN_UNLOCK'>('ALL');
+  const [selectedOfficeId, setSelectedOfficeId] = useState<string>('ALL');
+
+  const officesQuery = useQuery({
+    queryKey: ['offices-options'],
+    queryFn: getOffices,
+    staleTime: 5 * 60_000,
+  });
+
+  const offices = useMemo(() => {
+    const raw = (officesQuery.data?.offices || []) as Office[];
+    return raw
+      .filter((o) => o.id && o.isActive !== false)
+      .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+  }, [officesQuery.data]);
 
   const { data, isLoading } = useQuery({
-    queryKey: ['locked-staff'],
-    queryFn: listLockedStaff,
+    queryKey: ['locked-staff', selectedOfficeId],
+    queryFn: () => listLockedStaff({ officeId: selectedOfficeId !== 'ALL' ? selectedOfficeId : undefined }),
   });
 
   const unlockMutation = useMutation({
@@ -42,15 +57,7 @@ const UnlockStaffPage: React.FC = () => {
     onError: (err: any) => toast.error(err?.response?.data?.message || 'Failed to extend grace'),
   });
 
-  const allLockedUsers = data?.data || [];
-
-  const lockedUsers = allLockedUsers.filter((user: any) => {
-    if (filter === 'ESCALATED') return user.isEscalatedLock;
-    if (filter === 'SELF_UNLOCK') return user.hasUsedSelfUnlock;
-    if (filter === 'ADMIN_UNLOCK') return user.lastUnlockType === 'ADMIN';
-    if (filter === 'TARGET') return user.targetLockedAt;
-    return true; // ALL
-  });
+  const lockedUsers = data?.data || [];
 
   return (
     <DashboardLayout>
@@ -66,15 +73,16 @@ const UnlockStaffPage: React.FC = () => {
             
             <div className="flex flex-wrap gap-2">
               <select
-                value={filter}
-                onChange={(e) => setFilter(e.target.value as any)}
+                value={selectedOfficeId}
+                onChange={(e) => setSelectedOfficeId(e.target.value)}
                 className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 bg-white"
               >
-                <option value="ALL">All Locks</option>
-                <option value="TARGET">Target Locks</option>
-                <option value="ESCALATED">Escalated Locks</option>
-                <option value="SELF_UNLOCK">Self Unlocks</option>
-                <option value="ADMIN_UNLOCK">Admin Unlocks</option>
+                <option value="ALL">All Offices</option>
+                {offices.map((office) => (
+                  <option key={office.id} value={office.id}>
+                    {office.name}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
@@ -101,7 +109,9 @@ const UnlockStaffPage: React.FC = () => {
                 ) : lockedUsers.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="px-4 py-12 text-center text-sm font-semibold text-gray-500">
-                      No locked staff at the moment.
+                      {selectedOfficeId !== 'ALL'
+                        ? 'No locked staff found for this office.'
+                        : 'No locked staff at the moment.'}
                     </td>
                   </tr>
                 ) : (
@@ -110,6 +120,11 @@ const UnlockStaffPage: React.FC = () => {
                       <td className="px-4 py-4">
                         <p className="text-sm font-bold text-gray-900">{row.name || row.email}</p>
                         <p className="text-xs text-gray-500">{row.email}</p>
+                        {row.office?.name && (
+                          <span className="inline-block mt-1 px-2 py-0.5 rounded-md bg-gray-100 text-gray-600 text-[10px] font-semibold">
+                            {row.office.name}
+                          </span>
+                        )}
                       </td>
                       <td className="px-4 py-4 text-sm font-semibold text-gray-700">
                         {row.targetCycle?.name || '—'}
