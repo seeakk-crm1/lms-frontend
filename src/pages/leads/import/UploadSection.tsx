@@ -19,9 +19,19 @@ export default function UploadSection({ onUploadStart, importState, importSummar
   const [validationModalOpen, setValidationModalOpen] = useState(false);
   const [validationReport, setValidationReport] = useState<ValidationReport | null>(null);
 
-  const onDrop = useCallback((acceptedFiles: File[]) => {
+  const onDrop = useCallback((acceptedFiles: File[], fileRejections: any[]) => {
+    if (fileRejections && fileRejections.length > 0) {
+      toast.error('Unsupported file format.\n\nPlease upload a CSV or Excel (.xlsx) file.');
+      return;
+    }
     if (acceptedFiles.length > 0) {
-      setFile(acceptedFiles[0]);
+      const selected = acceptedFiles[0];
+      const ext = selected.name.toLowerCase().slice(selected.name.lastIndexOf('.'));
+      if (ext !== '.csv' && ext !== '.xlsx') {
+        toast.error('Unsupported file format.\n\nPlease upload a CSV or Excel (.xlsx) file.');
+        return;
+      }
+      setFile(selected);
     }
   }, []);
 
@@ -29,6 +39,7 @@ export default function UploadSection({ onUploadStart, importState, importSummar
     onDrop,
     accept: {
       'text/csv': ['.csv'],
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
     },
     maxFiles: 1,
   });
@@ -47,6 +58,7 @@ export default function UploadSection({ onUploadStart, importState, importSummar
       }
     } catch (err: any) {
       console.error('Pre-validation failed, proceeding to direct import', err);
+      toast.error(err.response?.data?.message || 'Unable to read the Excel file. Please verify the workbook format and try again.');
       await executeUpload();
     } finally {
       setLoading(false);
@@ -168,7 +180,7 @@ export default function UploadSection({ onUploadStart, importState, importSummar
               <div className="text-base text-gray-600 font-semibold mt-2">
                 <span className="text-emerald-500 font-black">Click to select</span> or drag and drop here
               </div>
-              <p className="text-sm font-medium text-gray-400 mt-1">Accepts CSV files only (max 10MB)</p>
+              <p className="text-sm font-medium text-gray-400 mt-1">Accepts CSV or Excel (.xlsx) files (max 10 MB)</p>
             </>
           )}
         </div>
@@ -179,15 +191,23 @@ export default function UploadSection({ onUploadStart, importState, importSummar
           <a
             href="/templates/lead_template.csv"
             download="lead_template.csv"
-            className="flex w-full sm:w-auto items-center justify-center gap-2 px-6 py-3 rounded-2xl text-sm font-black transition-all text-emerald-700 bg-emerald-50 hover:bg-emerald-100"
+            className="flex w-full sm:w-auto items-center justify-center gap-2 px-5 py-3 rounded-2xl text-sm font-black transition-all text-emerald-700 bg-emerald-50 hover:bg-emerald-100"
           >
             <DownloadCloud className="w-4 h-4" />
             Download CSV Template
           </a>
           <a
+            href="/templates/lead_template.xlsx"
+            download="lead_template.xlsx"
+            className="flex w-full sm:w-auto items-center justify-center gap-2 px-5 py-3 rounded-2xl text-sm font-black transition-all text-teal-700 bg-teal-50 hover:bg-teal-100"
+          >
+            <DownloadCloud className="w-4 h-4" />
+            Download Excel Template
+          </a>
+          <a
             href="/templates/lead_template.numbers"
             download="lead_template.numbers"
-            className="flex w-full sm:w-auto items-center justify-center gap-2 px-6 py-3 rounded-2xl text-sm font-black transition-all text-sky-700 bg-sky-50 hover:bg-sky-100"
+            className="flex w-full sm:w-auto items-center justify-center gap-2 px-5 py-3 rounded-2xl text-sm font-black transition-all text-sky-700 bg-sky-50 hover:bg-sky-100"
           >
             <DownloadCloud className="w-4 h-4" />
             Download Numbers Template
