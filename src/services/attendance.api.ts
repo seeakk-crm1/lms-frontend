@@ -179,3 +179,16 @@ export const getApprovalHistory = async () => {
   const response = await api.get('/attendance/approval-history');
   return response.data;
 };
+
+export const getAttendanceCalendar = async (params: {
+  userId?: string;
+  month: number;
+  year: number;
+  officeId?: string;
+  departmentId?: string;
+  roleId?: string;
+  status?: string;
+}) => {
+  const response = await api.get('/attendance/calendar', { params });
+  return response.data;
+};

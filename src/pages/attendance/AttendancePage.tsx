@@ -29,6 +29,7 @@ import DashboardLayout from '../../components/dashboard/DashboardLayout';
 import useAuthStore from '../../store/useAuthStore';
 import { hasPermission } from '../../utils/permission.util';
 import * as attendanceApi from '../../services/attendance.api';
+import AttendanceCalendarWidget from '../../components/attendance/AttendanceCalendarWidget';
 import LockedScreen from '../../components/LockedScreen';
 import { dispatchAttendanceRefresh, subscribeAttendanceRefresh } from '../../utils/attendanceRefresh';
 import {
@@ -860,6 +861,11 @@ const AttendancePage: React.FC = () => {
                     </div>
                   </div>
                 )}
+
+                {/* Primary Attendance Calendar Section */}
+                <div className="pt-6 border-t border-gray-100">
+                  <AttendanceCalendarWidget />
+                </div>
               </div>
             )}
 

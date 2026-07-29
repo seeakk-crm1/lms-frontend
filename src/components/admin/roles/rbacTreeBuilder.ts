@@ -186,6 +186,9 @@ const parsePermissionKey = (permission: Permission): { submoduleName: string; ac
     if (fullKey === 'DASHBOARD_VIEW_OWN_OFFICE') return 'View Own Office Dashboard';
     if (fullKey === 'DASHBOARD_VIEW_ASSIGNED_OFFICES') return 'View Assigned Users Offices Dashboard';
     if (fullKey === 'DASHBOARD_VIEW_ALL_OFFICES') return 'View All Offices Dashboard';
+    if (fullKey === 'view_own_attendance_calendar') return 'View Own Attendance Calendar';
+    if (fullKey === 'view_assigned_attendance_calendar') return 'View Assigned Users Attendance Calendar';
+    if (fullKey === 'view_all_attendance_calendar') return 'View All Users Attendance Calendar';
 
     switch (s) {
       case 'VIEW':
