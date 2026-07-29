@@ -192,3 +192,13 @@ export const getAttendanceCalendar = async (params: {
   const response = await api.get('/attendance/calendar', { params });
   return response.data;
 };
+
+export const getCalendarOffices = async () => {
+  const response = await api.get('/attendance/calendar/offices');
+  return response.data;
+};
+
+export const getCalendarUsers = async (params?: { officeId?: string }) => {
+  const response = await api.get('/attendance/calendar/users', { params });
+  return response.data;
+};

@@ -1,28 +1,19 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Calendar as CalendarIcon,
   ChevronLeft,
   ChevronRight,
-  User,
-  Building,
+  ChevronDown,
+  User as UserIcon,
+  Building2,
   Filter,
   RefreshCw,
   Clock,
-  CheckCircle,
-  AlertTriangle,
   AlertCircle,
-  Info,
-  MapPin,
-  Globe,
-  Smartphone,
-  ShieldCheck,
   X,
   Search,
-  TrendingUp,
-  Award,
-  Layers,
-  Sparkles,
+  Check,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import useAuthStore from '../../store/useAuthStore';
@@ -83,6 +74,21 @@ export interface CalendarSummaryMetrics {
   avgCheckInTime: string;
   avgCheckOutTime: string;
   attendancePercentage: number;
+}
+
+export interface UserOptionItem {
+  id: string;
+  name: string;
+  email: string;
+  profileImage: string | null;
+  roleName: string;
+  officeName: string;
+  officeId?: string | null;
+}
+
+export interface OfficeOptionItem {
+  id: string;
+  name: string;
 }
 
 const MONTH_NAMES = [
@@ -171,6 +177,13 @@ const STATUS_BADGE_CONFIG: Record<
   },
 };
 
+const getInitials = (name?: string) => {
+  if (!name) return 'U';
+  const parts = name.trim().split(' ');
+  if (parts.length >= 2) return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+  return name.slice(0, 2).toUpperCase();
+};
+
 const AttendanceCalendarWidget: React.FC = () => {
   const { user } = useAuthStore();
   const permissions = user?.permissions || [];
@@ -200,11 +213,20 @@ const AttendanceCalendarWidget: React.FC = () => {
   const [selectedUserId, setSelectedUserId] = useState<string>(user?.id || '');
   const [selectedOfficeId, setSelectedOfficeId] = useState<string>('');
   const [selectedStatusFilter, setSelectedStatusFilter] = useState<string>('ALL');
-  const [userSearchQuery, setUserSearchQuery] = useState<string>('');
 
-  // Loaded Options
-  const [userOptions, setUserOptions] = useState<any[]>([]);
-  const [officeOptions, setOfficeOptions] = useState<any[]>([]);
+  // Loaded Filter Options & Loading States
+  const [officeOptions, setOfficeOptions] = useState<OfficeOptionItem[]>([]);
+  const [loadingOffices, setLoadingOffices] = useState<boolean>(false);
+  const [officesError, setOfficesError] = useState<string | null>(null);
+
+  const [userOptions, setUserOptions] = useState<UserOptionItem[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState<boolean>(false);
+  const [usersError, setUsersError] = useState<string | null>(null);
+
+  // Searchable User Select Dropdown state
+  const [isUserDropdownOpen, setIsUserDropdownOpen] = useState<boolean>(false);
+  const [userSearchTerm, setUserSearchTerm] = useState<string>('');
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Response Data State
   const [calendarData, setCalendarData] = useState<{
@@ -216,55 +238,102 @@ const AttendanceCalendarWidget: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Selected Day Detail Popup Modal State
+  // Day Details Popup Modal State
   const [selectedDayPopup, setSelectedDayPopup] = useState<CalendarDayDetail | null>(null);
 
-  // Console Logging on load & scope check
+  // Outside Click Listener for User Dropdown
   useEffect(() => {
-    console.log('[Attendance Calendar] Attendance Calendar Loaded');
-    console.log(
-      '[Attendance Calendar] Permission Validated:',
-      canViewAllCalendar ? 'ALL' : canViewAssignedCalendar ? 'ASSIGNED' : 'OWN',
-    );
-  }, [canViewAllCalendar, canViewAssignedCalendar]);
-
-  // Fetch filter options (Users & Offices) if permission allows
-  useEffect(() => {
-    const fetchFilterOptions = async () => {
-      if (canViewAssignedCalendar) {
-        try {
-          const overviewRes = await attendanceApi.getAdminOverview({ limit: 200 });
-          if (overviewRes?.records) {
-            const uniqueUsersMap = new Map<string, any>();
-            overviewRes.records.forEach((rec: any) => {
-              if (rec.user && !uniqueUsersMap.has(rec.user.id)) {
-                uniqueUsersMap.set(rec.user.id, rec.user);
-              }
-            });
-            setUserOptions(Array.from(uniqueUsersMap.values()));
-          }
-        } catch (e) {
-          console.error('[Attendance Calendar] Failed to fetch user options:', e);
-        }
-
-        try {
-          const officeRes = await attendanceApi.getOfficeLocations();
-          setOfficeOptions(officeRes?.data || []);
-        } catch (e) {
-          console.error('[Attendance Calendar] Failed to fetch office options:', e);
-        }
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsUserDropdownOpen(false);
       }
     };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
-    fetchFilterOptions();
-  }, [canViewAssignedCalendar]);
+  // 1. Fetch Permitted Offices
+  const fetchOffices = async () => {
+    setLoadingOffices(true);
+    setOfficesError(null);
+    console.log('[Attendance Calendar] Loading Offices');
+
+    try {
+      const res = await attendanceApi.getCalendarOffices();
+      const offices: OfficeOptionItem[] = res?.data || [];
+      setOfficeOptions(offices);
+      console.log('[Attendance Calendar] Offices Loaded:', offices.length);
+    } catch (err: any) {
+      console.error('[Attendance Calendar] Failed to load offices:', err);
+      setOfficesError('Unable to load offices.');
+    } finally {
+      setLoadingOffices(false);
+    }
+  };
+
+  // 2. Fetch Permitted Users (depends on selectedOfficeId)
+  const fetchUsers = async (officeId?: string) => {
+    setLoadingUsers(true);
+    setUsersError(null);
+    console.log('[Attendance Calendar] Loading Users for office:', officeId || 'ALL');
+
+    try {
+      const res = await attendanceApi.getCalendarUsers({ officeId });
+      const usersList: UserOptionItem[] = res?.data || [];
+      setUserOptions(usersList);
+      console.log('[Attendance Calendar] Users Loaded:', usersList.length);
+
+      // Auto-select user if current selectedUserId is not in the newly loaded list
+      if (usersList.length > 0) {
+        const exists = usersList.some((u) => u.id === selectedUserId);
+        if (!exists) {
+          const defaultUser = usersList.find((u) => u.id === user?.id) || usersList[0];
+          setSelectedUserId(defaultUser.id);
+          console.log('[Attendance Calendar] User Selected:', defaultUser.id);
+        }
+      }
+    } catch (err: any) {
+      console.error('[Attendance Calendar] Failed to load users:', err);
+      setUsersError('Unable to load users.');
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
+
+  // Initial Load of Offices and Users
+  useEffect(() => {
+    if (!canViewOwnCalendarOnly) {
+      fetchOffices();
+      fetchUsers(selectedOfficeId);
+    } else if (user) {
+      setUserOptions([
+        {
+          id: user.id,
+          name: user.name || 'Self',
+          email: user.email || '',
+          profileImage: (user as any).avatar || (user as any).profileImage || null,
+          roleName: userRoleName,
+          officeName: (user as any).office?.name || 'HQ Office',
+        },
+      ]);
+      setSelectedUserId(user.id);
+    }
+  }, [canViewOwnCalendarOnly]);
+
+  // Handle Office Change (Office -> User Dependency)
+  const handleOfficeChange = (newOfficeId: string) => {
+    setSelectedOfficeId(newOfficeId);
+    console.log('[Attendance Calendar] Office Selected:', newOfficeId || 'ALL');
+    console.log('[Attendance Calendar] Reloading Users');
+    fetchUsers(newOfficeId);
+  };
 
   // Main Calendar Fetch Effect
   const fetchCalendar = async () => {
     setLoading(true);
     setError(null);
     console.log(
-      `[Attendance Calendar] Calendar Month Changed: month=${currentMonth}, year=${currentYear}, userId=${selectedUserId}`,
+      `[Attendance Calendar] Loading Calendar: month=${currentMonth}, year=${currentYear}, userId=${selectedUserId}, officeId=${selectedOfficeId}, status=${selectedStatusFilter}`,
     );
 
     try {
@@ -278,27 +347,40 @@ const AttendanceCalendarWidget: React.FC = () => {
 
       if (res?.data) {
         setCalendarData(res.data);
-      } else {
-        setCalendarData(null);
+        console.log('[Attendance Calendar] Calendar Loaded');
       }
     } catch (err: any) {
       console.error('[Attendance Calendar] Failed to load calendar data:', err);
       const errMsg = err?.response?.data?.message || err?.message || 'Failed to load attendance calendar.';
-      setError(errMsg);
-      toast.error(errMsg);
+
+      // Keep previous data if available to prevent page crash
+      if (!calendarData) {
+        setError(errMsg);
+      }
+      toast.error('Failed to refresh calendar data.');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchCalendar();
-  }, [currentMonth, currentYear, selectedUserId, selectedOfficeId, selectedStatusFilter]);
+    if (selectedUserId) {
+      fetchCalendar();
+    }
+  }, [currentMonth, currentYear, selectedUserId, selectedOfficeId]);
 
   // Handle User Change
-  const handleUserChange = (newUserId: string) => {
-    setSelectedUserId(newUserId);
-    console.log('[Attendance Calendar] Selected User Changed:', newUserId);
+  const handleUserSelect = (userId: string) => {
+    setSelectedUserId(userId);
+    setIsUserDropdownOpen(false);
+    console.log('[Attendance Calendar] User Selected:', userId);
+  };
+
+  // Handle Status Filter Change
+  const handleStatusFilterChange = (newStatus: string) => {
+    setSelectedStatusFilter(newStatus);
+    console.log('[Attendance Calendar] Status Filter Changed:', newStatus);
+    console.log('[Attendance Calendar] Calendar Filter Applied');
   };
 
   // Month Navigation Handlers
@@ -331,23 +413,31 @@ const AttendanceCalendarWidget: React.FC = () => {
     setSelectedDayPopup(day);
   };
 
-  // Filtered Users List for Search
+  // Filtered Users List for Searchable Dropdown
   const filteredUserOptions = useMemo(() => {
-    if (!userSearchQuery.trim()) return userOptions;
-    const q = userSearchQuery.toLowerCase();
+    if (!userSearchTerm.trim()) return userOptions;
+    const q = userSearchTerm.toLowerCase();
     return userOptions.filter(
-      (u) => u.name?.toLowerCase().includes(q) || u.email?.toLowerCase().includes(q),
+      (u) =>
+        u.name?.toLowerCase().includes(q) ||
+        u.email?.toLowerCase().includes(q) ||
+        u.roleName?.toLowerCase().includes(q) ||
+        u.officeName?.toLowerCase().includes(q),
     );
-  }, [userOptions, userSearchQuery]);
+  }, [userOptions, userSearchTerm]);
+
+  // Currently Selected User Item
+  const selectedUserItem = useMemo(() => {
+    return userOptions.find((u) => u.id === selectedUserId) || userOptions[0] || null;
+  }, [userOptions, selectedUserId]);
 
   // Calendar Grid Cells Computation (Padding days before 1st of month)
   const gridCells = useMemo<{ leadingSlots: number[]; days: CalendarDayDetail[] }>(() => {
     if (!calendarData?.days) return { leadingSlots: [], days: [] };
 
     const firstDayObj = new Date(currentYear, currentMonth - 1, 1);
-    // getDay(): 0 = Sunday, 1 = Monday. Let's make Monday = 0
     let firstDayOfWeek = firstDayObj.getDay() - 1;
-    if (firstDayOfWeek < 0) firstDayOfWeek = 6; // Sunday becomes 6
+    if (firstDayOfWeek < 0) firstDayOfWeek = 6;
 
     const emptyLeadingSlots = Array.from({ length: firstDayOfWeek }, (_, i) => i);
 
@@ -357,36 +447,90 @@ const AttendanceCalendarWidget: React.FC = () => {
     };
   }, [calendarData, currentYear, currentMonth]);
 
-  const summary = calendarData?.summary;
+  // Status Filter Cell Check Helper
+  const isDayStatusMatchingFilter = (day: CalendarDayDetail, filter: string): boolean => {
+    if (filter === 'ALL') return true;
+    if (filter === 'PRESENT') {
+      return day.status === 'PRESENT' || day.status === 'LATE' || day.status === 'EARLY_CHECKOUT';
+    }
+    return day.status === filter;
+  };
+
+  // Calculate Dynamic Summary Metrics based on status filter
+  const summaryMetrics = useMemo<CalendarSummaryMetrics | null>(() => {
+    if (!calendarData?.summary || !calendarData?.days) return null;
+
+    if (selectedStatusFilter === 'ALL') {
+      return calendarData.summary;
+    }
+
+    // Filtered Recalculation
+    const matchingDays = calendarData.days.filter((d) => isDayStatusMatchingFilter(d, selectedStatusFilter));
+    const matchingCount = matchingDays.length;
+
+    let presentDays = 0;
+    let absentDays = 0;
+    let lateDays = 0;
+    let leaveDays = 0;
+    let halfDays = 0;
+    let totalWorkingHours = 0;
+
+    matchingDays.forEach((d) => {
+      if (d.status === 'PRESENT' || d.status === 'EARLY_CHECKOUT') presentDays++;
+      if (d.status === 'LATE') {
+        lateDays++;
+        presentDays++;
+      }
+      if (d.status === 'ABSENT') absentDays++;
+      if (d.status === 'LEAVE') leaveDays++;
+      if (d.status === 'HALF_DAY') halfDays++;
+      totalWorkingHours += d.workingHours || 0;
+    });
+
+    return {
+      totalDaysInMonth: calendarData.summary.totalDaysInMonth,
+      workingDaysCount: calendarData.summary.workingDaysCount,
+      presentDays,
+      absentDays,
+      lateDays,
+      leaveDays,
+      halfDays,
+      totalWorkingHours: Math.round(totalWorkingHours * 10) / 10,
+      avgCheckInTime: matchingCount > 0 ? calendarData.summary.avgCheckInTime : '—',
+      avgCheckOutTime: matchingCount > 0 ? calendarData.summary.avgCheckOutTime : '—',
+      attendancePercentage:
+        calendarData.summary.workingDaysCount > 0
+          ? Math.min(100, Math.round(((presentDays + halfDays * 0.5) / calendarData.summary.workingDaysCount) * 100))
+          : 0,
+    };
+  }, [calendarData, selectedStatusFilter]);
+
   const targetUserInfo = calendarData?.user;
 
   return (
     <div className="space-y-6">
-      {/* 1. Header & Controls Bar */}
+      {/* 1. Header & Date Stepper Bar */}
       <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-        <div>
-          <div className="flex items-center gap-2">
-            <div className="p-2.5 rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-100 shadow-sm">
-              <CalendarIcon size={20} />
-            </div>
-            <div>
-              <h2 className="text-xl font-black text-gray-900 tracking-tight">Attendance Calendar</h2>
-              <p className="text-xs text-gray-400 font-medium">
-                {targetUserInfo?.name
-                  ? `Viewing Calendar for ${targetUserInfo.name} (${targetUserInfo.roleName || 'Staff'})`
-                  : 'Monthly Employee Attendance & Performance Tracking'}
-              </p>
-            </div>
+        <div className="flex items-center gap-3">
+          <div className="p-3 rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-100 shadow-sm">
+            <CalendarIcon size={22} />
+          </div>
+          <div>
+            <h2 className="text-xl font-black text-gray-900 tracking-tight">Attendance Calendar</h2>
+            <p className="text-xs text-gray-400 font-medium">
+              {targetUserInfo?.name
+                ? `Viewing Attendance for ${targetUserInfo.name} (${targetUserInfo.roleName || 'Staff'})`
+                : 'Monthly Employee Attendance & Performance Tracking'}
+            </p>
           </div>
         </div>
 
-        {/* Navigation & Selectors */}
+        {/* Date Navigation & Controls */}
         <div className="flex flex-wrap items-center gap-3">
-          {/* Today Button */}
           <button
             type="button"
             onClick={handleTodayClick}
-            className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold rounded-xl transition-all border border-slate-200 cursor-pointer"
+            className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold rounded-xl transition-all border border-slate-200 cursor-pointer shadow-sm"
           >
             Today
           </button>
@@ -416,11 +560,11 @@ const AttendanceCalendarWidget: React.FC = () => {
             </button>
           </div>
 
-          {/* Month Dropdown Selector */}
+          {/* Month Select */}
           <select
             value={currentMonth}
             onChange={(e) => setCurrentMonth(Number(e.target.value))}
-            className="px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm"
+            className="px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm cursor-pointer"
           >
             {MONTH_NAMES.map((m, idx) => (
               <option key={m} value={idx + 1}>
@@ -429,11 +573,11 @@ const AttendanceCalendarWidget: React.FC = () => {
             ))}
           </select>
 
-          {/* Year Dropdown Selector */}
+          {/* Year Select */}
           <select
             value={currentYear}
             onChange={(e) => setCurrentYear(Number(e.target.value))}
-            className="px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm"
+            className="px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm cursor-pointer"
           >
             {YEAR_OPTIONS.map((y) => (
               <option key={y} value={y}>
@@ -442,7 +586,7 @@ const AttendanceCalendarWidget: React.FC = () => {
             ))}
           </select>
 
-          {/* Manual Refresh Button */}
+          {/* Refresh Button */}
           <button
             type="button"
             onClick={fetchCalendar}
@@ -455,146 +599,269 @@ const AttendanceCalendarWidget: React.FC = () => {
         </div>
       </div>
 
-      {/* 2. Hierarchical Filters Bar (Office & User Selector) */}
+      {/* 2. Interactive Filter Controls Bar */}
       {!canViewOwnCalendarOnly && (
         <div className="bg-white rounded-3xl p-5 border border-gray-100 shadow-sm space-y-4">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold uppercase tracking-widest text-slate-400 flex items-center gap-1.5">
               <Filter size={14} className="text-emerald-500" />
-              <span>Hierarchical Calendar Filters</span>
+              <span>Attendance Filters</span>
             </span>
             <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-              {canViewAllCalendar ? 'All Users Visibility Scope' : 'Assigned Staff Scope'}
+              {canViewAllCalendar ? 'All Offices Scope' : 'Assigned Staff Scope'}
             </span>
           </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* User Selector Dropdown */}
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* Office Dropdown */}
             <div>
-              <label className="block text-[11px] font-bold text-gray-700 mb-1">Select Employee / User</label>
-              <div className="relative">
-                <select
-                  value={selectedUserId}
-                  onChange={(e) => handleUserChange(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm"
-                >
-                  <option value={user?.id}>Self: {user?.name} (Me)</option>
-                  {filteredUserOptions
-                    .filter((u) => u.id !== user?.id)
-                    .map((u) => (
-                      <option key={u.id} value={u.id}>
-                        {u.name} — {u.role?.name || u.email}
+              <label className="block text-[11px] font-bold text-gray-700 mb-1">Office Location</label>
+              {officesError ? (
+                <div className="flex items-center gap-2 p-2 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700">
+                  <AlertCircle size={14} />
+                  <span>{officesError}</span>
+                  <button
+                    type="button"
+                    onClick={fetchOffices}
+                    className="ml-auto text-[10px] underline font-bold"
+                  >
+                    Retry
+                  </button>
+                </div>
+              ) : (
+                <div className="relative">
+                  <select
+                    value={selectedOfficeId}
+                    onChange={(e) => handleOfficeChange(e.target.value)}
+                    disabled={loadingOffices}
+                    className="w-full pl-9 pr-8 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm cursor-pointer appearance-none"
+                  >
+                    <option value="">All Offices</option>
+                    {officeOptions.map((off) => (
+                      <option key={off.id} value={off.id}>
+                        {off.name}
                       </option>
                     ))}
-                </select>
-                <User size={14} className="absolute left-3 top-2.5 text-gray-400 pointer-events-none" />
-              </div>
+                  </select>
+                  <Building2 size={16} className="absolute left-3 top-3 text-slate-400 pointer-events-none" />
+                  <ChevronDown size={14} className="absolute right-3 top-3 text-slate-400 pointer-events-none" />
+                </div>
+              )}
             </div>
 
-            {/* Office Filter */}
-            <div>
-              <label className="block text-[11px] font-bold text-gray-700 mb-1">Office Location / Branch</label>
-              <div className="relative">
-                <select
-                  value={selectedOfficeId}
-                  onChange={(e) => setSelectedOfficeId(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm"
-                >
-                  <option value="">All Offices & Branches</option>
-                  {officeOptions.map((off) => (
-                    <option key={off.id} value={off.id}>
-                      {off.officeName || off.name || 'HQ Office'}
-                    </option>
-                  ))}
-                </select>
-                <Building size={14} className="absolute left-3 top-2.5 text-gray-400 pointer-events-none" />
-              </div>
+            {/* Custom Searchable Employee / User Dropdown */}
+            <div className="relative" ref={dropdownRef}>
+              <label className="block text-[11px] font-bold text-gray-700 mb-1">Employee / User</label>
+              {usersError ? (
+                <div className="flex items-center gap-2 p-2 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700">
+                  <AlertCircle size={14} />
+                  <span>{usersError}</span>
+                  <button
+                    type="button"
+                    onClick={() => fetchUsers(selectedOfficeId)}
+                    className="ml-auto text-[10px] underline font-bold"
+                  >
+                    Retry
+                  </button>
+                </div>
+              ) : (
+                <>
+                  {/* Select Trigger Box */}
+                  <button
+                    type="button"
+                    onClick={() => setIsUserDropdownOpen((prev) => !prev)}
+                    disabled={loadingUsers}
+                    className="w-full flex items-center justify-between pl-3 pr-3 py-2 bg-slate-50 hover:bg-slate-100/80 border border-slate-200 rounded-xl transition-all cursor-pointer text-left shadow-sm"
+                  >
+                    {selectedUserItem ? (
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        {selectedUserItem.profileImage ? (
+                          <img
+                            src={selectedUserItem.profileImage}
+                            alt={selectedUserItem.name}
+                            className="w-7 h-7 rounded-full object-cover border border-emerald-300 shrink-0"
+                          />
+                        ) : (
+                          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 text-white text-[10px] font-black flex items-center justify-center shrink-0 shadow-xs">
+                            {getInitials(selectedUserItem.name)}
+                          </div>
+                        )}
+
+                        <div className="min-w-0">
+                          <div className="text-xs font-black text-slate-900 truncate">
+                            {selectedUserItem.name}
+                          </div>
+                          <div className="text-[10px] text-slate-400 truncate font-medium">
+                            {selectedUserItem.roleName} • {selectedUserItem.officeName}
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-slate-400 font-bold">Select Employee...</span>
+                    )}
+
+                    <ChevronDown size={14} className="text-slate-400 shrink-0 ml-2" />
+                  </button>
+
+                  {/* Dropdown Menu Popup */}
+                  <AnimatePresence>
+                    {isUserDropdownOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -6 }}
+                        className="absolute z-40 left-0 right-0 mt-2 bg-white rounded-2xl border border-gray-200 shadow-2xl p-2.5 space-y-2 max-h-80 overflow-hidden flex flex-col"
+                      >
+                        {/* Search Input inside Dropdown */}
+                        <div className="relative shrink-0">
+                          <input
+                            type="text"
+                            placeholder="Search by name, email, or role..."
+                            value={userSearchTerm}
+                            onChange={(e) => setUserSearchTerm(e.target.value)}
+                            autoFocus
+                            className="w-full pl-8 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                          />
+                          <Search size={14} className="absolute left-2.5 top-2.5 text-slate-400 pointer-events-none" />
+                          {userSearchTerm && (
+                            <button
+                              type="button"
+                              onClick={() => setUserSearchTerm('')}
+                              className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600"
+                            >
+                              <X size={12} />
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Options List */}
+                        <div className="overflow-y-auto space-y-1 pr-1 flex-1">
+                          {filteredUserOptions.length === 0 ? (
+                            <div className="p-4 text-center text-xs text-slate-400">
+                              No matching employees found.
+                            </div>
+                          ) : (
+                            filteredUserOptions.map((u) => {
+                              const isSelected = u.id === selectedUserId;
+                              return (
+                                <button
+                                  key={u.id}
+                                  type="button"
+                                  onClick={() => handleUserSelect(u.id)}
+                                  className={`w-full flex items-center justify-between p-2 rounded-xl transition-all text-left cursor-pointer ${
+                                    isSelected
+                                      ? 'bg-emerald-50 border border-emerald-200 text-emerald-900 font-bold'
+                                      : 'hover:bg-slate-50 text-slate-800'
+                                  }`}
+                                >
+                                  <div className="flex items-center gap-2.5 min-w-0">
+                                    {u.profileImage ? (
+                                      <img
+                                        src={u.profileImage}
+                                        alt={u.name}
+                                        className="w-8 h-8 rounded-full object-cover border border-emerald-300 shrink-0"
+                                      />
+                                    ) : (
+                                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 text-white text-xs font-black flex items-center justify-center shrink-0 shadow-xs">
+                                        {getInitials(u.name)}
+                                      </div>
+                                    )}
+
+                                    <div className="min-w-0">
+                                      <div className="text-xs font-black text-slate-900 truncate">
+                                        {u.name}
+                                      </div>
+                                      <div className="text-[10px] text-slate-500 truncate font-medium">
+                                        {u.roleName} • <span className="text-slate-400">{u.officeName}</span>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {isSelected && <Check size={14} className="text-emerald-600 shrink-0 ml-2" />}
+                                </button>
+                              );
+                            })
+                          )}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </>
+              )}
             </div>
 
             {/* Status Filter */}
             <div>
               <label className="block text-[11px] font-bold text-gray-700 mb-1">Filter By Status</label>
-              <select
-                value={selectedStatusFilter}
-                onChange={(e) => setSelectedStatusFilter(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm"
-              >
-                <option value="ALL">All Statuses</option>
-                <option value="PRESENT">🟢 Present</option>
-                <option value="LATE">🟡 Late Check-In</option>
-                <option value="EARLY_CHECKOUT">🟠 Early Check-Out</option>
-                <option value="HALF_DAY">🔵 Half Day</option>
-                <option value="ABSENT">🔴 Absent</option>
-                <option value="HOLIDAY">⚪ Holiday</option>
-                <option value="LEAVE">🟣 Leave</option>
-                <option value="WEEKEND">⚫ Weekend / Weekly Off</option>
-              </select>
-            </div>
-
-            {/* User Search Query Filter */}
-            <div>
-              <label className="block text-[11px] font-bold text-gray-700 mb-1">Search User By Name</label>
               <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Type name or email..."
-                  value={userSearchQuery}
-                  onChange={(e) => setUserSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm"
-                />
-                <Search size={14} className="absolute left-3 top-2.5 text-gray-400 pointer-events-none" />
+                <select
+                  value={selectedStatusFilter}
+                  onChange={(e) => handleStatusFilterChange(e.target.value)}
+                  className="w-full pl-3 pr-8 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm cursor-pointer appearance-none"
+                >
+                  <option value="ALL">All Statuses</option>
+                  <option value="PRESENT">🟢 Present</option>
+                  <option value="LATE">🟡 Late Check-In</option>
+                  <option value="EARLY_CHECKOUT">🟠 Early Check-Out</option>
+                  <option value="HALF_DAY">🔵 Half Day</option>
+                  <option value="ABSENT">🔴 Absent</option>
+                  <option value="HOLIDAY">⚪ Holiday</option>
+                  <option value="LEAVE">🟣 Leave</option>
+                  <option value="WEEKEND">⚫ Weekly Off</option>
+                </select>
+                <ChevronDown size={14} className="absolute right-3 top-3 text-slate-400 pointer-events-none" />
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* 3. Monthly Summary Metrics Bar */}
-      {summary && (
+      {/* 3. Dynamic Summary Metrics Bar */}
+      {summaryMetrics && (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-9 gap-3">
           <div className="p-3.5 bg-white rounded-2xl border border-gray-100 shadow-sm text-center">
             <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-600 block">Present</span>
-            <span className="text-lg font-black text-gray-900 mt-0.5 block">{summary.presentDays} Days</span>
+            <span className="text-lg font-black text-gray-900 mt-0.5 block">{summaryMetrics.presentDays} Days</span>
           </div>
 
           <div className="p-3.5 bg-white rounded-2xl border border-gray-100 shadow-sm text-center">
             <span className="text-[10px] font-bold uppercase tracking-widest text-rose-600 block">Absent</span>
-            <span className="text-lg font-black text-gray-900 mt-0.5 block">{summary.absentDays} Days</span>
+            <span className="text-lg font-black text-gray-900 mt-0.5 block">{summaryMetrics.absentDays} Days</span>
           </div>
 
           <div className="p-3.5 bg-white rounded-2xl border border-gray-100 shadow-sm text-center">
             <span className="text-[10px] font-bold uppercase tracking-widest text-amber-600 block">Late</span>
-            <span className="text-lg font-black text-gray-900 mt-0.5 block">{summary.lateDays} Days</span>
+            <span className="text-lg font-black text-gray-900 mt-0.5 block">{summaryMetrics.lateDays} Days</span>
           </div>
 
           <div className="p-3.5 bg-white rounded-2xl border border-gray-100 shadow-sm text-center">
             <span className="text-[10px] font-bold uppercase tracking-widest text-purple-600 block">Leave</span>
-            <span className="text-lg font-black text-gray-900 mt-0.5 block">{summary.leaveDays} Days</span>
+            <span className="text-lg font-black text-gray-900 mt-0.5 block">{summaryMetrics.leaveDays} Days</span>
           </div>
 
           <div className="p-3.5 bg-white rounded-2xl border border-gray-100 shadow-sm text-center">
             <span className="text-[10px] font-bold uppercase tracking-widest text-blue-600 block">Half Day</span>
-            <span className="text-lg font-black text-gray-900 mt-0.5 block">{summary.halfDays} Days</span>
+            <span className="text-lg font-black text-gray-900 mt-0.5 block">{summaryMetrics.halfDays} Days</span>
           </div>
 
           <div className="p-3.5 bg-white rounded-2xl border border-gray-100 shadow-sm text-center">
             <span className="text-[10px] font-bold uppercase tracking-widest text-teal-600 block">Hours</span>
-            <span className="text-lg font-black text-gray-900 mt-0.5 block">{summary.totalWorkingHours}h</span>
+            <span className="text-lg font-black text-gray-900 mt-0.5 block">{summaryMetrics.totalWorkingHours}h</span>
           </div>
 
           <div className="p-3.5 bg-white rounded-2xl border border-gray-100 shadow-sm text-center">
             <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 block">Avg Check-In</span>
-            <span className="text-sm font-bold text-gray-800 mt-1 block">{summary.avgCheckInTime}</span>
+            <span className="text-sm font-bold text-gray-800 mt-1 block">{summaryMetrics.avgCheckInTime}</span>
           </div>
 
           <div className="p-3.5 bg-white rounded-2xl border border-gray-100 shadow-sm text-center">
             <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 block">Avg Check-Out</span>
-            <span className="text-sm font-bold text-gray-800 mt-1 block">{summary.avgCheckOutTime}</span>
+            <span className="text-sm font-bold text-gray-800 mt-1 block">{summaryMetrics.avgCheckOutTime}</span>
           </div>
 
           <div className="p-3.5 bg-emerald-500 text-white rounded-2xl shadow-md text-center">
             <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-100 block">Attendance</span>
-            <span className="text-lg font-black mt-0.5 block">{summary.attendancePercentage}%</span>
+            <span className="text-lg font-black mt-0.5 block">{summaryMetrics.attendancePercentage}%</span>
           </div>
         </div>
       )}
@@ -625,7 +892,7 @@ const AttendanceCalendarWidget: React.FC = () => {
             <button
               type="button"
               onClick={fetchCalendar}
-              className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-all shadow-sm"
+              className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-all shadow-sm cursor-pointer"
             >
               Retry Loading Calendar
             </button>
@@ -664,22 +931,25 @@ const AttendanceCalendarWidget: React.FC = () => {
 
               {/* Monthly Day Cards */}
               {gridCells.days?.map((day) => {
+                const isMatchingStatus = isDayStatusMatchingFilter(day, selectedStatusFilter);
                 const badgeCfg = STATUS_BADGE_CONFIG[day.status] || STATUS_BADGE_CONFIG.NO_ATTENDANCE;
                 const isTodayDate = day.date === today.toISOString().split('T')[0];
 
                 return (
                   <motion.div
                     key={day.date}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => handleDayClick(day)}
-                    className={`min-h-[100px] p-2.5 rounded-2xl border flex flex-col justify-between transition-all cursor-pointer relative overflow-hidden ${
-                      isTodayDate
-                        ? 'ring-2 ring-emerald-500 shadow-md bg-white border-emerald-300'
-                        : 'bg-white hover:shadow-md border-gray-100 hover:border-emerald-200'
+                    whileHover={isMatchingStatus ? { scale: 1.02 } : undefined}
+                    whileTap={isMatchingStatus ? { scale: 0.98 } : undefined}
+                    onClick={() => isMatchingStatus && handleDayClick(day)}
+                    className={`min-h-[100px] p-2.5 rounded-2xl border flex flex-col justify-between transition-all relative overflow-hidden ${
+                      !isMatchingStatus
+                        ? 'bg-slate-50/50 border-slate-100 opacity-40'
+                        : isTodayDate
+                        ? 'ring-2 ring-emerald-500 shadow-md bg-white border-emerald-300 cursor-pointer'
+                        : 'bg-white hover:shadow-md border-gray-100 hover:border-emerald-200 cursor-pointer'
                     }`}
                   >
-                    {/* Top Row: Date Number & Badge Indicator */}
+                    {/* Top Row: Date Number & Status Indicator */}
                     <div className="flex items-center justify-between">
                       <span
                         className={`text-xs font-black px-2 py-0.5 rounded-lg ${
@@ -689,34 +959,45 @@ const AttendanceCalendarWidget: React.FC = () => {
                         {day.dayNumber}
                       </span>
 
-                      <span className={`w-2.5 h-2.5 rounded-full ${badgeCfg.iconBg}`} title={badgeCfg.label} />
-                    </div>
-
-                    {/* Content Body */}
-                    <div className="mt-2 space-y-1">
-                      {day.checkInTime ? (
-                        <div className="text-[10px] font-bold text-slate-700 flex items-center justify-between">
-                          <span className="text-emerald-600">In:</span>
-                          <span>{day.checkInTime}</span>
-                        </div>
-                      ) : null}
-
-                      {day.checkOutTime ? (
-                        <div className="text-[10px] font-bold text-slate-700 flex items-center justify-between">
-                          <span className="text-slate-500">Out:</span>
-                          <span>{day.checkOutTime}</span>
-                        </div>
-                      ) : null}
-
-                      {day.workingHours > 0 && (
-                        <div className="text-[9px] font-semibold text-slate-400 text-right">{day.workingHours} hrs</div>
+                      {isMatchingStatus && (
+                        <span className={`w-2.5 h-2.5 rounded-full ${badgeCfg.iconBg}`} title={badgeCfg.label} />
                       )}
                     </div>
 
-                    {/* Bottom Status Badge */}
-                    <div className={`mt-2 px-2 py-0.5 rounded-lg text-[9px] font-black border text-center truncate ${badgeCfg.bg} ${badgeCfg.border}`}>
-                      {day.statusLabel}
-                    </div>
+                    {/* Content Body (Only visible if matching status) */}
+                    {isMatchingStatus ? (
+                      <>
+                        <div className="mt-2 space-y-1">
+                          {day.checkInTime ? (
+                            <div className="text-[10px] font-bold text-slate-700 flex items-center justify-between">
+                              <span className="text-emerald-600">In:</span>
+                              <span>{day.checkInTime}</span>
+                            </div>
+                          ) : null}
+
+                          {day.checkOutTime ? (
+                            <div className="text-[10px] font-bold text-slate-700 flex items-center justify-between">
+                              <span className="text-slate-500">Out:</span>
+                              <span>{day.checkOutTime}</span>
+                            </div>
+                          ) : null}
+
+                          {day.workingHours > 0 && (
+                            <div className="text-[9px] font-semibold text-slate-400 text-right">{day.workingHours} hrs</div>
+                          )}
+                        </div>
+
+                        {/* Bottom Status Badge */}
+                        <div className={`mt-2 px-2 py-0.5 rounded-lg text-[9px] font-black border text-center truncate ${badgeCfg.bg} ${badgeCfg.border}`}>
+                          {day.statusLabel}
+                        </div>
+                      </>
+                    ) : (
+                      /* Empty slot for non-matching dates */
+                      <div className="flex-1 flex items-center justify-center">
+                        <span className="text-slate-300 text-[10px] font-mono">□</span>
+                      </div>
+                    )}
                   </motion.div>
                 );
               })}
@@ -754,7 +1035,7 @@ const AttendanceCalendarWidget: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setSelectedDayPopup(null)}
-                className="absolute top-6 right-6 p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-slate-100 transition-all"
+                className="absolute top-6 right-6 p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-slate-100 transition-all cursor-pointer"
               >
                 <X size={20} />
               </button>
