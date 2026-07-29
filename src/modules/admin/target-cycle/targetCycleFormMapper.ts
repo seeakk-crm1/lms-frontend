@@ -45,6 +45,10 @@ export const mapTargetCycleToFormInitial = (
             leadStageId: st.leadStageId,
             targetValue: st.targetValue,
           })) : null,
+          productTargets: metric.productTargets ? metric.productTargets.map((pt) => ({
+            productId: pt.productId,
+            targetValue: pt.targetValue,
+          })) : null,
         })) : null,
       })),
       periodCounts: periods

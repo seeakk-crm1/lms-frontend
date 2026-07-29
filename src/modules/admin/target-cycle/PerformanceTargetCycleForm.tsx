@@ -2,14 +2,16 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Loader2, Plus, Save, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
+import { useQuery } from '@tanstack/react-query';
 import { useLeadStagesQuery } from '../../../hooks/useLeadStagesQuery';
+import { getActiveProducts } from '../../../services/products.api';
 import { countPeriodSlots, periodSlotLabel, previewTotalTargetDays, generatePeriods } from './targetCycleDuration';
 
 export type PerformanceTargetCyclePayload = {
   name: string;
   description?: string;
   targetType: 'WEEKLY' | 'MONTHLY' | 'SEMI_ANNUAL' | 'MANUAL';
-  targetMetric: 'LEADS' | 'REVENUE' | 'FOLLOW_UP';
+  targetMetric: 'LEADS' | 'REVENUE' | 'FOLLOW_UP' | 'PRODUCTS';
   leadStageId?: string | null;
   startDate: string;
   endDate?: string | null;
@@ -23,9 +25,10 @@ export type PerformanceTargetCyclePayload = {
     endDate: string;
     lockingDate: string;
     metrics?: Array<{
-      metricType: 'LEADS' | 'REVENUE' | 'FOLLOW_UP';
+      metricType: 'LEADS' | 'REVENUE' | 'FOLLOW_UP' | 'PRODUCTS';
       targetValue: number;
       stageTargets?: Array<{ leadStageId: string; targetValue: number }> | null;
+      productTargets?: Array<{ productId: string; targetValue: number }> | null;
     }> | null;
   }>;
   status: 'ACTIVE' | 'INACTIVE';
@@ -59,6 +62,15 @@ const PerformanceTargetCycleForm: React.FC<Props> = ({ initialData, isSubmitting
     const rows = (stagesData as any)?.data || (stagesData as any)?.stages || [];
     return rows.filter((stage: { isLOB?: boolean }) => !stage.isLOB);
   }, [stagesData]);
+
+  const { data: activeProductsData } = useQuery({
+    queryKey: ['active-products'],
+    queryFn: getActiveProducts,
+  });
+  const activeProducts = useMemo(() => {
+    const rows = (activeProductsData as any)?.data || (activeProductsData as any) || [];
+    return Array.isArray(rows) ? rows.filter((p: any) => p.status === 'ACTIVE' || !p.status) : [];
+  }, [activeProductsData]);
 
   const [name, setName] = useState(initialData?.name || '');
   const [description, setDescription] = useState(initialData?.description || '');
@@ -194,7 +206,7 @@ const PerformanceTargetCycleForm: React.FC<Props> = ({ initialData, isSubmitting
     });
   };
 
-  const handleToggleMetric = (periodIndex: number, metricType: 'LEADS' | 'REVENUE' | 'FOLLOW_UP') => {
+  const handleToggleMetric = (periodIndex: number, metricType: 'LEADS' | 'REVENUE' | 'FOLLOW_UP' | 'PRODUCTS') => {
     setPeriodsState((prev) => {
       return prev.map((p) => {
         if (p.periodIndex !== periodIndex) return p;
@@ -205,8 +217,9 @@ const PerformanceTargetCycleForm: React.FC<Props> = ({ initialData, isSubmitting
         } else {
           nextMetrics.push({
             metricType,
-            targetValue: metricType === 'REVENUE' ? 1000 : 5,
+            targetValue: metricType === 'REVENUE' ? 1000 : metricType === 'PRODUCTS' ? 0 : 5,
             stageTargets: metricType === 'LEADS' ? [] : null,
+            productTargets: metricType === 'PRODUCTS' ? [] : null,
           });
         }
         return { ...p, metrics: nextMetrics };
@@ -214,7 +227,7 @@ const PerformanceTargetCycleForm: React.FC<Props> = ({ initialData, isSubmitting
     });
   };
 
-  const handleUpdateMetricValue = (periodIndex: number, metricType: 'LEADS' | 'REVENUE' | 'FOLLOW_UP', value: number) => {
+  const handleUpdateMetricValue = (periodIndex: number, metricType: 'LEADS' | 'REVENUE' | 'FOLLOW_UP' | 'PRODUCTS', value: number) => {
     setPeriodsState((prev) => {
       return prev.map((p) => {
         if (p.periodIndex !== periodIndex) return p;
@@ -247,6 +260,34 @@ const PerformanceTargetCycleForm: React.FC<Props> = ({ initialData, isSubmitting
           }
           const sum = stageTargets.reduce((acc, st) => acc + st.targetValue, 0);
           return { ...m, targetValue: sum, stageTargets };
+        }) : [];
+        return { ...p, metrics: nextMetrics };
+      });
+    });
+  };
+
+  const handleUpdateProductTarget = (periodIndex: number, productId: string, value: number) => {
+    setPeriodsState((prev) => {
+      return prev.map((p) => {
+        if (p.periodIndex !== periodIndex) return p;
+        const nextMetrics = p.metrics ? p.metrics.map((m) => {
+          if (m.metricType !== 'PRODUCTS') return m;
+          let productTargets = m.productTargets ? [...m.productTargets] : [];
+          const exists = productTargets.some((pt) => pt.productId === productId);
+          if (value === 0 && !exists) {
+            // Unchecked
+          } else if (value === 0 && exists) {
+            productTargets = productTargets.filter((pt) => pt.productId !== productId);
+          } else if (exists) {
+            productTargets = productTargets.map((pt) => {
+              if (pt.productId !== productId) return pt;
+              return { ...pt, targetValue: value };
+            });
+          } else {
+            productTargets.push({ productId, targetValue: value });
+          }
+          const sum = productTargets.reduce((acc, pt) => acc + pt.targetValue, 0);
+          return { ...m, targetValue: sum, productTargets };
         }) : [];
         return { ...p, metrics: nextMetrics };
       });
@@ -414,6 +455,7 @@ const PerformanceTargetCycleForm: React.FC<Props> = ({ initialData, isSubmitting
             const leadsMetric = period.metrics?.find((m) => m.metricType === 'LEADS');
             const revenueMetric = period.metrics?.find((m) => m.metricType === 'REVENUE');
             const followupMetric = period.metrics?.find((m) => m.metricType === 'FOLLOW_UP');
+            const productsMetric = period.metrics?.find((m) => m.metricType === 'PRODUCTS');
 
             return (
               <div
@@ -446,6 +488,11 @@ const PerformanceTargetCycleForm: React.FC<Props> = ({ initialData, isSubmitting
                       {followupMetric && (
                         <span className="px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 text-[10px] font-bold">
                           F-Up: {followupMetric.targetValue}
+                        </span>
+                      )}
+                      {productsMetric && (
+                        <span className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 text-[10px] font-bold">
+                          Prod: {productsMetric.targetValue}
                         </span>
                       )}
                       {!period.metrics?.length && (
@@ -549,6 +596,15 @@ const PerformanceTargetCycleForm: React.FC<Props> = ({ initialData, isSubmitting
                           />
                           Follow-Up Target
                         </label>
+                        <label className="inline-flex items-center gap-2 text-xs font-semibold text-gray-700 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={!!productsMetric}
+                            onChange={() => handleToggleMetric(period.periodIndex, 'PRODUCTS')}
+                            className="rounded text-emerald-600"
+                          />
+                          Products Target
+                        </label>
                       </div>
                     </div>
 
@@ -604,6 +660,68 @@ const PerformanceTargetCycleForm: React.FC<Props> = ({ initialData, isSubmitting
                           </div>
                           {(!leadsMetric.stageTargets || leadsMetric.stageTargets.length === 0) && (
                             <p className="text-[10px] text-gray-400 font-medium">Please check at least one stage and set a target.</p>
+                          )}
+                        </div>
+                      )}
+
+                      {productsMetric && (
+                        <div className="space-y-3 bg-gray-50/50 p-3 rounded-xl border border-gray-100">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-black uppercase tracking-wider text-emerald-800">Product Targets</span>
+                            <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md">
+                              Total: {productsMetric.targetValue}
+                            </span>
+                          </div>
+
+                          {activeProducts.length === 0 ? (
+                            <div className="p-4 text-center text-xs text-gray-500 bg-white rounded-lg border border-gray-100 space-y-1">
+                              <p className="font-semibold text-gray-700">No products have been created yet.</p>
+                              <p className="text-[11px] text-gray-500">
+                                Create products from: <span className="font-bold text-emerald-700">Master Configuration → Products</span>
+                              </p>
+                            </div>
+                          ) : (
+                            <div className="grid gap-2 sm:grid-cols-2">
+                              {activeProducts.map((product: { id: string; name: string }) => {
+                                const productTarget = productsMetric.productTargets?.find((pt) => pt.productId === product.id);
+                                const isChecked = !!productTarget;
+
+                                return (
+                                  <div
+                                    key={product.id}
+                                    className="flex items-center justify-between gap-2 p-2 rounded-lg bg-white border border-gray-100 hover:border-gray-200 transition-colors"
+                                  >
+                                    <label className="flex items-center gap-2 text-xs font-semibold text-gray-700 cursor-pointer truncate">
+                                      <input
+                                        type="checkbox"
+                                        checked={isChecked}
+                                        onChange={(e) => {
+                                          handleUpdateProductTarget(period.periodIndex, product.id, e.target.checked ? 10 : 0);
+                                        }}
+                                        className="rounded text-emerald-600 focus:ring-emerald-500"
+                                      />
+                                      <span className="truncate">{product.name}</span>
+                                    </label>
+                                    {isChecked && (
+                                      <input
+                                        type="number"
+                                        min={0}
+                                        value={productTarget.targetValue}
+                                        onChange={(e) => {
+                                          const val = Math.max(0, parseInt(e.target.value, 10) || 0);
+                                          handleUpdateProductTarget(
+                                            period.periodIndex,
+                                            product.id,
+                                            val,
+                                          );
+                                        }}
+                                        className="w-16 text-center rounded border border-gray-200 px-1.5 py-0.5 text-xs font-black focus:outline-emerald-500"
+                                      />
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
                           )}
                         </div>
                       )}

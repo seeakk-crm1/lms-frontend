@@ -17,13 +17,19 @@ export interface TargetCyclePeriod {
   lockingDate: string;
   metrics?: Array<{
     id?: string;
-    metricType: 'LEADS' | 'REVENUE' | 'FOLLOW_UP';
+    metricType: 'LEADS' | 'REVENUE' | 'FOLLOW_UP' | 'PRODUCTS';
     targetValue: number;
     stageTargets?: Array<{
       id?: string;
       leadStageId: string;
       targetValue: number;
       leadStage?: { id: string; name: string; color?: string | null } | null;
+    }> | null;
+    productTargets?: Array<{
+      id?: string;
+      productId: string;
+      targetValue: number;
+      product?: { id: string; name: string; code?: string | null; unitPrice?: number } | null;
     }> | null;
   }> | null;
 }
@@ -41,7 +47,7 @@ export interface TargetCycle {
   ranges: TargetCycleRange[];
   description?: string | null;
   targetType?: 'WEEKLY' | 'MONTHLY' | 'SEMI_ANNUAL' | 'MANUAL';
-  targetMetric?: 'LEADS' | 'REVENUE' | 'FOLLOW_UP' | null;
+  targetMetric?: 'LEADS' | 'REVENUE' | 'FOLLOW_UP' | 'PRODUCTS' | null;
   leadStageId?: string | null;
   startDate?: string;
   endDate?: string | null;
