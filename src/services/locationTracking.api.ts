@@ -77,20 +77,8 @@ export const pushLocationPoints = async (payload: {
   attendanceRecordId?: string;
   points: LocationPointPayload[];
 }) => {
-  console.log('[Location Tracking] Request Started -> POST /location-tracking/points');
-  const tokenExists = Boolean(localStorage.getItem('accessToken'));
-  console.log(`[Location Tracking] Authorization Token Found: ${tokenExists}`);
-  console.log('[Location Tracking] Sending Request...');
-  try {
-    const { data, status } = await api.post('/location-tracking/points', payload);
-    console.log(`[Location Tracking] Response Received -> Status Code: ${status}`);
-    console.log('[Location Tracking] Request Completed Successfully');
-    return data;
-  } catch (error: any) {
-    const status = error.response?.status;
-    console.warn(`[Location Tracking] Response Received -> Error Status Code: ${status || 'Network Error'}`);
-    throw error;
-  }
+  const { data } = await api.post('/location-tracking/points', payload);
+  return data;
 };
 
 export const getLocationPoints = async (params?: {
@@ -99,20 +87,8 @@ export const getLocationPoints = async (params?: {
   startDate?: string;
   endDate?: string;
 }) => {
-  console.log('[Location Tracking] Request Started -> GET /location-tracking/points');
-  const tokenExists = Boolean(localStorage.getItem('accessToken'));
-  console.log(`[Location Tracking] Authorization Token Found: ${tokenExists}`);
-  console.log('[Location Tracking] Sending Request...');
-  try {
-    const { data, status } = await api.get('/location-tracking/points', { params });
-    console.log(`[Location Tracking] Response Received -> Status Code: ${status}`);
-    console.log('[Location Tracking] Request Completed Successfully');
-    return data;
-  } catch (error: any) {
-    const status = error.response?.status;
-    console.warn(`[Location Tracking] Response Received -> Error Status Code: ${status || 'Network Error'}`);
-    throw error;
-  }
+  const { data } = await api.get('/location-tracking/points', { params });
+  return data;
 };
 
 export const getLiveLocations = async (params?: { userId?: string }): Promise<LiveLocationUser[]> => {
