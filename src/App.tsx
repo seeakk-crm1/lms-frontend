@@ -220,7 +220,7 @@ function App() {
       {workflowEnabled ? <LocationTrackingClient /> : null}
       <Routes>
         <Route path="/" element={
-          <div className="min-h-screen bg-gray-950 font-sans text-white selection:bg-emerald-500 selection:text-gray-950 overflow-x-hidden">
+          <div className="min-h-screen bg-white font-sans text-slate-900 selection:bg-emerald-200 selection:text-emerald-900 overflow-x-hidden">
             <LandingNavbar />
             <main>
               <LandingHero />
