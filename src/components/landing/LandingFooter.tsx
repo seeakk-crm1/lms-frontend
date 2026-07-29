@@ -79,7 +79,7 @@ const LandingFooter: React.FC = () => {
               <li><a href="#pain-points" className="hover:text-white transition-colors">Enterprise Sales Teams</a></li>
               <li><a href="#pain-points" className="hover:text-white transition-colors">Regional Branch Networks</a></li>
               <li><a href="#pain-points" className="hover:text-white transition-colors">Loss of Business (LOB) Prevention</a></li>
-              <li><a href="#pricing" className="hover:text-white transition-colors">LOB Recovery ROI Calculator</a></li>
+              <li><a href="#pricing" className="hover:text-white transition-colors">Pricing & Enterprise Plans</a></li>
             </ul>
           </div>
 

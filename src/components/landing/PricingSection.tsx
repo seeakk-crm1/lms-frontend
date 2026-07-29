@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Check, Zap, ArrowRight, Calculator } from 'lucide-react';
+import { Check, Zap, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const pricingTiers = [
@@ -61,11 +61,6 @@ const pricingTiers = [
 
 const PricingSection: React.FC = () => {
   const [isAnnual, setIsAnnual] = useState(true);
-  const [leadVolume, setLeadVolume] = useState(1000);
-  const [avgDealValue, setAvgDealValue] = useState(2500);
-
-  // LOB Revenue Recovery Math: 15% estimated LOB saved by Seeakk * 4% conversion * avgDealValue
-  const estimatedRecoveredRevenue = Math.round(leadVolume * 0.15 * 0.04 * avgDealValue);
 
   return (
     <section id="pricing" className="py-24 lg:py-36 bg-slate-50 text-slate-900 relative overflow-hidden">
@@ -83,7 +78,7 @@ const PricingSection: React.FC = () => {
         >
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-100 border border-emerald-200 text-emerald-800 text-xs font-bold uppercase tracking-widest mb-4 shadow-sm">
             <Zap className="w-4 h-4 text-emerald-600" />
-            <span>Transparent Pricing & LOB Recovery ROI</span>
+            <span>Transparent Pricing & Plans</span>
           </div>
 
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight leading-tight mb-6">
@@ -124,7 +119,7 @@ const PricingSection: React.FC = () => {
         </motion.div>
 
         {/* Pricing Cards Grid */}
-        <div className="grid lg:grid-cols-3 gap-8 max-w-7xl mx-auto mb-20">
+        <div className="grid lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
           {pricingTiers.map((tier, idx) => (
             <motion.div
               key={tier.name}
@@ -182,69 +177,6 @@ const PricingSection: React.FC = () => {
               </Link>
             </motion.div>
           ))}
-        </div>
-
-        {/* Embedded LOB Revenue Recovery Calculator */}
-        <div className="max-w-4xl mx-auto bg-white rounded-3xl p-8 sm:p-10 border border-slate-200 shadow-xl">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="p-2.5 rounded-xl bg-emerald-100 text-emerald-700 border border-emerald-200 shadow-sm">
-              <Calculator className="w-5 h-5" />
-            </div>
-            <div>
-              <h3 className="text-xl font-bold text-slate-900">Loss of Business (LOB) Recovery Calculator</h3>
-              <p className="text-xs text-slate-600">Estimate monthly revenue recovered by stopping Loss of Business (LOB)</p>
-            </div>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-8 items-center pt-4">
-            {/* Controls */}
-            <div className="space-y-6">
-              <div>
-                <div className="flex justify-between text-xs font-semibold mb-2">
-                  <span className="text-slate-700">Monthly Managed Lead Volume:</span>
-                  <span className="text-emerald-700 font-bold">{leadVolume.toLocaleString()} Leads</span>
-                </div>
-                <input
-                  type="range"
-                  min="200"
-                  max="10000"
-                  step="100"
-                  value={leadVolume}
-                  onChange={(e) => setLeadVolume(Number(e.target.value))}
-                  className="w-full accent-emerald-600 cursor-pointer"
-                />
-              </div>
-
-              <div>
-                <div className="flex justify-between text-xs font-semibold mb-2">
-                  <span className="text-slate-700">Average Deal / Contract Value:</span>
-                  <span className="text-emerald-700 font-bold">${avgDealValue.toLocaleString()}</span>
-                </div>
-                <input
-                  type="range"
-                  min="500"
-                  max="20000"
-                  step="500"
-                  value={avgDealValue}
-                  onChange={(e) => setAvgDealValue(Number(e.target.value))}
-                  className="w-full accent-emerald-600 cursor-pointer"
-                />
-              </div>
-            </div>
-
-            {/* Output Box */}
-            <div className="bg-slate-50 p-6 rounded-2xl border border-emerald-200 text-center space-y-2 shadow-inner">
-              <p className="text-xs font-bold text-slate-600 uppercase tracking-wider">
-                Estimated Monthly Recovered LOB Revenue
-              </p>
-              <p className="text-3xl sm:text-4xl font-black text-emerald-600">
-                +${estimatedRecoveredRevenue.toLocaleString()}
-              </p>
-              <p className="text-[11px] text-slate-500 pt-1 font-medium">
-                Based on recovering 15% Loss of Business (LOB) & enforcing SLA follow-up velocity.
-              </p>
-            </div>
-          </div>
         </div>
       </div>
     </section>
