@@ -1,4 +1,5 @@
 import React, { memo, useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { DollarSign, Save, X } from 'lucide-react';
 import SearchableSelect from '../../../components/SearchableSelect';
@@ -33,6 +34,17 @@ const RevenueEditModal: React.FC<RevenueEditModalProps> = ({ isOpen, lead, isSub
   const [generatedRevenue, setGeneratedRevenue] = useState('');
   const [closureType, setClosureType] = useState<LeadClosureType | ''>('');
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (isOpen) {
+      console.log('[Diagnostic] Portal Mounted');
+      console.log('[Diagnostic] Popup Opened', { popup: 'RevenueEditModal' });
+      return () => {
+        console.log('[Diagnostic] Popup Closed', { popup: 'RevenueEditModal' });
+        console.log('[Diagnostic] Portal Unmounted');
+      };
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -74,10 +86,10 @@ const RevenueEditModal: React.FC<RevenueEditModalProps> = ({ isOpen, lead, isSub
     });
   };
 
-  return (
+  const modalNode = (
     <AnimatePresence>
       {isOpen ? (
-        <div className="fixed inset-0 z-[130] flex items-center justify-center bg-gray-900/60 p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[10300] flex items-center justify-center bg-gray-900/60 p-4 backdrop-blur-sm">
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -168,6 +180,8 @@ const RevenueEditModal: React.FC<RevenueEditModalProps> = ({ isOpen, lead, isSub
       ) : null}
     </AnimatePresence>
   );
+
+  return typeof document !== 'undefined' ? createPortal(modalNode, document.body) : modalNode;
 };
 
 export default memo(RevenueEditModal);

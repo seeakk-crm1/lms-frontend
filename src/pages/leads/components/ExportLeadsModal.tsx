@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Search, X, CheckSquare, Square, Download, FileSpreadsheet } from 'lucide-react';
 import { useLeadStore } from '../../../store/leadStore';
@@ -271,10 +272,21 @@ export const ExportLeadsModal: React.FC<ExportLeadsModalProps> = ({
       .filter((group) => group.fields.length > 0);
   }, [fieldGroups, searchTerm]);
 
-  return (
+  useEffect(() => {
+    if (isOpen) {
+      console.log('[Diagnostic] Portal Mounted');
+      console.log('[Diagnostic] Popup Opened', { popup: 'ExportLeadsModal' });
+      return () => {
+        console.log('[Diagnostic] Popup Closed', { popup: 'ExportLeadsModal' });
+        console.log('[Diagnostic] Portal Unmounted');
+      };
+    }
+  }, [isOpen]);
+
+  const modalNode = (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[10300] flex items-center justify-center p-4">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -458,4 +470,6 @@ export const ExportLeadsModal: React.FC<ExportLeadsModalProps> = ({
       )}
     </AnimatePresence>
   );
+
+  return typeof document !== 'undefined' ? createPortal(modalNode, document.body) : modalNode;
 };

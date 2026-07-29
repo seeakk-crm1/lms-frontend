@@ -1,4 +1,5 @@
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AlertCircle, CalendarClock, Save, Sparkles, X, Banknote, PlusCircle, FileText, History, Trash2, Eye, UploadCloud } from 'lucide-react';
@@ -295,6 +296,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
 
   useEffect(() => {
     if (isOpen) {
+      console.log('[Diagnostic] Drawer Opened');
       console.log('[Diagnostic] Payment section initialized');
       if (mode === 'create') {
         console.log('[Diagnostic] Lead Create page loaded');
@@ -302,6 +304,9 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
       } else {
         console.log('[Diagnostic] Lead Edit page loaded');
       }
+      return () => {
+        console.log('[Diagnostic] Drawer Restored');
+      };
     }
   }, [isOpen, mode]);
 
@@ -1916,60 +1921,65 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
       />
 
       {/* LOB Exit Reason Modal */}
-      {lobExitModalOpen && (
-        <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
-            <h3 className="text-lg font-black text-gray-900 mb-2">Return From LOB</h3>
-            <p className="text-xs font-semibold text-gray-500 mb-4">
-              Please enter the reason for returning this lead from LOB.
-            </p>
-            <label className="mb-2 block text-sm font-black text-gray-900">LOB Return Remark <span className="text-red-500">*</span></label>
-            <textarea
-              className={inputClassName}
-              rows={4}
-              value={lobExitReason}
-              onChange={(e) => setLobExitReason(e.target.value)}
-              placeholder="e.g. Customer became interested after follow-up."
-            />
-            <div className="mt-4 flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => {
-                  if (revertFormBeforeRulesRef.current) {
-                    setFormValues((prev) => ({ ...prev, ...revertFormBeforeRulesRef.current }));
+      {lobExitModalOpen &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          <div className="fixed inset-0 z-[10300] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+            <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
+              <h3 className="text-lg font-black text-gray-900 mb-2">Return From LOB</h3>
+              <p className="text-xs font-semibold text-gray-500 mb-4">
+                Please enter the reason for returning this lead from LOB.
+              </p>
+              <label className="mb-2 block text-sm font-black text-gray-900">LOB Return Remark <span className="text-red-500">*</span></label>
+              <textarea
+                className={inputClassName}
+                rows={4}
+                value={lobExitReason}
+                onChange={(e) => setLobExitReason(e.target.value)}
+                placeholder="e.g. Customer became interested after follow-up."
+              />
+              <div className="mt-4 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (revertFormBeforeRulesRef.current) {
+                      setFormValues((prev) => ({ ...prev, ...revertFormBeforeRulesRef.current }));
+                      revertFormBeforeRulesRef.current = null;
+                    }
+                    setLobExitReason('');
+                    setLobExitModalOpen(false);
+                    setPendingStageId(null);
+                    console.log('[Diagnostic] Popup Closed', { popup: 'LOBExitReasonModal' });
+                  }}
+                  className="rounded-2xl border border-gray-200 px-4 py-2.5 text-sm font-black text-gray-500 hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={!lobExitReason.trim()}
+                  onClick={() => {
+                    if (!pendingStageId || !lobExitReason.trim()) return;
+                    setFormValues((prev) => ({
+                      ...prev,
+                      stageId: pendingStageId,
+                      leadRemarks: lobExitReason.trim(),
+                    }));
+                    setLobExitReason('');
+                    setLobExitModalOpen(false);
+                    setPendingStageId(null);
                     revertFormBeforeRulesRef.current = null;
-                  }
-                  setLobExitReason('');
-                  setLobExitModalOpen(false);
-                  setPendingStageId(null);
-                }}
-                className="rounded-2xl border border-gray-200 px-4 py-2.5 text-sm font-black text-gray-500 hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                disabled={!lobExitReason.trim()}
-                onClick={() => {
-                  if (!pendingStageId || !lobExitReason.trim()) return;
-                  setFormValues((prev) => ({
-                    ...prev,
-                    stageId: pendingStageId,
-                    leadRemarks: lobExitReason.trim(),
-                  }));
-                  setLobExitReason('');
-                  setLobExitModalOpen(false);
-                  setPendingStageId(null);
-                  revertFormBeforeRulesRef.current = null;
-                }}
-                className="rounded-2xl bg-emerald-500 px-5 py-2.5 text-sm font-black text-white hover:bg-emerald-600 shadow-lg shadow-emerald-500/20 disabled:opacity-50"
-              >
-                Save & Continue
-              </button>
+                    console.log('[Diagnostic] Popup Closed', { popup: 'LOBExitReasonModal' });
+                  }}
+                  className="rounded-2xl bg-emerald-500 px-5 py-2.5 text-sm font-black text-white hover:bg-emerald-600 shadow-lg shadow-emerald-500/20 disabled:opacity-50"
+                >
+                  Save & Continue
+                </button>
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body,
+        )}
 
       <StageRulesTransitionModal
         isOpen={stageRulesModalOpen}
@@ -1980,55 +1990,60 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
       />
 
       {/* Total Amount Change Reason Modal */}
-      {totalAmountReasonModalOpen && (
-        <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
-            <h3 className="text-lg font-black text-gray-900 mb-2">Reason for Amount Modification</h3>
-            <p className="text-xs font-semibold text-gray-500 mb-4">
-              {(() => {
-                const safeProducts = formValues.products.filter((item) => item.productId && productOptions.some((product: any) => product.id === item.productId));
-                const calcTotal = safeProducts.length ? calculateProductTotal(safeProducts, productOptions) : undefined;
-                if (calcTotal !== undefined && Math.abs(Number(formValues.totalAmount || 0) - calcTotal) > 0.01) {
-                  return `You are setting the Final Amount to ${formatCurrency(formValues.totalAmount || 0)} (Calculated Product Total: ${formatCurrency(calcTotal)}). Please provide a reason for this price adjustment / discount.`;
-                }
-                return `You are updating the Total Amount from ${formatCurrency(paymentData?.totalAmount || 0)} to ${formatCurrency(formValues.totalAmount || 0)}. Please provide a reason.`;
-              })()}
-            </p>
-            <textarea
-              className={inputClassName}
-              rows={3}
-              value={totalAmountReason}
-              onChange={(e) => setTotalAmountReason(e.target.value)}
-              placeholder="e.g. Approved discount, negotiated deal, or special management pricing"
-            />
-            <div className="mt-4 flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => {
-                  setTotalAmountReasonModalOpen(false);
-                }}
-                className="rounded-2xl border border-gray-200 px-4 py-2.5 text-sm font-black text-gray-500 hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                disabled={!totalAmountReason.trim()}
-                onClick={() => {
-                  if (!totalAmountReason.trim()) {
-                    toast.error('Reason is required');
-                    return;
+      {totalAmountReasonModalOpen &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          <div className="fixed inset-0 z-[10300] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+            <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
+              <h3 className="text-lg font-black text-gray-900 mb-2">Reason for Amount Modification</h3>
+              <p className="text-xs font-semibold text-gray-500 mb-4">
+                {(() => {
+                  const safeProducts = formValues.products.filter((item) => item.productId && productOptions.some((product: any) => product.id === item.productId));
+                  const calcTotal = safeProducts.length ? calculateProductTotal(safeProducts, productOptions) : undefined;
+                  if (calcTotal !== undefined && Math.abs(Number(formValues.totalAmount || 0) - calcTotal) > 0.01) {
+                    return `You are setting the Final Amount to ${formatCurrency(formValues.totalAmount || 0)} (Calculated Product Total: ${formatCurrency(calcTotal)}). Please provide a reason for this price adjustment / discount.`;
                   }
-                  setTotalAmountReasonModalOpen(false);
-                }}
-                className="rounded-2xl bg-emerald-500 px-5 py-2.5 text-sm font-black text-white hover:bg-emerald-600 shadow-lg shadow-emerald-500/20 disabled:opacity-50"
-              >
-                Confirm Reason
-              </button>
+                  return `You are updating the Total Amount from ${formatCurrency(paymentData?.totalAmount || 0)} to ${formatCurrency(formValues.totalAmount || 0)}. Please provide a reason.`;
+                })()}
+              </p>
+              <textarea
+                className={inputClassName}
+                rows={3}
+                value={totalAmountReason}
+                onChange={(e) => setTotalAmountReason(e.target.value)}
+                placeholder="e.g. Approved discount, negotiated deal, or special management pricing"
+              />
+              <div className="mt-4 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTotalAmountReasonModalOpen(false);
+                    console.log('[Diagnostic] Popup Closed', { popup: 'TotalAmountReasonModal' });
+                  }}
+                  className="rounded-2xl border border-gray-200 px-4 py-2.5 text-sm font-black text-gray-500 hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={!totalAmountReason.trim()}
+                  onClick={() => {
+                    if (!totalAmountReason.trim()) {
+                      toast.error('Reason is required');
+                      return;
+                    }
+                    setTotalAmountReasonModalOpen(false);
+                    console.log('[Diagnostic] Popup Closed', { popup: 'TotalAmountReasonModal' });
+                  }}
+                  className="rounded-2xl bg-emerald-500 px-5 py-2.5 text-sm font-black text-white hover:bg-emerald-600 shadow-lg shadow-emerald-500/20 disabled:opacity-50"
+                >
+                  Confirm Reason
+                </button>
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body,
+        )}
 
       {/* Add Advance Payment Modal */}
       <AdvancePaymentModal
@@ -2047,25 +2062,29 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
       />
 
       {/* Proof Receipt Lightbox Modal */}
-      {previewModalOpen && previewImageUrl && (
-        <div className="fixed inset-0 z-[160] flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
-          <div className="relative max-w-2xl w-full rounded-3xl bg-white p-4 shadow-2xl">
-            <button
-              type="button"
-              onClick={() => {
-                setPreviewImageUrl(null);
-                setPreviewModalOpen(false);
-              }}
-              className="absolute -top-3 -right-3 rounded-full bg-white p-1 text-gray-700 shadow-lg hover:bg-gray-100"
-            >
-              <X className="h-5 w-5" />
-            </button>
-            <div className="flex justify-center max-h-[75vh] overflow-hidden rounded-2xl">
-              <img src={previewImageUrl} alt="Receipt Proof" className="max-w-full max-h-[75vh] object-contain rounded-xl" />
+      {previewModalOpen && previewImageUrl &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          <div className="fixed inset-0 z-[10400] flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
+            <div className="relative max-w-2xl w-full rounded-3xl bg-white p-4 shadow-2xl">
+              <button
+                type="button"
+                onClick={() => {
+                  setPreviewImageUrl(null);
+                  setPreviewModalOpen(false);
+                  console.log('[Diagnostic] Popup Closed', { popup: 'ProofReceiptLightbox' });
+                }}
+                className="absolute -top-3 -right-3 rounded-full bg-white p-1 text-gray-700 shadow-lg hover:bg-gray-100"
+              >
+                <X className="h-5 w-5" />
+              </button>
+              <div className="flex justify-center max-h-[75vh] overflow-hidden rounded-2xl">
+                <img src={previewImageUrl} alt="Receipt Proof" className="max-w-full max-h-[75vh] object-contain rounded-xl" />
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body,
+        )}
 
       {WeeklyOffScheduleModal}
     </>

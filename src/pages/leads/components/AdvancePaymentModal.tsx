@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { requestAdvancePayment } from '../../../services/leads.api';
@@ -30,6 +31,17 @@ const AdvancePaymentModal: React.FC<AdvancePaymentModalProps> = ({
   const [advanceRemarks, setAdvanceRemarks] = useState('');
   const [advanceProofUrl, setAdvanceProofUrl] = useState('');
   const [isSubmittingAdvance, setIsSubmittingAdvance] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      console.log('[Diagnostic] Portal Mounted');
+      console.log('[Diagnostic] Popup Opened', { popup: 'AdvancePaymentModal' });
+      return () => {
+        console.log('[Diagnostic] Popup Closed', { popup: 'AdvancePaymentModal' });
+        console.log('[Diagnostic] Portal Unmounted');
+      };
+    }
+  }, [isOpen]);
 
   const handleProofChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -100,8 +112,8 @@ const AdvancePaymentModal: React.FC<AdvancePaymentModalProps> = ({
 
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+  const content = (
+    <div className="fixed inset-0 z-[10300] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
       <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
         <h3 className="text-lg font-black text-gray-900 mb-4">Request Advance Payment</h3>
         <div className="space-y-4">
@@ -178,6 +190,8 @@ const AdvancePaymentModal: React.FC<AdvancePaymentModalProps> = ({
       </div>
     </div>
   );
+
+  return typeof document !== 'undefined' ? createPortal(content, document.body) : content;
 };
 
 export default AdvancePaymentModal;

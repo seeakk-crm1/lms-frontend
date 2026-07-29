@@ -1,4 +1,5 @@
 import React, { memo, useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AlertTriangle } from 'lucide-react';
 import { toast } from 'react-hot-toast';
@@ -35,6 +36,17 @@ const LOBModal: React.FC<LOBModalProps> = ({
     useActiveLOBReasonOptions(isOpen, lobReasonOptions.map((item) => ({ id: item.value, label: item.label })));
 
   useEffect(() => {
+    if (isOpen) {
+      console.log('[Diagnostic] Portal Mounted');
+      console.log('[Diagnostic] Popup Opened', { popup: 'LOBModal' });
+      return () => {
+        console.log('[Diagnostic] Popup Closed', { popup: 'LOBModal' });
+        console.log('[Diagnostic] Portal Unmounted');
+      };
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
     if (!isOpen) return;
     setReasonId(initialReasonId);
     setRemarks(initialRemarks);
@@ -68,10 +80,10 @@ const LOBModal: React.FC<LOBModalProps> = ({
       ? 'Select LOB reason'
       : 'No active LOB reasons';
 
-  return (
+  const modalNode = (
     <AnimatePresence>
       {isOpen ? (
-        <div className="fixed inset-0 z-[130] flex items-end justify-center p-0 sm:items-center sm:p-4">
+        <div className="fixed inset-0 z-[10300] flex items-end justify-center p-0 sm:items-center sm:p-4">
           <motion.button
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -151,6 +163,8 @@ const LOBModal: React.FC<LOBModalProps> = ({
       ) : null}
     </AnimatePresence>
   );
+
+  return typeof document !== 'undefined' ? createPortal(modalNode, document.body) : modalNode;
 };
 
 export default memo(LOBModal);

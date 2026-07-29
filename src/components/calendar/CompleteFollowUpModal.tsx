@@ -32,7 +32,7 @@ const CompleteFollowUpModal: React.FC<Props> = ({
   onSubmit,
   stackAboveMandatoryGate = false,
 }) => {
-  const layerZ = stackAboveMandatoryGate ? 'z-[10050]' : 'z-[140]';
+  const layerZ = stackAboveMandatoryGate ? 'z-[10350]' : 'z-[140]';
   const {
     register,
     handleSubmit,

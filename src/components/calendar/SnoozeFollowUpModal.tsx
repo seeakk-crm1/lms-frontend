@@ -45,7 +45,7 @@ const SnoozeFollowUpModal: React.FC<Props> = ({
   isSubmitting = false,
   stackAboveMandatoryGate = false,
 }) => {
-  const layerZ = stackAboveMandatoryGate ? 'z-[10050]' : 'z-[170]';
+  const layerZ = stackAboveMandatoryGate ? 'z-[10350]' : 'z-[170]';
   const { data: activeReasons = [] } = useActiveExtensionReasonsQuery(isOpen);
   const lifecycleQuery = useLifecycleExtensionLimit(followUp?.leadId, isOpen && Boolean(followUp?.leadId));
   const lifecycle = lifecycleQuery.data?.data;

@@ -145,8 +145,8 @@ const LeadHistoryDrawer: React.FC<LeadHistoryDrawerProps> = ({ isOpen, leadId, o
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100]" onClick={onClose} />
-      <div className="fixed inset-y-0 right-0 w-full max-w-2xl bg-white shadow-2xl z-[101] flex flex-col transform transition-transform duration-300 ease-in-out">
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[10200]" onClick={onClose} />
+      <div className="fixed inset-y-0 right-0 w-full max-w-2xl bg-white shadow-2xl z-[10200] flex flex-col transform transition-transform duration-300 ease-in-out">
         {/* Header */}
         <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-white sticky top-0 z-10">
           <div>

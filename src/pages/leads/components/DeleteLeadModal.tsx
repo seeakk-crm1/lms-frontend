@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AlertTriangle, Archive, Trash2, X } from 'lucide-react';
 
@@ -24,6 +25,17 @@ const DeleteLeadModal: React.FC<DeleteLeadModalProps> = ({
   const isBusy = isArchiving || isPermanentlyDeleting;
 
   useEffect(() => {
+    if (isOpen) {
+      console.log('[Diagnostic] Portal Mounted');
+      console.log('[Diagnostic] Popup Opened', { popup: 'DeleteLeadModal' });
+      return () => {
+        console.log('[Diagnostic] Popup Closed', { popup: 'DeleteLeadModal' });
+        console.log('[Diagnostic] Portal Unmounted');
+      };
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
     if (!isOpen || isBusy) return;
 
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -36,10 +48,10 @@ const DeleteLeadModal: React.FC<DeleteLeadModalProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isBusy, isOpen, onClose]);
 
-  return (
+  const modalNode = (
     <AnimatePresence>
       {isOpen ? (
-        <div className="fixed inset-0 z-[130] flex items-end justify-center p-0 sm:items-center sm:p-4">
+        <div className="fixed inset-0 z-[10300] flex items-end justify-center p-0 sm:items-center sm:p-4">
           <motion.button
             type="button"
             aria-label="Close lead removal modal"
@@ -137,6 +149,8 @@ const DeleteLeadModal: React.FC<DeleteLeadModalProps> = ({
       ) : null}
     </AnimatePresence>
   );
+
+  return typeof document !== 'undefined' ? createPortal(modalNode, document.body) : modalNode;
 };
 
 export default DeleteLeadModal;

@@ -170,6 +170,7 @@ function App() {
     <>
       <Toaster
         position="top-center"
+        containerStyle={{ zIndex: 11000 }}
         toastOptions={{
           className: 'text-sm font-bold',
           style: {

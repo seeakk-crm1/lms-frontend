@@ -1,4 +1,5 @@
 import React, { memo, useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AlarmClock, AlertTriangle, ArrowRightCircle } from 'lucide-react';
 import SearchableSelect from '../../../components/SearchableSelect';
@@ -67,10 +68,10 @@ const LeadSlaDecisionModal: React.FC<LeadSlaDecisionModalProps> = ({
     });
   };
 
-  return (
+  const modalNode = (
     <AnimatePresence>
       {isOpen && lead ? (
-        <div className="fixed inset-0 z-[135] flex items-end justify-center p-0 sm:items-center sm:p-4">
+        <div className="fixed inset-0 z-[10300] flex items-end justify-center p-0 sm:items-center sm:p-4">
           <motion.button
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -192,6 +193,8 @@ const LeadSlaDecisionModal: React.FC<LeadSlaDecisionModalProps> = ({
       ) : null}
     </AnimatePresence>
   );
+
+  return typeof document !== 'undefined' ? createPortal(modalNode, document.body) : modalNode;
 };
 
 export default memo(LeadSlaDecisionModal);

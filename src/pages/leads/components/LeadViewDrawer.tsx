@@ -146,7 +146,7 @@ const LeadViewDrawer: React.FC<LeadViewDrawerProps> = ({
   return (
     <AnimatePresence>
       {isOpen ? (
-        <div className="fixed inset-0 z-[130] flex justify-end">
+        <div className="fixed inset-0 z-[10200] flex justify-end">
           <motion.button
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
