@@ -118,19 +118,11 @@ const LocationTrackingClient = () => {
         const queued = await idbGetQueue();
         const points = [...queued, ...(point ? [point] : [])];
         if (points.length === 0) return;
-
-        console.log('[Location Tracking] Location Tracking Request Started');
-        console.log('[Location Tracking] Authorization Token Found: true');
-        console.log(`[Location Tracking] Sending Request (points: ${points.length})...`);
-
         const response = await pushLocationPoints({
           sessionId: sessionIdRef.current,
           attendanceRecordId: attendanceRecordIdRef.current,
           points,
         });
-
-        console.log('[Location Tracking] Response Received -> Status Code: 201');
-        console.log('[Location Tracking] Request Completed');
 
         sessionIdRef.current = response?.data?.sessionId || sessionIdRef.current;
         await idbClearQueue();

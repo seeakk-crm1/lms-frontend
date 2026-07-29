@@ -105,15 +105,8 @@ api.interceptors.request.use(
 
     try {
       const accessToken = await resolveValidAccessToken();
-      const isLocationRoute = config.url?.includes('/location-tracking');
-      if (isLocationRoute) {
-        console.log('[API Interceptor] Location Tracking Request Started');
-        console.log(`[API Interceptor] Authorization Token Found: ${Boolean(accessToken)}`);
-      }
       if (accessToken) {
         setAuthorizationHeader(config, accessToken);
-      } else if (isLocationRoute) {
-        console.warn('[API Interceptor] Warning: No valid access token available for location tracking request.');
       }
     } catch (err) {
       if (isRefreshAuthFailure(err)) {
