@@ -172,9 +172,9 @@ const SupervisorNode: React.FC<SupervisorNodeProps> = ({
         </div>
       </motion.div>
 
-      {/* Downward Vertical Stem connecting parent to children */}
+      {/* Downward Vertical Stem connecting parent bottom center to children */}
       {hasChildren && isExpanded && (
-        <div className="w-px h-6 bg-slate-300" />
+        <div className="w-0.5 h-6 bg-slate-300" />
       )}
 
       {/* Subordinates Recursive Subtree */}
@@ -199,7 +199,7 @@ const SupervisorNode: React.FC<SupervisorNodeProps> = ({
                     {/* Horizontal Connector Bar Segment */}
                     {!isOnly && (
                       <div
-                        className={`absolute top-0 h-px bg-slate-300 ${
+                        className={`absolute top-0 h-0.5 bg-slate-300 ${
                           isFirst
                             ? 'left-1/2 right-0'
                             : isLast
@@ -209,8 +209,8 @@ const SupervisorNode: React.FC<SupervisorNodeProps> = ({
                       />
                     )}
 
-                    {/* Vertical Drop Line into Child Card */}
-                    <div className="w-px h-6 bg-slate-300 relative z-10" />
+                    {/* Vertical Drop Line into Child Card top center */}
+                    <div className="w-0.5 h-6 bg-slate-300 relative z-10" />
 
                     {/* Recursive Child Node */}
                     <SupervisorNode

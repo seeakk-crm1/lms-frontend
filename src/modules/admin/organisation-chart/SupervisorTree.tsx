@@ -128,21 +128,42 @@ const SupervisorTree: React.FC<SupervisorTreeProps> = ({ roots }) => {
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex flex-row justify-center items-start gap-12"
+          className="flex flex-row justify-center items-start"
         >
-          {roots.map((root) => (
-            <SupervisorNode
-              key={root.id}
-              node={root}
-              expandedNodes={expandedNodes}
-              selectedNode={selectedNode}
-              searchQuery={searchQuery}
-              matchedIds={matchedIds}
-              pathIds={pathIds}
-              onToggle={toggleNode}
-              onSelect={setSelectedNode}
-            />
-          ))}
+          {roots.map((root, index) => {
+            const isFirst = index === 0;
+            const isLast = index === roots.length - 1;
+            const isOnly = roots.length === 1;
+
+            return (
+              <div key={root.id} className="relative flex flex-col items-center px-6">
+                {/* Horizontal bar linking multiple top-level root supervisors if > 1 root */}
+                {!isOnly && (
+                  <div
+                    className={`absolute top-0 h-0.5 bg-slate-300 ${
+                      isFirst
+                        ? 'left-1/2 right-0'
+                        : isLast
+                        ? 'left-0 right-1/2'
+                        : 'left-0 right-0'
+                    }`}
+                  />
+                )}
+                {!isOnly && <div className="w-0.5 h-6 bg-slate-300 relative z-10" />}
+
+                <SupervisorNode
+                  node={root}
+                  expandedNodes={expandedNodes}
+                  selectedNode={selectedNode}
+                  searchQuery={searchQuery}
+                  matchedIds={matchedIds}
+                  pathIds={pathIds}
+                  onToggle={toggleNode}
+                  onSelect={setSelectedNode}
+                />
+              </div>
+            );
+          })}
         </motion.div>
       </div>
     </div>
