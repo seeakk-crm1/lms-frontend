@@ -1,6 +1,6 @@
 import React, { memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, ChevronRight, Mail, Shield, Building2, MapPin, AlertTriangle } from 'lucide-react';
+import { ChevronDown, ChevronRight, Mail, Shield, Building2, MapPin, AlertTriangle, UserCheck } from 'lucide-react';
 import { OrganisationChartNode } from './types';
 
 interface SupervisorNodeProps {
@@ -59,10 +59,10 @@ const SupervisorNode: React.FC<SupervisorNodeProps> = ({
         animate={{ opacity: 1, y: 0 }}
         whileHover={{ scale: 1.02 }}
         transition={{ duration: 0.2 }}
-        className={`w-[260px] rounded-2xl border p-4 shadow-sm transition-all cursor-pointer bg-white border-slate-200 ${
+        className={`w-[260px] rounded-2xl border p-4 shadow-sm transition-all cursor-pointer bg-white border-slate-300 relative z-20 ${
           isSelected
-            ? 'ring-2 ring-emerald-500 shadow-lg border-emerald-300'
-            : 'hover:shadow-md hover:border-emerald-300'
+            ? 'ring-2 ring-emerald-500 shadow-xl border-emerald-400'
+            : 'hover:shadow-lg hover:border-emerald-400'
         } ${isOnPath ? 'ring-2 ring-emerald-400/80 shadow-emerald-100' : ''}`}
         onClick={() => onSelect(node.id)}
         title={node.name}
@@ -83,7 +83,7 @@ const SupervisorNode: React.FC<SupervisorNodeProps> = ({
       >
         <div className="flex items-start gap-3">
           {/* Avatar with Initials Fallback */}
-          <div className="h-10 w-10 shrink-0 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white font-black flex items-center justify-center shadow-sm">
+          <div className="h-10 w-10 shrink-0 rounded-xl bg-gradient-to-br from-emerald-600 to-teal-700 text-white font-black flex items-center justify-center shadow-md">
             {node.name.charAt(0).toUpperCase()}
           </div>
 
@@ -92,8 +92,8 @@ const SupervisorNode: React.FC<SupervisorNodeProps> = ({
               {highlightText(node.name, searchQuery)}
             </p>
             <div className="mt-1 flex flex-wrap gap-1">
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-emerald-50 text-emerald-700 border border-emerald-200">
-                Supervisor
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-slate-900 text-white shadow-xs">
+                {hasChildren ? 'Supervisor' : 'Team Member'}
               </span>
               {node.isActive === false ? (
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-slate-100 text-slate-500 border border-slate-200">
@@ -150,8 +150,11 @@ const SupervisorNode: React.FC<SupervisorNodeProps> = ({
           {/* Subordinates Count Badge */}
           {hasChildren && (
             <div className="pt-1.5 mt-1 border-t border-slate-100 flex items-center justify-between text-[11px] font-bold text-slate-600">
-              <span>Direct Reports: {node.children.length}</span>
-              <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+              <span className="flex items-center gap-1">
+                <UserCheck className="w-3.5 h-3.5 text-emerald-600" />
+                Reports: {node.children.length}
+              </span>
+              <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 font-extrabold">
                 Team: {node.memberCount ?? node.children.length}
               </span>
             </div>
@@ -160,7 +163,7 @@ const SupervisorNode: React.FC<SupervisorNodeProps> = ({
           {node.isOrphan && (
             <div className="flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 mt-1">
               <AlertTriangle className="w-3 h-3 text-amber-600" />
-              <span>Unassigned / Root Node</span>
+              <span>Root Supervisor</span>
             </div>
           )}
 
@@ -172,9 +175,9 @@ const SupervisorNode: React.FC<SupervisorNodeProps> = ({
         </div>
       </motion.div>
 
-      {/* Downward Vertical Stem connecting parent bottom center to children */}
+      {/* Downward Solid 2px Vertical Stem connecting parent to child horizontal bar */}
       {hasChildren && isExpanded && (
-        <div className="w-0.5 h-6 bg-slate-300" />
+        <div className="w-[2px] h-8 bg-slate-800" />
       )}
 
       {/* Subordinates Recursive Subtree */}
@@ -195,11 +198,11 @@ const SupervisorNode: React.FC<SupervisorNodeProps> = ({
                 const isOnly = node.children.length === 1;
 
                 return (
-                  <div key={child.id} className="relative flex flex-col items-center px-4">
-                    {/* Horizontal Connector Bar Segment */}
+                  <div key={child.id} className="relative flex flex-col items-center px-4 sm:px-6">
+                    {/* Horizontal Connector Bar Segment (Solid 2px Dark Line) */}
                     {!isOnly && (
                       <div
-                        className={`absolute top-0 h-0.5 bg-slate-300 ${
+                        className={`absolute top-0 h-[2px] bg-slate-800 ${
                           isFirst
                             ? 'left-1/2 right-0'
                             : isLast
@@ -209,8 +212,8 @@ const SupervisorNode: React.FC<SupervisorNodeProps> = ({
                       />
                     )}
 
-                    {/* Vertical Drop Line into Child Card top center */}
-                    <div className="w-0.5 h-6 bg-slate-300 relative z-10" />
+                    {/* Vertical Drop Line into Child Card Top Center */}
+                    <div className="w-[2px] h-8 bg-slate-800 relative z-10" />
 
                     {/* Recursive Child Node */}
                     <SupervisorNode

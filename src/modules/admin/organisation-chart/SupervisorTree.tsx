@@ -1,6 +1,6 @@
-import React, { memo, useEffect, useMemo } from 'react';
+import React, { memo, useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Users } from 'lucide-react';
+import { Users, ChevronDown, ChevronRight, UserX } from 'lucide-react';
 import SupervisorNode from './SupervisorNode';
 import { OrganisationChartNode } from './types';
 import { useOrganisationChartStore } from './organisationChart.store';
@@ -43,6 +43,8 @@ const flattenNodes = (roots: OrganisationChartNode[]): FlatNode[] => {
 };
 
 const SupervisorTree: React.FC<SupervisorTreeProps> = ({ roots }) => {
+  const [showUnassigned, setShowUnassigned] = useState(false);
+
   const {
     expandedNodes,
     searchQuery,
@@ -112,6 +114,25 @@ const SupervisorTree: React.FC<SupervisorTreeProps> = ({ roots }) => {
     }
   }, [expandNodes, pathIds, searchQuery]);
 
+  // Separate true tree roots (supervisors with children) from standalone unassigned users
+  const { hierarchyRoots, standaloneRoots } = useMemo(() => {
+    const trees: OrganisationChartNode[] = [];
+    const standalone: OrganisationChartNode[] = [];
+
+    roots.forEach((root) => {
+      if (root.children.length > 0) {
+        trees.push(root);
+      } else {
+        standalone.push(root);
+      }
+    });
+
+    return {
+      hierarchyRoots: trees.length > 0 ? trees : roots,
+      standaloneRoots: trees.length > 0 ? standalone : [],
+    };
+  }, [roots]);
+
   if (roots.length === 0) {
     return (
       <div className="rounded-3xl border border-gray-200 bg-white p-10 text-center shadow-sm">
@@ -123,35 +144,54 @@ const SupervisorTree: React.FC<SupervisorTreeProps> = ({ roots }) => {
   }
 
   return (
-    <div className="w-full overflow-x-auto pb-6">
-      <div className="min-w-max px-4 md:px-8 py-2" role="tree" aria-label="Supervisor hierarchy tree">
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex flex-row justify-center items-start"
-        >
-          {roots.map((root, index) => {
-            const isFirst = index === 0;
-            const isLast = index === roots.length - 1;
-            const isOnly = roots.length === 1;
+    <div className="w-full space-y-8">
+      {/* Primary Top-Down Organizational Tree View */}
+      <div className="w-full overflow-x-auto pb-6">
+        <div className="min-w-max px-4 md:px-8 py-2" role="tree" aria-label="Supervisor hierarchy tree">
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex flex-row justify-center items-start gap-16"
+          >
+            {hierarchyRoots.map((root) => (
+              <SupervisorNode
+                key={root.id}
+                node={root}
+                expandedNodes={expandedNodes}
+                selectedNode={selectedNode}
+                searchQuery={searchQuery}
+                matchedIds={matchedIds}
+                pathIds={pathIds}
+                onToggle={toggleNode}
+                onSelect={setSelectedNode}
+              />
+            ))}
+          </motion.div>
+        </div>
+      </div>
 
-            return (
-              <div key={root.id} className="relative flex flex-col items-center px-6">
-                {/* Horizontal bar linking multiple top-level root supervisors if > 1 root */}
-                {!isOnly && (
-                  <div
-                    className={`absolute top-0 h-0.5 bg-slate-300 ${
-                      isFirst
-                        ? 'left-1/2 right-0'
-                        : isLast
-                        ? 'left-0 right-1/2'
-                        : 'left-0 right-0'
-                    }`}
-                  />
-                )}
-                {!isOnly && <div className="w-0.5 h-6 bg-slate-300 relative z-10" />}
+      {/* Standalone Staff without Assigned Supervisors */}
+      {standaloneRoots.length > 0 && (
+        <div className="border-t border-slate-200 pt-6">
+          <button
+            type="button"
+            onClick={() => setShowUnassigned((v) => !v)}
+            className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-slate-500 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-4 py-2 rounded-xl transition-all"
+          >
+            <UserX className="w-4 h-4 text-amber-600" />
+            <span>Unassigned Staff (No Supervisor Assigned) — {standaloneRoots.length} Users</span>
+            {showUnassigned ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+          </button>
 
+          {showUnassigned && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              className="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 overflow-x-auto"
+            >
+              {standaloneRoots.map((root) => (
                 <SupervisorNode
+                  key={root.id}
                   node={root}
                   expandedNodes={expandedNodes}
                   selectedNode={selectedNode}
@@ -161,11 +201,11 @@ const SupervisorTree: React.FC<SupervisorTreeProps> = ({ roots }) => {
                   onToggle={toggleNode}
                   onSelect={setSelectedNode}
                 />
-              </div>
-            );
-          })}
-        </motion.div>
-      </div>
+              ))}
+            </motion.div>
+          )}
+        </div>
+      )}
     </div>
   );
 };
