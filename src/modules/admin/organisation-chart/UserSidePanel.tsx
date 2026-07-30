@@ -23,7 +23,13 @@ interface UserDetails {
 }
 
 const fetchUserDetails = async (userId: string): Promise<UserDetails> => {
+  console.log('[Organisation Chart] User Card Clicked');
+  console.log('[Organisation Chart] Selected User ID:', userId);
+  console.log('[Organisation Chart] Calling Details API:', `/admin/organisation-chart/${userId}/details`);
+  
   const response = await api.get(`/admin/organisation-chart/${userId}/details`);
+  
+  console.log('[Organisation Chart] API Response Received');
   return response.data.data;
 };
 
@@ -38,6 +44,10 @@ const UserSidePanel: React.FC = () => {
 
   const isOpen = !!selectedNode;
   const isDepartmentOrWorkspace = selectedNode?.startsWith('dept-') || selectedNode?.startsWith('root-');
+
+  if (isOpen) {
+    console.log('[Organisation Chart] Rendering Details Drawer:', selectedNode);
+  }
 
   return (
     <AnimatePresence>
