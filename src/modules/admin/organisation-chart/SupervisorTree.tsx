@@ -1,7 +1,7 @@
 import React, { memo, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Users } from 'lucide-react';
-import OrganisationNode from './OrganisationNode';
+import SupervisorNode from './SupervisorNode';
 import { OrganisationChartNode } from './types';
 import { useOrganisationChartStore } from './organisationChart.store';
 
@@ -123,15 +123,15 @@ const SupervisorTree: React.FC<SupervisorTreeProps> = ({ roots }) => {
   }
 
   return (
-    <div className="w-full overflow-x-auto pb-4">
-      <div className="min-w-max px-3 md:px-6" role="tree" aria-label="Supervisor hierarchy tree">
+    <div className="w-full overflow-x-auto pb-6">
+      <div className="min-w-max px-4 md:px-8 py-2" role="tree" aria-label="Supervisor hierarchy tree">
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col md:flex-row gap-8 justify-center items-start"
+          className="flex flex-row justify-center items-start gap-12"
         >
           {roots.map((root) => (
-            <OrganisationNode
+            <SupervisorNode
               key={root.id}
               node={root}
               expandedNodes={expandedNodes}
