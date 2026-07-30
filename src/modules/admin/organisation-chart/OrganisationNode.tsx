@@ -115,7 +115,7 @@ const OrganisationNode: React.FC<OrganisationNodeProps> = ({
             </p>
             <div className="mt-1 flex flex-wrap gap-1.5">
               <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide ${theme.badge}`}>
-                {node.nodeType}
+                {node.role || node.nodeType}
               </span>
               {node.nodeType === 'USER' && !node.isActive && (
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-gray-200 text-gray-600">
