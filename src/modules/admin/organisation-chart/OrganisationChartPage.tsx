@@ -1,11 +1,9 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { ChevronDownSquare, ChevronUpSquare, GitBranch, Search, Users, UserCheck, Building } from 'lucide-react';
+import { ChevronDownSquare, ChevronUpSquare, GitBranch, Search, Users } from 'lucide-react';
 import DashboardLayout from '../../../components/dashboard/DashboardLayout';
 import OrganisationTree from './OrganisationTree';
-import SupervisorTree from './SupervisorTree';
 import { useOrganisationChartQuery } from './useOrganisationChartQuery';
-import { useSupervisorHierarchyQuery } from './useSupervisorHierarchyQuery';
 import { useOrganisationChartStore } from './organisationChart.store';
 import { OrganisationChartNode } from './types';
 import UserSidePanel from './UserSidePanel';
@@ -52,20 +50,11 @@ const OrganisationChartPage: React.FC = () => {
   const [includeInactive, setIncludeInactive] = useState(false);
 
   const { searchQuery, setSearch, expandAll, collapseAll } = useOrganisationChartStore();
-  const { data: deptData, isLoading: deptLoading, isFetching: deptFetching, isError: deptIsError, error: deptError, refetch: deptRefetch } = useOrganisationChartQuery(includeInactive);
-  const { data: supData, isLoading: supLoading, isFetching: supFetching, isError: supIsError, error: supError, refetch: supRefetch } = useSupervisorHierarchyQuery(includeInactive);
+  const { data, isLoading, isFetching, isError, error, refetch } = useOrganisationChartQuery(includeInactive);
 
-  const deptRoots = deptData?.data || [];
-  const deptMeta = deptData?.meta;
-
-  const supRoots = supData?.data || [];
-  const supMeta = supData?.meta;
-
-  const allNodeIds = useMemo(() => {
-    const ids1 = collectNodeIds(deptRoots);
-    const ids2 = collectNodeIds(supRoots);
-    return Array.from(new Set([...ids1, ...ids2]));
-  }, [deptRoots, supRoots]);
+  const roots = data?.data || [];
+  const meta = data?.meta;
+  const allNodeIds = useMemo(() => collectNodeIds(roots), [roots]);
 
   const handleExpandAll = useCallback(() => {
     expandAll(allNodeIds);
@@ -74,9 +63,6 @@ const OrganisationChartPage: React.FC = () => {
   const handleCollapseAll = useCallback(() => {
     collapseAll();
   }, [collapseAll]);
-
-  const isLoading = deptLoading || supLoading;
-  const isFetching = deptFetching || supFetching;
 
   return (
     <DashboardLayout>
@@ -92,7 +78,7 @@ const OrganisationChartPage: React.FC = () => {
                 </span>
               </div>
               <h1 className="text-2xl md:text-3xl font-black tracking-tight">Organisation Chart</h1>
-              <p className="text-sm text-gray-500 mt-1">Visual hierarchy of departments and assigned supervisor reporting structures.</p>
+              <p className="text-sm text-gray-500 mt-1">Visual hierarchy of users, roles, and departments.</p>
             </motion.div>
 
             <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
@@ -129,15 +115,15 @@ const OrganisationChartPage: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
               <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Total Users</p>
-              <p className="text-2xl font-black mt-1">{deptMeta?.totalUsers ?? supMeta?.totalUsers ?? 0}</p>
+              <p className="text-2xl font-black mt-1">{meta?.totalUsers ?? 0}</p>
             </div>
             <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
-              <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Supervisor Root Nodes</p>
-              <p className="text-2xl font-black mt-1">{supMeta?.rootCount ?? 0}</p>
+              <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Root Nodes</p>
+              <p className="text-2xl font-black mt-1">{meta?.rootCount ?? 0}</p>
             </div>
             <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
-              <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Orphan / Unassigned</p>
-              <p className="text-2xl font-black mt-1">{supMeta?.orphanCount ?? 0}</p>
+              <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Orphans</p>
+              <p className="text-2xl font-black mt-1">{meta?.orphanCount ?? 0}</p>
             </div>
             <label className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm flex items-center justify-between gap-3 cursor-pointer">
               <div>
@@ -165,99 +151,39 @@ const OrganisationChartPage: React.FC = () => {
             </button>
           </div>
 
-          {/* Section 1: Department Hierarchy */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="p-2 rounded-xl bg-indigo-50 border border-indigo-100 text-indigo-700">
-                  <Building className="w-4 h-4" />
-                </div>
-                <div>
-                  <h2 className="text-lg font-black text-slate-900">Department Hierarchy</h2>
-                  <p className="text-xs text-gray-500">Organized by company workspace departments</p>
-                </div>
-              </div>
+          {isLoading || isFetching ? (
+            <TreeSkeleton />
+          ) : isError ? (
+            <div className="rounded-3xl border border-red-200 bg-red-50 p-8 shadow-sm">
+              <p className="text-lg font-black text-red-700">Failed to load organisation chart</p>
+              <p className="text-sm text-red-600 mt-1">{(error as Error)?.message || 'Unknown error'}</p>
+              <button
+                onClick={() => refetch()}
+                className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-red-600 text-white text-sm font-bold hover:bg-red-700"
+              >
+                Retry
+              </button>
             </div>
-
-            {deptLoading || deptFetching ? (
-              <TreeSkeleton />
-            ) : deptIsError ? (
-              <div className="rounded-3xl border border-red-200 bg-red-50 p-8 shadow-sm">
-                <p className="text-lg font-black text-red-700">Failed to load department hierarchy</p>
-                <p className="text-sm text-red-600 mt-1">{(deptError as Error)?.message || 'Unknown error'}</p>
-                <button
-                  onClick={() => deptRefetch()}
-                  className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-red-600 text-white text-sm font-bold hover:bg-red-700"
-                >
-                  Retry
-                </button>
+          ) : (
+            <div className="rounded-3xl border border-gray-200 bg-white p-4 md:p-6 shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-xs font-black uppercase tracking-widest text-gray-400">Hierarchy Tree</p>
+                <span className="text-xs font-bold text-gray-500 inline-flex items-center gap-1">
+                  <GitBranch className="w-3.5 h-3.5" />
+                  Read only
+                </span>
               </div>
-            ) : (
-              <div className="rounded-3xl border border-gray-200 bg-white p-4 md:p-6 shadow-sm">
-                <div className="flex items-center justify-between mb-4">
-                  <p className="text-xs font-black uppercase tracking-widest text-gray-400">Department Hierarchy Tree</p>
-                  <span className="text-xs font-bold text-gray-500 inline-flex items-center gap-1">
-                    <GitBranch className="w-3.5 h-3.5" />
-                    Read only
-                  </span>
-                </div>
-                <OrganisationTree roots={deptRoots} />
-              </div>
-            )}
-          </div>
-
-          {/* Section Divider */}
-          <div className="relative py-4">
-            <div className="absolute inset-0 flex items-center" aria-hidden="true">
-              <div className="w-full border-t border-gray-200" />
+              <OrganisationTree roots={roots} />
             </div>
-            <div className="relative flex justify-center">
-              <span className="bg-slate-100 px-4 text-xs font-bold text-gray-400 uppercase tracking-widest rounded-full border border-gray-200 py-1">
-                Hierarchy Views
-              </span>
-            </div>
-          </div>
+          )}
 
-          {/* Section 2: Supervisor Hierarchy */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="p-2 rounded-xl bg-emerald-50 border border-emerald-100 text-emerald-700">
-                  <UserCheck className="w-4 h-4" />
-                </div>
-                <div>
-                  <h2 className="text-lg font-black text-slate-900">Supervisor Hierarchy</h2>
-                  <p className="text-xs text-gray-500">Organized purely by assigned supervisor reporting relationships</p>
-                </div>
-              </div>
+          {!isLoading && !isFetching && roots.length === 0 && (
+            <div className="rounded-2xl border border-gray-200 bg-white p-8 text-center">
+              <Users className="mx-auto w-8 h-8 text-gray-400" />
+              <p className="mt-2 text-base font-black">No organisation data available</p>
+              <p className="text-sm text-gray-500">Add users and reporting managers to render the hierarchy.</p>
             </div>
-
-            {supLoading || supFetching ? (
-              <TreeSkeleton />
-            ) : supIsError ? (
-              <div className="rounded-3xl border border-red-200 bg-red-50 p-8 shadow-sm">
-                <p className="text-lg font-black text-red-700">Failed to load supervisor hierarchy</p>
-                <p className="text-sm text-red-600 mt-1">{(supError as Error)?.message || 'Unknown error'}</p>
-                <button
-                  onClick={() => supRefetch()}
-                  className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-red-600 text-white text-sm font-bold hover:bg-red-700"
-                >
-                  Retry
-                </button>
-              </div>
-            ) : (
-              <div className="rounded-3xl border border-gray-200 bg-white p-4 md:p-6 shadow-sm">
-                <div className="flex items-center justify-between mb-4">
-                  <p className="text-xs font-black uppercase tracking-widest text-gray-400">Supervisor Reporting Tree</p>
-                  <span className="text-xs font-bold text-gray-500 inline-flex items-center gap-1">
-                    <GitBranch className="w-3.5 h-3.5 text-emerald-600" />
-                    Read only
-                  </span>
-                </div>
-                <SupervisorTree roots={supRoots} />
-              </div>
-            )}
-          </div>
+          )}
         </div>
       </div>
 
