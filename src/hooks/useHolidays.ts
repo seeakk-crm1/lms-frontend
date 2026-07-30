@@ -18,10 +18,10 @@ export const useHolidaysQuery = () =>
     retry: shouldRetry,
   });
 
-export const useHolidayCalendarQuery = (month: string) =>
+export const useHolidayCalendarQuery = (month: string, officeIds?: string[]) =>
   useQuery({
-    queryKey: ['holidays', 'calendar', month],
-    queryFn: () => holidaysApi.getHolidayCalendar(month),
+    queryKey: ['holidays', 'calendar', month, officeIds ? officeIds.slice().sort().join(',') : 'all'],
+    queryFn: () => holidaysApi.getHolidayCalendar(month, officeIds),
     enabled: Boolean(month),
     staleTime: 30_000,
     refetchOnWindowFocus: false,

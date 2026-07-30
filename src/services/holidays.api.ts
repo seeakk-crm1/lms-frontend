@@ -3,14 +3,17 @@ import api from './api';
 export type HolidayStatus = 'ACTIVE' | 'INACTIVE';
 export type HolidaySource = 'MANUAL' | 'API' | 'AI' | 'GOOGLE';
 
+export interface AssignedOffice {
+  id: string;
+  name: string;
+}
+
 export interface HolidayRecord {
   id: string;
   name: string;
   holidayDate: string;
   color: string;
-  countryId?: string | null;
-  stateId?: string | null;
-  districtId?: string | null;
+  offices?: AssignedOffice[];
   isRecurring: boolean;
   recurrenceRule?: string | null;
   source: HolidaySource;
@@ -25,6 +28,7 @@ export interface HolidayCalendarItem {
   title: string;
   type: 'HOLIDAY' | 'WEEKLY_OFF';
   source: HolidaySource | 'SYSTEM';
+  offices?: AssignedOffice[];
 }
 
 export interface WeeklyOffSettings {
@@ -41,9 +45,7 @@ export interface HolidayPayload {
   name: string;
   holidayDate: string;
   color?: string;
-  countryId?: string;
-  stateId?: string;
-  districtId?: string;
+  officeIds: string[];
   isRecurring?: boolean;
   recurrenceRule?: string;
   status?: HolidayStatus;
@@ -54,8 +56,12 @@ export const getHolidays = async (): Promise<HolidayRecord[]> => {
   return data?.data?.holidays || [];
 };
 
-export const getHolidayCalendar = async (month: string): Promise<HolidayCalendarItem[]> => {
-  const { data } = await api.get('/holidays/calendar', { params: { month } });
+export const getHolidayCalendar = async (month: string, officeIds?: string[]): Promise<HolidayCalendarItem[]> => {
+  const params: Record<string, string> = { month };
+  if (officeIds && officeIds.length > 0) {
+    params.officeIds = officeIds.join(',');
+  }
+  const { data } = await api.get('/holidays/calendar', { params });
   return data?.data || [];
 };
 
