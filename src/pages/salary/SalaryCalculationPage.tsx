@@ -159,6 +159,10 @@ const SalaryCalculationPage: React.FC = () => {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isSubmittingApproval, setIsSubmittingApproval] = useState<boolean>(false);
 
+  // Skipped Records Summary Modal
+  const [showSkippedModal, setShowSkippedModal] = useState<boolean>(false);
+  const [skippedRecords, setSkippedRecords] = useState<Array<{ userId: string; name: string; reason: string }>>([]);
+
   const fetchCalculations = async () => {
     setIsLoading(true);
     try {
@@ -219,7 +223,24 @@ const SalaryCalculationPage: React.FC = () => {
         officeId: genScope === 'OFFICE' ? genTargetId : undefined,
         workingDays: genWorkingDays ? Number(genWorkingDays) : undefined,
       });
-      toast.success(res.message || 'Salary calculations generated successfully.');
+
+      const generated = res.data?.generatedCount ?? 0;
+      const skipped = res.data?.skippedCount ?? 0;
+      const skippedList = res.data?.skipped || [];
+
+      if (generated > 0 && skipped === 0) {
+        toast.success(`Salary generated successfully for ${generated} employee(s).`);
+      } else if (generated > 0 && skipped > 0) {
+        toast.success(`Salary generated for ${generated} employee(s). ${skipped} employee(s) skipped.`, { duration: 6000 });
+      } else {
+        toast.error(`No salary records generated (${skipped} employee(s) skipped). Check monthly salary configuration in User Management.`, { duration: 8000 });
+      }
+
+      if (skippedList.length > 0) {
+        setSkippedRecords(skippedList);
+        setShowSkippedModal(true);
+      }
+
       setShowGenerateModal(false);
       fetchCalculations();
     } catch (err: any) {
@@ -874,6 +895,54 @@ const SalaryCalculationPage: React.FC = () => {
                     </div>
                   </>
                 ) : null}
+              </div>
+            </motion.div>
+          </div>
+        )}
+
+        {/* Skipped Records Summary Modal */}
+        {showSkippedModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-3xl p-6 w-full max-w-lg shadow-xl border border-gray-100 flex flex-col max-h-[85vh]"
+            >
+              <div className="flex items-center justify-between pb-4 border-b border-gray-100">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 bg-amber-50 text-amber-600 rounded-xl border border-amber-100">
+                    <AlertCircle className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-black text-gray-900">Skipped Records Summary</h3>
+                    <p className="text-xs text-gray-500">{skippedRecords.length} employee(s) skipped during salary generation</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowSkippedModal(false)}
+                  className="p-2 text-gray-400 hover:bg-gray-100 rounded-full transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto custom-scrollbar my-4 space-y-3 pr-1">
+                {skippedRecords.map((item, idx) => (
+                  <div key={idx} className="p-3 bg-amber-50/60 border border-amber-200/80 rounded-2xl text-xs space-y-1">
+                    <p className="font-bold text-gray-900">{item.name || 'Employee'}</p>
+                    <p className="text-amber-800 font-medium">{item.reason}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="pt-3 border-t border-gray-100 flex justify-end">
+                <button
+                  onClick={() => setShowSkippedModal(false)}
+                  className="px-5 py-2.5 rounded-xl bg-slate-900 text-white font-bold text-xs hover:bg-slate-800 transition-colors"
+                >
+                  Close
+                </button>
               </div>
             </motion.div>
           </div>
