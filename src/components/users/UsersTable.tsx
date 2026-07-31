@@ -17,6 +17,7 @@ import {
   Trash2,
   Key,
   Loader2,
+  AlertCircle,
 } from 'lucide-react';
 import { useUsersStore } from '../../store/useUsersStore';
 import { useUsersQuery } from '../../hooks/useUsersQuery';
@@ -374,9 +375,18 @@ const UsersTable: React.FC = () => {
                       <div className="min-w-0">
                         <div 
                           onClick={(e) => e.stopPropagation()}
-                          className="text-sm font-bold text-gray-900 truncate flex items-center gap-2"
+                          className="text-sm font-bold text-gray-900 truncate flex items-center gap-2 flex-wrap"
                         >
-                          {user.name || 'Invited User'}
+                          <span>{user.name || 'Invited User'}</span>
+                          {(!user.monthlySalary || user.monthlySalary <= 0) && (
+                            <span 
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 text-[10px] font-bold tracking-tight border border-amber-200/80" 
+                              title="Monthly salary not configured. Employee will be skipped during salary generation."
+                            >
+                              <AlertCircle className="w-3 h-3 shrink-0" />
+                              Missing Monthly Salary
+                            </span>
+                          )}
                         </div>
                         <div className="flex flex-col">
                             <span className="text-[10px] text-gray-400 font-medium truncate">{user.email}</span>

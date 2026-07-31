@@ -229,11 +229,11 @@ const SalaryCalculationPage: React.FC = () => {
       const skippedList = res.data?.skipped || [];
 
       if (generated > 0 && skipped === 0) {
-        toast.success(`Salary generated successfully for ${generated} employee(s).`);
+        toast.success(`Salary Generation Completed: ${generated} employee record(s) generated successfully.`);
       } else if (generated > 0 && skipped > 0) {
-        toast.success(`Salary generated for ${generated} employee(s). ${skipped} employee(s) skipped.`, { duration: 6000 });
+        toast.success(`Salary Generation Completed: ${generated} generated, ${skipped} skipped.`, { duration: 6000 });
       } else {
-        toast.error(`No salary records generated (${skipped} employee(s) skipped). Check monthly salary configuration in User Management.`, { duration: 8000 });
+        toast.error(`Salary Generation Completed: 0 generated, ${skipped} skipped. Check user monthly salary configuration.`, { duration: 8000 });
       }
 
       if (skippedList.length > 0) {
@@ -381,7 +381,7 @@ const SalaryCalculationPage: React.FC = () => {
           </div>
 
           {/* Stats Bar */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             <div className="bg-white rounded-2xl border border-gray-100 p-4 flex items-center gap-4 shadow-sm">
               <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
                 {getWorkspaceCurrencySymbol()}
@@ -399,6 +399,18 @@ const SalaryCalculationPage: React.FC = () => {
               <div>
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Calculated Staff</p>
                 <h3 className="text-xl font-black text-gray-900">{meta.total} Employees</h3>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-amber-100 bg-amber-50/30 p-4 flex items-center gap-4 shadow-sm">
+              <div className="w-12 h-12 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center font-bold">
+                <AlertCircle className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-amber-700 uppercase tracking-wider">Missing Salary Config</p>
+                <h3 className="text-xl font-black text-amber-900">
+                  {activeUsers.filter((u: any) => !u.monthlySalary || u.monthlySalary <= 0).length} Users
+                </h3>
               </div>
             </div>
 
@@ -424,78 +436,102 @@ const SalaryCalculationPage: React.FC = () => {
           </div>
 
           {/* Filters Bar */}
-          <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm flex flex-col lg:flex-row gap-4 justify-between items-stretch lg:items-center">
-            <form onSubmit={handleSearchSubmit} className="flex-1 flex gap-2">
-              <div className="relative flex-1">
-                <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input
-                  type="text"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search employee name, email..."
-                  className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-100 rounded-xl text-xs sm:text-sm font-semibold text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
-                />
+          <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm space-y-3">
+            <div className="flex flex-col lg:flex-row gap-4 justify-between items-stretch lg:items-center">
+              <form onSubmit={handleSearchSubmit} className="flex-1 flex gap-2">
+                <div className="relative flex-1">
+                  <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Search employee name, email..."
+                    className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-100 rounded-xl text-xs sm:text-sm font-semibold text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                  />
+                </div>
+                <button type="submit" className="px-4 py-2 bg-gray-900 text-white rounded-xl text-xs font-bold hover:bg-gray-800">
+                  Search
+                </button>
+              </form>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <select
+                  value={month}
+                  onChange={(e) => setMonth(Number(e.target.value))}
+                  className="px-3 py-2 bg-gray-50 border border-gray-100 rounded-xl text-xs font-bold text-gray-700"
+                >
+                  {MONTHS.map((m) => (
+                    <option key={m.value} value={m.value}>{m.label}</option>
+                  ))}
+                </select>
+
+                <select
+                  value={year}
+                  onChange={(e) => setYear(Number(e.target.value))}
+                  className="px-3 py-2 bg-gray-50 border border-gray-100 rounded-xl text-xs font-bold text-gray-700"
+                >
+                  {YEARS.map((y) => (
+                    <option key={y} value={y}>{y}</option>
+                  ))}
+                </select>
+
+                <select
+                  value={departmentId}
+                  onChange={(e) => setDepartmentId(e.target.value)}
+                  className="px-3 py-2 bg-gray-50 border border-gray-100 rounded-xl text-xs font-bold text-gray-700"
+                >
+                  <option value="">All Departments</option>
+                  {deptList.map((d: any) => (
+                    <option key={d.id} value={d.id}>{d.name}</option>
+                  ))}
+                </select>
+
+                <select
+                  value={officeId}
+                  onChange={(e) => setOfficeId(e.target.value)}
+                  className="px-3 py-2 bg-gray-50 border border-gray-100 rounded-xl text-xs font-bold text-gray-700"
+                >
+                  <option value="">All Offices</option>
+                  {officeList.map((o: any) => (
+                    <option key={o.id} value={o.id}>{o.name}</option>
+                  ))}
+                </select>
+
+                <select
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value as any)}
+                  className="px-3 py-2 bg-gray-50 border border-gray-100 rounded-xl text-xs font-bold text-gray-700"
+                >
+                  <option value="">All Statuses</option>
+                  <option value="DRAFT">Draft</option>
+                  <option value="PENDING_APPROVAL">Pending Approval</option>
+                  <option value="APPROVED">Finalized</option>
+                  <option value="REJECTED">Rejected</option>
+                  <option value="RETURNED">Returned</option>
+                </select>
               </div>
-              <button type="submit" className="px-4 py-2 bg-gray-900 text-white rounded-xl text-xs font-bold hover:bg-gray-800">
-                Search
-              </button>
-            </form>
+            </div>
 
-            <div className="flex flex-wrap items-center gap-2">
-              <select
-                value={month}
-                onChange={(e) => setMonth(Number(e.target.value))}
-                className="px-3 py-2 bg-gray-50 border border-gray-100 rounded-xl text-xs font-bold text-gray-700"
-              >
-                {MONTHS.map((m) => (
-                  <option key={m.value} value={m.value}>{m.label}</option>
-                ))}
-              </select>
-
-              <select
-                value={year}
-                onChange={(e) => setYear(Number(e.target.value))}
-                className="px-3 py-2 bg-gray-50 border border-gray-100 rounded-xl text-xs font-bold text-gray-700"
-              >
-                {YEARS.map((y) => (
-                  <option key={y} value={y}>{y}</option>
-                ))}
-              </select>
-
-              <select
-                value={departmentId}
-                onChange={(e) => setDepartmentId(e.target.value)}
-                className="px-3 py-2 bg-gray-50 border border-gray-100 rounded-xl text-xs font-bold text-gray-700"
-              >
-                <option value="">All Departments</option>
-                {deptsData?.data?.map((d: any) => (
-                  <option key={d.id} value={d.id}>{d.name}</option>
-                ))}
-              </select>
-
-              <select
-                value={officeId}
-                onChange={(e) => setOfficeId(e.target.value)}
-                className="px-3 py-2 bg-gray-50 border border-gray-100 rounded-xl text-xs font-bold text-gray-700"
-              >
-                <option value="">All Offices</option>
-                {officesData?.data?.map((o: any) => (
-                  <option key={o.id} value={o.id}>{o.name}</option>
-                ))}
-              </select>
-
-              <select
-                value={status}
-                onChange={(e) => setStatus(e.target.value as any)}
-                className="px-3 py-2 bg-gray-50 border border-gray-100 rounded-xl text-xs font-bold text-gray-700"
-              >
-                <option value="">All Statuses</option>
-                <option value="DRAFT">Draft</option>
-                <option value="PENDING_APPROVAL">Pending Approval</option>
-                <option value="APPROVED">Finalized</option>
-                <option value="REJECTED">Rejected</option>
-                <option value="RETURNED">Returned</option>
-              </select>
+            {/* Active Filter Visibility Bar */}
+            <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-gray-50 text-xs">
+              <span className="font-bold text-gray-400 uppercase tracking-wider text-[10px]">Active Listing Filters:</span>
+              <span className="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 font-bold border border-emerald-100">
+                Month: {MONTHS.find(m => m.value === month)?.label} {year}
+              </span>
+              <span className="px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 font-bold border border-blue-100">
+                Status: {status === 'DRAFT' ? 'Draft' : status === 'PENDING_APPROVAL' ? 'Pending Approval' : status === 'APPROVED' ? 'Finalized' : status === 'REJECTED' ? 'Rejected' : status === 'RETURNED' ? 'Returned' : 'All Statuses'}
+              </span>
+              <span className="px-2.5 py-1 rounded-lg bg-gray-100 text-gray-700 font-medium">
+                Dept: {deptList.find((d: any) => d.id === departmentId)?.name || 'All Departments'}
+              </span>
+              <span className="px-2.5 py-1 rounded-lg bg-gray-100 text-gray-700 font-medium">
+                Office: {officeList.find((o: any) => o.id === officeId)?.name || 'All Offices'}
+              </span>
+              {search && (
+                <span className="px-2.5 py-1 rounded-lg bg-purple-50 text-purple-700 font-bold border border-purple-100">
+                  Search: "{search}"
+                </span>
+              )}
             </div>
           </div>
 
@@ -534,8 +570,24 @@ const SalaryCalculationPage: React.FC = () => {
                     <tr>
                       <td colSpan={9} className="px-6 py-16 text-center text-gray-400">
                         <Calculator className="w-12 h-12 mx-auto mb-2 text-gray-300" />
-                        <p className="font-semibold text-sm">No salary calculations found for this selection.</p>
-                        <p className="text-xs text-gray-400 mt-1">Click "Generate Salary" to calculate payroll records.</p>
+                        <p className="font-bold text-base text-gray-800">
+                          {status === 'DRAFT'
+                            ? `No Draft salary records found for ${MONTHS.find(m => m.value === month)?.label} ${year}`
+                            : status === 'APPROVED'
+                            ? `No Finalized salary records found for ${MONTHS.find(m => m.value === month)?.label} ${year}`
+                            : status === 'PENDING_APPROVAL'
+                            ? `No Pending Approval salary records found for ${MONTHS.find(m => m.value === month)?.label} ${year}`
+                            : `No salary records found for ${MONTHS.find(m => m.value === month)?.label} ${year}`}
+                        </p>
+                        <p className="text-xs text-gray-500 max-w-md mx-auto mt-1 font-medium">
+                          {status === 'DRAFT'
+                            ? 'If Approved or Pending records exist for this month, change the Status filter to "All Statuses" or "Finalized".'
+                            : status === 'APPROVED'
+                            ? 'Check "Draft" or "Pending Approval" status filters to view in-progress calculations.'
+                            : status === 'PENDING_APPROVAL'
+                            ? 'Check "Draft" or "All Statuses" filters to review generated payrolls.'
+                            : 'Click "Generate Salary" above to calculate employee payroll records for this period.'}
+                        </p>
                       </td>
                     </tr>
                   ) : (
@@ -901,52 +953,110 @@ const SalaryCalculationPage: React.FC = () => {
         )}
 
         {/* Skipped Records Summary Modal */}
-        {showSkippedModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-3xl p-6 w-full max-w-lg shadow-xl border border-gray-100 flex flex-col max-h-[85vh]"
-            >
-              <div className="flex items-center justify-between pb-4 border-b border-gray-100">
-                <div className="flex items-center gap-3">
-                  <div className="p-2.5 bg-amber-50 text-amber-600 rounded-xl border border-amber-100">
-                    <AlertCircle className="w-5 h-5" />
+        {showSkippedModal && (() => {
+          const missingSalaryList = skippedRecords.filter(r => r.reason?.toLowerCase().includes('monthly salary'));
+          const alreadyApprovedList = skippedRecords.filter(r => r.reason?.toLowerCase().includes('already generated') || r.reason?.toLowerCase().includes('approved') || r.reason?.toLowerCase().includes('pending'));
+          const otherList = skippedRecords.filter(r => 
+            !r.reason?.toLowerCase().includes('monthly salary') && 
+            !r.reason?.toLowerCase().includes('already generated') && 
+            !r.reason?.toLowerCase().includes('approved') && 
+            !r.reason?.toLowerCase().includes('pending')
+          );
+
+          return (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="bg-white rounded-3xl p-6 w-full max-w-lg shadow-xl border border-gray-100 flex flex-col max-h-[85vh]"
+              >
+                <div className="flex items-center justify-between pb-4 border-b border-gray-100">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2.5 bg-amber-50 text-amber-600 rounded-xl border border-amber-100">
+                      <AlertCircle className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-black text-gray-900">Salary Generation Skip Diagnostics</h3>
+                      <p className="text-xs text-gray-500">{skippedRecords.length} employee(s) skipped during salary generation</p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-base font-black text-gray-900">Skipped Records Summary</h3>
-                    <p className="text-xs text-gray-500">{skippedRecords.length} employee(s) skipped during salary generation</p>
-                  </div>
+                  <button
+                    onClick={() => setShowSkippedModal(false)}
+                    className="p-2 text-gray-400 hover:bg-gray-100 rounded-full transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
                 </div>
-                <button
-                  onClick={() => setShowSkippedModal(false)}
-                  className="p-2 text-gray-400 hover:bg-gray-100 rounded-full transition-colors"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
 
-              <div className="flex-1 overflow-y-auto custom-scrollbar my-4 space-y-3 pr-1">
-                {skippedRecords.map((item, idx) => (
-                  <div key={idx} className="p-3 bg-amber-50/60 border border-amber-200/80 rounded-2xl text-xs space-y-1">
-                    <p className="font-bold text-gray-900">{item.name || 'Employee'}</p>
-                    <p className="text-amber-800 font-medium">{item.reason}</p>
-                  </div>
-                ))}
-              </div>
+                <div className="flex-1 overflow-y-auto custom-scrollbar my-4 space-y-4 pr-1">
+                  {missingSalaryList.length > 0 && (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-xs font-bold text-amber-700 uppercase tracking-wider flex items-center gap-1.5">
+                          <AlertCircle className="w-3.5 h-3.5" />
+                          Missing Monthly Salary ({missingSalaryList.length})
+                        </h4>
+                        <span className="text-[10px] text-amber-600 font-semibold">Action: Configure in User Management</span>
+                      </div>
+                      <div className="space-y-1.5">
+                        {missingSalaryList.map((item, idx) => (
+                          <div key={idx} className="p-2.5 bg-amber-50/80 border border-amber-200/80 rounded-xl text-xs flex justify-between items-center">
+                            <span className="font-bold text-gray-900">{item.name || 'Employee'}</span>
+                            <span className="text-[10px] text-amber-800 font-medium">Unconfigured Salary</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
-              <div className="pt-3 border-t border-gray-100 flex justify-end">
-                <button
-                  onClick={() => setShowSkippedModal(false)}
-                  className="px-5 py-2.5 rounded-xl bg-slate-900 text-white font-bold text-xs hover:bg-slate-800 transition-colors"
-                >
-                  Close
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
+                  {alreadyApprovedList.length > 0 && (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-xs font-bold text-blue-700 uppercase tracking-wider flex items-center gap-1.5">
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          Already Approved or Pending Approval ({alreadyApprovedList.length})
+                        </h4>
+                        <span className="text-[10px] text-blue-600 font-semibold">Protected Payroll Records</span>
+                      </div>
+                      <div className="space-y-1.5">
+                        {alreadyApprovedList.map((item, idx) => (
+                          <div key={idx} className="p-2.5 bg-blue-50/80 border border-blue-200/80 rounded-xl text-xs flex justify-between items-center">
+                            <span className="font-bold text-gray-900">{item.name || 'Employee'}</span>
+                            <span className="text-[10px] text-blue-800 font-medium">Locked / Approved</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {otherList.length > 0 && (
+                    <div className="space-y-2">
+                      <h4 className="text-xs font-bold text-gray-600 uppercase tracking-wider">Other Reasons ({otherList.length})</h4>
+                      <div className="space-y-1.5">
+                        {otherList.map((item, idx) => (
+                          <div key={idx} className="p-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs space-y-0.5">
+                            <p className="font-bold text-gray-900">{item.name || 'Employee'}</p>
+                            <p className="text-gray-600 text-[11px]">{item.reason}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="pt-3 border-t border-gray-100 flex justify-end">
+                  <button
+                    onClick={() => setShowSkippedModal(false)}
+                    className="px-5 py-2.5 rounded-xl bg-slate-900 text-white font-bold text-xs hover:bg-slate-800 transition-colors"
+                  >
+                    Close & Review
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          );
+        })()}
       </AnimatePresence>
     </DashboardLayout>
   );
