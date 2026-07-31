@@ -4,7 +4,6 @@ import DashboardLayout from '../components/dashboard/DashboardLayout';
 import KPICards from '../components/dashboard/KPICards';
 import LeadGrowthChart from '../components/dashboard/LeadGrowthChart';
 import PipelineStages from '../components/dashboard/PipelineStages';
-import QuickLeadWidget from '../components/dashboard/QuickLeadWidget';
 import RecentActivityWidget from '../components/dashboard/RecentActivityWidget';
 import LOBAnalysisWidget from '../components/dashboard/LOBAnalysisWidget';
 import CalendarWidget from '../components/dashboard/CalendarWidget';
@@ -132,7 +131,6 @@ const Dashboard: React.FC<DashboardProps> = ({ mode = 'operations' }) => {
         'DASHBOARD_VIEW_ASSIGNED_OFFICES',
         'DASHBOARD_VIEW_ALL_OFFICES',
     ]);
-    const canQuickAddLead = hasPermission(user?.permissions || [], 'LEADS_CREATE');
     const canSeeActivity = hasAnyPermission(user?.permissions || [], [
         'LEADS_VIEW_ALL',
         'LEADS_VIEW_OWN',
@@ -168,7 +166,7 @@ const Dashboard: React.FC<DashboardProps> = ({ mode = 'operations' }) => {
         'DASHBOARD_VIEW_ASSIGNED_OFFICES',
         'DASHBOARD_VIEW_ALL_OFFICES',
     ]);
-    const hasAnyDashboardSection = [canSeeMetrics, canSeeGrowth, canQuickAddLead, canSeeActivity, canSeeLOB, canSeeCalendar].some(Boolean);
+    const hasAnyDashboardSection = [canSeeMetrics, canSeeGrowth, canSeeActivity, canSeeLOB, canSeeCalendar].some(Boolean);
     const shouldFetchDashboardData = [canSeeMetrics, canSeeGrowth, canSeeActivity, canSeeLOB, canSeeCalendar].some(Boolean);
     const showOfficeFilter = canUseOfficeFilter(user);
     const showUserFilter = showOfficeFilter;
@@ -370,9 +368,8 @@ const Dashboard: React.FC<DashboardProps> = ({ mode = 'operations' }) => {
                             </div>
                         )}
 
-                        {(canQuickAddLead || canSeeActivity || canSeeLOB || canSeeCalendar) && (
-                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-                                {canQuickAddLead && <QuickLeadWidget />}
+                        {(canSeeActivity || canSeeLOB || canSeeCalendar) && (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                 {canSeeActivity && <RecentActivityWidget />}
                                 {canSeeLOB && <LOBAnalysisWidget />}
                                 {canSeeCalendar && <CalendarWidget />}
