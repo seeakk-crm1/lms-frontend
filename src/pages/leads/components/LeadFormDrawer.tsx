@@ -600,7 +600,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
   const lobReturnRemarks = allRemarks.filter((remark: any) => remark.remarkType === 'LOB_RETURN');
   const generalRemarks = allRemarks.filter((remark: any) => remark.remarkType !== 'LOB_RETURN');
   const selectedFormStage = stageOptions.find((item) => item.id === formValues.stageId);
-  const showLobContext = Boolean(isLobStageOption(selectedFormStage) && (formValues.reasonId || formValues.remarks));
+  const showLobContext = Boolean(isLobStageOption(selectedFormStage));
 
   const isLeadLoading = metaLoading || (mode === 'edit' && leadLoading && !leadDetails);
 
@@ -1034,12 +1034,16 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
             sourceId: formValues.sourceId || null,
             nextFollowUpAt: toIsoOrNull(formValues.nextFollowUpAt),
             nextFollowUpType: formValues.nextFollowUpType,
-            reasonId: stageChanged ? (shouldUseStageTransitionFlow ? undefined : formValues.reasonId.trim() || null) : undefined,
+            reasonId: stageChanged
+              ? (shouldUseStageTransitionFlow ? undefined : formValues.reasonId.trim() || null)
+              : (isLobStageOption(selectedTargetStage) || formValues.reasonId.trim() ? formValues.reasonId.trim() || null : undefined),
             remarks:
               isMovingOutOfLob && shouldUseStageTransitionFlow
                 ? undefined
                 : nullableTrimmed(formValues.leadRemarks),
-            lobRemarks: stageChanged ? (shouldUseStageTransitionFlow ? undefined : nullableTrimmed(formValues.remarks)) : undefined,
+            lobRemarks: stageChanged
+              ? (shouldUseStageTransitionFlow ? undefined : nullableTrimmed(formValues.remarks))
+              : (isLobStageOption(selectedTargetStage) || formValues.remarks.trim() ? nullableTrimmed(formValues.remarks) : undefined),
           },
         });
 
@@ -1064,7 +1068,12 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
             return;
           }
 
-          await changeStageMutation.mutateAsync({
+          if (selectedTargetStage?.isApprovalRequired) {
+            console.log('[Frontend] Approval Required Enabled', { targetStageId });
+            console.log('[Frontend] Approval API Called', { targetStageId });
+          }
+
+          const stageChangeRes = await changeStageMutation.mutateAsync({
             id: lead.id,
             payload: {
               stageId: targetStageId,
@@ -1078,6 +1087,10 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
               stageRuleValues: stageRuleSubmitPayload.length ? stageRuleSubmitPayload : [],
             },
           });
+
+          if ((stageChangeRes as any)?.approvalRequired) {
+            console.log('[Frontend] Approval Created', { approvalId: (stageChangeRes as any)?.approval?.id });
+          }
         }
 
         console.log('[Frontend] Lead Update Success', { id: lead.id });
@@ -1098,6 +1111,8 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
         const remainingCount = overdueQueryData?.data?.items?.length ?? 0;
         console.log('[Frontend] Overdue Result', { remainingOverdueCount: remainingCount });
       }
+
+      console.log('[Frontend] Lead Save Completed', { mode, leadId: lead?.id });
 
       if (isEditingFromFollowup) {
         handleLeadSaveSuccess();
