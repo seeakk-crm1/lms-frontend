@@ -149,6 +149,9 @@ const AttendancePage: React.FC = () => {
 
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [processingActionRecordId, setProcessingActionRecordId] = useState<string | null>(null);
+  const [submittingRejection, setSubmittingRejection] = useState(false);
+  const [submittingClarification, setSubmittingClarification] = useState(false);
 
   const fetchTodayStatus = async () => {
     try {
@@ -429,12 +432,16 @@ const AttendancePage: React.FC = () => {
       return;
     }
 
+    if (processingActionRecordId) return;
+    setProcessingActionRecordId(recordId);
     try {
       await attendanceApi.reviewAttendance(recordId, 'APPROVE');
       toast.success('Attendance request approved.');
-      refreshAll();
+      await refreshAll();
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Failed to review request');
+    } finally {
+      setProcessingActionRecordId(null);
     }
   };
 
@@ -443,13 +450,17 @@ const AttendancePage: React.FC = () => {
       toast.error('Rejection reason is mandatory.');
       return;
     }
+    if (submittingRejection) return;
+    setSubmittingRejection(true);
     try {
       await attendanceApi.reviewAttendance(rejectRecordId!, 'REJECT', rejectionReason);
       toast.success('Attendance request rejected.');
       setRejectRecordId(null);
-      refreshAll();
+      await refreshAll();
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Failed to reject request');
+    } finally {
+      setSubmittingRejection(false);
     }
   };
 
@@ -498,15 +509,19 @@ const AttendancePage: React.FC = () => {
       toast.error('Clarification request reason is mandatory.');
       return;
     }
+    if (submittingClarification) return;
+    setSubmittingClarification(true);
     try {
       await attendanceApi.requestClarification(clarificationRecordId!, clarificationReason);
       toast.success('Clarification request sent to employee.');
       setClarificationRecordId(null);
       setClarificationReason('');
       setShowClarificationModal(false);
-      refreshAll();
+      await refreshAll();
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Failed to request clarification');
+    } finally {
+      setSubmittingClarification(false);
     }
   };
 
@@ -1324,19 +1339,22 @@ const AttendancePage: React.FC = () => {
                               )}
                               <button
                                 onClick={() => handleClarificationRequest(record.id)}
-                                className="px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg font-bold hover:bg-blue-100 transition-colors cursor-pointer"
+                                disabled={processingActionRecordId === record.id}
+                                className="px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg font-bold hover:bg-blue-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                               >
                                 Clarify
                               </button>
                               <button
                                 onClick={() => handleReview(record.id, 'APPROVE')}
-                                className="px-3 py-1.5 bg-emerald-50 text-emerald-600 rounded-lg font-bold hover:bg-emerald-100 transition-colors cursor-pointer"
+                                disabled={processingActionRecordId === record.id}
+                                className="px-3 py-1.5 bg-emerald-50 text-emerald-600 rounded-lg font-bold hover:bg-emerald-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                               >
-                                Approve
+                                {processingActionRecordId === record.id ? 'Approving...' : 'Approve'}
                               </button>
                               <button
                                 onClick={() => handleReview(record.id, 'REJECT')}
-                                className="px-3 py-1.5 bg-rose-50 text-rose-600 rounded-lg font-bold hover:bg-rose-100 transition-colors cursor-pointer"
+                                disabled={processingActionRecordId === record.id}
+                                className="px-3 py-1.5 bg-rose-50 text-rose-600 rounded-lg font-bold hover:bg-rose-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                               >
                                 Reject
                               </button>
@@ -2124,9 +2142,10 @@ const AttendancePage: React.FC = () => {
                 </button>
                 <button
                   onClick={submitRejection}
-                  className="px-4 py-2 bg-rose-600 text-white font-bold rounded-lg hover:bg-rose-700 transition-colors cursor-pointer"
+                  disabled={submittingRejection}
+                  className="px-4 py-2 bg-rose-600 text-white font-bold rounded-lg hover:bg-rose-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 >
-                  Confirm Rejection
+                  {submittingRejection ? 'Rejecting...' : 'Confirm Rejection'}
                 </button>
               </div>
             </motion.div>
@@ -2345,9 +2364,10 @@ const AttendancePage: React.FC = () => {
                 </button>
                 <button
                   onClick={submitClarification}
-                  className="px-4 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-colors cursor-pointer"
+                  disabled={submittingClarification}
+                  className="px-4 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 >
-                  Send Request
+                  {submittingClarification ? 'Sending...' : 'Send Request'}
                 </button>
               </div>
             </motion.div>

@@ -175,16 +175,21 @@ api.interceptors.response.use(
     if (status >= 500 && status !== 502 && status !== 503 && status !== 504) {
       showToastError('Internal Server Error: Something went wrong on our end.');
     } else if (status === 404) {
-      // Opt not to toast 404s globally as they are often handled gracefully, but we can log them
       console.warn('API 404 Not Found:', originalRequest.url);
     } else if (status === 403) {
       showToastError('Forbidden: You do not have permission to perform this action.');
     } else if (status === 400) {
-      // Usually validation errors have a message in response.data.message
       const data = error.response.data as any;
       if (data?.message) {
         showToastError(`Validation Error: ${data.message}`);
       }
+    } else if (status === 429) {
+      const data = error.response.data as any;
+      const message =
+        data?.message ||
+        "You're processing requests very quickly. Please wait a few seconds and try again.";
+      showToastError(message, 'rate-limit-429');
+      return Promise.reject(error);
     }
 
     if (status === 423) {
