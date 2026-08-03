@@ -18,7 +18,7 @@ const personas = [
     role: 'Lead Generation Agency',
     quote: '"We Delivered 3,500 Qualified Campaign Leads Last Month. The Client Says None Converted, But They Never Even Called 60% Of Them."',
     pain: 'Agencies Get Blamed For "Poor Lead Quality" When The Client Sales Team Fails To Follow Up In Time.',
-    solution: 'Seeakk Gives Agencies Immutable Proof Of Lead Delivery, Instant Assignment, And Response Time Call Compliance.',
+    solution: 'Seeakk Gives Agencies Permanent Proof Of Lead Delivery, Instant Assignment, And Response Time Call Compliance.',
     icon: Flame,
     color: 'bg-amber-50/80 border-amber-200 text-amber-900',
   },

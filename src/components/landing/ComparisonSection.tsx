@@ -12,7 +12,7 @@ const comparisonRows = [
   {
     feature: 'Agency & Sales Relationship',
     without: 'Constant Finger-Pointing Over Lead Quality And Contact Attempts.',
-    with: 'Immutable Proof Of Delivery, Contact Response Time, And Conversion Audit Trail.',
+    with: 'Permanent Proof Of Delivery, Contact Response Time, And Conversion Audit Trail.',
   },
   {
     feature: 'Follow-Up Discipline',
