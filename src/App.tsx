@@ -2,6 +2,7 @@ import React, { useState, useEffect, ReactNode } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import ScrollProgressBar from './components/landing/ScrollProgressBar';
+import SeeakkProductLoader from './components/common/SeeakkProductLoader';
 import LandingNavbar from './components/landing/LandingNavbar';
 import LandingHero from './components/landing/LandingHero';
 import EmotionalHook from './components/landing/EmotionalHook';
@@ -206,12 +207,7 @@ function App() {
             transition={{ duration: 0.5 }}
             className="fixed inset-0 z-[100] flex items-center justify-center bg-white"
           >
-            <div className="flex flex-col items-center gap-4">
-              <div className="w-16 h-16 border-4 border-emerald-100 border-t-emerald-500 rounded-full animate-spin"></div>
-              <p className="text-emerald-500 font-bold tracking-widest uppercase text-sm animate-pulse">
-                Loading Workspace
-              </p>
-            </div>
+            <SeeakkProductLoader fullScreen={false} />
           </motion.div>
         )}
       </AnimatePresence>
