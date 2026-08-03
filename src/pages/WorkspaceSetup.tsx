@@ -1,6 +1,7 @@
 import React, { useState, useEffect, ChangeEvent, FormEvent } from 'react';
 import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import useAuthStore from '../store/useAuthStore';
 import api from '../services/api';
@@ -135,6 +136,17 @@ const WorkspaceSetup = () => {
 
     return (
         <div className="min-h-screen bg-[#f8fafc] flex flex-col items-center justify-center p-4 relative overflow-hidden font-sans">
+
+            {/* Top Left Navigation - Back to Landing Page */}
+            <div className="absolute top-6 left-6 lg:top-8 lg:left-10 z-20">
+                <Link
+                    to="/"
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-white/90 hover:bg-white border border-gray-200/80 rounded-full text-xs font-bold text-gray-700 hover:text-emerald-600 shadow-sm hover:shadow-md backdrop-blur-sm transition-all duration-200 group active:scale-95"
+                >
+                    <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform text-gray-500 group-hover:text-emerald-600" />
+                    <span>Back to Landing</span>
+                </Link>
+            </div>
 
             {/* Top Right User Badge */}
             <div className="absolute top-6 right-6 lg:top-8 lg:right-10 bg-white rounded-full pl-2 pr-4 py-1.5 shadow-sm border border-gray-100 flex items-center gap-3 hidden sm:flex">

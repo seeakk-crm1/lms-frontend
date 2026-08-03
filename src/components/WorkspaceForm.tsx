@@ -1,5 +1,6 @@
 import React, { ChangeEvent, FormEvent } from 'react';
-import { Building2, Users, Globe2, Languages, Coins, CheckCircle2, ChevronRight, Loader2, Sparkles, LucideIcon, ImagePlus, X } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Building2, Users, Globe2, Languages, Coins, CheckCircle2, ChevronRight, Loader2, Sparkles, LucideIcon, ImagePlus, X, ArrowLeft } from 'lucide-react';
 import SearchableSelect from './SearchableSelect';
 import { WorkspaceFormData, WorkspaceMetaLists } from '../pages/WorkspaceSetup';
 import BrandLogo from './BrandLogo';
@@ -65,8 +66,17 @@ const WorkspaceForm: React.FC<WorkspaceFormProps> = ({ formData, handleChange, s
     return (
         <div className="md:w-[58%] p-8 sm:p-12 pl-8 sm:pl-14 flex flex-col justify-center bg-white relative">
 
-            {/* Mobile Logo (Visible only on small screens) */}
-            <BrandLogo alt="Seeakk" className="mb-6 md:hidden" />
+            {/* Mobile Header (Visible only on small screens) */}
+            <div className="flex items-center justify-between mb-6 md:hidden">
+                <Link
+                    to="/"
+                    className="inline-flex items-center gap-1.5 text-xs font-bold text-gray-500 hover:text-emerald-600 transition-colors"
+                >
+                    <ArrowLeft size={16} />
+                    <span>Back to Landing</span>
+                </Link>
+                <BrandLogo alt="Seeakk" className="flex-shrink-0" />
+            </div>
 
             <h1 className="text-2xl font-black text-gray-900 mb-2">Configure Your Workspace</h1>
             <p className="text-gray-500 text-sm mb-8 font-medium">Tailor your Seeakk experience by providing a few details about your team.</p>

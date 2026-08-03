@@ -251,6 +251,15 @@ const Login = () => {
                 transition={{ duration: 0.7, delay: 0.3, ease: "easeOut" }}
                 className="w-full lg:w-1/2 min-h-[100dvh] lg:min-h-0 flex items-center justify-center px-4 py-8 sm:p-12 relative overflow-y-auto overflow-x-hidden"
             >
+                {/* Desktop Back Button */}
+                <Link
+                    to="/"
+                    className="hidden lg:inline-flex items-center gap-2 px-4 py-2 bg-white/90 hover:bg-white border border-slate-200/80 rounded-full text-xs font-bold text-slate-700 hover:text-emerald-600 shadow-sm hover:shadow transition-all duration-200 group active:scale-95 absolute top-6 left-6 z-30"
+                >
+                    <ArrowRight className="w-4 h-4 rotate-180 group-hover:-translate-x-0.5 transition-transform text-slate-400 group-hover:text-emerald-600" />
+                    <span>Back to Landing</span>
+                </Link>
+
                 <div className="w-full max-w-md mx-auto">
 
                     {/* Mobile Header (Visible only on small screens) */}
