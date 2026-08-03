@@ -1,15 +1,18 @@
 import React, { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { MoreHorizontal, PencilLine, Power } from 'lucide-react';
+import { MoreHorizontal, PencilLine, Power, Trash2 } from 'lucide-react';
 import StatusBadge from './StatusBadge';
 import type { LOBReason } from '../types/lobReason.types';
 
 interface LOBReasonTableProps {
   rows: LOBReason[];
   loading?: boolean;
-  canManage: boolean;
+  canEdit?: boolean;
+  canDelete?: boolean;
+  canManage?: boolean;
   onEdit: (item: LOBReason) => void;
   onToggleStatus: (item: LOBReason) => void;
+  onDelete?: (item: LOBReason) => void;
 }
 
 const formatDate = (value: string) =>
@@ -23,11 +26,14 @@ const resolveActorLabel = (user?: LOBReason['createdBy']) => user?.displayName |
 
 const RowActions: React.FC<{
   row: LOBReason;
-  canManage: boolean;
+  canEdit: boolean;
+  canDelete: boolean;
   onEdit: (item: LOBReason) => void;
   onToggleStatus: (item: LOBReason) => void;
-}> = ({ row, canManage, onEdit, onToggleStatus }) => {
+  onDelete?: (item: LOBReason) => void;
+}> = ({ row, canEdit, canDelete, onEdit, onToggleStatus, onDelete }) => {
   const [open, setOpen] = useState(false);
+  const [openUpward, setOpenUpward] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -40,22 +46,34 @@ const RowActions: React.FC<{
     return () => document.removeEventListener('mousedown', onMouseDown);
   }, []);
 
+  const handleToggleOpen = () => {
+    if (!open && wrapperRef.current) {
+      const rect = wrapperRef.current.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      setOpenUpward(spaceBelow < 170);
+    }
+    setOpen((prev) => !prev);
+  };
+
   const items = useMemo(
     () => [
-      { label: 'Edit', icon: PencilLine, onClick: () => onEdit(row), show: canManage, destructive: false },
-      { label: row.status === 'ACTIVE' ? 'Deactivate' : 'Activate', icon: Power, onClick: () => onToggleStatus(row), show: canManage, destructive: row.status === 'ACTIVE' },
+      { label: 'Edit', icon: PencilLine, onClick: () => onEdit(row), show: canEdit, destructive: false },
+      { label: row.status === 'ACTIVE' ? 'Deactivate' : 'Activate', icon: Power, onClick: () => onToggleStatus(row), show: canEdit, destructive: row.status === 'ACTIVE' },
+      { label: 'Delete', icon: Trash2, onClick: () => onDelete?.(row), show: canDelete && Boolean(onDelete), destructive: true },
     ].filter((item) => item.show),
-    [canManage, onEdit, onToggleStatus, row],
+    [canEdit, canDelete, onEdit, onToggleStatus, onDelete, row],
   );
 
   if (!items.length) return null;
 
   return (
-    <div ref={wrapperRef} className="relative">
+    <div ref={wrapperRef} className="relative inline-flex items-center justify-center">
       <button
         type="button"
-        onClick={() => setOpen((value) => !value)}
-        className="rounded-2xl border border-gray-200 p-2.5 text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-700"
+        onClick={handleToggleOpen}
+        className={`rounded-2xl border border-gray-200 p-2.5 text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-700 ${
+          open ? 'bg-gray-100 border-gray-300 text-gray-800' : ''
+        }`}
         aria-label={`Open actions for ${row.name}`}
       >
         <MoreHorizontal className="h-4 w-4" />
@@ -64,10 +82,13 @@ const RowActions: React.FC<{
       <AnimatePresence>
         {open ? (
           <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 8 }}
-            className="absolute right-0 top-12 z-20 min-w-[180px] max-w-[calc(100vw-3rem)] overflow-hidden rounded-2xl border border-gray-100 bg-white p-2 shadow-[0_20px_60px_-24px_rgba(15,23,42,0.35)]"
+            initial={{ opacity: 0, scale: 0.95, y: openUpward ? -4 : 4 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: openUpward ? -4 : 4 }}
+            transition={{ duration: 0.15 }}
+            className={`absolute right-0 z-40 min-w-[180px] max-w-[calc(100vw-3rem)] overflow-hidden rounded-2xl border border-gray-100 bg-white p-2 shadow-[0_20px_60px_-24px_rgba(15,23,42,0.35)] ${
+              openUpward ? 'bottom-full mb-2' : 'top-full mt-2'
+            }`}
           >
             {items.map((item) => (
               <button
@@ -100,7 +121,19 @@ const TableSkeleton = () => (
   </div>
 );
 
-const LOBReasonTable: React.FC<LOBReasonTableProps> = ({ rows, loading, canManage, onEdit, onToggleStatus }) => {
+const LOBReasonTable: React.FC<LOBReasonTableProps> = ({
+  rows,
+  loading,
+  canEdit = true,
+  canDelete = false,
+  canManage = true,
+  onEdit,
+  onToggleStatus,
+  onDelete,
+}) => {
+  const effectiveCanEdit = canEdit || canManage;
+  const effectiveCanDelete = canDelete || canManage;
+
   if (loading) {
     return <TableSkeleton />;
   }
@@ -126,7 +159,7 @@ const LOBReasonTable: React.FC<LOBReasonTableProps> = ({ rows, loading, canManag
               <th className="px-4 py-3">Status</th>
               <th className="px-4 py-3">Created Date</th>
               <th className="px-4 py-3">Created By</th>
-              <th className="px-4 py-3">Actions</th>
+              <th className="px-4 py-3 text-center">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -144,8 +177,15 @@ const LOBReasonTable: React.FC<LOBReasonTableProps> = ({ rows, loading, canManag
                 <td className="border-y border-gray-100 bg-white px-4 py-4 text-sm font-semibold text-gray-500 shadow-sm transition-colors group-hover:bg-emerald-50/30">
                   {resolveActorLabel(row.createdBy)}
                 </td>
-                <td className="rounded-r-3xl border-y border-r border-gray-100 bg-white px-4 py-4 shadow-sm transition-colors group-hover:bg-emerald-50/30">
-                  <RowActions row={row} canManage={canManage} onEdit={onEdit} onToggleStatus={onToggleStatus} />
+                <td className="rounded-r-3xl border-y border-r border-gray-100 bg-white px-4 py-4 text-center shadow-sm transition-colors group-hover:bg-emerald-50/30">
+                  <RowActions
+                    row={row}
+                    canEdit={effectiveCanEdit}
+                    canDelete={effectiveCanDelete}
+                    onEdit={onEdit}
+                    onToggleStatus={onToggleStatus}
+                    onDelete={onDelete}
+                  />
                 </td>
               </motion.tr>
             ))}
@@ -164,7 +204,14 @@ const LOBReasonTable: React.FC<LOBReasonTableProps> = ({ rows, loading, canManag
                 </div>
               </div>
               <div className="self-end sm:self-start">
-                <RowActions row={row} canManage={canManage} onEdit={onEdit} onToggleStatus={onToggleStatus} />
+                <RowActions
+                  row={row}
+                  canEdit={effectiveCanEdit}
+                  canDelete={effectiveCanDelete}
+                  onEdit={onEdit}
+                  onToggleStatus={onToggleStatus}
+                  onDelete={onDelete}
+                />
               </div>
             </div>
             <div className="mt-4 grid gap-3 text-sm font-semibold text-gray-500 sm:grid-cols-2">

@@ -6,7 +6,7 @@ import SearchableSelect from '../../../components/SearchableSelect';
 import useAuthStore from '../../../store/useAuthStore';
 import { useCreateLOBReason } from '../hooks/useCreateLOBReason';
 import { useLOBReasonsQuery } from '../hooks/useLOBReasonsQuery';
-import { useToggleLOBReason } from '../hooks/useToggleLOBReason';
+import { useDeleteLOBReason, useToggleLOBReason } from '../hooks/useToggleLOBReason';
 import { useUpdateLOBReason } from '../hooks/useUpdateLOBReason';
 import useLOBStore from '../store/lobReasonStore';
 import LOBReasonTable from '../components/LOBReasonTable';
@@ -14,6 +14,7 @@ import type { LOBReason, LOBReasonPayload, LOBReasonStatus } from '../types/lobR
 import { lazyWithChunkRecovery } from '../../../utils/chunkLoadRecovery';
 
 const LOBReasonModal = lazyWithChunkRecovery(() => import('../components/LOBReasonModal'));
+const DeleteLOBReasonModal = lazyWithChunkRecovery(() => import('../components/DeleteLOBReasonModal'));
 
 const roleKey = (role: unknown) =>
   String(typeof role === 'object' && role !== null ? (role as { name?: string }).name || '' : role || '')
@@ -31,6 +32,7 @@ const LOBReasonsPage: React.FC = () => {
   const [searchDraft, setSearchDraft] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalReason, setModalReason] = useState<LOBReason | null>(null);
+  const [deleteCandidate, setDeleteCandidate] = useState<LOBReason | null>(null);
 
   const { user } = useAuthStore();
   const { search, status, page, setSearch, setStatus, resetFilters, setPage } = useLOBStore();
@@ -38,6 +40,7 @@ const LOBReasonsPage: React.FC = () => {
   const createMutation = useCreateLOBReason();
   const updateMutation = useUpdateLOBReason();
   const toggleMutation = useToggleLOBReason();
+  const deleteMutation = useDeleteLOBReason();
 
   const normalizedRole = roleKey(user?.role);
   const isAdminRole = ['admin', 'administrator', 'superadmin'].includes(normalizedRole);
@@ -205,6 +208,8 @@ const LOBReasonsPage: React.FC = () => {
                 <LOBReasonTable
                   rows={rows}
                   loading={reasonsQuery.isLoading}
+                  canEdit={canEdit}
+                  canDelete={canDelete}
                   canManage={canManage}
                   onEdit={(item) => {
                     setModalReason(item);
@@ -216,6 +221,7 @@ const LOBReasonsPage: React.FC = () => {
                       status: item.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE',
                     })
                   }
+                  onDelete={(item) => setDeleteCandidate(item)}
                 />
 
                 {pagination && pagination.totalPages > 1 ? (
@@ -257,6 +263,21 @@ const LOBReasonsPage: React.FC = () => {
           }}
           onSubmit={handleSave}
           isSubmitting={createMutation.isPending || updateMutation.isPending}
+        />
+        <DeleteLOBReasonModal
+          open={Boolean(deleteCandidate)}
+          reason={deleteCandidate}
+          isDeleting={deleteMutation.isPending}
+          onClose={() => setDeleteCandidate(null)}
+          onConfirm={async () => {
+            if (!deleteCandidate) return;
+            try {
+              await deleteMutation.mutateAsync(deleteCandidate.id);
+              setDeleteCandidate(null);
+            } catch {
+              // Mutation error handled by toast
+            }
+          }}
         />
       </Suspense>
     </DashboardLayout>

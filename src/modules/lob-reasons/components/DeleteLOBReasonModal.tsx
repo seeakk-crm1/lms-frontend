@@ -35,16 +35,17 @@ const DeleteLOBReasonModal: React.FC<DeleteLOBReasonModalProps> = ({ open, reaso
                 <AlertTriangle className="h-5 w-5" />
               </div>
               <div>
-                <div className="text-lg font-black text-gray-900">Delete LOB reason?</div>
+                <div className="text-lg font-black text-gray-900">Delete LOB Reason?</div>
                 <p className="mt-1 text-sm font-semibold text-gray-500">
-                  This will deactivate <span className="font-black text-gray-700">{reason.name}</span> and remove it from new LOB selections.
+                  Are you sure you want to delete <span className="font-black text-gray-700">“{reason.name}”</span>? This action cannot be undone.
                 </p>
               </div>
             </div>
             <button
               type="button"
               onClick={onClose}
-              className="rounded-2xl border border-gray-200 p-3 text-gray-400 transition-colors hover:bg-gray-50 hover:text-gray-600"
+              disabled={isDeleting}
+              className="rounded-2xl border border-gray-200 p-3 text-gray-400 transition-colors hover:bg-gray-50 hover:text-gray-600 disabled:opacity-50"
               aria-label="Close delete dialog"
             >
               <X className="h-5 w-5" />
@@ -55,7 +56,8 @@ const DeleteLOBReasonModal: React.FC<DeleteLOBReasonModalProps> = ({ open, reaso
             <button
               type="button"
               onClick={onClose}
-              className="rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-black text-gray-600 transition-colors hover:bg-gray-50"
+              disabled={isDeleting}
+              className="rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-black text-gray-600 transition-colors hover:bg-gray-50 disabled:opacity-50"
             >
               Cancel
             </button>
