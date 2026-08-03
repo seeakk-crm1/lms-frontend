@@ -28,7 +28,7 @@ const SeeakkProductLoader: React.FC<SeeakkProductLoaderProps> = ({
   useEffect(() => {
     const interval = setInterval(() => {
       setStatusIndex((prev) => (prev + 1) % loadingStatuses.length);
-    }, 2200);
+    }, 1200);
     return () => clearInterval(interval);
   }, []);
 

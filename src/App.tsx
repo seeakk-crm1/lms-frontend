@@ -133,36 +133,35 @@ function App() {
   );
 
   useEffect(() => {
-    if (!workflowEnabled) {
-      setLoading(false);
-      return;
-    }
-
     let cancelled = false;
+    const minDisplayTime = new Promise((resolve) => setTimeout(resolve, 1800));
 
-    api
-      .get('/auth/me')
-      .then((response) => {
-        if (cancelled || !response.data?.user) return;
-        updateUser(response.data.user);
-        const session = response.data?.session;
-        if (session?.mandatoryFollowupRequired) {
-          useAuthStore.getState().setMandatoryFollowupBlock(true, session.mandatoryFollowupCount ?? 0);
-          void queryClient.invalidateQueries({ queryKey: ['followups', 'mandatory-continuation'] });
-        } else {
-          useAuthStore.getState().clearMandatoryFollowupBlock();
-        }
-      })
-      .catch((error) => {
-        if (cancelled) return;
-        const status = error?.response?.status;
-        if (status === 401 || status === 403) {
-          handleSessionExpired();
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
+    const authCheck = workflowEnabled
+      ? api
+          .get('/auth/me')
+          .then((response) => {
+            if (cancelled || !response.data?.user) return;
+            updateUser(response.data.user);
+            const session = response.data?.session;
+            if (session?.mandatoryFollowupRequired) {
+              useAuthStore.getState().setMandatoryFollowupBlock(true, session.mandatoryFollowupCount ?? 0);
+              void queryClient.invalidateQueries({ queryKey: ['followups', 'mandatory-continuation'] });
+            } else {
+              useAuthStore.getState().clearMandatoryFollowupBlock();
+            }
+          })
+          .catch((error) => {
+            if (cancelled) return;
+            const status = error?.response?.status;
+            if (status === 401 || status === 403) {
+              handleSessionExpired();
+            }
+          })
+      : Promise.resolve();
+
+    Promise.all([authCheck, minDisplayTime]).finally(() => {
+      if (!cancelled) setLoading(false);
+    });
 
     return () => {
       cancelled = true;
