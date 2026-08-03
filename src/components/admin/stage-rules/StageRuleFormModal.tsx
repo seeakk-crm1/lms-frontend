@@ -19,15 +19,31 @@ import { z } from 'zod';
 import { toast } from 'react-hot-toast';
 import { CreateStageRuleInput, StageRule, StageRuleInputType } from '../../../types/stageRule.types';
 
+interface StageRuleFormValues {
+  name: string;
+  inputType: StageRuleInputType;
+  sortOrder: number;
+  required: boolean;
+  minCharacters?: number | null;
+  status: 'ACTIVE' | 'INACTIVE';
+}
+
 const stageRuleSchema = z.object({
   name: z.string().trim().min(2, 'Rule name must be at least 2 characters'),
   inputType: z.enum(['TEXT', 'TEXTAREA', 'RADIO', 'SELECT']),
   sortOrder: z.number().int().min(1, 'Sort order must be greater than 0'),
   required: z.boolean(),
+  minCharacters: z
+    .number()
+    .int('Minimum Characters must be a whole number')
+    .min(1, 'Minimum Characters must be at least 1')
+    .max(10000, 'Minimum Characters cannot exceed 10000')
+    .optional()
+    .nullable()
+    .or(z.nan())
+    .transform((val): number | null => (typeof val === 'number' && !isNaN(val) ? val : null)),
   status: z.enum(['ACTIVE', 'INACTIVE']),
 });
-
-type StageRuleFormValues = z.infer<typeof stageRuleSchema>;
 
 interface StageRuleFormModalProps {
   isOpen: boolean;
@@ -65,6 +81,7 @@ const buildPreviewByType = (
   ruleName: string,
   previewOptionsList: string[],
   previewValue: string,
+  minCharacters: number | null | undefined,
   onPreviewValueChange: (value: string) => void,
 ): React.ReactNode => {
   const normalizedName = ruleName.trim();
@@ -85,12 +102,20 @@ const buildPreviewByType = (
 
   if (inputType === 'TEXTAREA') {
     return (
-      <textarea
-        readOnly
-        rows={4}
-        placeholder={`${label} notes...`}
-        className="w-full resize-none rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-600"
-      />
+      <div className="space-y-2">
+        <textarea
+          readOnly
+          rows={4}
+          placeholder={`${label} notes...`}
+          className="w-full resize-none rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-600"
+        />
+        {minCharacters && minCharacters > 0 ? (
+          <div className="flex items-center justify-between text-[11px] font-semibold text-gray-500">
+            <span>0 / {minCharacters} minimum characters</span>
+            <span className="font-bold text-emerald-700">Minimum {minCharacters} characters required</span>
+          </div>
+        ) : null}
+      </div>
     );
   }
 
@@ -152,6 +177,7 @@ const StageRuleFormModal: React.FC<StageRuleFormModalProps> = ({
     control,
     watch,
     reset,
+    setValue,
     formState: { errors },
   } = useForm<StageRuleFormValues>({
     resolver: zodResolver(stageRuleSchema),
@@ -160,6 +186,7 @@ const StageRuleFormModal: React.FC<StageRuleFormModalProps> = ({
       inputType: 'TEXT',
       sortOrder: 1,
       required: false,
+      minCharacters: null,
       status: 'ACTIVE',
     },
   });
@@ -171,6 +198,7 @@ const StageRuleFormModal: React.FC<StageRuleFormModalProps> = ({
       inputType: stageRule?.inputType || 'TEXT',
       sortOrder: stageRule?.sortOrder || 1,
       required: stageRule?.required || false,
+      minCharacters: stageRule?.inputType === 'TEXTAREA' ? (stageRule?.minCharacters ?? null) : null,
       status: stageRule?.status || 'ACTIVE',
     });
     setOptionRows(stageRule?.options?.length ? [...stageRule.options] : ['']);
@@ -179,10 +207,18 @@ const StageRuleFormModal: React.FC<StageRuleFormModalProps> = ({
   const watchedName = watch('name');
   const watchedInputType = watch('inputType');
   const watchedRequired = watch('required');
+  const watchedMinCharacters = watch('minCharacters');
+
+  useEffect(() => {
+    if (watchedInputType !== 'TEXTAREA') {
+      setValue('minCharacters', null);
+    }
+  }, [watchedInputType, setValue]);
 
   useEffect(() => {
     setPreviewValue('');
   }, [isOpen, watchedInputType, watchedName]);
+
   const previewOptionList = useMemo(
     () => optionRows.map((row) => row.trim()).filter(Boolean),
     [optionRows],
@@ -190,15 +226,23 @@ const StageRuleFormModal: React.FC<StageRuleFormModalProps> = ({
 
   const previewContent = useMemo(
     () =>
-      buildPreviewByType(watchedInputType, watchedName || '', previewOptionList, previewValue, setPreviewValue),
-    [previewOptionList, previewValue, watchedInputType, watchedName],
+      buildPreviewByType(
+        watchedInputType,
+        watchedName || '',
+        previewOptionList,
+        previewValue,
+        watchedMinCharacters,
+        setPreviewValue,
+      ),
+    [previewOptionList, previewValue, watchedInputType, watchedName, watchedMinCharacters],
   );
+
   const selectedInputTypeMeta = useMemo(
     () => inputTypeOptions.find((option) => option.value === watchedInputType) || inputTypeOptions[0],
     [watchedInputType],
   );
 
-  const handleFormSubmit = async (data: StageRuleFormValues) => {
+  const handleFormSubmit = async (data: Record<string, any>) => {
     const cleanedOptions = optionRows.map((row) => row.trim()).filter(Boolean);
     if (data.inputType === 'RADIO' || data.inputType === 'SELECT') {
       if (cleanedOptions.length < 1) {
@@ -207,10 +251,18 @@ const StageRuleFormModal: React.FC<StageRuleFormModalProps> = ({
       }
     }
 
+    const minCharsValue =
+      data.inputType === 'TEXTAREA' && data.minCharacters && Number(data.minCharacters) > 0
+        ? Number(data.minCharacters)
+        : null;
+
     await onSubmit({
-      ...data,
-      name: data.name.trim(),
-      sortOrder: Number(data.sortOrder),
+      name: String(data.name || '').trim(),
+      inputType: data.inputType as StageRuleInputType,
+      sortOrder: Number(data.sortOrder || 1),
+      required: Boolean(data.required),
+      status: (data.status || 'ACTIVE') as 'ACTIVE' | 'INACTIVE',
+      minCharacters: minCharsValue,
       options: data.inputType === 'TEXT' || data.inputType === 'TEXTAREA' ? [] : cleanedOptions,
     });
   };
@@ -340,6 +392,32 @@ const StageRuleFormModal: React.FC<StageRuleFormModalProps> = ({
                       />
                       {errors.sortOrder && <p className="text-[10px] text-red-500 font-bold">{errors.sortOrder.message}</p>}
                     </div>
+
+                    {watchedInputType === 'TEXTAREA' ? (
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                          Minimum Characters
+                        </label>
+                        <input
+                          type="number"
+                          min={1}
+                          max={10000}
+                          placeholder="e.g., 50"
+                          {...register('minCharacters', { valueAsNumber: true })}
+                          className={`w-full px-4 py-3 bg-gray-50 border rounded-2xl focus:bg-white outline-none transition-all font-bold text-gray-900 ${
+                            errors.minCharacters ? 'border-red-300 focus:border-red-500' : 'border-gray-50 focus:border-emerald-500'
+                          }`}
+                          aria-invalid={Boolean(errors.minCharacters)}
+                        />
+                        {errors.minCharacters ? (
+                          <p className="text-[10px] text-red-500 font-bold">{errors.minCharacters.message}</p>
+                        ) : (
+                          <p className="text-[11px] font-semibold text-gray-500">
+                            Set the minimum number of characters users must enter before this field can be submitted.
+                          </p>
+                        )}
+                      </div>
+                    ) : null}
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -458,13 +536,20 @@ const StageRuleFormModal: React.FC<StageRuleFormModalProps> = ({
                             {selectedInputTypeMeta.label} input
                           </p>
                         </div>
-                        <span
-                          className={`rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-widest ${
-                            watchedRequired ? 'bg-red-50 text-red-600' : 'bg-gray-100 text-gray-500'
-                          }`}
-                        >
-                          {watchedRequired ? 'Required' : 'Optional'}
-                        </span>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span
+                            className={`rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-widest ${
+                              watchedRequired ? 'bg-red-50 text-red-600' : 'bg-gray-100 text-gray-500'
+                            }`}
+                          >
+                            {watchedRequired ? 'Required' : 'Optional'}
+                          </span>
+                          {watchedInputType === 'TEXTAREA' && watchedMinCharacters && Number(watchedMinCharacters) > 0 ? (
+                            <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-emerald-700">
+                              Minimum {watchedMinCharacters} characters
+                            </span>
+                          ) : null}
+                        </div>
                       </div>
                       <div className="p-4">
                         {previewContent}

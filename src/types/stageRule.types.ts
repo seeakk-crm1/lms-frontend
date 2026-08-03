@@ -8,6 +8,7 @@ export interface StageRule {
   options?: string[];
   sortOrder: number;
   required: boolean;
+  minCharacters?: number | null;
   status: StageRuleStatus;
   stageId?: string | null;
   createdBy: string | null;
@@ -41,6 +42,7 @@ export interface CreateStageRuleInput {
   options?: string[];
   sortOrder: number;
   required: boolean;
+  minCharacters?: number | null;
   status: StageRuleStatus;
   stageId?: string;
 }

@@ -145,10 +145,17 @@ const StageRulesTable: React.FC<StageRulesTableProps> = ({
                   >
                     <td className="px-6 py-4 text-sm font-black text-gray-900">{item.name}</td>
                     <td className="px-6 py-4">
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-50 text-blue-600 text-[11px] font-bold">
-                        <InputIcon className="w-3.5 h-3.5" />
-                        {inputType.label}
-                      </span>
+                      <div className="flex flex-col items-start gap-1">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-50 text-blue-600 text-[11px] font-bold">
+                          <InputIcon className="w-3.5 h-3.5" />
+                          {inputType.label}
+                        </span>
+                        {item.inputType === 'TEXTAREA' && item.minCharacters && item.minCharacters > 0 ? (
+                          <span className="text-[10px] font-black uppercase tracking-wider text-emerald-600">
+                            Min {item.minCharacters} chars
+                          </span>
+                        ) : null}
+                      </div>
                     </td>
                     <td className="px-6 py-4">
                       <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-gray-100 text-gray-700 text-[11px] font-black">
