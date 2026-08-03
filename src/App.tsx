@@ -134,7 +134,7 @@ function App() {
 
   useEffect(() => {
     let cancelled = false;
-    const minDisplayTime = new Promise((resolve) => setTimeout(resolve, 1800));
+    const minDisplayTime = new Promise((resolve) => setTimeout(resolve, 1000));
 
     const authCheck = workflowEnabled
       ? api
