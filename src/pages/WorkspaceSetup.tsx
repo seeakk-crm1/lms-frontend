@@ -138,7 +138,7 @@ const WorkspaceSetup = () => {
         <div className="min-h-screen bg-[#f8fafc] flex flex-col items-center justify-center p-4 relative overflow-hidden font-sans">
 
             {/* Top Left Navigation - Back to Landing Page */}
-            <div className="absolute top-6 left-6 lg:top-8 lg:left-10 z-20">
+            <div className="absolute top-4 left-4 sm:top-6 sm:left-6 lg:top-8 lg:left-10 z-20">
                 <Link
                     to="/"
                     className="inline-flex items-center gap-2 px-4 py-2 bg-white/90 hover:bg-white border border-gray-200/80 rounded-full text-xs font-bold text-gray-700 hover:text-emerald-600 shadow-sm hover:shadow-md backdrop-blur-sm transition-all duration-200 group active:scale-95"

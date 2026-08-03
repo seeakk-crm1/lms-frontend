@@ -1,6 +1,5 @@
 import React, { ChangeEvent, FormEvent } from 'react';
-import { Link } from 'react-router-dom';
-import { Building2, Users, Globe2, Languages, Coins, CheckCircle2, ChevronRight, Loader2, Sparkles, LucideIcon, ImagePlus, X, ArrowLeft } from 'lucide-react';
+import { Building2, Users, Globe2, Languages, Coins, CheckCircle2, ChevronRight, Loader2, Sparkles, LucideIcon, ImagePlus, X } from 'lucide-react';
 import SearchableSelect from './SearchableSelect';
 import { WorkspaceFormData, WorkspaceMetaLists } from '../pages/WorkspaceSetup';
 import BrandLogo from './BrandLogo';
@@ -66,15 +65,8 @@ const WorkspaceForm: React.FC<WorkspaceFormProps> = ({ formData, handleChange, s
     return (
         <div className="md:w-[58%] p-8 sm:p-12 pl-8 sm:pl-14 flex flex-col justify-center bg-white relative">
 
-            {/* Mobile Header (Visible only on small screens) */}
-            <div className="flex items-center justify-between mb-6 md:hidden">
-                <Link
-                    to="/"
-                    className="inline-flex items-center gap-1.5 text-xs font-bold text-gray-500 hover:text-emerald-600 transition-colors"
-                >
-                    <ArrowLeft size={16} />
-                    <span>Back to Landing</span>
-                </Link>
+            {/* Mobile Brand Logo (Visible only on small screens) */}
+            <div className="flex justify-end mb-6 md:hidden">
                 <BrandLogo alt="Seeakk" className="flex-shrink-0" />
             </div>
 
