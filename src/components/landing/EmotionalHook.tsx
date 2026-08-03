@@ -18,7 +18,7 @@ const personas = [
     role: 'Lead Generation Agency',
     quote: '"We Delivered 3,500 Qualified Campaign Leads Last Month. The Client Says None Converted, But They Never Even Called 60% Of Them."',
     pain: 'Agencies Get Blamed For "Poor Lead Quality" When The Client Sales Team Fails To Follow Up In Time.',
-    solution: 'Seeakk Gives Agencies Immutable Proof Of Lead Delivery, Instant Assignment, And SLA Call Compliance.',
+    solution: 'Seeakk Gives Agencies Immutable Proof Of Lead Delivery, Instant Assignment, And Response Time Call Compliance.',
     icon: Flame,
     color: 'bg-amber-50/80 border-amber-200 text-amber-900',
   },
@@ -34,7 +34,7 @@ const personas = [
   {
     id: 'sales-head',
     role: 'Head of Sales',
-    quote: '"My Team Claims They Called Every Lead. But Without Automated SLA Tracking, Follow-Ups Slip Through The Cracks Every Single Day."',
+    quote: '"My Team Claims They Called Every Lead. But Without Automated Working Schedule Tracking, Follow-Ups Slip Through The Cracks Every Single Day."',
     pain: 'Manual Logging Leads To Forgotten Follow-Ups, Uncontacted Leads, And Massive Loss Of Business (LOB).',
     solution: 'Seeakk Locks Staff Out Of Non-Compliant Actions Until Mandatory Follow-Ups And Stage Rules Are Completed.',
     icon: UserX,
@@ -169,7 +169,7 @@ const EmotionalHook: React.FC = () => {
             {
               metric: '71%',
               label: 'Leads Never Contacted',
-              desc: 'Without Automated SLA Follow-Up Gates, 7 Out Of 10 Ad Leads Are Never Called Within 24 Hours.',
+              desc: 'Without Automated Response Time Follow-Up Gates, 7 Out Of 10 Ad Leads Are Never Called Within 24 Hours.',
             },
             {
               metric: '44%',

@@ -6,13 +6,13 @@ import { Link } from 'react-router-dom';
 const comparisonRows = [
   {
     feature: 'Lead Custody & Retention',
-    without: 'Up To 40% Of Leads Lost Or Uncontacted Due To Lack Of SLA Tracking.',
+    without: 'Up To 40% Of Leads Lost Or Uncontacted Due To Lack Of Response Tracking.',
     with: '100% Timestamped Lead Custody From Campaign Import To Sales Contact.',
   },
   {
     feature: 'Agency & Sales Relationship',
     without: 'Constant Finger-Pointing Over Lead Quality And Contact Attempts.',
-    with: 'Immutable Proof Of Delivery, Contact SLA, And Conversion Audit Trail.',
+    with: 'Immutable Proof Of Delivery, Contact Response Time, And Conversion Audit Trail.',
   },
   {
     feature: 'Follow-Up Discipline',

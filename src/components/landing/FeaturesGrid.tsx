@@ -52,7 +52,7 @@ const featuresList = [
   },
   {
     category: 'leads',
-    title: 'Mandatory Follow-Up SLA Clocks',
+    title: 'Mandatory Follow-Up Response Clocks',
     desc: 'Enforced Reminder Gates And WhatsApp Integrations Ensuring No Follow-Up Is Skipped Or Forgotten.',
     icon: Clock,
     badge: 'Zero Leakage',

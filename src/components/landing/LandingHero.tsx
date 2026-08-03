@@ -42,9 +42,9 @@ const simulatorSteps = [
     id: 'step-3',
     stage: 'Mandatory Follow-Up',
     actor: 'Assigned Sales Rep',
-    title: 'Follow-Up SLA Initiated',
-    details: 'Strict 15-Minute SLA Clock Active. Follow-Up Locked In Calendar To Prevent Loss Of Business (LOB).',
-    status: 'SLA Active',
+    title: 'Follow-Up Schedule Initiated',
+    details: 'Strict 15-Minute Response Clock Active. Follow-Up Locked In Calendar To Prevent Loss Of Business (LOB).',
+    status: 'Schedule Active',
     statusColor: 'bg-emerald-50 text-emerald-700 border-emerald-200',
     icon: Clock,
   },
@@ -121,7 +121,7 @@ const LandingHero: React.FC = () => {
 
             {/* Core Subtitle */}
             <p className="text-base sm:text-lg text-slate-600 mb-8 leading-relaxed max-w-2xl mx-auto lg:mx-0 font-normal">
-              Seeakk Manages, Tracks, Monitors, Verifies, And Audits Leads Imported Or Received From Marketing Campaigns And Agencies. Enforcing Lead Custody, Mandatory Follow-Up SLA Clocks, And Performance-Based Locks To Prevent <strong>Loss Of Business (LOB)</strong>.
+              Seeakk Manages, Tracks, Monitors, Verifies, And Audits Leads Imported Or Received From Marketing Campaigns And Agencies. Enforcing Lead Custody, Mandatory Follow-Up Response Clocks, And Performance-Based Locks To Prevent <strong>Loss Of Business (LOB)</strong>.
             </p>
 
             {/* Feature Pills */}
@@ -174,7 +174,7 @@ const LandingHero: React.FC = () => {
               </div>
               <div>
                 <p className="text-2xl sm:text-3xl font-black text-emerald-600">4.2x</p>
-                <p className="text-xs font-medium text-slate-500 mt-1">Faster SLA Follow-Up Velocity</p>
+                <p className="text-xs font-medium text-slate-500 mt-1">Faster Response Time Velocity</p>
               </div>
             </div>
           </motion.div>

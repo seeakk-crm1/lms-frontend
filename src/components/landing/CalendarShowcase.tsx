@@ -26,11 +26,11 @@ const viewTabs = [
 
 const eventCategories = [
   { label: 'Lead Creation & Assignment', color: 'bg-emerald-500 text-white', badgeBg: 'bg-emerald-50 text-emerald-800 border-emerald-200' },
-  { label: 'Mandatory SLA Follow-Ups', color: 'bg-amber-500 text-white', badgeBg: 'bg-amber-50 text-amber-800 border-amber-200' },
+  { label: 'Mandatory Follow-Up Schedule', color: 'bg-amber-500 text-white', badgeBg: 'bg-amber-50 text-amber-800 border-amber-200' },
   { label: 'Product Demos & Calls', color: 'bg-blue-500 text-white', badgeBg: 'bg-blue-50 text-blue-800 border-blue-200' },
   { label: 'Won Deals & Closures', color: 'bg-teal-600 text-white', badgeBg: 'bg-teal-50 text-teal-800 border-teal-200' },
   { label: 'Stage Movement History', color: 'bg-indigo-500 text-white', badgeBg: 'bg-indigo-50 text-indigo-800 border-indigo-200' },
-  { label: 'Overdue SLA Alerts', color: 'bg-rose-500 text-white', badgeBg: 'bg-rose-50 text-rose-800 border-rose-200' },
+  { label: 'Overdue Follow-Up Alerts', color: 'bg-rose-500 text-white', badgeBg: 'bg-rose-50 text-rose-800 border-rose-200' },
 ];
 
 const mockCalendarDays = [
@@ -42,7 +42,7 @@ const mockCalendarDays = [
   { day: 31, isCurrentMonth: false, events: [] },
   { day: 1, isCurrentMonth: true, events: [{ title: 'Q4 Target Cycle Start', cat: 'Milestone', type: 'indigo' }] },
   { day: 2, isCurrentMonth: true, events: [] },
-  { day: 3, isCurrentMonth: true, events: [{ title: 'AcroTech SLA Follow-Up', cat: 'SLA', type: 'amber' }] },
+  { day: 3, isCurrentMonth: true, events: [{ title: 'AcroTech Follow-Up Call', cat: 'Schedule', type: 'amber' }] },
   { day: 4, isCurrentMonth: true, events: [] },
   { day: 5, isCurrentMonth: true, events: [{ title: 'Apex Enterprise Demo', cat: 'Demo', type: 'blue' }] },
   { day: 6, isCurrentMonth: true, events: [] },
@@ -50,14 +50,14 @@ const mockCalendarDays = [
   { day: 8, isCurrentMonth: true, events: [] },
   { day: 9, isCurrentMonth: true, events: [{ title: 'Metro Global - $45k Won', cat: 'Won Deal', type: 'teal' }] },
   { day: 10, isCurrentMonth: true, events: [] },
-  { day: 11, isCurrentMonth: true, events: [{ title: 'Vanguard - SLA Follow-Up', cat: 'SLA', type: 'amber' }] },
+  { day: 11, isCurrentMonth: true, events: [{ title: 'Vanguard - Follow-Up Call', cat: 'Schedule', type: 'amber' }] },
   { day: 12, isCurrentMonth: true, events: [] },
   { day: 13, isCurrentMonth: true, events: [] },
   { day: 14, isCurrentMonth: true, events: [{ title: 'Stage -> Proposal Review', cat: 'Stage', type: 'indigo' }] },
   { day: 15, isCurrentMonth: true, events: [{ title: 'Mid-Month Sales Review', cat: 'Milestone', type: 'emerald' }] },
   { day: 16, isCurrentMonth: true, events: [] },
   { day: 17, isCurrentMonth: true, events: [] },
-  { day: 18, isCurrentMonth: true, events: [{ title: 'Zenith SLA Overdue Alert', cat: 'Overdue', type: 'rose' }] },
+  { day: 18, isCurrentMonth: true, events: [{ title: 'Zenith Follow-Up Overdue', cat: 'Overdue', type: 'rose' }] },
   { day: 19, isCurrentMonth: true, events: [] },
   { day: 20, isCurrentMonth: true, events: [{ title: 'Branch Customer Meeting', cat: 'Meeting', type: 'blue' }] },
   { day: 21, isCurrentMonth: true, events: [] },
@@ -65,7 +65,7 @@ const mockCalendarDays = [
   { day: 23, isCurrentMonth: true, events: [] },
   { day: 24, isCurrentMonth: true, events: [{ title: 'Starlight - Assigned', cat: 'Created', type: 'emerald' }] },
   { day: 25, isCurrentMonth: true, events: [] },
-  { day: 26, isCurrentMonth: true, events: [{ title: 'SLA Clock Verified', cat: 'SLA', type: 'amber' }] },
+  { day: 26, isCurrentMonth: true, events: [{ title: 'Working Schedule Verified', cat: 'Schedule', type: 'amber' }] },
   { day: 27, isCurrentMonth: true, events: [] },
   { day: 28, isCurrentMonth: true, events: [{ title: 'Orion Inc - $80k Closed', cat: 'Won Deal', type: 'teal' }] },
   { day: 29, isCurrentMonth: true, events: [] },
@@ -81,7 +81,7 @@ const featureHighlights = [
   },
   {
     icon: Clock,
-    title: 'Follow-Up SLA Velocity',
+    title: 'Follow-Up Response Velocity',
     desc: 'Never Miss A Customer Contact With Live Countdown Timers And Automated Notifications For Upcoming Or Overdue Follow-Ups.',
     color: 'amber',
   },
@@ -204,7 +204,7 @@ const CalendarShowcase: React.FC = () => {
               </div>
               <div>
                 <h3 className="text-lg font-black text-slate-900">Lead Operations Calendar — Sales Activity View</h3>
-                <p className="text-xs text-slate-500 font-medium">Real-Time Lead Journey, SLA Follow-Up & Revenue Milestone Synchronization</p>
+                <p className="text-xs text-slate-500 font-medium">Real-Time Lead Journey, Follow-Up Schedule & Revenue Milestone Synchronization</p>
               </div>
             </div>
 
@@ -345,10 +345,10 @@ const CalendarShowcase: React.FC = () => {
                     <div className="flex justify-between text-xs font-bold text-emerald-900">
                       <span>AcroTech Enterprise Call</span>
                       <span className="text-[10px] bg-emerald-600 text-white px-1.5 py-0.5 rounded uppercase">
-                        SLA Active
+                        Schedule Active
                       </span>
                     </div>
-                    <p className="text-[11px] text-emerald-700 font-medium">Assigned: Rahul (15m SLA Timer Running)</p>
+                    <p className="text-[11px] text-emerald-700 font-medium">Assigned: Rahul (15m Response Timer Running)</p>
                   </div>
 
                   <div className="bg-blue-50 p-3 rounded-xl border border-blue-200 space-y-1">
@@ -373,12 +373,12 @@ const CalendarShowcase: React.FC = () => {
 
                   <div className="bg-rose-50 p-3 rounded-xl border border-rose-200 space-y-1">
                     <div className="flex justify-between text-xs font-bold text-rose-900">
-                      <span>Zenith Ltd SLA Overdue</span>
+                      <span>Zenith Ltd Follow-Up Overdue</span>
                       <span className="text-[10px] bg-rose-600 text-white px-1.5 py-0.5 rounded uppercase">
                         Overdue Alert
                       </span>
                     </div>
-                    <p className="text-[11px] text-rose-700 font-medium">Follow-Up SLA Clock Expired</p>
+                    <p className="text-[11px] text-rose-700 font-medium">Follow-Up Response Clock Expired</p>
                   </div>
                 </div>
               </div>
@@ -390,7 +390,7 @@ const CalendarShowcase: React.FC = () => {
                   <span>Lead Operations Control</span>
                 </div>
                 <p className="text-xs text-slate-300 leading-relaxed font-normal">
-                  Connects Seamlessly With Lead Assignment, SLA Follow-Up Clocks, Stage Transition Rules, And Target Cycles.
+                  Connects Seamlessly With Lead Assignment, Follow-Up Schedule Clocks, Stage Transition Rules, And Target Cycles.
                 </p>
                 <Link
                   to="/login"

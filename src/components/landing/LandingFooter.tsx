@@ -64,7 +64,7 @@ const LandingFooter: React.FC = () => {
               <li><a href="#bridge" className="hover:text-white transition-colors">Chain Of Custody</a></li>
               <li><a href="#calendar" className="hover:text-white transition-colors">Operations Calendar</a></li>
               <li><a href="#showcase" className="hover:text-white transition-colors">Target Locking Engine</a></li>
-              <li><a href="#showcase" className="hover:text-white transition-colors">Mandatory Follow-Up SLA</a></li>
+              <li><a href="#showcase" className="hover:text-white transition-colors">Mandatory Follow-Up Schedule</a></li>
               <li><a href="#showcase" className="hover:text-white transition-colors">Geo-Attendance & Roster</a></li>
               <li><a href="#features" className="hover:text-white transition-colors">Excel & CSV Import</a></li>
               <li><a href="#features" className="hover:text-white transition-colors">Loss Of Business (LOB) Audit</a></li>

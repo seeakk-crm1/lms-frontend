@@ -2498,5 +2498,4 @@ const AttendancePage: React.FC = () => {
     </DashboardLayout>
   );
 };
-
 export default AttendancePage;

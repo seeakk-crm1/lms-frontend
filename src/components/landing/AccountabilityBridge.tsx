@@ -37,9 +37,9 @@ const bridgeStages = [
     step: '03',
     name: 'Mandatory Follow-Up',
     owner: 'Assigned Sales Advisor',
-    desc: 'Strict SLA Countdown Clock. Next Follow-Up Date And Contact Method Locked In The Calendar.',
+    desc: 'Strict Response Countdown Clock. Next Follow-Up Date And Contact Method Locked In The Calendar.',
     icon: Clock,
-    badge: 'SLA Enforced',
+    badge: 'Schedule Enforced',
   },
   {
     step: '04',

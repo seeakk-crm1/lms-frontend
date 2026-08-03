@@ -20,13 +20,13 @@ const showcaseTabs = [
     id: 'target-locking',
     label: 'Target Locking Engine',
     icon: Lock,
-    headline: 'Automatic Staff Locking When Targets Or SLA Follow-Ups Miss Quota',
+    headline: 'Automatic Staff Locking When Targets Or Service Rules Miss Quota',
     desc: 'When Sales Representatives Fail To Meet Target Cycles Or Accumulate Overdue Mandatory Follow-Ups, Seeakk Automatically Locks CRM Actions Until Supervisors Review And Unlock Them, Preventing Loss Of Business (LOB).',
     previewType: 'lock',
   },
   {
     id: 'followups',
-    label: 'Smart Follow-Up SLA',
+    label: 'Smart Response Rules',
     icon: CalendarCheck,
     headline: 'Zero Lead Abandonment With Mandatory Follow-Up Gates',
     desc: 'Mandatory Follow-Up Reminders Enforce Strict Response Clocks. Reps Cannot Browse Away Or Skip Scheduling Without Completing Active Lead Follow-Up Notes.',
@@ -216,7 +216,7 @@ const InteractiveShowcase: React.FC = () => {
                           </div>
                           <div>
                             <p className="text-xs font-bold text-slate-900">Lead: AcroTech Enterprise</p>
-                            <p className="text-[11px] text-emerald-800 font-semibold">Follow-Up SLA: 14 Mins Remaining</p>
+                            <p className="text-[11px] text-emerald-800 font-semibold">Response Time: 14 Mins Remaining</p>
                           </div>
                         </div>
                         <span className="text-[10px] font-bold px-2.5 py-1 rounded bg-emerald-600 text-white uppercase shadow-sm">
