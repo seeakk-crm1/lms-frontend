@@ -132,22 +132,31 @@ const UnlockStaffPage: React.FC = () => {
                       <td className="px-4 py-4 text-sm font-bold text-rose-600">
                         {Math.round(row.completionPercentage || 0)}%
                       </td>
-                      <td className="px-4 py-4 text-xs text-gray-600 max-w-[200px]">
-                        {row.targetLockReason || 'Target incomplete'}
+                      <td className="px-4 py-4 text-xs text-gray-600 max-w-[240px]">
+                        <p className="font-semibold text-gray-900 line-clamp-2">{row.targetLockReason || 'Target incomplete'}</p>
                         {row.targetLockedAt ? (
                           <p className="text-[10px] text-gray-400 mt-1">
                             {format(new Date(row.targetLockedAt), 'dd MMM yyyy, hh:mm a')}
                           </p>
                         ) : null}
                         <div className="mt-2 flex flex-wrap gap-1">
-                          {row.hasUsedSelfUnlock && (
-                            <span className="inline-block px-2 py-0.5 rounded-md bg-blue-50 text-blue-600 text-[10px] font-bold">
-                              Self Unlocked
+                          {row.isEscalatedLock ? (
+                            <span className="inline-block px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 text-[10px] font-extrabold border border-amber-300">
+                              Supervisor Lock {row.escalationLevel > 0 ? `(L${row.escalationLevel})` : ''}
+                            </span>
+                          ) : (
+                            <span className="inline-block px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 text-[10px] font-bold">
+                              Direct Target Lock
                             </span>
                           )}
-                          {row.isEscalatedLock && (
-                            <span className="inline-block px-2 py-0.5 rounded-md bg-rose-100 text-rose-700 text-[10px] font-bold">
-                              Escalated Lock
+                          {row.originatingUser && (
+                            <span className="inline-block px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 text-[10px] font-bold">
+                              From: {row.originatingUser.name || row.originatingUser.email}
+                            </span>
+                          )}
+                          {row.hasUsedSelfUnlock && (
+                            <span className="inline-block px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 text-[10px] font-bold border border-blue-200">
+                              Self-Unlocked {row.reEvaluationAt ? `(Due: ${format(new Date(row.reEvaluationAt), 'dd MMM')})` : ''}
                             </span>
                           )}
                         </div>

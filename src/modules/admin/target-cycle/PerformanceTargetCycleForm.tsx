@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Loader2, Plus, Save, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Loader2, Plus, Save, Trash2, ChevronDown, ChevronUp, ShieldAlert } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
 import { useQuery } from '@tanstack/react-query';
@@ -24,6 +24,10 @@ export type PerformanceTargetCyclePayload = {
     startDate: string;
     endDate: string;
     lockingDate: string;
+    allowSelfUnlock?: boolean;
+    selfUnlockGraceDays?: number | null;
+    lockSupervisorOnRefailure?: boolean;
+    enableSupervisorLockChain?: boolean;
     metrics?: Array<{
       metricType: 'LEADS' | 'REVENUE' | 'FOLLOW_UP' | 'PRODUCTS';
       targetValue: number;
@@ -343,6 +347,10 @@ const PerformanceTargetCycleForm: React.FC<Props> = ({ initialData, isSubmitting
         startDate: period.startDate,
         endDate: period.endDate,
         lockingDate: period.lockingDate,
+        allowSelfUnlock: Boolean(period.allowSelfUnlock),
+        selfUnlockGraceDays: period.allowSelfUnlock && period.selfUnlockGraceDays ? Number(period.selfUnlockGraceDays) : null,
+        lockSupervisorOnRefailure: period.allowSelfUnlock ? Boolean(period.lockSupervisorOnRefailure) : false,
+        enableSupervisorLockChain: period.allowSelfUnlock && period.lockSupervisorOnRefailure ? Boolean(period.enableSupervisorLockChain) : false,
         metrics: period.metrics || [],
       })),
       status,
@@ -766,6 +774,155 @@ const PerformanceTargetCycleForm: React.FC<Props> = ({ initialData, isSubmitting
                           )}
                         </div>
                       )}
+                    </div>
+
+                    {/* Self-Unlock & Escalation Rules Section */}
+                    <div className="pt-4 border-t border-gray-100 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 flex items-center gap-1.5">
+                            <ShieldAlert className="w-4 h-4 text-emerald-600" />
+                            Self-Unlock & Escalation Rules
+                          </h4>
+                          <p className="text-[11px] text-slate-500">
+                            Configure period-specific self-unlock policy and supervisor re-lock escalation.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="grid gap-3 sm:grid-cols-2 bg-slate-50/70 p-4 rounded-xl border border-slate-200/80">
+                        {/* Field 1: Allow User Self-Unlock */}
+                        <div className="flex items-start justify-between gap-3 sm:col-span-2 bg-white p-3 rounded-xl border border-slate-100 shadow-xs">
+                          <div>
+                            <label className="text-xs font-bold text-slate-900 block">Allow User Self-Unlock</label>
+                            <p className="text-[11px] text-slate-500 mt-0.5">
+                              Allow users locked for missing this target period to unlock their own account once and receive a limited grace period to complete the target.
+                            </p>
+                          </div>
+                          <input
+                            type="checkbox"
+                            checked={!!period.allowSelfUnlock}
+                            onChange={(e) => {
+                              const val = e.target.checked;
+                              setPeriodsState((prev) =>
+                                prev.map((p) =>
+                                  p.periodIndex === period.periodIndex
+                                    ? {
+                                        ...p,
+                                        allowSelfUnlock: val,
+                                        selfUnlockGraceDays: val ? (p.selfUnlockGraceDays || 2) : null,
+                                        lockSupervisorOnRefailure: val ? p.lockSupervisorOnRefailure : false,
+                                        enableSupervisorLockChain: val ? p.enableSupervisorLockChain : false,
+                                      }
+                                    : p,
+                                ),
+                              );
+                            }}
+                            className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 mt-1 cursor-pointer"
+                          />
+                        </div>
+
+                        {period.allowSelfUnlock && (
+                          <>
+                            {/* Field 2: Self-Unlock Grace Days */}
+                            <div className="space-y-1 bg-white p-3 rounded-xl border border-slate-100 shadow-xs">
+                              <label className="text-xs font-bold text-slate-900 block">Days Allowed After Self-Unlock</label>
+                              <p className="text-[11px] text-slate-500">
+                                Number of calendar days (1–365) the user receives after self-unlocking before the target is evaluated again.
+                              </p>
+                              <div className="flex items-center gap-2 mt-2">
+                                <input
+                                  type="number"
+                                  min={1}
+                                  max={365}
+                                  required
+                                  value={period.selfUnlockGraceDays ?? 2}
+                                  onChange={(e) => {
+                                    const val = Math.max(1, Math.min(365, parseInt(e.target.value, 10) || 1));
+                                    setPeriodsState((prev) =>
+                                      prev.map((p) =>
+                                        p.periodIndex === period.periodIndex ? { ...p, selfUnlockGraceDays: val } : p,
+                                      ),
+                                    );
+                                  }}
+                                  className="w-28 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-bold focus:outline-emerald-500"
+                                />
+                                <span className="text-xs text-slate-600 font-medium">Days</span>
+                              </div>
+                            </div>
+
+                            {/* Field 3: Lock Supervisor On Re-Failure */}
+                            <div className="flex items-start justify-between gap-3 bg-white p-3 rounded-xl border border-slate-100 shadow-xs">
+                              <div>
+                                <label className="text-xs font-bold text-slate-900 block">Lock Supervisor If User Fails Again</label>
+                                <p className="text-[11px] text-slate-500 mt-0.5">
+                                  If the user still does not meet the target after the self-unlock grace period, lock the user again and optionally lock the user’s valid supervisor.
+                                </p>
+                              </div>
+                              <input
+                                type="checkbox"
+                                checked={!!period.lockSupervisorOnRefailure}
+                                onChange={(e) => {
+                                  const val = e.target.checked;
+                                  setPeriodsState((prev) =>
+                                    prev.map((p) =>
+                                      p.periodIndex === period.periodIndex
+                                        ? {
+                                            ...p,
+                                            lockSupervisorOnRefailure: val,
+                                            enableSupervisorLockChain: val ? p.enableSupervisorLockChain : false,
+                                          }
+                                        : p,
+                                    ),
+                                  );
+                                }}
+                                className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 mt-1 cursor-pointer"
+                              />
+                            </div>
+
+                            {/* Field 4: Enable Supervisor Lock Chain */}
+                            {period.lockSupervisorOnRefailure && (
+                              <div className="flex items-start justify-between gap-3 sm:col-span-2 bg-amber-50/70 p-3 rounded-xl border border-amber-200/80">
+                                <div>
+                                  <label className="text-xs font-bold text-amber-950 block">Continue Locking Through Supervisor Chain</label>
+                                  <p className="text-[11px] text-amber-800 mt-0.5">
+                                    When enabled, the system may continue locking eligible supervisors upward through the reporting chain, according to configured rules and hierarchy safeguards.
+                                  </p>
+                                </div>
+                                <input
+                                  type="checkbox"
+                                  checked={!!period.enableSupervisorLockChain}
+                                  onChange={(e) => {
+                                    const val = e.target.checked;
+                                    setPeriodsState((prev) =>
+                                      prev.map((p) =>
+                                        p.periodIndex === period.periodIndex
+                                          ? { ...p, enableSupervisorLockChain: val }
+                                          : p,
+                                      ),
+                                    );
+                                  }}
+                                  className="w-4 h-4 rounded text-amber-600 focus:ring-amber-500 mt-1 cursor-pointer"
+                                />
+                              </div>
+                            )}
+
+                            {/* Dynamic Workflow Preview */}
+                            <div className="sm:col-span-2 bg-emerald-50/90 p-3 rounded-xl border border-emerald-200/90 text-xs text-emerald-900">
+                              <span className="font-bold block mb-0.5 text-emerald-950">Workflow Rule Preview:</span>
+                              <p>
+                                If a user misses this target, they may self-unlock once. They will receive{' '}
+                                <strong>{period.selfUnlockGraceDays || 2} days</strong> to complete the target.{' '}
+                                {period.lockSupervisorOnRefailure
+                                  ? period.enableSupervisorLockChain
+                                    ? `If they fail again, both the user and their eligible supervisors up the reporting chain will be locked.`
+                                    : `If they fail again, both the user and their eligible supervisor will be locked.`
+                                  : `If they fail again, only the user will be locked.`}
+                              </p>
+                            </div>
+                          </>
+                        )}
+                      </div>
                     </div>
                   </div>
                 )}

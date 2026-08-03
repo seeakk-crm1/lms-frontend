@@ -15,6 +15,10 @@ export interface TargetCyclePeriod {
   startDate: string;
   endDate: string;
   lockingDate: string;
+  allowSelfUnlock?: boolean;
+  selfUnlockGraceDays?: number | null;
+  lockSupervisorOnRefailure?: boolean;
+  enableSupervisorLockChain?: boolean;
   metrics?: Array<{
     id?: string;
     metricType: 'LEADS' | 'REVENUE' | 'FOLLOW_UP' | 'PRODUCTS';

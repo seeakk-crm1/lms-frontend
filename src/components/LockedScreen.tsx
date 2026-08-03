@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import toast from 'react-hot-toast';
 import useAuthStore from '../store/useAuthStore';
-import { unlockTargetStaff } from '../services/target.api';
+import { performSelfUnlockApi } from '../services/target.api';
 import TargetLockDetails, { type TargetLockDetailsData } from './TargetLockDetails';
 
 type LockedScreenProps = {
@@ -14,11 +14,10 @@ const LockedScreen: React.FC<LockedScreenProps> = ({ targetLock, isTargetLocked 
   const [isUnlocking, setIsUnlocking] = useState(false);
 
   const handleSelfUnlock = async () => {
-    if (!user?.id) return;
     try {
       setIsUnlocking(true);
-      await unlockTargetStaff(user.id, 'SELF_UNLOCK');
-      toast.success('Account successfully unlocked!');
+      const res = await performSelfUnlockApi();
+      toast.success(res.message || 'Account successfully self-unlocked!');
       window.location.reload();
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to unlock account.');

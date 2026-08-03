@@ -34,3 +34,8 @@ export const assignUserTargetCycleAdmin = async (userId: string, targetCycleId: 
   const response = await api.put(`/admin/users/${userId}/target-cycle`, { targetCycleId });
   return response.data;
 };
+
+export const performSelfUnlockApi = async (lockId?: string) => {
+  const response = await api.post(lockId ? `/targets/self-unlock/${lockId}` : '/targets/self-unlock');
+  return response.data;
+};
