@@ -85,7 +85,8 @@ const EmotionalHook: React.FC = () => {
           </h2>
 
           <p className="text-base sm:text-lg text-slate-600 leading-relaxed">
-            Agencies Blame Sales. Sales Blames Lead Quality. Executives Bleed Cash From <strong>Loss Of Business (LOB)</strong>. Without A Centralized Accountability Bridge, Every Uncontacted Lead Becomes A Permanent Revenue Loss.
+            Marketing agencies blame the sales team. Sales teams blame lead quality. Business owners lose revenue while everyone looks for someone to blame.{' '}
+            Without a centralized accountability platform, every uncontacted lead, missed follow-up, and delayed decision becomes permanent revenue loss. Seeakk ensures every lead has an owner, every follow-up is completed, every action is tracked, and every opportunity is converted into measurable revenue.
           </p>
         </motion.div>
 
