@@ -425,7 +425,7 @@ function App() {
         <Route path="/admin/report-types" element={<Navigate to="/reports/activity" replace />} />
 
         <Route path="/admin/lob-reasons" element={
-          <PermissionRoute permissions={['LOB_REASONS_VIEW', 'SYSTEM_CONFIG']}>
+          <PermissionRoute permissions={['LOB_REASONS_VIEW', 'LOB_REASONS_CREATE', 'Create LOB Reasons', 'SYSTEM_CONFIG']}>
             <LOBReasonsPage />
           </PermissionRoute>
         } />

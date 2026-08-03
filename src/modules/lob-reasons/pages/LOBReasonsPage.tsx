@@ -40,7 +40,44 @@ const LOBReasonsPage: React.FC = () => {
   const toggleMutation = useToggleLOBReason();
 
   const normalizedRole = roleKey(user?.role);
-  const canManage = ['admin', 'superadmin'].includes(normalizedRole);
+  const isAdminRole = ['admin', 'administrator', 'superadmin'].includes(normalizedRole);
+
+  const permissions = useMemo(() => {
+    if (!Array.isArray(user?.permissions)) return new Set<string>();
+    return new Set(user.permissions.map((permission) => String(permission)));
+  }, [user?.permissions]);
+
+  const canCreate = useMemo(
+    () =>
+      isAdminRole ||
+      permissions.has('LOB_REASONS_CREATE') ||
+      permissions.has('Create LOB Reasons') ||
+      permissions.has('create_lob_reasons') ||
+      permissions.has('SYSTEM_CONFIG'),
+    [isAdminRole, permissions],
+  );
+
+  const canEdit = useMemo(
+    () =>
+      isAdminRole ||
+      permissions.has('LOB_REASONS_EDIT') ||
+      permissions.has('Edit LOB Reasons') ||
+      permissions.has('edit_lob_reasons') ||
+      permissions.has('SYSTEM_CONFIG'),
+    [isAdminRole, permissions],
+  );
+
+  const canDelete = useMemo(
+    () =>
+      isAdminRole ||
+      permissions.has('LOB_REASONS_DELETE') ||
+      permissions.has('Delete LOB Reasons') ||
+      permissions.has('delete_lob_reasons') ||
+      permissions.has('SYSTEM_CONFIG'),
+    [isAdminRole, permissions],
+  );
+
+  const canManage = canCreate || canEdit || canDelete;
 
   useEffect(() => {
     setSearchDraft(search);
@@ -110,7 +147,7 @@ const LOBReasonsPage: React.FC = () => {
                   name="status"
                 />
 
-                {canManage ? (
+                {canCreate ? (
                   <button
                     type="button"
                     onClick={() => {
