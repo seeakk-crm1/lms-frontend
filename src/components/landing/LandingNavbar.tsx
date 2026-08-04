@@ -6,7 +6,7 @@ import BrandLogo from '../BrandLogo';
 
 const navLinks = [
   { href: '#positioning', label: 'Positioning' },
-  { href: '#bridge', label: 'Accountability Chain' },
+  { href: '#bridge', label: 'Core Features' },
   { href: '#showcase', label: 'Interactive Tour' },
   { href: '#calendar', label: 'Operations Calendar' },
   { href: '#features', label: 'Capabilities' },
