@@ -20,6 +20,8 @@ let authRecoveryInFlight = false;
 /** Prevents infinite connect_error → refresh → connect loops on persistent auth failure */
 let consecutiveSocketAuthRecoveries = 0;
 const MAX_SOCKET_AUTH_RECOVERIES = 8;
+let tokenWasRefreshedForSocket = false;
+let lastSocketRecoveryAttemptTime = 0;
 
 const readStoredUserId = (): string | null => {
   try {
@@ -105,6 +107,7 @@ export const reconnectRealtimeWithFreshToken = (): void => {
   if (!token) return;
 
   consecutiveSocketAuthRecoveries = 0;
+  tokenWasRefreshedForSocket = false;
   applyFreshTokenToSocket(socket, token);
 
   if (socket.connected) {
@@ -117,6 +120,7 @@ onAccessTokenRefreshed((accessToken) => {
   if (!socket || !lastSocketUserId) return;
   applyFreshTokenToSocket(socket, accessToken);
   consecutiveSocketAuthRecoveries = 0;
+  tokenWasRefreshedForSocket = false;
   if (!socket.connected) {
     scheduleSocketReconnect(socket, 50);
   }
@@ -125,6 +129,7 @@ onAccessTokenRefreshed((accessToken) => {
 const attachCoreSocketHandlers = (s: Socket, baseUrl: string): void => {
   s.on('connect', () => {
     consecutiveSocketAuthRecoveries = 0;
+    tokenWasRefreshedForSocket = false;
   });
 
   s.on('connect_error', async (err: Error & { message?: string }) => {
@@ -134,6 +139,14 @@ const attachCoreSocketHandlers = (s: Socket, baseUrl: string): void => {
     console.warn('[Socket.io]', explainFailureKind(kind, baseUrl));
 
     if (!isLikelySocketAuthError(msg)) return;
+
+    // Rate-limiting cooldown (10 seconds) for socket-triggered refreshes to prevent redundant refresh calls while the network is unstable.
+    const now = Date.now();
+    const COOLDOWN_MS = 10000;
+    if (now - lastSocketRecoveryAttemptTime < COOLDOWN_MS) {
+      console.warn('[Socket.io] Socket auth recovery cooldown active — letting Socket.IO retry with built-in backoff');
+      return;
+    }
 
     const refreshToken = localStorage.getItem('refreshToken');
     if (!refreshToken) {
@@ -153,16 +166,24 @@ const attachCoreSocketHandlers = (s: Socket, baseUrl: string): void => {
 
     if (authRecoveryInFlight) return;
 
+    // If we already refreshed the token for the socket connection once, and we STILL got an auth error,
+    // then increment the consecutive recoveries counter.
+    if (tokenWasRefreshedForSocket) {
+      consecutiveSocketAuthRecoveries += 1;
+      tokenWasRefreshedForSocket = false;
+    }
+
     if (consecutiveSocketAuthRecoveries >= MAX_SOCKET_AUTH_RECOVERIES) {
       console.warn('[Socket.io] Too many auth recovery attempts — clearing session');
       useAuthStore.getState().clearAuth();
       return;
     }
-    consecutiveSocketAuthRecoveries += 1;
 
+    lastSocketRecoveryAttemptTime = now;
     authRecoveryInFlight = true;
     try {
       const newToken = await refreshAccessToken();
+      tokenWasRefreshedForSocket = true;
       applyFreshTokenToSocket(s, newToken);
       s.connect();
     } catch (e) {
@@ -290,6 +311,7 @@ export const disconnectRealtime = (): void => {
   lastSocketUserId = null;
   authRecoveryInFlight = false;
   consecutiveSocketAuthRecoveries = 0;
+  tokenWasRefreshedForSocket = false;
   if (!socket) return;
   socket.removeAllListeners();
   socket.disconnect();

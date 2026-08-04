@@ -222,7 +222,7 @@ api.interceptors.response.use(
           clearExpiredSession();
           return Promise.reject(err);
         }
-        return Promise.reject(error);
+        return Promise.reject(err);
       }
     }
 
