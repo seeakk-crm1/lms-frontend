@@ -146,6 +146,8 @@ const AttendancePage: React.FC = () => {
   // Rejection modal
   const [rejectRecordId, setRejectRecordId] = useState<string | null>(null);
   const [rejectionReason, setRejectionReason] = useState('');
+  const [leaveApprovalRecordId, setLeaveApprovalRecordId] = useState<string | null>(null);
+  const [isPaidLeave, setIsPaidLeave] = useState<boolean>(true);
 
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -432,6 +434,13 @@ const AttendancePage: React.FC = () => {
       return;
     }
 
+    const record = pendingList.find((r: any) => r.id === recordId);
+    if (action === 'APPROVE' && record && record.attendanceType === 'LEAVE') {
+      setLeaveApprovalRecordId(recordId);
+      setIsPaidLeave(true);
+      return;
+    }
+
     if (processingActionRecordId) return;
     setProcessingActionRecordId(recordId);
     try {
@@ -461,6 +470,22 @@ const AttendancePage: React.FC = () => {
       toast.error(err.response?.data?.message || 'Failed to reject request');
     } finally {
       setSubmittingRejection(false);
+    }
+  };
+
+  const submitLeaveApproval = async () => {
+    if (!leaveApprovalRecordId) return;
+    if (processingActionRecordId) return;
+    setProcessingActionRecordId(leaveApprovalRecordId);
+    try {
+      await attendanceApi.reviewAttendance(leaveApprovalRecordId, 'APPROVE', undefined, isPaidLeave);
+      toast.success(`Leave approved as ${isPaidLeave ? 'Paid' : 'Unpaid'}.`);
+      setLeaveApprovalRecordId(null);
+      await refreshAll();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to approve leave request');
+    } finally {
+      setProcessingActionRecordId(null);
     }
   };
 
@@ -2146,6 +2171,85 @@ const AttendancePage: React.FC = () => {
                   className="px-4 py-2 bg-rose-600 text-white font-bold rounded-lg hover:bg-rose-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 >
                   {submittingRejection ? 'Rejecting...' : 'Confirm Rejection'}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Leave Approval Modal (Paid vs Unpaid selection) */}
+      <AnimatePresence>
+        {leaveApprovalRecordId && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white rounded-3xl p-6 md:p-8 max-w-md w-full shadow-2xl relative border border-gray-50 space-y-5"
+            >
+              <div>
+                <h3 className="text-base font-black text-gray-900">Approve Leave Request</h3>
+                <p className="text-xs text-gray-400 mt-1">Specify whether this leave request should be approved as paid or unpaid leave.</p>
+              </div>
+
+              <div className="flex gap-4">
+                <label
+                  className={`flex-1 flex items-center justify-between p-4 rounded-2xl border-2 cursor-pointer transition-all select-none ${
+                    isPaidLeave === true ? 'border-emerald-500 bg-emerald-50/30' : 'border-gray-200 bg-white hover:bg-gray-50'
+                  }`}
+                  onClick={() => setIsPaidLeave(true)}
+                >
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="radio"
+                      name="leavePaidStatus"
+                      checked={isPaidLeave === true}
+                      readOnly
+                      className="w-4 h-4 text-emerald-600 border-gray-300 focus:ring-emerald-500"
+                    />
+                    <div className="text-left">
+                      <p className="text-xs font-bold text-gray-900">Paid Leave</p>
+                      <p className="text-[10px] text-gray-500 mt-0.5">Counts as working day</p>
+                    </div>
+                  </div>
+                </label>
+
+                <label
+                  className={`flex-1 flex items-center justify-between p-4 rounded-2xl border-2 cursor-pointer transition-all select-none ${
+                    isPaidLeave === false ? 'border-amber-500 bg-amber-50/30' : 'border-gray-200 bg-white hover:bg-gray-50'
+                  }`}
+                  onClick={() => setIsPaidLeave(false)}
+                >
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="radio"
+                      name="leavePaidStatus"
+                      checked={isPaidLeave === false}
+                      readOnly
+                      className="w-4 h-4 text-amber-600 border-gray-300 focus:ring-amber-500"
+                    />
+                    <div className="text-left">
+                      <p className="text-xs font-bold text-gray-900">Unpaid Leave</p>
+                      <p className="text-[10px] text-gray-500 mt-0.5">LOP deduction applies</p>
+                    </div>
+                  </div>
+                </label>
+              </div>
+
+              <div className="flex gap-2 justify-end text-xs pt-1">
+                <button
+                  onClick={() => setLeaveApprovalRecordId(null)}
+                  className="px-4 py-2 bg-gray-50 text-gray-500 font-bold rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={submitLeaveApproval}
+                  disabled={processingActionRecordId === leaveApprovalRecordId}
+                  className="px-5 py-2 bg-emerald-600 text-white font-bold rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                >
+                  {processingActionRecordId === leaveApprovalRecordId ? 'Approving...' : 'Confirm Approval'}
                 </button>
               </div>
             </motion.div>

@@ -161,6 +161,13 @@ const STATUS_BADGE_CONFIG: Record<
     iconBg: 'bg-purple-500',
     label: 'Leave',
   },
+  WORK_FROM_HOME: {
+    bg: 'bg-indigo-50 text-indigo-700',
+    border: 'border-indigo-200',
+    text: 'text-indigo-700',
+    iconBg: 'bg-indigo-500',
+    label: 'Work From Home',
+  },
   WEEKEND: {
     bg: 'bg-slate-100 text-slate-600',
     border: 'border-slate-200',
@@ -451,7 +458,7 @@ const AttendanceCalendarWidget: React.FC = () => {
   const isDayStatusMatchingFilter = (day: CalendarDayDetail, filter: string): boolean => {
     if (filter === 'ALL') return true;
     if (filter === 'PRESENT') {
-      return day.status === 'PRESENT' || day.status === 'LATE' || day.status === 'EARLY_CHECKOUT';
+      return day.status === 'PRESENT' || day.status === 'LATE' || day.status === 'EARLY_CHECKOUT' || day.status === 'WORK_FROM_HOME';
     }
     return day.status === filter;
   };
@@ -476,7 +483,7 @@ const AttendanceCalendarWidget: React.FC = () => {
     let totalWorkingHours = 0;
 
     matchingDays.forEach((d) => {
-      if (d.status === 'PRESENT' || d.status === 'EARLY_CHECKOUT') presentDays++;
+      if (d.status === 'PRESENT' || d.status === 'EARLY_CHECKOUT' || d.status === 'WORK_FROM_HOME') presentDays++;
       if (d.status === 'LATE') {
         lateDays++;
         presentDays++;
@@ -807,6 +814,7 @@ const AttendanceCalendarWidget: React.FC = () => {
                   <option value="ABSENT">🔴 Absent</option>
                   <option value="HOLIDAY">⚪ Holiday</option>
                   <option value="LEAVE">🟣 Leave</option>
+                  <option value="WORK_FROM_HOME">🏠 Work From Home</option>
                   <option value="WEEKEND">⚫ Weekly Off</option>
                 </select>
                 <ChevronDown size={14} className="absolute right-3 top-3 text-slate-400 pointer-events-none" />

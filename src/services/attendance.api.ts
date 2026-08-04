@@ -92,8 +92,8 @@ export const getPendingApprovals = async () => {
   return response.data;
 };
 
-export const reviewAttendance = async (recordId: string, action: 'APPROVE' | 'REJECT', reason?: string) => {
-  const response = await api.post(`/attendance/review/${recordId}`, { action, reason });
+export const reviewAttendance = async (recordId: string, action: 'APPROVE' | 'REJECT', reason?: string, isPaidLeave?: boolean) => {
+  const response = await api.post(`/attendance/review/${recordId}`, { action, reason, isPaidLeave });
   return response.data;
 };
 
