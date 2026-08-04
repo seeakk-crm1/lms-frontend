@@ -33,7 +33,8 @@ export interface CalendarDayDetail {
     | 'HOLIDAY'
     | 'LEAVE'
     | 'WEEKEND'
-    | 'NO_ATTENDANCE';
+    | 'NO_ATTENDANCE'
+    | 'WORK_FROM_HOME';
   statusLabel: string;
   checkInTime: string | null;
   checkOutTime: string | null;
