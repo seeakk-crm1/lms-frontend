@@ -92,7 +92,7 @@ const featuresList = [
   },
   {
     category: 'enterprise',
-    title: 'Immutable Activity Audit Logs',
+    title: 'Permanent Activity Audit Logs',
     desc: 'Full Forensic Timeline Recording Every Single Lead Edit, Stage Move, Assignment, And Unlock Request.',
     icon: History,
     badge: 'Audit Trail',

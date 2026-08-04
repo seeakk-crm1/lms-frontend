@@ -36,7 +36,7 @@ const pricingTiers = [
       'Dynamic Stage Rules & Proofs',
       'Advance Payment & Receipt Logging',
       'Supervisor Approval Queue',
-      'Immutable Audit Logs & Export',
+      'Permanent Audit Logs & Export',
       '24/7 Priority Support',
     ],
   },
