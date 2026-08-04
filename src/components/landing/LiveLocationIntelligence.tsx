@@ -10,22 +10,32 @@ import {
   CheckCircle2,
   Users,
   Activity,
-  Layers,
   ArrowRight,
   Eye,
-  Globe,
   Radio,
   FileCheck,
-  TrendingUp,
   Lock,
+  Plus,
+  Minus,
+  Maximize2,
+  User,
+  Car,
+  Layers,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const mapTabs = [
-  { id: 'live', label: 'Live Map View', icon: Radio },
-  { id: 'timeline', label: 'Customer Visit Timeline', icon: Clock },
-  { id: 'branches', label: 'Branch-Wise Field Visibility', icon: Building2 },
-  { id: 'geofence', label: 'GPS Geofence Audit', icon: ShieldCheck },
+  { id: 'live', label: 'Live User Map', icon: Radio },
+  { id: 'timeline', label: 'User Travel Timeline', icon: Clock },
+  { id: 'team', label: 'Team Location View', icon: Users },
+  { id: 'verification', label: 'Location Verification', icon: ShieldCheck },
+];
+
+const liveStatusCards = [
+  { label: 'Live Users', value: '8 Active', color: 'text-blue-600', bg: 'bg-blue-50 border-blue-200' },
+  { label: 'Customer Visits', value: '3 In Progress', color: 'text-amber-600', bg: 'bg-amber-50 border-amber-200' },
+  { label: 'Travelling', value: '4 Users', color: 'text-indigo-600', bg: 'bg-indigo-50 border-indigo-200' },
+  { label: 'Location Verified', value: '97%', color: 'text-emerald-600', bg: 'bg-emerald-50 border-emerald-200' },
 ];
 
 const statisticsMetrics = [
@@ -107,51 +117,90 @@ const businessBenefitsList = [
   'Create Complete Lead Accountability',
 ];
 
-const mockMapNodes = [
+const mockUserMarkers = [
   {
-    id: 1,
-    title: 'Calicut HQ Office',
-    type: 'OFFICE',
-    x: '25%',
-    y: '35%',
-    status: 'Verified Geofence',
-    activeUsers: '14 Active Staff',
-    color: 'emerald',
-  },
-  {
-    id: 2,
-    title: 'Kochi Regional Branch',
-    type: 'BRANCH',
-    x: '70%',
-    y: '28%',
-    status: 'Verified Branch',
-    activeUsers: '9 Field Execs',
-    color: 'teal',
-  },
-  {
-    id: 3,
-    title: 'Acme Corp — Lead #8429',
-    type: 'VISIT',
-    x: '45%',
-    y: '58%',
-    status: 'Customer Meeting Verified',
-    time: '11:42 AM',
+    id: 'u1',
+    name: 'Rahul Sharma',
+    avatar: 'RS',
+    avatarBg: 'bg-amber-500',
+    status: 'On Customer Visit',
+    subtext: 'Acme Corporation • Arrived 11:42 AM',
+    time: 'Updated 2 Mins Ago',
+    speed: 'Location Verified',
+    x: '38%',
+    y: '56%',
     color: 'amber',
   },
   {
-    id: 4,
-    title: 'Apex Systems — Lead #8430',
-    type: 'VISIT',
+    id: 'u2',
+    name: 'Aisha Khan',
+    avatar: 'AK',
+    avatarBg: 'bg-blue-600',
+    status: 'Travelling To Lead Location',
+    subtext: 'En Route to Apex Systems',
+    time: '12.4 km/h',
+    speed: '12.4 km/h',
+    x: '64%',
+    y: '34%',
+    color: 'blue',
+  },
+  {
+    id: 'u3',
+    name: 'Mohammed Nifras',
+    avatar: 'MN',
+    avatarBg: 'bg-emerald-600',
+    status: 'Visit Completed',
+    subtext: 'Duration: 36 Mins • Logged',
+    time: 'Updated 5 Mins Ago',
+    speed: 'Verified Visit',
+    x: '22%',
+    y: '28%',
+    color: 'emerald',
+  },
+  {
+    id: 'u4',
+    name: 'Vinod Thomas',
+    avatar: 'VT',
+    avatarBg: 'bg-indigo-600',
+    status: 'Office Check-In Verified',
+    subtext: 'HQ Office • Accuracy 8m',
+    time: 'Updated 1 Min Ago',
+    speed: 'Accuracy: 8m',
     x: '82%',
-    y: '65%',
-    status: 'Check-In Confirmed',
-    time: '02:15 PM',
+    y: '68%',
     color: 'indigo',
+  },
+];
+
+const mockCustomerPins = [
+  {
+    id: 'c1',
+    title: 'Acme Corporation',
+    leadTag: 'Lead #8429',
+    status: 'Customer Visit Location',
+    arrival: 'Verified Arrival 11:42 AM',
+    x: '46%',
+    y: '60%',
+  },
+  {
+    id: 'c2',
+    title: 'Apex Systems',
+    leadTag: 'Lead #8430',
+    status: 'Scheduled Visit Destination',
+    arrival: 'ETA 02:35 PM',
+    x: '76%',
+    y: '24%',
   },
 ];
 
 const LiveLocationIntelligence: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>('live');
+  const [mapStyleMode, setMapStyleMode] = useState<'map' | 'satellite'>('map');
+  const [zoomLevel, setZoomLevel] = useState<number>(100);
+
+  const handleZoomIn = () => setZoomLevel((prev) => Math.min(prev + 15, 140));
+  const handleZoomOut = () => setZoomLevel((prev) => Math.max(prev - 15, 85));
+  const handleRecenter = () => setZoomLevel(100);
 
   return (
     <section className="py-24 bg-gradient-to-b from-white via-slate-50/50 to-white relative overflow-hidden">
@@ -170,7 +219,7 @@ const LiveLocationIntelligence: React.FC = () => {
             className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-50 border border-emerald-200/80 text-emerald-800 text-xs font-black uppercase tracking-widest shadow-xs"
           >
             <Radio size={14} className="text-emerald-600 animate-pulse" />
-            <span>Live Location Intelligence</span>
+            <span>SEEAKK LIVE USER LOCATION TRACKING</span>
           </motion.div>
 
           <motion.h2
@@ -210,16 +259,16 @@ const LiveLocationIntelligence: React.FC = () => {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="bg-slate-900 rounded-3xl border border-slate-800 shadow-2xl p-6 sm:p-8 lg:p-10 relative overflow-hidden"
+          className="bg-slate-900 rounded-3xl border border-slate-800 shadow-2xl p-5 sm:p-7 lg:p-9 relative overflow-hidden"
         >
-          {/* Top Bar Navigation Tabs */}
-          <div className="flex flex-wrap items-center justify-between gap-4 pb-6 border-b border-slate-800 mb-6">
+          {/* Top Bar Navigation & Main Section Label */}
+          <div className="flex flex-wrap items-center justify-between gap-4 pb-5 border-b border-slate-800 mb-5">
             <div className="flex items-center gap-3">
               <div className="w-3 h-3 rounded-full bg-rose-500/80" />
               <div className="w-3 h-3 rounded-full bg-amber-500/80" />
               <div className="w-3 h-3 rounded-full bg-emerald-500/80" />
-              <span className="text-xs font-bold text-slate-400 ml-2 uppercase tracking-wider">
-                Seeakk Location Intelligence Engine v2.4
+              <span className="text-xs font-black text-slate-300 ml-2 uppercase tracking-wider">
+                SEEAKK LIVE USER LOCATION TRACKING
               </span>
             </div>
 
@@ -247,173 +296,333 @@ const LiveLocationIntelligence: React.FC = () => {
             </div>
           </div>
 
-          {/* Interactive Map Visual Grid */}
-          <div className="relative h-[440px] sm:h-[480px] w-full bg-slate-950 rounded-2xl border border-slate-800 overflow-hidden flex items-center justify-center">
-            {/* Map Grid Pattern Background */}
-            <div
-              className="absolute inset-0 opacity-20 pointer-events-none"
-              style={{
-                backgroundImage:
-                  'radial-gradient(#10b981 1px, transparent 1px), linear-gradient(to right, #1e293b 1px, transparent 1px), linear-gradient(to bottom, #1e293b 1px, transparent 1px)',
-                backgroundSize: '32px 32px, 64px 64px, 64px 64px',
-              }}
-            />
+          {/* Operational Status Overview Bar */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+            {liveStatusCards.map((card) => (
+              <div
+                key={card.label}
+                className={`p-3 rounded-2xl border flex items-center justify-between shadow-sm ${card.bg}`}
+              >
+                <div>
+                  <span className="text-[10px] font-extrabold text-slate-600 uppercase tracking-wider block">
+                    {card.label}
+                  </span>
+                  <span className={`text-sm font-black ${card.color}`}>{card.value}</span>
+                </div>
+                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              </div>
+            ))}
+          </div>
 
-            {/* Simulated Animated Connecting Route Lines (SVG) */}
-            <svg className="absolute inset-0 w-full h-full pointer-events-none">
+          {/* Interactive Light Google Maps-Style Map Canvas */}
+          <div
+            className={`relative h-[480px] sm:h-[520px] w-full rounded-2xl border overflow-hidden flex items-center justify-center transition-all duration-500 ${
+              mapStyleMode === 'map'
+                ? 'bg-[#f8fafc] border-slate-200 shadow-inner'
+                : 'bg-slate-950 border-slate-800'
+            }`}
+            style={{ transform: `scale(${zoomLevel / 100})`, transformOrigin: 'center center' }}
+          >
+            {/* VECTOR MAP GRAPHICS ENGINE */}
+            {mapStyleMode === 'map' ? (
+              <div className="absolute inset-0 pointer-events-none">
+                {/* Green Park Areas */}
+                <svg className="absolute inset-0 w-full h-full">
+                  <path d="M 40 80 Q 120 40 220 100 T 180 260 Z" fill="#dcfce7" opacity="0.7" />
+                  <path d="M 680 280 Q 780 220 890 320 T 790 480 Z" fill="#dcfce7" opacity="0.7" />
+                  <path d="M 420 380 Q 520 340 600 420 T 480 500 Z" fill="#dcfce7" opacity="0.6" />
+
+                  {/* Water River Body */}
+                  <path
+                    d="M -20 320 C 150 280, 250 420, 420 310 C 580 200, 720 340, 1020 260 L 1020 540 L -20 540 Z"
+                    fill="#dbeafe"
+                    opacity="0.85"
+                  />
+                  <text x="240" y="440" fill="#93c5fd" fontSize="11" fontWeight="bold" fontFamily="sans-serif">
+                    Vanguard River Basin
+                  </text>
+                </svg>
+
+                {/* Road Network Grid (Main Highways + Secondary Streets) */}
+                <svg className="absolute inset-0 w-full h-full">
+                  {/* Minor Street Grid Lines */}
+                  <g stroke="#e2e8f0" strokeWidth="2">
+                    <line x1="0" y1="120" x2="1000" y2="120" />
+                    <line x1="0" y1="240" x2="1000" y2="240" />
+                    <line x1="0" y1="380" x2="1000" y2="380" />
+                    <line x1="160" y1="0" x2="160" y2="600" />
+                    <line x1="340" y1="0" x2="340" y2="600" />
+                    <line x1="560" y1="0" x2="560" y2="600" />
+                    <line x1="780" y1="0" x2="780" y2="600" />
+                  </g>
+
+                  {/* Major White City Roads with Grey Borders */}
+                  <g fill="none" stroke="#ffffff" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M 0 180 C 300 180, 450 120, 1000 120" />
+                    <path d="M 0 450 C 350 450, 600 360, 1000 360" />
+                    <path d="M 240 0 C 240 250, 420 350, 420 600" />
+                    <path d="M 720 0 C 720 300, 840 450, 840 600" />
+                  </g>
+
+                  {/* Yellow Primary Arterial Highway (Google Maps Yellow Style) */}
+                  <path
+                    d="M 50 40 C 250 140, 500 220, 950 480"
+                    fill="none"
+                    stroke="#fde68a"
+                    strokeWidth="10"
+                    strokeLinecap="round"
+                  />
+                  <path
+                    d="M 50 40 C 250 140, 500 220, 950 480"
+                    fill="none"
+                    stroke="#f59e0b"
+                    strokeWidth="1"
+                    strokeDasharray="8 8"
+                  />
+                </svg>
+
+                {/* Road Labels & Area Labels */}
+                <div className="absolute inset-0 pointer-events-none">
+                  <span className="absolute top-[8%] left-[8%] text-[10px] font-black uppercase tracking-widest text-slate-400 bg-white/80 px-2 py-0.5 rounded border border-slate-200">
+                    NORTH INDUSTRIAL ZONE
+                  </span>
+                  <span className="absolute top-[18%] right-[12%] text-[10px] font-black uppercase tracking-widest text-slate-400 bg-white/80 px-2 py-0.5 rounded border border-slate-200">
+                    FINANCIAL TECH PARK
+                  </span>
+                  <span className="absolute bottom-[22%] left-[14%] text-[10px] font-black uppercase tracking-widest text-slate-400 bg-white/80 px-2 py-0.5 rounded border border-slate-200">
+                    CENTRAL BUSINESS DISTRICT
+                  </span>
+
+                  {/* Road Street Labels */}
+                  <span className="absolute top-[31%] left-[28%] text-[9px] font-bold text-slate-500 -rotate-6">
+                    Grand Trunk Expressway
+                  </span>
+                  <span className="absolute top-[28%] right-[32%] text-[9px] font-bold text-slate-500 rotate-12">
+                    Cyber Highway
+                  </span>
+                  <span className="absolute bottom-[36%] left-[45%] text-[9px] font-bold text-slate-500">
+                    MG Road Arterial
+                  </span>
+                </div>
+              </div>
+            ) : (
+              /* Satellite Dark Mode Grid Fallback */
+              <div
+                className="absolute inset-0 opacity-30 pointer-events-none"
+                style={{
+                  backgroundImage:
+                    'radial-gradient(#10b981 1px, transparent 1px), linear-gradient(to right, #1e293b 1px, transparent 1px), linear-gradient(to bottom, #1e293b 1px, transparent 1px)',
+                  backgroundSize: '32px 32px, 64px 64px, 64px 64px',
+                }}
+              />
+            )}
+
+            {/* REALISTIC ROAD-FOLLOWING ROUTE LINES (SVG Overlay) */}
+            <svg className="absolute inset-0 w-full h-full pointer-events-none z-10">
               <defs>
-                <linearGradient id="lineGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#10b981" stopOpacity="0.8" />
-                  <stop offset="100%" stopColor="#14b8a6" stopOpacity="0.2" />
-                </linearGradient>
-                <linearGradient id="lineGrad2" x1="100%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" stopColor="#f59e0b" stopOpacity="0.8" />
-                  <stop offset="100%" stopColor="#6366f1" stopOpacity="0.2" />
-                </linearGradient>
+                <marker id="arrowGreen" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                  <path d="M 0 0 L 10 5 L 0 10 z" fill="#10b981" />
+                </marker>
+                <marker id="arrowBlue" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                  <path d="M 0 0 L 10 5 L 0 10 z" fill="#3b82f6" />
+                </marker>
               </defs>
 
-              {/* Route Line 1: Calicut HQ to Acme Corp */}
+              {/* ROUTE 1: Completed Route (Mohammed Nifras -> Rahul Sharma -> Acme Corp) */}
+              {/* Solid Green Road-Following Path */}
               <motion.path
-                d="M 250 160 Q 350 200 450 270"
+                d="M 220 170 Q 280 240 380 300 L 460 320"
                 fill="none"
-                stroke="url(#lineGrad1)"
-                strokeWidth="3"
-                strokeDasharray="6 6"
-                initial={{ pathLength: 0 }}
-                animate={{ pathLength: 1 }}
-                transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
+                stroke="#10b981"
+                strokeWidth="4"
+                strokeLinecap="round"
+                markerEnd="url(#arrowGreen)"
               />
 
-              {/* Route Line 2: Kochi Branch to Apex Systems */}
+              {/* ROUTE 2: Active En-Route (Aisha Khan -> Apex Systems Customer Pin) */}
+              {/* Completed Segment (Solid Green) */}
               <motion.path
-                d="M 700 130 Q 760 220 820 300"
+                d="M 520 120 Q 580 140 640 180"
                 fill="none"
-                stroke="url(#lineGrad2)"
-                strokeWidth="3"
-                strokeDasharray="6 6"
-                initial={{ pathLength: 0 }}
-                animate={{ pathLength: 1 }}
-                transition={{ duration: 2.5, repeat: Infinity, ease: 'linear' }}
+                stroke="#10b981"
+                strokeWidth="4"
+                strokeLinecap="round"
+              />
+
+              {/* Remaining Segment (Dashed Blue Line) */}
+              <motion.path
+                d="M 640 180 C 700 220 730 160 760 130"
+                fill="none"
+                stroke="#3b82f6"
+                strokeWidth="4"
+                strokeDasharray="7 7"
+                strokeLinecap="round"
+                markerEnd="url(#arrowBlue)"
+                initial={{ strokeDashoffset: 40 }}
+                animate={{ strokeDashoffset: 0 }}
+                transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
               />
             </svg>
 
-            {/* Circular Geofence Zones */}
-            <div className="absolute top-[25%] left-[20%] w-48 h-48 rounded-full border-2 border-emerald-500/30 bg-emerald-500/5 animate-pulse pointer-events-none flex items-center justify-center">
-              <span className="text-[10px] font-mono text-emerald-400/70 font-bold uppercase tracking-wider">
-                Geofence Radius: 150m
-              </span>
-            </div>
-
-            <div className="absolute top-[18%] right-[22%] w-40 h-40 rounded-full border-2 border-teal-500/30 bg-teal-500/5 animate-pulse pointer-events-none flex items-center justify-center">
-              <span className="text-[10px] font-mono text-teal-400/70 font-bold uppercase tracking-wider">
-                Branch Radius: 100m
-              </span>
-            </div>
-
-            {/* Map Node Pins */}
-            {mockMapNodes.map((node) => (
+            {/* CUSTOMER DESTINATION PINS */}
+            {mockCustomerPins.map((pin) => (
               <motion.div
-                key={node.id}
-                style={{ left: node.x, top: node.y }}
+                key={pin.id}
+                style={{ left: pin.x, top: pin.y }}
                 whileHover={{ scale: 1.15 }}
-                className="absolute -translate-x-1/2 -translate-y-1/2 z-20 cursor-pointer group"
+                className="absolute -translate-x-1/2 -translate-y-full z-20 cursor-pointer group"
               >
-                {/* Pulsing Beacon */}
-                <div
-                  className={`w-6 h-6 rounded-full bg-${node.color}-500/30 animate-ping absolute inset-0`}
-                />
-
-                {/* Node Icon Circle */}
-                <div
-                  className={`w-10 h-10 rounded-2xl bg-slate-900 border-2 border-${node.color}-400 text-${node.color}-400 flex items-center justify-center shadow-lg relative group-hover:bg-${node.color}-500 group-hover:text-slate-950 transition-all`}
-                >
-                  {node.type === 'OFFICE' && <Building2 size={18} />}
-                  {node.type === 'BRANCH' && <Globe size={18} />}
-                  {node.type === 'VISIT' && <MapPin size={18} />}
+                <div className="flex flex-col items-center">
+                  <div className="bg-rose-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-md mb-1 flex items-center gap-1 border border-rose-400 whitespace-nowrap">
+                    <MapPin size={10} />
+                    <span>{pin.title}</span>
+                  </div>
+                  <div className="w-7 h-7 rounded-full bg-rose-600 border-2 border-white text-white flex items-center justify-center shadow-lg relative">
+                    <Building2 size={14} />
+                    <div className="w-2 h-2 rounded-full bg-rose-500 animate-ping absolute inset-0" />
+                  </div>
+                  <div className="w-1 h-2 bg-rose-700 rounded-b" />
                 </div>
 
-                {/* Tooltip Card on Hover / Active */}
-                <div className="absolute top-12 left-1/2 -translate-x-1/2 w-48 bg-slate-900/95 border border-slate-700 backdrop-blur-md rounded-2xl p-3 shadow-2xl opacity-90 group-hover:opacity-100 transition-all pointer-events-none z-30">
-                  <div className="text-xs font-black text-white truncate">{node.title}</div>
-                  <div className="text-[10px] font-bold text-emerald-400 mt-0.5">{node.status}</div>
-                  <div className="text-[10px] text-slate-400 mt-1 font-mono">{node.activeUsers || node.time}</div>
+                {/* Customer Pin Detail Card */}
+                <div className="absolute top-12 left-1/2 -translate-x-1/2 w-48 bg-white border border-slate-200 rounded-2xl p-3 shadow-xl opacity-90 group-hover:opacity-100 transition-all pointer-events-none z-30 text-slate-900">
+                  <div className="text-xs font-black text-rose-700 flex items-center gap-1">
+                    <MapPin size={12} />
+                    <span>{pin.title}</span>
+                  </div>
+                  <div className="text-[10px] font-bold text-slate-500">{pin.leadTag}</div>
+                  <div className="text-[10px] font-bold text-emerald-600 mt-1">{pin.status}</div>
+                  <div className="text-[9px] text-slate-400 font-mono mt-0.5">{pin.arrival}</div>
                 </div>
               </motion.div>
             ))}
 
-            {/* Floating Live Information Cards (Overlay Visual Badges) */}
-            {/* Floating Card 1: GPS Verified Check-In */}
-            <motion.div
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: [0, -6, 0], opacity: 1 }}
-              transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-              className="absolute top-6 left-6 z-30 bg-slate-900/90 border border-emerald-500/40 backdrop-blur-xl p-3.5 rounded-2xl shadow-2xl flex items-center gap-3 text-xs max-w-xs"
-            >
-              <div className="p-2.5 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                <CheckCircle2 size={18} />
-              </div>
-              <div>
-                <div className="font-black text-emerald-400 flex items-center gap-1.5">
-                  <span>✓ GPS Verified</span>
-                  <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300">
-                    Live
-                  </span>
+            {/* USER AVATAR MARKERS (Rahul Sharma, Aisha Khan, Mohammed Nifras, Vinod Thomas) */}
+            {mockUserMarkers.map((userNode) => (
+              <motion.div
+                key={userNode.id}
+                style={{ left: userNode.x, top: userNode.y }}
+                whileHover={{ scale: 1.12 }}
+                className="absolute -translate-x-1/2 -translate-y-1/2 z-30 cursor-pointer group"
+              >
+                {/* Active Outer Pulse Ring */}
+                <div className="w-10 h-10 rounded-full bg-emerald-500/20 animate-ping absolute inset-0 -m-1" />
+
+                {/* User Avatar Circle Marker */}
+                <div className="flex items-center gap-2 bg-white border-2 border-emerald-500 rounded-full p-1 shadow-lg relative group-hover:border-emerald-600 transition-all">
+                  <div className={`w-8 h-8 rounded-full ${userNode.avatarBg} text-white font-black text-xs flex items-center justify-center shrink-0 shadow-xs`}>
+                    {userNode.avatar}
+                  </div>
+                  <div className="pr-2.5 hidden sm:block">
+                    <div className="text-[11px] font-black text-slate-900 leading-tight whitespace-nowrap">
+                      {userNode.name}
+                    </div>
+                    <div className="text-[9px] font-bold text-emerald-600 leading-tight flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      <span>{userNode.status}</span>
+                    </div>
+                  </div>
                 </div>
-                <div className="font-bold text-slate-200 mt-0.5">Office Check-In Successful</div>
-                <div className="text-[10px] font-mono text-slate-400">Accuracy: 5 m • Calicut HQ</div>
-              </div>
-            </motion.div>
 
-            {/* Floating Card 2: Customer Visit Verified */}
-            <motion.div
-              initial={{ y: -20, opacity: 0 }}
-              animate={{ y: [0, 6, 0], opacity: 1 }}
-              transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
-              className="absolute top-6 right-6 z-30 bg-slate-900/90 border border-amber-500/40 backdrop-blur-xl p-3.5 rounded-2xl shadow-2xl flex items-center gap-3 text-xs max-w-xs"
-            >
-              <div className="p-2.5 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30">
-                <MapPin size={18} />
-              </div>
-              <div>
-                <div className="font-black text-amber-400">Customer Visit Verified</div>
-                <div className="font-bold text-slate-200 mt-0.5">Lead #8429 — Acme Corp</div>
-                <div className="text-[10px] font-mono text-slate-400">Visited: 11:42 AM • On Site</div>
-              </div>
-            </motion.div>
+                {/* Detailed Hover User Card */}
+                <div className="absolute top-12 left-1/2 -translate-x-1/2 w-52 bg-white border border-slate-200 rounded-2xl p-3 shadow-2xl opacity-95 group-hover:opacity-100 transition-all pointer-events-none z-40 text-slate-900">
+                  <div className="flex items-center gap-2 pb-1.5 border-b border-slate-100">
+                    <div className={`w-6 h-6 rounded-full ${userNode.avatarBg} text-white text-[10px] font-black flex items-center justify-center`}>
+                      {userNode.avatar}
+                    </div>
+                    <div>
+                      <div className="text-xs font-black text-slate-900">{userNode.name}</div>
+                      <div className="text-[9px] font-bold text-emerald-600">{userNode.status}</div>
+                    </div>
+                  </div>
+                  <div className="text-[10px] text-slate-600 font-medium mt-1.5">{userNode.subtext}</div>
+                  <div className="flex items-center justify-between text-[9px] text-slate-400 font-mono mt-1 pt-1 border-t border-slate-100">
+                    <span>{userNode.time}</span>
+                    <span className="font-bold text-slate-600">{userNode.speed}</span>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
 
-            {/* Floating Card 3: Branch Performance Today */}
-            <motion.div
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: [0, -8, 0], opacity: 1 }}
-              transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
-              className="absolute bottom-6 left-6 z-30 bg-slate-900/90 border border-teal-500/40 backdrop-blur-xl p-3.5 rounded-2xl shadow-2xl flex items-center gap-3 text-xs"
-            >
-              <div className="p-2.5 rounded-xl bg-teal-500/20 text-teal-400 border border-teal-500/30">
-                <Building2 size={18} />
-              </div>
-              <div>
-                <div className="font-black text-teal-400">Branch Performance</div>
-                <div className="font-bold text-slate-200 mt-0.5">Today's Total Field Output</div>
-                <div className="text-[10px] font-mono text-slate-300">27 Customer Visits Confirmed</div>
-              </div>
-            </motion.div>
+            {/* REALISTIC MAP INTERACTIVE CONTROLS (Zoom In, Zoom Out, Recenter, Map/Sat Toggle) */}
+            <div className="absolute bottom-5 right-5 z-40 flex flex-col items-center gap-1.5 bg-white/90 backdrop-blur-md p-1.5 rounded-2xl border border-slate-200 shadow-xl">
+              <button
+                type="button"
+                onClick={handleZoomIn}
+                title="Zoom In"
+                className="p-2 text-slate-700 hover:bg-slate-100 rounded-xl transition-all cursor-pointer"
+              >
+                <Plus size={16} />
+              </button>
+              <button
+                type="button"
+                onClick={handleZoomOut}
+                title="Zoom Out"
+                className="p-2 text-slate-700 hover:bg-slate-100 rounded-xl transition-all cursor-pointer"
+              >
+                <Minus size={16} />
+              </button>
+              <button
+                type="button"
+                onClick={handleRecenter}
+                title="Recenter Map"
+                className="p-2 text-slate-700 hover:bg-slate-100 rounded-xl transition-all cursor-pointer"
+              >
+                <Navigation size={16} />
+              </button>
+              <div className="w-full h-px bg-slate-200 my-0.5" />
+              <button
+                type="button"
+                onClick={() => setMapStyleMode(mapStyleMode === 'map' ? 'satellite' : 'map')}
+                title="Toggle Map / Satellite View"
+                className={`p-2 rounded-xl transition-all cursor-pointer ${
+                  mapStyleMode === 'satellite'
+                    ? 'bg-slate-900 text-emerald-400'
+                    : 'text-slate-700 hover:bg-slate-100'
+                }`}
+              >
+                <Layers size={16} />
+              </button>
+            </div>
 
-            {/* Floating Card 4: Live Team Status */}
-            <motion.div
-              initial={{ y: -20, opacity: 0 }}
-              animate={{ y: [0, 8, 0], opacity: 1 }}
-              transition={{ duration: 5.5, repeat: Infinity, ease: 'easeInOut', delay: 1.5 }}
-              className="absolute bottom-6 right-6 z-30 bg-slate-900/90 border border-indigo-500/40 backdrop-blur-xl p-3.5 rounded-2xl shadow-2xl flex items-center gap-3 text-xs"
-            >
-              <div className="p-2.5 rounded-xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">
-                <Users size={18} />
+            {/* FLOATING REALISTIC USER ACTIVITY CARDS OVERLAY (Responsive Bottom Grid) */}
+            <div className="absolute bottom-5 left-5 z-30 hidden lg:flex items-center gap-3 max-w-2xl overflow-x-auto pb-1">
+              {/* Card 1: Rahul Sharma */}
+              <div className="bg-white/95 border border-slate-200 backdrop-blur-md p-3 rounded-2xl shadow-xl flex items-center gap-2.5 text-xs text-slate-900 shrink-0">
+                <div className="w-7 h-7 rounded-full bg-amber-500 text-white font-black text-[10px] flex items-center justify-center shrink-0">
+                  RS
+                </div>
+                <div>
+                  <div className="font-black text-slate-900 text-[11px]">Rahul Sharma</div>
+                  <div className="text-[10px] font-bold text-amber-700">Customer Visit In Progress</div>
+                  <div className="text-[9px] text-slate-500 font-mono">Acme Corp • Arrived 11:42 AM</div>
+                </div>
               </div>
-              <div>
-                <div className="font-black text-indigo-400">Live Team Status</div>
-                <div className="font-bold text-slate-200 mt-0.5">18 Active Field Users</div>
-                <div className="text-[10px] font-mono text-slate-400">3 Customer Meetings In Progress</div>
+
+              {/* Card 2: Aisha Khan */}
+              <div className="bg-white/95 border border-slate-200 backdrop-blur-md p-3 rounded-2xl shadow-xl flex items-center gap-2.5 text-xs text-slate-900 shrink-0">
+                <div className="w-7 h-7 rounded-full bg-blue-600 text-white font-black text-[10px] flex items-center justify-center shrink-0">
+                  AK
+                </div>
+                <div>
+                  <div className="font-black text-slate-900 text-[11px]">Aisha Khan</div>
+                  <div className="text-[10px] font-bold text-blue-700">Travelling To Customer</div>
+                  <div className="text-[9px] text-slate-500 font-mono">Rem: 3.8 km • ETA 02:35 PM</div>
+                </div>
               </div>
-            </motion.div>
+
+              {/* Card 3: Mohammed Nifras */}
+              <div className="bg-white/95 border border-slate-200 backdrop-blur-md p-3 rounded-2xl shadow-xl flex items-center gap-2.5 text-xs text-slate-900 shrink-0">
+                <div className="w-7 h-7 rounded-full bg-teal-600 text-white font-black text-[10px] flex items-center justify-center shrink-0">
+                  MN
+                </div>
+                <div>
+                  <div className="font-black text-slate-900 text-[11px]">Mohammed Nifras</div>
+                  <div className="text-[10px] font-bold text-teal-700">Visit Completed (36m)</div>
+                  <div className="text-[9px] text-slate-500 font-mono">Location Verified</div>
+                </div>
+              </div>
+            </div>
           </div>
         </motion.div>
 
