@@ -20,7 +20,7 @@ const showcaseTabs = [
     id: 'target-locking',
     label: 'Target Locking Engine',
     icon: Lock,
-    headline: 'Automatic Staff Locking When Targets Or Service Rules Miss Quota',
+    headline: 'Automatic Account Locking When Staff Miss Their Targets',
     desc: 'When Sales Representatives Fail To Meet Target Cycles Or Accumulate Overdue Mandatory Follow-Ups, Seeakk Automatically Locks CRM Actions Until Supervisors Review And Unlock Them, Preventing Loss Of Business (LOB).',
     previewType: 'lock',
   },
