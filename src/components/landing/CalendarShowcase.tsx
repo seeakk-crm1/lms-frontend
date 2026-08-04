@@ -25,12 +25,12 @@ const viewTabs = [
 ];
 
 const eventCategories = [
-  { label: 'Lead Creation & Assignment', color: 'bg-emerald-500 text-white', badgeBg: 'bg-emerald-50 text-emerald-800 border-emerald-200' },
-  { label: 'Mandatory Follow-Up Schedule', color: 'bg-amber-500 text-white', badgeBg: 'bg-amber-50 text-amber-800 border-amber-200' },
-  { label: 'Product Demos & Calls', color: 'bg-blue-500 text-white', badgeBg: 'bg-blue-50 text-blue-800 border-blue-200' },
-  { label: 'Won Deals & Closures', color: 'bg-teal-600 text-white', badgeBg: 'bg-teal-50 text-teal-800 border-teal-200' },
-  { label: 'Stage Movement History', color: 'bg-indigo-500 text-white', badgeBg: 'bg-indigo-50 text-indigo-800 border-indigo-200' },
-  { label: 'Overdue Follow-Up Alerts', color: 'bg-rose-500 text-white', badgeBg: 'bg-rose-50 text-rose-800 border-rose-200' },
+  { label: 'NEW / PQL / QL / SQL Created', color: 'bg-blue-500 text-white', badgeBg: 'bg-blue-50 text-blue-800 border-blue-200' },
+  { label: 'Stage Follow-Up Schedules', color: 'bg-amber-500 text-white', badgeBg: 'bg-amber-50 text-amber-800 border-amber-200' },
+  { label: 'Opportunity & Negotiation', color: 'bg-purple-600 text-white', badgeBg: 'bg-purple-50 text-purple-800 border-purple-200' },
+  { label: 'Closed Lead Created', color: 'bg-emerald-500 text-white', badgeBg: 'bg-emerald-50 text-emerald-800 border-emerald-200' },
+  { label: 'LOB Created & Follow-Up', color: 'bg-rose-500 text-white', badgeBg: 'bg-rose-50 text-rose-800 border-rose-200' },
+  { label: 'Closed Lead Follow-Up', color: 'bg-slate-500 text-white', badgeBg: 'bg-slate-100 text-slate-700 border-slate-200' },
 ];
 
 const mockCalendarDays = [
@@ -40,73 +40,73 @@ const mockCalendarDays = [
   { day: 29, isCurrentMonth: false, events: [] },
   { day: 30, isCurrentMonth: false, events: [] },
   { day: 31, isCurrentMonth: false, events: [] },
-  { day: 1, isCurrentMonth: true, events: [{ title: 'Q4 Target Cycle Start', cat: 'Milestone', type: 'indigo' }] },
+  { day: 1, isCurrentMonth: true, events: [{ title: 'NEW Created', type: 'blue' }] },
   { day: 2, isCurrentMonth: true, events: [] },
-  { day: 3, isCurrentMonth: true, events: [{ title: 'AcroTech Follow-Up Call', cat: 'Schedule', type: 'amber' }] },
+  { day: 3, isCurrentMonth: true, events: [{ title: 'NEW Follow-Up', type: 'orange' }] },
   { day: 4, isCurrentMonth: true, events: [] },
-  { day: 5, isCurrentMonth: true, events: [{ title: 'Apex Enterprise Demo', cat: 'Demo', type: 'blue' }] },
+  { day: 5, isCurrentMonth: true, events: [{ title: 'PQL Created', type: 'blue' }] },
   { day: 6, isCurrentMonth: true, events: [] },
-  { day: 7, isCurrentMonth: true, events: [] },
+  { day: 7, isCurrentMonth: true, events: [{ title: 'PQL Follow-Up', type: 'orange' }] },
   { day: 8, isCurrentMonth: true, events: [] },
-  { day: 9, isCurrentMonth: true, events: [{ title: 'Metro Global - $45k Won', cat: 'Won Deal', type: 'teal' }] },
+  { day: 9, isCurrentMonth: true, events: [{ title: 'QL Created', type: 'blue' }] },
   { day: 10, isCurrentMonth: true, events: [] },
-  { day: 11, isCurrentMonth: true, events: [{ title: 'Vanguard - Follow-Up Call', cat: 'Schedule', type: 'amber' }] },
+  { day: 11, isCurrentMonth: true, events: [{ title: 'QL Follow-Up', type: 'orange' }] },
   { day: 12, isCurrentMonth: true, events: [] },
   { day: 13, isCurrentMonth: true, events: [] },
-  { day: 14, isCurrentMonth: true, events: [{ title: 'Stage -> Proposal Review', cat: 'Stage', type: 'indigo' }] },
-  { day: 15, isCurrentMonth: true, events: [{ title: 'Mid-Month Sales Review', cat: 'Milestone', type: 'emerald' }] },
+  { day: 14, isCurrentMonth: true, events: [{ title: 'SQL Created', type: 'blue' }] },
+  { day: 15, isCurrentMonth: true, events: [{ title: 'SQL Follow-Up', type: 'orange' }] },
   { day: 16, isCurrentMonth: true, events: [] },
   { day: 17, isCurrentMonth: true, events: [] },
-  { day: 18, isCurrentMonth: true, events: [{ title: 'Zenith Follow-Up Overdue', cat: 'Overdue', type: 'rose' }] },
+  { day: 18, isCurrentMonth: true, events: [{ title: 'Opportunity Created', type: 'purple' }] },
   { day: 19, isCurrentMonth: true, events: [] },
-  { day: 20, isCurrentMonth: true, events: [{ title: 'Branch Customer Meeting', cat: 'Meeting', type: 'blue' }] },
+  { day: 20, isCurrentMonth: true, events: [{ title: 'Opportunity Follow-Up', type: 'orange' }] },
   { day: 21, isCurrentMonth: true, events: [] },
-  { day: 22, isCurrentMonth: true, events: [] },
+  { day: 22, isCurrentMonth: true, events: [{ title: 'Proposal Follow-Up', type: 'purple' }] },
   { day: 23, isCurrentMonth: true, events: [] },
-  { day: 24, isCurrentMonth: true, events: [{ title: 'Starlight - Assigned', cat: 'Created', type: 'emerald' }] },
+  { day: 24, isCurrentMonth: true, events: [{ title: 'Negotiation Follow-Up', type: 'purple' }] },
   { day: 25, isCurrentMonth: true, events: [] },
-  { day: 26, isCurrentMonth: true, events: [{ title: 'Working Schedule Verified', cat: 'Schedule', type: 'amber' }] },
-  { day: 27, isCurrentMonth: true, events: [] },
-  { day: 28, isCurrentMonth: true, events: [{ title: 'Orion Inc - $80k Closed', cat: 'Won Deal', type: 'teal' }] },
+  { day: 26, isCurrentMonth: true, events: [{ title: 'LOB Created', type: 'red' }] },
+  { day: 27, isCurrentMonth: true, events: [{ title: 'LOB Follow-Up', type: 'red' }] },
+  { day: 28, isCurrentMonth: true, events: [{ title: 'Closed Created', type: 'green' }] },
   { day: 29, isCurrentMonth: true, events: [] },
-  { day: 30, isCurrentMonth: true, events: [] },
+  { day: 30, isCurrentMonth: true, events: [{ title: 'Closed Follow-Up', type: 'gray' }] },
 ];
 
 const featureHighlights = [
   {
     icon: TimelineIcon,
-    title: 'Visual Lead Timeline',
-    desc: 'Chronological Tracking Of Every Customer Touchpoint, Lead Assignment, And Stage Transition On A Single Visual Grid.',
+    title: 'Real-Time Lead Operations',
+    desc: 'Chronological Tracking Of Every Lead From Creation To Closure Across Complete Operational Lifecycle Stages.',
     color: 'emerald',
   },
   {
     icon: Clock,
-    title: 'Follow-Up Response Velocity',
-    desc: 'Never Miss A Customer Contact With Live Countdown Timers And Automated Notifications For Upcoming Or Overdue Follow-Ups.',
+    title: 'Follow-Up Timelines',
+    desc: 'Automated Response Velocity Schedules Ensuring Timely Touchpoints For PQL, QL, SQL, And Opportunity Stages.',
     color: 'amber',
   },
   {
     icon: TrendingUp,
-    title: 'Stage Movement History',
-    desc: 'Complete Audit Visibility Into Deal Progression, Mandatory Stage Rules, And Revenue Milestones As Leads Advance.',
+    title: 'Lead Stage Progress',
+    desc: 'Full Operational Audit Visibility Into Pipeline Activities, Stage Transitions, And Loss-of-Business Logs.',
     color: 'indigo',
   },
   {
     icon: Eye,
     title: '3-Second Manager Audit',
-    desc: 'Evaluate Representative Workload, Follow-Up Consistency, And Sales Discipline At A Single Glance Without Opening Reports.',
+    desc: 'Evaluate Operational CRM Calendar Activity, Sales Representative Discipline, And Follow-Up Consistency Instantly.',
     color: 'teal',
   },
   {
     icon: Award,
-    title: 'Closed Deal & Revenue Badges',
-    desc: 'Celebrate Won Leads And Track Revenue Milestone Velocity Directly On The Calendar Interface.',
+    title: 'Closed & LOB Lifecycle Tracking',
+    desc: 'Monitor Closed Lead Conversions And Reason Logs For LOB (Loss of Business) Cases Directly On The Grid.',
     color: 'emerald',
   },
   {
     icon: Zap,
     title: 'Daily Action Agenda',
-    desc: 'Prioritized Daily Workload View Giving Sales Advisors Instant Clarity On Urgent Customer Engagements.',
+    desc: 'Prioritized Operational CRM View Giving Sales Advisors Instant Clarity On Urgent Lead Stage Progress.',
     color: 'blue',
   },
 ];
@@ -134,18 +134,18 @@ const CalendarShowcase: React.FC = () => {
         >
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-100 border border-emerald-200 text-emerald-800 text-xs font-bold uppercase tracking-widest mb-4 shadow-sm">
             <CalendarIcon className="w-4 h-4 text-emerald-600" />
-            <span>Lead Operations Calendar</span>
+            <span>Operational CRM Calendar</span>
           </div>
 
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight leading-tight mb-6">
-            Understand Any Employee's Sales Activity In{' '}
+            Real-Time Lead Operations &{' '}
             <span className="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 bg-clip-text text-transparent">
-              As Little As 3 Seconds.
+              Lead Lifecycle Tracking.
             </span>
           </h2>
 
           <p className="text-base sm:text-lg text-slate-600 leading-relaxed">
-            One Glance At The Lead Operations Calendar Instantly Reveals Follow-Up Consistency, Customer Engagement, Sales Representative Discipline, And Deal Progression—Eliminating The Need To Open Multiple Reports.
+            One Glance At The Operational CRM Calendar Instantly Reveals Follow-Up Timelines, Pipeline Activities, Lead Stage Progress, And Representative Discipline—From Creation To Closure.
           </p>
         </motion.div>
 
@@ -163,13 +163,13 @@ const CalendarShowcase: React.FC = () => {
             <div className="space-y-2 text-center md:text-left">
               <div className="inline-flex items-center gap-2 text-emerald-400 font-extrabold text-xs uppercase tracking-widest">
                 <Flame className="w-4 h-4" />
-                <span>3-Second Manager Performance Audit</span>
+                <span>3-Second Manager Operational Audit</span>
               </div>
               <h3 className="text-lg sm:text-xl font-bold text-white">
-                Instant Sales Representative Activity & Discipline Intelligence
+                Real-Time Lead Operations & Pipeline Activity Intelligence
               </h3>
               <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                Managers No Longer Need To Open Multiple Static Reports To Evaluate User Performance. One Glance At The Calendar Instantly Reveals Upcoming Follow-Ups, Overdue Alerts, Customer Engagement Density, And Stage Progress.
+                Operational CRM Calendar Provides Complete Lead Lifecycle Tracking. Audit Follow-Up Timelines, Lead Stage Progress, LOB Cases, And Closed Leads At A Single Glance Without Opening Multiple Static Reports.
               </p>
             </div>
           </div>
@@ -203,8 +203,8 @@ const CalendarShowcase: React.FC = () => {
                 <CalendarIcon className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-lg font-black text-slate-900">Lead Operations Calendar — Sales Activity View</h3>
-                <p className="text-xs text-slate-500 font-medium">Real-Time Lead Journey, Follow-Up Schedule & Revenue Milestone Synchronization</p>
+                <h3 className="text-lg font-black text-slate-900">Lead Operations Calendar — Pipeline Activities</h3>
+                <p className="text-xs text-slate-500 font-medium">Real-Time Lead Operations, Follow-Up Timelines & Lead Stage Progress Synchronization</p>
               </div>
             </div>
 
@@ -282,17 +282,17 @@ const CalendarShowcase: React.FC = () => {
                         initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
                         className={`text-[9px] font-bold px-1.5 py-0.5 rounded leading-tight truncate ${
-                          ev.type === 'emerald'
+                          ev.type === 'green'
                             ? 'bg-emerald-500 text-white'
                             : ev.type === 'blue'
                             ? 'bg-blue-500 text-white'
-                            : ev.type === 'amber'
+                            : ev.type === 'orange'
                             ? 'bg-amber-500 text-white'
-                            : ev.type === 'teal'
-                            ? 'bg-teal-600 text-white shadow-sm'
-                            : ev.type === 'rose'
-                            ? 'bg-rose-500 text-white animate-pulse'
-                            : 'bg-indigo-500 text-white'
+                            : ev.type === 'purple'
+                            ? 'bg-purple-600 text-white'
+                            : ev.type === 'red'
+                            ? 'bg-rose-500 text-white'
+                            : 'bg-slate-500 text-white'
                         }`}
                       >
                         {ev.title}
@@ -318,12 +318,20 @@ const CalendarShowcase: React.FC = () => {
                 </div>
                 <div className="grid grid-cols-2 gap-2 pt-1">
                   <div className="bg-slate-800/80 p-2.5 rounded-xl border border-slate-700">
-                    <span className="text-[10px] text-slate-400 block font-semibold">Follow-Up Streak</span>
-                    <span className="text-sm font-black text-emerald-400">14 Days Active</span>
+                    <span className="text-[10px] text-slate-400 block font-semibold">Today's New Leads</span>
+                    <span className="text-sm font-black text-blue-400">18 Leads</span>
                   </div>
                   <div className="bg-slate-800/80 p-2.5 rounded-xl border border-slate-700">
-                    <span className="text-[10px] text-slate-400 block font-semibold">Today's Workload</span>
-                    <span className="text-sm font-black text-teal-300">12 Activities</span>
+                    <span className="text-[10px] text-slate-400 block font-semibold">Pending Follow-Ups</span>
+                    <span className="text-sm font-black text-amber-400">24 Active</span>
+                  </div>
+                  <div className="bg-slate-800/80 p-2.5 rounded-xl border border-slate-700">
+                    <span className="text-[10px] text-slate-400 block font-semibold">PQL & QL Count</span>
+                    <span className="text-sm font-black text-teal-300">14 Qualified</span>
+                  </div>
+                  <div className="bg-slate-800/80 p-2.5 rounded-xl border border-slate-700">
+                    <span className="text-[10px] text-slate-400 block font-semibold">Closed & LOB Cases</span>
+                    <span className="text-sm font-black text-emerald-400">9 Processed</span>
                   </div>
                 </div>
               </div>
@@ -341,44 +349,44 @@ const CalendarShowcase: React.FC = () => {
                 </div>
 
                 <div className="space-y-3">
-                  <div className="bg-emerald-50 p-3 rounded-xl border border-emerald-200 space-y-1">
-                    <div className="flex justify-between text-xs font-bold text-emerald-900">
-                      <span>AcroTech Enterprise Call</span>
-                      <span className="text-[10px] bg-emerald-600 text-white px-1.5 py-0.5 rounded uppercase">
-                        Schedule Active
+                  <div className="bg-amber-50 p-3 rounded-xl border border-amber-200 space-y-1">
+                    <div className="flex justify-between text-xs font-bold text-amber-900">
+                      <span>PQL Follow-Up</span>
+                      <span className="text-[10px] bg-amber-600 text-white px-1.5 py-0.5 rounded uppercase font-semibold">
+                        DUE TODAY
                       </span>
                     </div>
-                    <p className="text-[11px] text-emerald-700 font-medium">Assigned: Rahul (15m Response Timer Running)</p>
+                    <p className="text-[11px] text-amber-700 font-medium">Response Due Today</p>
                   </div>
 
                   <div className="bg-blue-50 p-3 rounded-xl border border-blue-200 space-y-1">
                     <div className="flex justify-between text-xs font-bold text-blue-900">
-                      <span>Product Demo — Apex Group</span>
-                      <span className="text-[10px] bg-blue-600 text-white px-1.5 py-0.5 rounded uppercase">
-                        02:30 PM
+                      <span>QL Created</span>
+                      <span className="text-[10px] bg-blue-600 text-white px-1.5 py-0.5 rounded uppercase font-semibold">
+                        READY
                       </span>
                     </div>
-                    <p className="text-[11px] text-blue-700 font-medium">Stage: Demo Scheduled</p>
+                    <p className="text-[11px] text-blue-700 font-medium">Ready For Qualification</p>
                   </div>
 
-                  <div className="bg-teal-50 p-3 rounded-xl border border-teal-200 space-y-1">
-                    <div className="flex justify-between text-xs font-bold text-teal-900">
-                      <span>Contract Signed — Metro</span>
-                      <span className="text-[10px] bg-teal-600 text-white px-1.5 py-0.5 rounded uppercase font-extrabold">
-                        $45,000 Won
+                  <div className="bg-purple-50 p-3 rounded-xl border border-purple-200 space-y-1">
+                    <div className="flex justify-between text-xs font-bold text-purple-900">
+                      <span>Proposal Follow-Up</span>
+                      <span className="text-[10px] bg-purple-600 text-white px-1.5 py-0.5 rounded uppercase font-semibold">
+                        AWAITING
                       </span>
                     </div>
-                    <p className="text-[11px] text-teal-700 font-medium">Status: Deal Closed & Won</p>
+                    <p className="text-[11px] text-purple-700 font-medium">Awaiting Customer Decision</p>
                   </div>
 
                   <div className="bg-rose-50 p-3 rounded-xl border border-rose-200 space-y-1">
                     <div className="flex justify-between text-xs font-bold text-rose-900">
-                      <span>Zenith Ltd Follow-Up Overdue</span>
-                      <span className="text-[10px] bg-rose-600 text-white px-1.5 py-0.5 rounded uppercase">
-                        Overdue Alert
+                      <span>LOB Created</span>
+                      <span className="text-[10px] bg-rose-600 text-white px-1.5 py-0.5 rounded uppercase font-semibold">
+                        REASON LOGGED
                       </span>
                     </div>
-                    <p className="text-[11px] text-rose-700 font-medium">Follow-Up Response Clock Expired</p>
+                    <p className="text-[11px] text-rose-700 font-medium">Reason Recorded</p>
                   </div>
                 </div>
               </div>
@@ -390,13 +398,13 @@ const CalendarShowcase: React.FC = () => {
                   <span>Lead Operations Control</span>
                 </div>
                 <p className="text-xs text-slate-300 leading-relaxed font-normal">
-                  Connects Seamlessly With Lead Assignment, Follow-Up Schedule Clocks, Stage Transition Rules, And Target Cycles.
+                  Real-Time Lead Operations connect seamlessly with Lead Stage Progress, Follow-Up Timelines, and Pipeline Activities.
                 </p>
                 <Link
                   to="/login"
                   className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-400 hover:text-emerald-300 pt-1"
                 >
-                  <span>Launch Lead Operations Calendar</span>
+                  <span>Launch Operational CRM Calendar</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </Link>
               </div>
