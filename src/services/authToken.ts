@@ -48,6 +48,7 @@ export const isRefreshAuthFailure = (error: unknown): boolean => {
   if (error instanceof AuthSessionError) return true;
   if (!axios.isAxiosError(error)) return false;
   const status = error.response?.status;
+  if (!status) return false;
   return status === 400 || status === 401 || status === 403;
 };
 
@@ -55,8 +56,8 @@ export const isRefreshAuthFailure = (error: unknown): boolean => {
 export const isTransientRefreshFailure = (error: unknown): boolean => {
   if (!axios.isAxiosError(error)) return false;
   const status = error.response?.status;
-  // Browser network errors have no status. Do not loop aggressively here.
-  if (!status) return false;
+  // Browser network errors or timeout/abort issues have no status.
+  if (!status) return true;
   return status === 500 || status === 502 || status === 503 || status === 504;
 };
 

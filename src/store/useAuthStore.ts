@@ -103,6 +103,11 @@ const useAuthStore = create<AuthState>((set) => {
         localStorage.removeItem('jobId');
         queryClient.clear();
         resetDashboardStore();
+        import('../services/realtime').then((mod) => {
+            mod.disconnectRealtime();
+        }).catch((err) => {
+            console.error('Failed to disconnect realtime socket on logout:', err);
+        });
         set({
             user: null,
             accessToken: null,

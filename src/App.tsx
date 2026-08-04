@@ -28,6 +28,7 @@ import AuthenticatedWorkflowGates from './components/AuthenticatedWorkflowGates'
 import RealtimeSyncListener from './components/realtime/RealtimeSyncListener';
 import LocationTrackingClient from './components/location/LocationTrackingClient';
 import { shouldRunAuthenticatedWorkflow } from './utils/publicRoutes';
+import { installNetworkRecovery } from './services/networkRecovery';
 import Login from './pages/Login';
 import InvitePage from './pages/InvitePage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
@@ -131,6 +132,10 @@ function App() {
     isOnboarded,
     location.pathname,
   );
+
+  useEffect(() => {
+    return installNetworkRecovery();
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
