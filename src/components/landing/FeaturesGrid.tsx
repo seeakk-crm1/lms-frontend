@@ -7,16 +7,14 @@ import {
   DollarSign,
   FileSpreadsheet,
   Clock,
-  Smartphone,
+  Workflow,
   Layers,
   UserCheck,
-  TrendingUp,
   MapPin,
   Calendar,
   SlidersHorizontal,
   History,
   ChevronRight,
-  ShieldCheck,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -56,6 +54,13 @@ const featuresList = [
     desc: 'Enforced Reminder Gates And WhatsApp Integrations Ensuring No Follow-Up Is Skipped Or Forgotten.',
     icon: Clock,
     badge: 'Zero Leakage',
+  },
+  {
+    category: 'leads',
+    title: 'Lead Life Cycle Management',
+    desc: 'Create multiple lead life cycles for different business processes and control how every lead progresses from enquiry to revenue using customizable workflows and stage-based management.',
+    icon: Workflow,
+    badge: 'Lifecycle',
   },
   {
     category: 'office',
@@ -112,13 +117,6 @@ const featuresList = [
     desc: 'Override Queues For Stage Transitions, Target Unlocks, And Special Permission Requests.',
     icon: UserCheck,
     badge: 'Approvals',
-  },
-  {
-    category: 'office',
-    title: 'Mobile PWA & Real-Time Sync',
-    desc: 'Native Progressive Web App (PWA) With Offline Queued Syncing And Socket-Driven Live Updates.',
-    icon: Smartphone,
-    badge: 'PWA Ready',
   },
 ];
 
