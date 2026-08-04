@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ShieldCheck, Lock, Building, FileKey2, Cpu, Globe2 } from 'lucide-react';
+import { ShieldCheck, Building, FileKey2 } from 'lucide-react';
 
 const trustPillars = [
   {
@@ -10,28 +10,13 @@ const trustPillars = [
   },
   {
     icon: FileKey2,
-    title: 'Immutable Forensic Audit Logs',
-    desc: 'Every Single Lead Assignment, Status Transition, Payment Edit, And Supervisor Unlock Request Is Cryptographically Recorded.',
+    title: 'Detailed Activity & Audit Logs',
+    desc: 'Track Important Lead Assignments, Stage Changes, Approvals, Payment Edits, And Account Unlock Actions With Clear User And Timestamp History.',
   },
   {
     icon: Building,
     title: 'Multi-Office Branch Hierarchy',
     desc: 'Support Complex Multi-Regional Office Structures, Loss Of Business (LOB) Splits, And Department-Wise Reporting Boundaries.',
-  },
-  {
-    icon: Cpu,
-    title: 'PWA & Offline Queue Sync',
-    desc: 'Progressive Web App (PWA) Architecture Allowing Sales Reps To Capture Notes Offline And Auto-Sync Upon Reconnection.',
-  },
-  {
-    icon: Lock,
-    title: 'Bank-Grade Data Encryption',
-    desc: 'AES-256 Encrypted Storage, TLS 1.3 In Transit, And JWT Token Rotation For Maximum Data Security.',
-  },
-  {
-    icon: Globe2,
-    title: 'Real-Time WebSocket Infrastructure',
-    desc: 'Low-Latency Real-Time Event Broadcasting For Instant Follow-Up Reminders, Lead Transfers, And Supervisor Notifications.',
   },
 ];
 
@@ -52,7 +37,7 @@ const EnterpriseTrust: React.FC = () => {
         >
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-100 border border-blue-200 text-blue-800 text-xs font-bold uppercase tracking-widest mb-4 shadow-sm">
             <ShieldCheck className="w-4 h-4 text-blue-600" />
-            <span>Enterprise Security & Compliance</span>
+            <span>Enterprise Access & Security Boundaries</span>
           </div>
 
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight leading-tight mb-6">
@@ -62,13 +47,13 @@ const EnterpriseTrust: React.FC = () => {
             </span>
           </h2>
 
-          <p className="text-base sm:text-lg text-slate-600 leading-relaxed">
-            Seeakk Complies With Strict Enterprise Security, Multi-Office Data Boundaries, Loss Of Business (LOB) Monitoring, And Forensic Audit Logging Standards Out Of The Box.
+          <p className="text-base sm:text-lg text-slate-600 leading-relaxed font-medium">
+            Seeakk provides role-based access control, structured multi-office data boundaries, and detailed activity tracking to help organizations manage operational access and accountability.
           </p>
         </motion.div>
 
-        {/* Pillars Grid */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+        {/* Pillars Grid - 3 Cards Balanced Row */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto items-stretch">
           {trustPillars.map((pillar, idx) => (
             <motion.div
               key={pillar.title}
@@ -76,14 +61,16 @@ const EnterpriseTrust: React.FC = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: idx * 0.08 }}
-              className="bg-slate-50/80 rounded-2xl p-6 border border-slate-200 hover:border-blue-500/40 hover:bg-white hover:shadow-md transition-all group"
+              className="bg-slate-50/80 rounded-2xl p-6 sm:p-8 border border-slate-200 hover:border-blue-500/40 hover:bg-white hover:shadow-md transition-all flex flex-col justify-between group"
             >
-              <div className="p-3 rounded-xl bg-blue-100 text-blue-700 border border-blue-200 w-fit mb-4 group-hover:scale-110 transition-transform shadow-sm">
-                <pillar.icon className="w-5 h-5" />
-              </div>
+              <div>
+                <div className="p-3 rounded-xl bg-blue-100 text-blue-700 border border-blue-200 w-fit mb-4 group-hover:scale-110 transition-transform shadow-sm">
+                  <pillar.icon className="w-5 h-5" />
+                </div>
 
-              <h3 className="text-base font-bold text-slate-900 mb-2">{pillar.title}</h3>
-              <p className="text-xs text-slate-600 leading-relaxed font-medium">{pillar.desc}</p>
+                <h3 className="text-base font-bold text-slate-900 mb-2">{pillar.title}</h3>
+                <p className="text-xs text-slate-600 leading-relaxed font-medium">{pillar.desc}</p>
+              </div>
             </motion.div>
           ))}
         </div>
