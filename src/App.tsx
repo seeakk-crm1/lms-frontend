@@ -65,6 +65,8 @@ import RevenueReportsPage from './modules/reports/pages/RevenueReportsPage';
 import LeadReportsPage from './modules/reports/pages/LeadReportsPage';
 import FollowupReportsPage from './modules/reports/pages/FollowupReportsPage';
 import AttendanceReportsPage from './modules/reports/pages/AttendanceReportsPage';
+import { CallPerformanceReportPage } from './pages/reports/CallPerformanceReportPage';
+import { SubstageManager } from './pages/admin/SubstageManager';
 import ExportCenterPage from './modules/reports/pages/ExportCenterPage';
 import LOBReasonsPage from './modules/lob-reasons/pages/LOBReasonsPage';
 import FollowUpExtensionReasonsPage from './modules/followup-extension-reasons/pages/FollowUpExtensionReasonsPage';
@@ -329,6 +331,12 @@ function App() {
           </PermissionRoute>
         } />
 
+        <Route path="/admin/lead-substages" element={
+          <PermissionRoute permissions={['LEAD_SUBSTAGES_VIEW', 'LEAD_STAGES_VIEW', 'SYSTEM_CONFIG']}>
+            <SubstageManager />
+          </PermissionRoute>
+        } />
+
         <Route path="/admin/stage-rules" element={
           <PermissionRoute permissions={['LEAD_STAGE_RULES_VIEW', 'SYSTEM_CONFIG']}>
             <StageRulesListPage />
@@ -418,6 +426,16 @@ function App() {
         <Route path="/reports/attendance" element={
           <PermissionRoute permissions={['REPORTS_VIEW', 'REPORTS_GENERATE']}>
             <AttendanceReportsPage />
+          </PermissionRoute>
+        } />
+        <Route path="/reports/calls" element={
+          <PermissionRoute permissions={['CALL_REPORTS_VIEW_ALL', 'CALL_REPORTS_VIEW_ASSIGNED', 'CALL_REPORTS_VIEW_OWN', 'REPORTS_VIEW', 'SYSTEM_CONFIG']}>
+            <CallPerformanceReportPage />
+          </PermissionRoute>
+        } />
+        <Route path="/reports/call-performance" element={
+          <PermissionRoute permissions={['CALL_REPORTS_VIEW_ALL', 'CALL_REPORTS_VIEW_ASSIGNED', 'CALL_REPORTS_VIEW_OWN', 'REPORTS_VIEW', 'SYSTEM_CONFIG']}>
+            <CallPerformanceReportPage />
           </PermissionRoute>
         } />
         <Route path="/reports/export" element={

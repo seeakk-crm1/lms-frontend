@@ -12,6 +12,9 @@ import WhatsAppActionButton from '../../../components/common/WhatsAppActionButto
 import { LEAD_WHATSAPP_PERMISSIONS } from '../../../constants/whatsappPermissions';
 import LeadAvatar from './LeadAvatar';
 import { getImageUrl } from '../../../utils/getImageUrl';
+import { CallButton } from '../../../components/calls/CallButton';
+import { CallOutcomeModal } from '../../../components/calls/CallOutcomeModal';
+import { useCallTracking } from '../../../hooks/useCallTracking';
 
 interface LeadsTableProps {
   items: LeadListItem[];
@@ -56,6 +59,8 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
   onHistory,
   onDelete,
 }) => {
+  const callTracking = useCallTracking();
+
   const pageNumbers = useMemo(() => {
     const numbers: number[] = [];
     const start = Math.max(1, page - 1);
@@ -272,6 +277,16 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
                               entityName: lead.name,
                             }}
                           />
+                          <CallButton
+                            leadId={lead.id}
+                            leadName={lead.name}
+                            phone={lead.phone}
+                            sourceContext="ALL_LEADS"
+                            currentStageName={lead.stage?.name}
+                            size="sm"
+                            variant="icon"
+                            onInitiate={callTracking.startCall}
+                          />
                         </div>
                         </div>
                       </div>
@@ -357,6 +372,16 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
                               entityId: lead.id,
                               entityName: lead.name,
                             }}
+                          />
+                          <CallButton
+                            leadId={lead.id}
+                            leadName={lead.name}
+                            phone={lead.phone}
+                            sourceContext="ALL_LEADS"
+                            currentStageName={lead.stage?.name}
+                            size="md"
+                            variant="icon"
+                            onInitiate={callTracking.startCall}
                           />
                           <button
                             type="button"
@@ -454,6 +479,20 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
           </button>
         </div>
       </div>
+
+      {callTracking.isModalOpen && callTracking.activeSession && (
+        <CallOutcomeModal
+          isOpen={callTracking.isModalOpen}
+          onClose={callTracking.closeModal}
+          callSessionId={callTracking.activeSession.callSessionId}
+          leadId={callTracking.activeSession.leadId}
+          leadName={callTracking.activeSession.leadName}
+          leadPhone={callTracking.activeSession.leadPhone}
+          sourceContext={callTracking.activeSession.sourceContext as any}
+          currentStageName={callTracking.activeSession.currentStageName}
+          currentSubstageName={callTracking.activeSession.currentSubstageName}
+        />
+      )}
     </div>
   );
 };

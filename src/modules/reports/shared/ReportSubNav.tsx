@@ -13,6 +13,7 @@ import {
 const tabs = [
   { to: '/reports/activity', label: 'Activity Reports', icon: Activity },
   { to: '/reports/summary', label: 'Summary Reports', icon: FileText },
+  { to: '/reports/call-performance', label: 'Call Performance', icon: PhoneCall },
   { to: '/reports/revenue', label: 'Revenue Reports', icon: IndianRupee },
   { to: '/reports/leads', label: 'Lead Reports', icon: Briefcase },
   { to: '/reports/followups', label: 'Followup Reports', icon: PhoneCall },

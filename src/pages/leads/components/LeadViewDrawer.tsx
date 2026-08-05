@@ -22,6 +22,9 @@ import { LEAD_WHATSAPP_PERMISSIONS } from '../../../constants/whatsappPermission
 import LeadAvatar from './LeadAvatar';
 import { formatPhoneWithFlag } from '../../../utils/phoneUtils';
 import { getImageUrl } from '../../../utils/getImageUrl';
+import { CallButton } from '../../../components/calls/CallButton';
+import { CallOutcomeModal } from '../../../components/calls/CallOutcomeModal';
+import { useCallTracking } from '../../../hooks/useCallTracking';
 
 interface LeadViewDrawerProps {
   isOpen: boolean;
@@ -54,6 +57,7 @@ const LeadViewDrawer: React.FC<LeadViewDrawerProps> = ({
   onEdit,
   onToggleStar,
 }) => {
+  const callTracking = useCallTracking();
   const [activeTab, setActiveTab] = useState<'overview' | 'history'>(initialTab);
   const { data, isLoading } = useLeadDetailQuery(lead?.id, isOpen);
   const resolvedLead = (data || lead) as LeadListItem | null;
@@ -267,6 +271,16 @@ const LeadViewDrawer: React.FC<LeadViewDrawerProps> = ({
                             entityName: resolvedLead.name,
                           }}
                         />
+                        <CallButton
+                          leadId={resolvedLead.id}
+                          leadName={resolvedLead.name}
+                          phone={resolvedLead.phone}
+                          sourceContext="LEAD_DETAILS"
+                          currentStageName={resolvedLead.stage?.name}
+                          size="sm"
+                          variant="pill"
+                          onInitiate={callTracking.startCall}
+                        />
                       </div>
                       <div className="flex items-center gap-2.5">
                         <Building2 className="h-4 w-4 shrink-0 text-gray-400" />
@@ -476,6 +490,20 @@ const LeadViewDrawer: React.FC<LeadViewDrawerProps> = ({
               </div>
             ) : null}
           </motion.aside>
+
+          {callTracking.isModalOpen && callTracking.activeSession && (
+            <CallOutcomeModal
+              isOpen={callTracking.isModalOpen}
+              onClose={callTracking.closeModal}
+              callSessionId={callTracking.activeSession.callSessionId}
+              leadId={callTracking.activeSession.leadId}
+              leadName={callTracking.activeSession.leadName}
+              leadPhone={callTracking.activeSession.leadPhone}
+              sourceContext={callTracking.activeSession.sourceContext as any}
+              currentStageName={callTracking.activeSession.currentStageName}
+              currentSubstageName={callTracking.activeSession.currentSubstageName}
+            />
+          )}
         </div>
       ) : null}
     </AnimatePresence>
