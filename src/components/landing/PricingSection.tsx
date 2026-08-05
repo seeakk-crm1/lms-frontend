@@ -5,15 +5,11 @@ import {
   Zap,
   ArrowRight,
   Sparkles,
-  Layers,
-  MessageSquare,
-  Share2,
-  Clock,
-  ShieldCheck,
-  CheckCircle2,
-  XCircle,
+  Building2,
   Cpu,
   Info,
+  CheckCircle2,
+  XCircle,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -44,8 +40,8 @@ const pricingTiers = [
     id: 'pro',
     name: 'Pro',
     tagline: 'Everything In Basic Plus Powerful Business Automation.',
-    monthlyPrice: 1299,
-    annualPrice: 999,
+    monthlyPrice: 1099,
+    annualPrice: 899,
     minUsers: 'Minimum 3 Users',
     popular: true,
     badge: 'Automation Pack',
@@ -60,6 +56,29 @@ const pricingTiers = [
       'Priority 24/7 Dedicated Support',
     ],
   },
+  {
+    id: 'enterprise',
+    name: 'Enterprise',
+    tagline: 'Built for organizations that need multiple business integrations, higher automation limits, custom workflows, and dedicated implementation support.',
+    monthlyPrice: 'Custom Pricing',
+    annualPrice: 'Custom Pricing',
+    minUsers: 'Custom Scope',
+    popular: false,
+    badge: 'Best For Large Organizations',
+    cta: 'Contact Sales',
+    features: [
+      'Everything In Pro',
+      'Multiple Meta Business Accounts',
+      'Higher Automation Limits',
+      'Custom Integrations',
+      'Dedicated Support',
+      'Custom Onboarding',
+      'Custom Deployment Options',
+      'Dedicated Account Manager',
+      'Priority Technical Support',
+      'Advanced Workspace Configuration',
+    ],
+  },
 ];
 
 const automationLimits = [
@@ -71,26 +90,34 @@ const automationLimits = [
 ];
 
 const footerNotes = [
-  'Minimum Subscription: 3 Users',
-  '1 Meta Business Connection Included',
-  'Additional Meta Business Connections Available',
+  'Minimum Subscription: 3 Users For Basic And Pro',
+  'Enterprise Pricing Is Based On Users, Offices, Integrations, And Automation Volume',
+  'One Meta Business Connection Is Included In Pro',
+  'Additional Meta Business Connections Are Available',
   'WhatsApp Business Charges May Apply According To Usage',
-  'Automation Limits Reset Every Month',
+  'Automation Limits Reset Monthly',
+  'Contact Sales For Enterprise Configuration',
 ];
 
 const comparisonRows = [
-  { feature: 'Lead Custody & Distribution', basic: true, pro: true, isAutomation: false },
-  { feature: 'Loss Of Business (LOB) Engine', basic: true, pro: true, isAutomation: false },
-  { feature: 'Mandatory Follow-Up Response Clocks', basic: true, pro: true, isAutomation: false },
-  { feature: 'Target Evaluation Cycles & Performance Locking', basic: true, pro: true, isAutomation: false },
-  { feature: 'Multi-Office & Branch Isolation', basic: true, pro: true, isAutomation: false },
-  { feature: 'Geo-Fenced Attendance & Shift Rosters', basic: true, pro: true, isAutomation: false },
-  { feature: 'Dynamic Stage Transition Rules', basic: true, pro: true, isAutomation: false },
-  { feature: 'Advance Deposit & Financial Logging', basic: true, pro: true, isAutomation: false },
-  { feature: 'Permanent Activity Audit Logs', basic: true, pro: true, isAutomation: false },
-  { feature: 'Automatic Meta Lead Import', basic: false, pro: true, isAutomation: true },
-  { feature: 'Automatic WhatsApp Reports To Admins', basic: false, pro: true, isAutomation: true },
-  { feature: 'Automatic WhatsApp Messages Based On Lead Stage', basic: false, pro: true, isAutomation: true },
+  { feature: 'Lead Custody & Distribution', basic: true, pro: true, enterprise: true, isCategory: false },
+  { feature: 'Loss Of Business (LOB) Engine', basic: true, pro: true, enterprise: true, isCategory: false },
+  { feature: 'Mandatory Follow-Up Response Clocks', basic: true, pro: true, enterprise: true, isCategory: false },
+  { feature: 'Target Evaluation Cycles & Performance Locking', basic: true, pro: true, enterprise: true, isCategory: false },
+  { feature: 'Multi-Office & Branch Isolation', basic: true, pro: true, enterprise: true, isCategory: false },
+  { feature: 'Geo-Fenced Attendance & Shift Rosters', basic: true, pro: true, enterprise: true, isCategory: false },
+  { feature: 'Dynamic Stage Transition Rules', basic: true, pro: true, enterprise: true, isCategory: false },
+  { feature: 'Advance Deposit & Financial Logging', basic: true, pro: true, enterprise: true, isCategory: false },
+  { feature: 'Permanent Activity Audit Logs', basic: true, pro: true, enterprise: true, isCategory: false },
+  { feature: 'Automatic Meta Lead Import', basic: false, pro: true, enterprise: true, isCategory: false },
+  { feature: 'Automatic WhatsApp Reports To Admins', basic: false, pro: true, enterprise: true, isCategory: false },
+  { feature: 'Automatic WhatsApp Messages Based On Lead Stage', basic: false, pro: true, enterprise: true, isCategory: false },
+  { feature: 'Multiple Meta Business Accounts', basic: false, pro: false, enterprise: true, isCategory: false },
+  { feature: 'Higher Automation Limits', basic: false, pro: false, enterprise: true, isCategory: false },
+  { feature: 'Custom Integrations', basic: false, pro: false, enterprise: true, isCategory: false },
+  { feature: 'Dedicated Support & Onboarding', basic: false, pro: false, enterprise: true, isCategory: false },
+  { feature: 'Dedicated Account Manager', basic: false, pro: false, enterprise: true, isCategory: false },
+  { feature: 'Priority Technical Support', basic: false, pro: false, enterprise: true, isCategory: false },
 ];
 
 const PricingSection: React.FC = () => {
@@ -153,7 +180,7 @@ const PricingSection: React.FC = () => {
         </motion.div>
 
         {/* Pricing Cards Grid */}
-        <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto mb-16">
+        <div className="grid lg:grid-cols-3 gap-8 max-w-7xl mx-auto mb-16 items-stretch">
           {pricingTiers.map((tier, idx) => (
             <motion.div
               key={tier.name}
@@ -163,13 +190,20 @@ const PricingSection: React.FC = () => {
               transition={{ delay: idx * 0.1 }}
               className={`rounded-3xl p-8 bg-white border relative flex flex-col justify-between transition-all duration-300 ${
                 tier.popular
-                  ? 'border-emerald-500 shadow-2xl shadow-emerald-500/10 ring-2 ring-emerald-500/30 md:scale-105'
+                  ? 'border-emerald-500 shadow-2xl shadow-emerald-500/10 ring-2 ring-emerald-500/30 lg:scale-105 z-10'
                   : 'border-slate-200 shadow-md hover:shadow-xl'
               }`}
             >
-              {tier.popular && (
-                <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-emerald-600 to-teal-700 text-white font-extrabold text-[10px] uppercase tracking-widest px-4 py-1 rounded-full shadow-md flex items-center gap-1.5">
-                  <Sparkles className="w-3 h-3 text-emerald-200" />
+              {tier.badge && (
+                <span
+                  className={`absolute -top-3.5 left-1/2 -translate-x-1/2 font-extrabold text-[10px] uppercase tracking-widest px-4 py-1 rounded-full shadow-md flex items-center gap-1.5 ${
+                    tier.popular
+                      ? 'bg-gradient-to-r from-emerald-600 to-teal-700 text-white'
+                      : 'bg-slate-900 text-white'
+                  }`}
+                >
+                  {tier.popular && <Sparkles className="w-3 h-3 text-emerald-200" />}
+                  {tier.id === 'enterprise' && <Building2 className="w-3 h-3 text-slate-300" />}
                   <span>{tier.badge}</span>
                 </span>
               )}
@@ -182,23 +216,38 @@ const PricingSection: React.FC = () => {
                   </span>
                 </div>
 
-                <p className="text-xs text-slate-600 mb-6 min-h-[36px] font-medium leading-relaxed">{tier.tagline}</p>
+                <p className="text-xs text-slate-600 mb-6 min-h-[48px] font-medium leading-relaxed">{tier.tagline}</p>
 
                 <div className="mb-6 pb-6 border-b border-slate-100">
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-4xl sm:text-5xl font-black text-slate-900">
-                      ₹{isAnnual ? tier.annualPrice : tier.monthlyPrice}
-                    </span>
-                    <span className="text-xs text-slate-500 font-medium">/ user / month</span>
-                  </div>
-                  <p className="text-[11px] text-slate-500 mt-1 font-semibold">
-                    {isAnnual ? 'Billed annually per user' : 'Billed monthly per user'} • {tier.minUsers}
-                  </p>
+                  {typeof tier.monthlyPrice === 'number' ? (
+                    <>
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-4xl sm:text-5xl font-black text-slate-900">
+                          ₹{(isAnnual ? tier.annualPrice : tier.monthlyPrice).toLocaleString('en-IN')}
+                        </span>
+                        <span className="text-xs text-slate-500 font-medium">/ user / month</span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 mt-1 font-semibold">
+                        {isAnnual ? 'Billed annually per user' : 'Billed monthly per user'} • {tier.minUsers}
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-3xl sm:text-4xl font-black text-slate-900">
+                          {tier.monthlyPrice}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 mt-1 font-semibold">
+                        Tailored Scope & Integrations
+                      </p>
+                    </>
+                  )}
                 </div>
 
                 <ul className="space-y-3 mb-8">
                   {tier.features.map((feature) => {
-                    const isHighlight = tier.popular && feature.startsWith('Automatic');
+                    const isHighlight = (tier.popular && feature.startsWith('Automatic')) || (tier.id === 'enterprise' && feature.startsWith('Everything'));
                     return (
                       <li key={feature} className="flex items-center gap-3 text-xs text-slate-700 font-medium">
                         <Check className={`w-4 h-4 shrink-0 ${isHighlight ? 'text-emerald-600 stroke-[3]' : 'text-emerald-600'}`} />
@@ -214,7 +263,9 @@ const PricingSection: React.FC = () => {
                 className={`w-full py-4 rounded-2xl font-bold text-xs transition-all text-center flex items-center justify-center gap-2 ${
                   tier.popular
                     ? 'bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white shadow-lg shadow-emerald-500/20'
-                    : 'bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200'
+                    : tier.id === 'enterprise'
+                      ? 'bg-slate-900 hover:bg-slate-800 text-white shadow-md'
+                      : 'bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200'
                 }`}
               >
                 <span>{tier.cta}</span>
@@ -272,58 +323,74 @@ const PricingSection: React.FC = () => {
           <div className="bg-slate-900 text-white p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-400">Detailed Capability Matrix</span>
-              <h3 className="text-xl sm:text-2xl font-black tracking-tight text-white mt-1">Basic vs. Pro Plan Comparison</h3>
+              <h3 className="text-xl sm:text-2xl font-black tracking-tight text-white mt-1">Full Plan Comparison</h3>
             </div>
             <span className="text-xs font-semibold px-4 py-1.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
               Compare Features Side-by-Side
             </span>
           </div>
 
-          {/* Table Header */}
-          <div className="grid grid-cols-12 bg-slate-100/90 border-b border-slate-200 p-4 sm:p-6 text-xs sm:text-sm font-bold text-slate-800">
-            <div className="col-span-6 sm:col-span-6">Operational Feature</div>
-            <div className="col-span-3 sm:col-span-3 text-center">Basic (₹499/user/mo)</div>
-            <div className="col-span-3 sm:col-span-3 text-center text-emerald-700">Pro (₹1,299/user/mo)</div>
-          </div>
-
-          {/* Rows */}
-          <div className="divide-y divide-slate-100">
-            {comparisonRows.map((row, idx) => (
-              <div
-                key={row.feature}
-                className={`grid grid-cols-12 p-4 sm:p-5 text-xs sm:text-sm items-center transition-colors ${
-                  row.isAutomation ? 'bg-emerald-50/50 hover:bg-emerald-50' : 'hover:bg-slate-50'
-                }`}
-              >
-                <div className="col-span-6 sm:col-span-6 font-bold text-slate-900 flex items-center gap-2">
-                  {row.isAutomation && <Sparkles className="w-3.5 h-3.5 text-emerald-600 shrink-0" />}
-                  <span>{row.feature}</span>
-                </div>
-                <div className="col-span-3 sm:col-span-3 flex justify-center">
-                  {row.basic ? (
-                    <span className="inline-flex items-center gap-1 text-emerald-700 font-bold text-xs bg-emerald-100 px-3 py-1 rounded-full border border-emerald-200">
-                      <Check className="w-3.5 h-3.5 text-emerald-600" />
-                      <span>Included</span>
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1 text-slate-400 font-semibold text-xs bg-slate-100 px-3 py-1 rounded-full border border-slate-200">
-                      <XCircle className="w-3.5 h-3.5 text-slate-400" />
-                      <span>Not Included</span>
-                    </span>
-                  )}
-                </div>
-                <div className="col-span-3 sm:col-span-3 flex justify-center">
-                  {row.pro ? (
-                    <span className="inline-flex items-center gap-1 text-emerald-800 font-bold text-xs bg-emerald-100 px-3 py-1 rounded-full border border-emerald-300 shadow-sm">
-                      <Check className="w-3.5 h-3.5 text-emerald-600 stroke-[3]" />
-                      <span>Included</span>
-                    </span>
-                  ) : (
-                    <span className="text-slate-400">—</span>
-                  )}
-                </div>
+          {/* Scrollable Container for Mobile */}
+          <div className="overflow-x-auto">
+            <div className="min-w-[640px]">
+              {/* Table Header */}
+              <div className="grid grid-cols-12 bg-slate-100/90 border-b border-slate-200 p-4 sm:p-6 text-xs sm:text-sm font-bold text-slate-800">
+                <div className="col-span-5">Operational Feature</div>
+                <div className="col-span-2 text-center">Basic (₹499/user/mo)</div>
+                <div className="col-span-2 text-center text-emerald-700">Pro (₹1,099/user/mo)</div>
+                <div className="col-span-3 text-center text-slate-900">Enterprise (Custom)</div>
               </div>
-            ))}
+
+              {/* Rows */}
+              <div className="divide-y divide-slate-100">
+                {comparisonRows.map((row) => (
+                  <div
+                    key={row.feature}
+                    className="grid grid-cols-12 p-4 sm:p-5 text-xs sm:text-sm items-center hover:bg-slate-50 transition-colors"
+                  >
+                    <div className="col-span-5 font-bold text-slate-900 flex items-center gap-2">
+                      <span>{row.feature}</span>
+                    </div>
+                    <div className="col-span-2 flex justify-center">
+                      {row.basic ? (
+                        <span className="inline-flex items-center gap-1 text-emerald-700 font-bold text-xs bg-emerald-100 px-3 py-1 rounded-full border border-emerald-200">
+                          <Check className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>Included</span>
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-slate-400 font-semibold text-xs bg-slate-100 px-2.5 py-1 rounded-full border border-slate-200">
+                          <XCircle className="w-3 h-3 text-slate-400" />
+                          <span>—</span>
+                        </span>
+                      )}
+                    </div>
+                    <div className="col-span-2 flex justify-center">
+                      {row.pro ? (
+                        <span className="inline-flex items-center gap-1 text-emerald-800 font-bold text-xs bg-emerald-100 px-3 py-1 rounded-full border border-emerald-300 shadow-sm">
+                          <Check className="w-3.5 h-3.5 text-emerald-600 stroke-[3]" />
+                          <span>Included</span>
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-slate-400 font-semibold text-xs bg-slate-100 px-2.5 py-1 rounded-full border border-slate-200">
+                          <XCircle className="w-3 h-3 text-slate-400" />
+                          <span>—</span>
+                        </span>
+                      )}
+                    </div>
+                    <div className="col-span-3 flex justify-center">
+                      {row.enterprise ? (
+                        <span className="inline-flex items-center gap-1 text-slate-900 font-bold text-xs bg-slate-100 px-3 py-1 rounded-full border border-slate-300 shadow-sm">
+                          <Check className="w-3.5 h-3.5 text-emerald-600 stroke-[3]" />
+                          <span>Included</span>
+                        </span>
+                      ) : (
+                        <span className="text-slate-400">—</span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </motion.div>
 
@@ -331,7 +398,7 @@ const PricingSection: React.FC = () => {
         <div className="max-w-5xl mx-auto bg-white rounded-2xl p-6 border border-slate-200 shadow-sm text-center">
           <div className="flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-600 mb-4">
             <Info className="w-4 h-4 text-emerald-600" />
-            <span>Subscription & Automation Guidelines</span>
+            <span>Subscription & Enterprise Guidelines</span>
           </div>
           <div className="flex flex-wrap justify-center gap-2 sm:gap-3 text-xs font-semibold text-slate-700">
             {footerNotes.map((note) => (
