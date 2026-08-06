@@ -12,7 +12,6 @@ import {
   User,
   X,
 } from 'lucide-react';
-import { toast } from 'react-hot-toast';
 import { fetchGroupedSubstages, GroupedSubstages, LeadSubstage } from '../../services/substages.api';
 import { saveCallOutcome, SaveCallOutcomePayload } from '../../services/calls.api';
 import LOBModal from '../../pages/leads/components/LOBModal';
@@ -63,8 +62,12 @@ export const CallOutcomeModal: React.FC<CallOutcomeModalProps> = ({
   const [nextFollowUpTime, setNextFollowUpTime] = useState('10:00');
   const [followUpDescription, setFollowUpDescription] = useState('');
 
-  // LOB Reason Interception State
+  // LOB Entry Modal Interception State
   const [isLOBModalOpen, setIsLOBModalOpen] = useState(false);
+
+  // LOB Exit Modal Interception State (Return from LOB)
+  const [isLOBExitModalOpen, setIsLOBExitModalOpen] = useState(false);
+  const [lobExitReason, setLobExitReason] = useState('');
 
   // Open Lead Drawer State
   const [isLeadDrawerOpen, setIsLeadDrawerOpen] = useState(false);
@@ -91,6 +94,12 @@ export const CallOutcomeModal: React.FC<CallOutcomeModalProps> = ({
 
   if (!isOpen) return null;
 
+  // Check if current stage is an LOB stage
+  const isCurrentLOB = Boolean(
+    (currentStageName || '').toLowerCase().includes('lob') ||
+      groupedSubstages.find((g) => g.name === currentStageName)?.isLOB,
+  );
+
   // Construct minimal lead object for LeadFormDrawer
   const leadItemForDrawer = {
     id: leadId,
@@ -100,7 +109,11 @@ export const CallOutcomeModal: React.FC<CallOutcomeModalProps> = ({
     substage: currentSubstageName ? { id: '', name: currentSubstageName } : undefined,
   } as unknown as LeadListItem;
 
-  const executeOutcomeSubmission = async (extraPayload?: { reasonId?: string; remarks?: string }) => {
+  const executeOutcomeSubmission = async (extraPayload?: {
+    reasonId?: string;
+    remarks?: string;
+    lobExitReason?: string;
+  }) => {
     setSubmitting(true);
     setErrorMsg(null);
 
@@ -117,11 +130,12 @@ export const CallOutcomeModal: React.FC<CallOutcomeModalProps> = ({
       reasonId: extraPayload?.reasonId,
       lobReasonId: extraPayload?.reasonId,
       lobRemarks: extraPayload?.remarks,
+      lobExitReason: extraPayload?.lobExitReason,
+      lobReturnRemarks: extraPayload?.lobExitReason,
     };
 
     try {
       const res = await saveCallOutcome(leadId, payload);
-      toast.success(res.message || 'Call outcome recorded successfully!');
 
       if (onSuccess) onSuccess(res);
       onClose();
@@ -133,7 +147,6 @@ export const CallOutcomeModal: React.FC<CallOutcomeModalProps> = ({
       console.error('Failed to save call outcome:', err);
       const msg = err.response?.data?.message || 'Failed to save call outcome. Please try again.';
       setErrorMsg(msg);
-      toast.error(msg);
     } finally {
       setSubmitting(false);
     }
@@ -144,16 +157,24 @@ export const CallOutcomeModal: React.FC<CallOutcomeModalProps> = ({
     if (submitting) return;
     setErrorMsg(null);
 
-    // Find selected substage group to check if target stage is LOB
+    // Check target stage classification when a substage is selected
     if (selectedSubstageId) {
       const targetGroup = groupedSubstages.find((group) =>
         group.substages.some((sub) => sub.id === selectedSubstageId),
       );
 
-      if (targetGroup && targetGroup.isLOB) {
-        // Intercept and open LOB reason modal
-        setIsLOBModalOpen(true);
-        return;
+      if (targetGroup) {
+        // Case 1: Non-LOB -> LOB Entry
+        if (!isCurrentLOB && targetGroup.isLOB) {
+          setIsLOBModalOpen(true);
+          return;
+        }
+
+        // Case 2: LOB -> Non-LOB Return
+        if (isCurrentLOB && !targetGroup.isLOB) {
+          setIsLOBExitModalOpen(true);
+          return;
+        }
       }
     }
 
@@ -170,9 +191,22 @@ export const CallOutcomeModal: React.FC<CallOutcomeModalProps> = ({
     setErrorMsg('LOB stage change was not completed. Select a reason or choose another outcome.');
   };
 
+  const handleLOBExitConfirm = async () => {
+    if (!lobExitReason.trim()) return;
+    setIsLOBExitModalOpen(false);
+    await executeOutcomeSubmission({ lobExitReason: lobExitReason.trim() });
+    setLobExitReason('');
+  };
+
+  const handleLOBExitCancel = () => {
+    setIsLOBExitModalOpen(false);
+    setLobExitReason('');
+    setErrorMsg('LOB return was not completed. Select a return reason or choose another outcome.');
+  };
+
   return (
     <>
-      <div className="fixed inset-0 z-[10300] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm animate-fadeIn">
+      <div className="fixed inset-0 z-[10200] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm animate-fadeIn">
         <div className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100 flex flex-col max-h-[90vh]">
           {/* Header */}
           <div className="flex items-center justify-between border-b border-gray-100 bg-white px-6 py-5">
@@ -212,7 +246,7 @@ export const CallOutcomeModal: React.FC<CallOutcomeModalProps> = ({
 
           {/* Scrollable Body */}
           <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-6 flex-1 text-gray-800">
-            {/* Warning / Error Message */}
+            {/* Single Warning / Error Message Banner */}
             {errorMsg && (
               <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-800 text-xs font-semibold flex items-center gap-3 shadow-sm">
                 <AlertTriangle className="w-5 h-5 shrink-0 text-amber-600" />
@@ -235,7 +269,11 @@ export const CallOutcomeModal: React.FC<CallOutcomeModalProps> = ({
               <div className="flex items-center gap-2 text-xs">
                 <span className="text-gray-400 font-semibold">Current Status:</span>
                 {currentStageName && (
-                  <span className="px-2.5 py-1 rounded-xl bg-emerald-100 text-emerald-800 font-extrabold text-[11px]">
+                  <span
+                    className={`px-2.5 py-1 rounded-xl font-extrabold text-[11px] ${
+                      isCurrentLOB ? 'bg-rose-100 text-rose-800' : 'bg-emerald-100 text-emerald-800'
+                    }`}
+                  >
                     {currentStageName}
                   </span>
                 )}
@@ -518,7 +556,7 @@ export const CallOutcomeModal: React.FC<CallOutcomeModalProps> = ({
         </div>
       </div>
 
-      {/* LOB Reason Modal Interception */}
+      {/* Non-LOB -> LOB Entry Modal Interception */}
       <LOBModal
         isOpen={isLOBModalOpen}
         isSubmitting={submitting}
@@ -526,7 +564,49 @@ export const CallOutcomeModal: React.FC<CallOutcomeModalProps> = ({
         onConfirm={handleLOBConfirm}
       />
 
-      {/* Open Lead Form Drawer */}
+      {/* LOB -> Non-LOB Exit/Return Modal Interception */}
+      {isLOBExitModalOpen && (
+        <div className="fixed inset-0 z-[10350] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm animate-fadeIn">
+          <div className="relative w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl border border-gray-100">
+            <h3 className="text-lg font-black text-gray-900 mb-1">Return From LOB</h3>
+            <p className="text-xs font-semibold text-gray-500 mb-4">
+              Please enter the reason for returning this lead from Loss Of Business (LOB).
+            </p>
+
+            <label className="block text-xs font-black uppercase tracking-wider text-gray-700 mb-2">
+              LOB Return Remark <span className="text-rose-500">*</span>
+            </label>
+            <textarea
+              value={lobExitReason}
+              onChange={(e) => setLobExitReason(e.target.value)}
+              rows={4}
+              placeholder="e.g. Customer interested again after follow-up call..."
+              className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-xs font-semibold text-gray-900 outline-none focus:border-emerald-500 focus:bg-white transition-all placeholder:text-gray-400"
+            />
+
+            <div className="mt-5 flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={handleLOBExitCancel}
+                className="px-4 py-2.5 rounded-xl border border-gray-200 text-xs font-extrabold text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                disabled={!lobExitReason.trim() || submitting}
+                onClick={handleLOBExitConfirm}
+                className="px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-black text-xs disabled:opacity-50 transition-all shadow-md shadow-emerald-500/20 cursor-pointer"
+              >
+                Confirm LOB Return
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Open Lead Form Drawer Layered Above Call Outcome */}
       <LeadFormDrawer
         isOpen={isLeadDrawerOpen}
         mode="edit"

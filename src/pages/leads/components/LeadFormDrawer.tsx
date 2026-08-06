@@ -1146,7 +1146,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
     <>
       <AnimatePresence>
         {isOpen ? (
-          <div className="fixed inset-0 z-[10200]">
+          <div className="fixed inset-0 z-[10350]">
             <motion.button
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}

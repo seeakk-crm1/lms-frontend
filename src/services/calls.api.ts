@@ -47,6 +47,9 @@ export interface SaveCallOutcomePayload {
   reasonId?: string;
   lobReasonId?: string;
   lobRemarks?: string;
+  lobExitReason?: string;
+  lobReturnReasonId?: string;
+  lobReturnRemarks?: string;
 }
 
 export interface SaveCallOutcomeResponse {
