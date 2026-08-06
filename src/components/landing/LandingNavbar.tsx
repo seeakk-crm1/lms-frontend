@@ -42,7 +42,7 @@ const LandingNavbar: React.FC = () => {
           {/* Brand Logo Container with Liquid Gloss Refraction */}
           <a href="/" className="flex items-center gap-3 group shrink-0">
             <div className="relative p-1 bg-gradient-to-br from-emerald-500/10 via-white/80 to-emerald-100/40 rounded-xl border border-emerald-500/20 shadow-[inset_0_1px_1px_0_rgba(255,255,255,0.9)] group-hover:border-emerald-400/40 group-hover:shadow-[0_0_12px_0_rgba(16,185,129,0.2)] transition-all">
-              <BrandLogo alt="Seeakk" width={125} height={34} />
+              <BrandLogo alt="Seeakk" width={140} height={38} />
             </div>
           </a>
 

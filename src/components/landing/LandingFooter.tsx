@@ -26,7 +26,7 @@ const LandingFooter: React.FC = () => {
           {/* Brand & Social Column */}
           <div className="col-span-2 space-y-5 pr-6">
             <a href="/" className="inline-block">
-              <BrandLogo alt="Seeakk" width={130} height={36} className="filter brightness-110" />
+              <BrandLogo alt="Seeakk" width={150} height={42} className="filter brightness-110" />
             </a>
             <p className="text-gray-400 text-xs leading-relaxed max-w-sm font-normal">
               Seeakk Is The Enterprise Lead Accountability Platform Connecting Digital Marketing Campaigns With Company Sales Operations—Ensuring Zero Lead Leakage, Loss Of Business (LOB) Prevention, Target-Enforced Locking, And 100% Operational Transparency.
