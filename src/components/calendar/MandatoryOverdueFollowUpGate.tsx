@@ -379,13 +379,18 @@ const MandatoryOverdueFollowUpGate: React.FC<Props> = ({ children }) => {
         followUp={completeTarget}
         isSubmitting={completeMutation.isPending}
         stackAboveMandatoryGate
+        isMandatory={true}
         onClose={() => setCompleteTarget(null)}
         onSubmit={async (payload) => {
           if (!completeTarget) return;
           const resolvedId = completeTarget.id;
-          await completeMutation.mutateAsync({ id: resolvedId, payload });
-          setCompleteTarget(null);
-          await advanceQueueAfterAction(resolvedId);
+          try {
+            await completeMutation.mutateAsync({ id: resolvedId, payload });
+            setCompleteTarget(null);
+            await advanceQueueAfterAction(resolvedId);
+          } catch (err) {
+            console.error('Follow-up completion failed:', err);
+          }
         }}
       />
 
@@ -393,6 +398,7 @@ const MandatoryOverdueFollowUpGate: React.FC<Props> = ({ children }) => {
         isOpen={Boolean(snoozeTarget)}
         followUp={snoozeTarget}
         stackAboveMandatoryGate
+        isMandatory={true}
         value={snoozeDateTime}
         onChange={setSnoozeDateTime}
         recentDescription={recentDescription}
@@ -418,20 +424,24 @@ const MandatoryOverdueFollowUpGate: React.FC<Props> = ({ children }) => {
           const proceed = await confirmIfWeeklyOff(nextTime);
           if (!proceed) return;
           const resolvedId = snoozeTarget.id;
-          await snoozeMutation.mutateAsync({
-            id: resolvedId,
-            payload: {
-              scheduledAt: nextTime.toISOString(),
-              recentDescription: recentDescription.trim() || undefined,
-              extensionReasonId: snoozeReasonId || undefined,
-              reminderActionType,
-            },
-          });
-          setSnoozeTarget(null);
-          setSnoozeDateTime('');
-          setRecentDescription('');
-          setSnoozeReasonId('');
-          await advanceQueueAfterAction(resolvedId);
+          try {
+            await snoozeMutation.mutateAsync({
+              id: resolvedId,
+              payload: {
+                scheduledAt: nextTime.toISOString(),
+                recentDescription: recentDescription.trim() || undefined,
+                extensionReasonId: snoozeReasonId || undefined,
+                reminderActionType,
+              },
+            });
+            setSnoozeTarget(null);
+            setSnoozeDateTime('');
+            setRecentDescription('');
+            setSnoozeReasonId('');
+            await advanceQueueAfterAction(resolvedId);
+          } catch (err) {
+            console.error('Follow-up extension failed:', err);
+          }
         }}
       />
 

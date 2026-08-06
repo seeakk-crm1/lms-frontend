@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Loader2, X } from 'lucide-react';
+import { Loader2, X, ShieldAlert } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import FollowUpContextCard from './FollowUpContextCard';
 import type { FollowUp } from '../../types/followup.types';
@@ -27,6 +27,8 @@ interface Props {
   isSubmitting?: boolean;
   /** Renders above mandatory overdue gate (z-index 9998). */
   stackAboveMandatoryGate?: boolean;
+  /** When true, modal cannot be dismissed via X, Cancel, backdrop, or Escape */
+  isMandatory?: boolean;
 }
 
 const SnoozeFollowUpModal: React.FC<Props> = ({
@@ -44,7 +46,9 @@ const SnoozeFollowUpModal: React.FC<Props> = ({
   onSubmit,
   isSubmitting = false,
   stackAboveMandatoryGate = false,
+  isMandatory = false,
 }) => {
+  const isLockedMandatory = isMandatory || stackAboveMandatoryGate;
   const layerZ = stackAboveMandatoryGate ? 'z-[10350]' : 'z-[170]';
   const { data: activeReasons = [] } = useActiveExtensionReasonsQuery(isOpen);
   const lifecycleQuery = useLifecycleExtensionLimit(followUp?.leadId, isOpen && Boolean(followUp?.leadId));
@@ -100,7 +104,7 @@ const SnoozeFollowUpModal: React.FC<Props> = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={onClose}
+            onClick={isLockedMandatory ? undefined : onClose}
             className="absolute inset-0 bg-gray-900/55 backdrop-blur-sm"
             aria-label="Close snooze modal"
           />
@@ -111,14 +115,31 @@ const SnoozeFollowUpModal: React.FC<Props> = ({
             className="relative w-full max-w-md rounded-t-3xl border border-gray-100 bg-white shadow-2xl sm:rounded-3xl flex flex-col max-h-[90vh] overflow-hidden"
           >
             <div className="flex items-center justify-between gap-3 border-b border-gray-100 px-5 py-4 shrink-0">
-              <h3 className="text-lg font-black text-gray-900">Snooze Follow-up</h3>
-              <button onClick={onClose} className="rounded-xl border border-gray-200 p-2 text-gray-400 hover:bg-gray-50">
-                <X className="h-4 w-4" />
-              </button>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-lg font-black text-gray-900">Extend Follow-up</h3>
+                  {isLockedMandatory && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 text-[10px] font-black uppercase text-amber-800">
+                      <ShieldAlert className="h-3 w-3" />
+                      Mandatory Extension
+                    </span>
+                  )}
+                </div>
+                {isLockedMandatory && (
+                  <p className="mt-1 text-xs font-bold text-amber-800">
+                    This follow-up must be completed or extended before continuing.
+                  </p>
+                )}
+              </div>
+              {!isLockedMandatory && (
+                <button onClick={onClose} className="rounded-xl border border-gray-200 p-2 text-gray-400 hover:bg-gray-50">
+                  <X className="h-4 w-4" />
+                </button>
+              )}
             </div>
             <div className="space-y-4 p-5 flex-1 overflow-y-auto min-h-0 scrollbar-thin">
               <FollowUpContextCard leadId={followUp?.leadId} />
-              
+
               <div>
                 <label className="block text-[11px] font-black uppercase tracking-widest text-gray-400">
                   Current Follow-Up Date
@@ -214,21 +235,25 @@ const SnoozeFollowUpModal: React.FC<Props> = ({
               </div>
 
               <div className="flex gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="flex-1 rounded-2xl border border-gray-200 py-3 text-sm font-black text-gray-500 hover:bg-gray-50"
-                >
-                  Cancel
-                </button>
+                {!isLockedMandatory && (
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="flex-1 rounded-2xl border border-gray-200 py-3 text-sm font-black text-gray-500 hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={onSubmit}
                   disabled={isSubmitting || !value || !hasAnyInput || lifecycleBlocked}
-                  className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl bg-amber-500 py-3 text-sm font-black text-white hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className={`inline-flex flex-1 items-center justify-center gap-2 rounded-2xl bg-amber-500 py-3 text-sm font-black text-white hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed ${
+                    isLockedMandatory ? 'w-full' : ''
+                  }`}
                 >
                   {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                  Save
+                  Extend Follow-up
                 </button>
               </div>
             </div>

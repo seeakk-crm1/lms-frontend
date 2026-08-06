@@ -105,9 +105,9 @@ const MandatoryFollowUpContinuationModal: React.FC<Props> = ({
           </div>
           
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1 text-[10px] font-extrabold uppercase tracking-widest text-white backdrop-blur-sm">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-red-500/30 border border-red-300/40 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white backdrop-blur-sm shadow-sm">
               <CalendarClock size={12} />
-              Required Action
+              Mandatory Follow-Up
             </span>
             {queueTotal > 1 && (
               <span className="text-[10px] font-bold opacity-80">
@@ -119,8 +119,8 @@ const MandatoryFollowUpContinuationModal: React.FC<Props> = ({
           <h2 id="mandatory-followup-title" className="mt-3 text-xl md:text-2xl font-black tracking-tight">
             Schedule Next Follow-up
           </h2>
-          <p className="mt-1 text-xs text-emerald-100/90 font-medium">
-            This active lifecycle lead requires a future follow-up before you can continue using the application.
+          <p className="mt-1 text-xs text-white/90 font-bold">
+            This follow-up must be completed or extended before continuing.
           </p>
         </div>
 
