@@ -177,36 +177,28 @@ function App() {
   return (
     <>
       <Toaster
-        position="top-right"
-        containerStyle={{ zIndex: 12000 }}
+        position="top-center"
+        containerStyle={{ zIndex: 11000 }}
         toastOptions={{
-          duration: 4000,
-          className: 'text-xs font-black tracking-wide',
+          className: 'text-sm font-bold',
           style: {
-            borderRadius: '18px',
-            background: 'rgba(15, 23, 42, 0.95)',
-            color: '#ffffff',
-            padding: '14px 22px',
-            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.4), 0 0 1px 1px rgba(255, 255, 255, 0.1)',
-            backdropFilter: 'blur(16px)',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
+            borderRadius: '16px',
+            background: '#ffffff',
+            color: '#111827',
+            padding: '12px 24px',
+            boxShadow: '0 20px 40px -15px rgba(0,0,0,0.1)',
+            border: '1px solid rgba(0,0,0,0.05)',
           },
           success: {
             iconTheme: {
               primary: '#10b981',
-              secondary: '#0f172a',
-            },
-            style: {
-              borderLeft: '4px solid #10b981',
+              secondary: '#fff',
             },
           },
           error: {
             iconTheme: {
-              primary: '#f43f5e',
-              secondary: '#0f172a',
-            },
-            style: {
-              borderLeft: '4px solid #f43f5e',
+              primary: '#ef4444',
+              secondary: '#fff',
             },
           },
         }}
