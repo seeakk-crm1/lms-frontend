@@ -45,6 +45,8 @@ export interface SaveCallOutcomePayload {
   followUpDescription?: string;
   stageRuleValues?: Array<{ ruleId: string; value: string }>;
   reasonId?: string;
+  lobReasonId?: string;
+  lobRemarks?: string;
 }
 
 export interface SaveCallOutcomeResponse {
