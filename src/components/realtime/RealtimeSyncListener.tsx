@@ -124,7 +124,6 @@ const RealtimeSyncListener = () => {
     socket.on('user_updated', onUserUpdated);
     socket.on('lead_updated', onLeadUpdated);
     socket.on('approval_updated', onLeadUpdated);
-    socket.on('followup_reminder_due', onLeadUpdated);
     socket.on('report_updated', onReportUpdated);
     socket.on('attendance_updated', onAttendanceUpdated);
 
@@ -134,7 +133,6 @@ const RealtimeSyncListener = () => {
       socket.off('user_updated', onUserUpdated);
       socket.off('lead_updated', onLeadUpdated);
       socket.off('approval_updated', onLeadUpdated);
-      socket.off('followup_reminder_due', onLeadUpdated);
       socket.off('report_updated', onReportUpdated);
       socket.off('attendance_updated', onAttendanceUpdated);
     };

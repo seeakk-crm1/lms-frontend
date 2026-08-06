@@ -122,6 +122,12 @@ const FollowUpReminderListener: React.FC = () => {
   useEffect(() => {
     if (!workflowEnabled || query.isLoading) return;
 
+    // Skip first response after mount to prevent a flood of historical reminders.
+    if (!initialLoaded.current) {
+      initialLoaded.current = true;
+      return;
+    }
+
     if (items.length === 0) return;
 
     const seen = readSeenMap();

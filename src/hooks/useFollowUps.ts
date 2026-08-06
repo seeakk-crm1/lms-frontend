@@ -227,7 +227,6 @@ export const useCreateFollowUpMutation = () => {
     onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: ['followups', 'calendar'] });
       queryClient.invalidateQueries({ queryKey: ['followups', 'today'] });
-      queryClient.invalidateQueries({ queryKey: ['followups', 'alerts'] });
       queryClient.invalidateQueries({ queryKey: MANDATORY_FOLLOWUP_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: OVERDUE_MANDATORY_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: ['followups', 'advanced-calendar'] });
@@ -269,7 +268,6 @@ export const useCompleteFollowUpMutation = () => {
     onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: ['followups', 'calendar'] });
       queryClient.invalidateQueries({ queryKey: ['followups', 'today'] });
-      queryClient.invalidateQueries({ queryKey: ['followups', 'alerts'] });
       queryClient.invalidateQueries({ queryKey: ['followups', 'history'] });
       queryClient.invalidateQueries({ queryKey: MANDATORY_FOLLOWUP_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: OVERDUE_MANDATORY_QUERY_KEY });
