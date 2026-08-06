@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   AlertCircle,
   AlertTriangle,
@@ -47,6 +48,7 @@ export const CallOutcomeModal: React.FC<CallOutcomeModalProps> = ({
   onSuccess,
   onReturnToFollowUp,
 }) => {
+  const queryClient = useQueryClient();
   const [groupedSubstages, setGroupedSubstages] = useState<GroupedSubstages[]>([]);
   const [loadingSubstages, setLoadingSubstages] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -136,6 +138,8 @@ export const CallOutcomeModal: React.FC<CallOutcomeModalProps> = ({
 
     try {
       const res = await saveCallOutcome(leadId, payload);
+
+      void queryClient.invalidateQueries();
 
       if (onSuccess) onSuccess(res);
       onClose();
