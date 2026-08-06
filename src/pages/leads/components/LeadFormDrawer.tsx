@@ -33,6 +33,7 @@ import LeadAvatar from './LeadAvatar';
 import type { ListLeadsResponse } from '../../../types/lead.types';
 import { getImageUrl } from '../../../utils/getImageUrl';
 import { formatCurrency } from '../../../utils/currency';
+import { normalizeAmount } from '../../../utils/amountUtils';
 
 interface LeadFormDrawerProps {
   isOpen: boolean;
@@ -328,11 +329,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
   const [addAdvanceModalOpen, setAddAdvanceModalOpen] = useState(false);
   const [isSubmittingTotalAmountReason, setIsSubmittingTotalAmountReason] = useState(false);
 
-  useEffect(() => {
-    if (addAdvanceModalOpen) {
-      console.log('[Diagnostic] Advance popup opened');
-    }
-  }, [addAdvanceModalOpen]);
+  const originalTotalAmountRef = useRef<number | null>(null);
 
   const fetchPayments = async () => {
     if (lead?.id) {
@@ -349,11 +346,15 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
 
   useEffect(() => {
     if (isOpen && mode === 'edit' && lead?.id) {
+      originalTotalAmountRef.current = normalizeAmount(lead.totalAmount);
       fetchPayments();
-    } else {
+    } else if (!isOpen) {
+      originalTotalAmountRef.current = null;
       setPaymentData(null);
+      setTotalAmountReason('');
+      setTotalAmountReasonModalOpen(false);
     }
-  }, [isOpen, mode, lead?.id]);
+  }, [isOpen, mode, lead?.id, lead?.totalAmount]);
 
   const handleSaveTotalAmountReason = async () => {
     if (!totalAmountReason.trim()) {
@@ -945,11 +946,16 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
         quantity: Math.max(1, Math.trunc(Number(item.quantity) || 1)),
       }));
 
-    const calculatedProductTotal = safeProducts.length ? calculateProductTotal(safeProducts, productOptions) : undefined;
-    const isAmountDifferentFromCalculated = calculatedProductTotal !== undefined && Math.abs(totalAmount - calculatedProductTotal) > 0.01;
-    const isAmountDifferentFromPrevious = mode === 'edit' && paymentData && Math.abs(totalAmount - Number(paymentData.totalAmount || 0)) > 0.01;
+    const normOriginal = normalizeAmount(originalTotalAmountRef.current ?? lead?.totalAmount);
+    const normSubmitted = normalizeAmount(formValues.totalAmount);
 
-    if ((isAmountDifferentFromCalculated || isAmountDifferentFromPrevious) && !totalAmountReason.trim()) {
+    const isAmountChanged = mode === 'edit' && (
+      (normOriginal === null && normSubmitted !== null) ||
+      (normOriginal !== null && normSubmitted === null) ||
+      (normOriginal !== null && normSubmitted !== null && Math.abs(normOriginal - normSubmitted) > 0.01)
+    );
+
+    if (isAmountChanged && !totalAmountReason.trim()) {
       setTotalAmountReasonModalOpen(true);
       return;
     }
@@ -1111,6 +1117,9 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
         const remainingCount = overdueQueryData?.data?.items?.length ?? 0;
         console.log('[Frontend] Overdue Result', { remainingOverdueCount: remainingCount });
       }
+
+      originalTotalAmountRef.current = normSubmitted;
+      setTotalAmountReason('');
 
       console.log('[Frontend] Lead Save Completed', { mode, leadId: lead?.id });
 
@@ -2008,18 +2017,11 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
       {totalAmountReasonModalOpen &&
         typeof document !== 'undefined' &&
         createPortal(
-          <div className="fixed inset-0 z-[10300] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+          <div className="fixed inset-0 z-[10400] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
             <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
               <h3 className="text-lg font-black text-gray-900 mb-2">Reason for Amount Modification</h3>
               <p className="text-xs font-semibold text-gray-500 mb-4">
-                {(() => {
-                  const safeProducts = formValues.products.filter((item) => item.productId && productOptions.some((product: any) => product.id === item.productId));
-                  const calcTotal = safeProducts.length ? calculateProductTotal(safeProducts, productOptions) : undefined;
-                  if (calcTotal !== undefined && Math.abs(Number(formValues.totalAmount || 0) - calcTotal) > 0.01) {
-                    return `You are setting the Final Amount to ${formatCurrency(formValues.totalAmount || 0)} (Calculated Product Total: ${formatCurrency(calcTotal)}). Please provide a reason for this price adjustment / discount.`;
-                  }
-                  return `You are updating the Total Amount from ${formatCurrency(paymentData?.totalAmount || 0)} to ${formatCurrency(formValues.totalAmount || 0)}. Please provide a reason.`;
-                })()}
+                {`You are updating the Total Amount from ${formatCurrency(originalTotalAmountRef.current ?? lead?.totalAmount ?? 0)} to ${formatCurrency(formValues.totalAmount || 0)}. Please provide a reason.`}
               </p>
               <textarea
                 className={inputClassName}
@@ -2049,6 +2051,9 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
                     }
                     setTotalAmountReasonModalOpen(false);
                     console.log('[Diagnostic] Popup Closed', { popup: 'TotalAmountReasonModal' });
+                    setTimeout(() => {
+                      handleSubmit({ preventDefault: () => {} } as any);
+                    }, 0);
                   }}
                   className="rounded-2xl bg-emerald-500 px-5 py-2.5 text-sm font-black text-white hover:bg-emerald-600 shadow-lg shadow-emerald-500/20 disabled:opacity-50"
                 >
