@@ -31,6 +31,12 @@ const leadStageSchema = z
       required: z.boolean(),
     }),
   ),
+  substages: z.array(
+    z.object({
+      id: z.string().optional(),
+      name: z.string().trim().min(1, 'Substage name is required'),
+    }),
+  ).optional().default([]),
 })
   .transform((value) => ({
     ...value,
@@ -106,6 +112,8 @@ const LeadStageFormModal: React.FC<LeadStageFormModalProps> = ({
   const navigate = useNavigate();
   const [isRulesDropdownOpen, setIsRulesDropdownOpen] = useState(false);
   const [ruleSearchTerm, setRuleSearchTerm] = useState('');
+  const [substageInput, setSubstageInput] = useState('');
+
   const activeStageRulesQuery = useQuery({
     queryKey: ['stage-rules', 'active-for-lead-stage-modal'],
     queryFn: async () => {
@@ -137,11 +145,13 @@ const LeadStageFormModal: React.FC<LeadStageFormModalProps> = ({
       stageOrder: 1,
       status: 'ACTIVE',
       ruleAssignments: [],
+      substages: [],
     },
   });
 
   useEffect(() => {
     if (!isOpen) return;
+    setSubstageInput('');
     reset({
       name: leadStage?.name || '',
       stageShortForm: leadStage?.stageShortForm ?? '',
@@ -157,6 +167,7 @@ const LeadStageFormModal: React.FC<LeadStageFormModalProps> = ({
           ruleId: rule.id,
           required: rule.required,
         })) || [],
+      substages: leadStage?.substages?.map((sub) => ({ id: sub.id, name: sub.name })) || [],
     });
   }, [isOpen, leadStage, reset]);
 
@@ -164,7 +175,27 @@ const LeadStageFormModal: React.FC<LeadStageFormModalProps> = ({
   const isClosedStage = watch('isClosed');
   const isLOBStage = watch('isLOB');
   const showInCalendar = watch('showInCalendar');
+  const currentSubstages = watch('substages') || [];
   const activeStageRules = activeStageRulesQuery.data || [];
+
+  const handleAddSubstage = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const trimmed = substageInput.trim();
+    if (!trimmed) return;
+
+    const isDuplicate = currentSubstages.some(
+      (sub) => sub.name.toLowerCase() === trimmed.toLowerCase(),
+    );
+    if (isDuplicate) return;
+
+    setValue('substages', [...currentSubstages, { name: trimmed }], { shouldDirty: true });
+    setSubstageInput('');
+  };
+
+  const handleRemoveSubstage = (index: number) => {
+    const updated = currentSubstages.filter((_, i) => i !== index);
+    setValue('substages', updated, { shouldDirty: true });
+  };
 
   useEffect(() => {
     if (!isOpen) {
@@ -449,6 +480,66 @@ const LeadStageFormModal: React.FC<LeadStageFormModalProps> = ({
                       />
                     </div>
                   </div>
+
+                    {/* Substages Section */}
+                    <div className="space-y-3 rounded-2xl border border-gray-100 bg-gray-50/50 p-4">
+                      <div>
+                        <h3 className="text-sm font-black text-gray-900">Substages</h3>
+                        <p className="text-[11px] font-semibold text-gray-500 mt-0.5">
+                          Add optional substages under this lead stage. These substages will appear in call outcomes and lead workflow selections.
+                        </p>
+                      </div>
+
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={substageInput}
+                          onChange={(e) => setSubstageInput(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              handleAddSubstage();
+                            }
+                          }}
+                          placeholder="Enter substage name"
+                          className="flex-1 px-4 py-2.5 bg-white border border-gray-200 rounded-xl outline-none focus:border-emerald-500 text-xs font-bold text-gray-900 transition-all"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleAddSubstage()}
+                          disabled={!substageInput.trim()}
+                          className="px-4 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-xs font-black transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-sm shrink-0 cursor-pointer"
+                        >
+                          + Add
+                        </button>
+                      </div>
+
+                      {currentSubstages.length > 0 ? (
+                        <div className="flex flex-wrap gap-2 pt-1">
+                          {currentSubstages.map((sub, idx) => (
+                            <span
+                              key={sub.id || idx}
+                              className="inline-flex items-center gap-2 px-3 py-1.5 bg-white border border-emerald-200/80 rounded-xl text-xs font-bold text-emerald-900 shadow-sm"
+                            >
+                              <span>{sub.name}</span>
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveSubstage(idx)}
+                                title="Remove Substage"
+                                aria-label="Remove Substage"
+                                className="p-0.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors cursor-pointer"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-[11px] font-semibold text-gray-400 italic">
+                          No substages added yet. Type a name above and click + Add.
+                        </p>
+                      )}
+                    </div>
 
                     <div className="space-y-3">
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">

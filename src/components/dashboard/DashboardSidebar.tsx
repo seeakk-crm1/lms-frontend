@@ -76,7 +76,6 @@ const sidebarMenus: SidebarSection[] = [
                     { label: 'Lead Sources', path: '/admin/lead-source', requiredPermissions: ['LEAD_SOURCES_VIEW', 'SYSTEM_CONFIG'] },
                     { label: 'Products', path: '/admin/products', requiredPermissions: ['PRODUCTS_VIEW', 'SYSTEM_CONFIG'] },
                     { label: 'Lead Stages', path: '/admin/lead-stages', requiredPermissions: ['LEAD_STAGES_VIEW', 'SYSTEM_CONFIG'] },
-                    { label: 'Lead Substages', path: '/admin/lead-substages', requiredPermissions: ['LEAD_SUBSTAGES_VIEW', 'LEAD_STAGES_VIEW', 'SYSTEM_CONFIG'] },
                     { label: 'Stage Rules', path: '/admin/stage-rules', requiredPermissions: ['LEAD_STAGE_RULES_VIEW', 'SYSTEM_CONFIG'] },
                     { label: 'Target Cycles', path: '/admin/target-cycles', requiredPermissions: ['TARGET_CYCLES_VIEW', 'SYSTEM_CONFIG'] },
                     { label: 'Lead Dynamic Forms', path: '/admin/lead-dynamics', requiredPermissions: ['LEAD_DYNAMICS_VIEW', 'SYSTEM_CONFIG'] },

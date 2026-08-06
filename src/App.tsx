@@ -66,7 +66,6 @@ import LeadReportsPage from './modules/reports/pages/LeadReportsPage';
 import FollowupReportsPage from './modules/reports/pages/FollowupReportsPage';
 import AttendanceReportsPage from './modules/reports/pages/AttendanceReportsPage';
 import { CallPerformanceReportPage } from './pages/reports/CallPerformanceReportPage';
-import { SubstageManager } from './pages/admin/SubstageManager';
 import ExportCenterPage from './modules/reports/pages/ExportCenterPage';
 import LOBReasonsPage from './modules/lob-reasons/pages/LOBReasonsPage';
 import FollowUpExtensionReasonsPage from './modules/followup-extension-reasons/pages/FollowUpExtensionReasonsPage';
@@ -328,12 +327,6 @@ function App() {
         <Route path="/admin/lead-stages" element={
           <PermissionRoute permissions={['LEAD_STAGES_VIEW', 'SYSTEM_CONFIG']}>
             <LeadStagesListPage />
-          </PermissionRoute>
-        } />
-
-        <Route path="/admin/lead-substages" element={
-          <PermissionRoute permissions={['LEAD_SUBSTAGES_VIEW', 'LEAD_STAGES_VIEW', 'SYSTEM_CONFIG']}>
-            <SubstageManager />
           </PermissionRoute>
         } />
 

@@ -94,7 +94,17 @@ export const useUpdateLeadStageMutation = () => {
 
       queryClient.setQueriesData<ListLeadStagesResponse>({ queryKey: ['lead-stages'] }, (oldData) =>
         updateLeadStageListCache(oldData, (list) =>
-          list.map((item) => (item.id === id ? { ...item, ...data, updatedAt: new Date().toISOString() } : item)),
+          list.map((item) => {
+            if (item.id !== id) return item;
+            const { substages, ...restData } = data;
+            const updatedSubstages = Array.isArray(substages) ? substages : item.substages;
+            return {
+              ...item,
+              ...restData,
+              substages: updatedSubstages,
+              updatedAt: new Date().toISOString(),
+            };
+          }),
         ),
       );
 

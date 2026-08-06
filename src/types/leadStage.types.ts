@@ -16,6 +16,12 @@ export interface LeadStageRuleAssignment {
   required: boolean;
 }
 
+export interface LeadSubstageItem {
+  id?: string;
+  name: string;
+  status?: LeadStageStatus;
+}
+
 export interface LeadStage {
   id: string;
   name: string;
@@ -27,6 +33,7 @@ export interface LeadStage {
   isClosed: boolean;
   stageOrder: number;
   rules: LeadStageRule[];
+  substages?: LeadSubstageItem[];
   status: LeadStageStatus;
   createdBy: string | null;
   createdAt: string;
@@ -62,7 +69,14 @@ export interface CreateLeadStageInput {
   isClosed: boolean;
   stageOrder: number;
   ruleAssignments: LeadStageRuleAssignment[];
+  substages?: LeadSubstageItem[];
   status: LeadStageStatus;
 }
 
-export interface UpdateLeadStageInput extends Partial<CreateLeadStageInput> {}
+export interface UpdateLeadStageInput extends Partial<Omit<CreateLeadStageInput, 'substages'>> {
+  substages?: LeadSubstageItem[] | {
+    create?: LeadSubstageItem[];
+    update?: Array<{ id: string; name: string; status?: LeadStageStatus }>;
+    remove?: string[];
+  };
+}
