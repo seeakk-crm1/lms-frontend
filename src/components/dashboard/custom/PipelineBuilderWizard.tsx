@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'react-hot-toast';
 import {
   X,
   Sparkles,
@@ -142,6 +143,7 @@ export const PipelineBuilderWizard: React.FC<PipelineBuilderWizardProps> = ({
           visibilityType,
           clickAction,
         });
+        toast.success('Pipeline updated successfully!');
       } else {
         await createPipeline({
           sectionId,
@@ -154,11 +156,12 @@ export const PipelineBuilderWizard: React.FC<PipelineBuilderWizardProps> = ({
           visibilityType,
           clickAction,
         });
+        toast.success('Pipeline created successfully!');
       }
       onSuccess();
       onClose();
     } catch (err: any) {
-      alert(err?.response?.data?.error || 'Failed to save custom pipeline');
+      toast.error(err?.response?.data?.error || 'Failed to save custom pipeline');
     } finally {
       setIsSubmitting(false);
     }

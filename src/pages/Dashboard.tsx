@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { RotateCcw } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'react-hot-toast';
+import { RotateCcw, LayoutGrid, Sparkles, Plus, Trash2, Loader2 } from 'lucide-react';
 import DashboardLayout from '../components/dashboard/DashboardLayout';
 import KPICards from '../components/dashboard/KPICards';
 import LeadGrowthChart from '../components/dashboard/LeadGrowthChart';
@@ -19,7 +21,6 @@ import { getLeadMeta, getLeadAssignees } from '../services/leads.api';
 import { getUsers } from '../services/users.api';
 import type { DashboardSummaryFilters, DashboardStatusFilter } from '../services/dashboard.api';
 import { useNavigate } from 'react-router-dom';
-import { LayoutGrid, Sparkles, Plus } from 'lucide-react';
 import {
   getPipelineSections,
   deletePipeline,
@@ -116,6 +117,8 @@ const Dashboard: React.FC<DashboardProps> = ({ mode = 'operations' }) => {
     const [isSectionManagerOpen, setIsSectionManagerOpen] = useState(false);
     const [activeSectionIdForBuilder, setActiveSectionIdForBuilder] = useState<string | undefined>(undefined);
     const [editingPipeline, setEditingPipeline] = useState<Pipeline | null>(null);
+    const [deletingPipelineConfirm, setDeletingPipelineConfirm] = useState<Pipeline | null>(null);
+    const [isDeletingPipeline, setIsDeletingPipeline] = useState(false);
 
     const loadCustomSections = useCallback(async () => {
         try {
@@ -154,19 +157,29 @@ const Dashboard: React.FC<DashboardProps> = ({ mode = 'operations' }) => {
     const handleDuplicatePipeline = async (pipeline: Pipeline) => {
         try {
             await duplicatePipeline(pipeline.id);
+            toast.success(`Pipeline "${pipeline.name}" duplicated successfully!`);
             void loadCustomSections();
-        } catch (err) {
-            alert('Failed to duplicate pipeline');
+        } catch (err: any) {
+            toast.error(err?.response?.data?.error || 'Failed to duplicate pipeline');
         }
     };
 
-    const handleDeletePipeline = async (pipeline: Pipeline) => {
-        if (!confirm(`Are you sure you want to delete pipeline "${pipeline.name}"?`)) return;
+    const handleDeletePipelineClick = (pipeline: Pipeline) => {
+        setDeletingPipelineConfirm(pipeline);
+    };
+
+    const handleConfirmDeletePipeline = async () => {
+        if (!deletingPipelineConfirm) return;
         try {
-            await deletePipeline(pipeline.id);
+            setIsDeletingPipeline(true);
+            await deletePipeline(deletingPipelineConfirm.id);
+            toast.success(`Pipeline "${deletingPipelineConfirm.name}" deleted successfully!`);
+            setDeletingPipelineConfirm(null);
             void loadCustomSections();
-        } catch (err) {
-            alert('Failed to delete pipeline');
+        } catch (err: any) {
+            toast.error(err?.response?.data?.error || 'Failed to delete pipeline');
+        } finally {
+            setIsDeletingPipeline(false);
         }
     };
 
@@ -512,7 +525,7 @@ const Dashboard: React.FC<DashboardProps> = ({ mode = 'operations' }) => {
                                         onDeleteSection={() => setIsSectionManagerOpen(true)}
                                         onEditPipeline={handleEditPipeline}
                                         onDuplicatePipeline={handleDuplicatePipeline}
-                                        onDeletePipeline={handleDeletePipeline}
+                                        onDeletePipeline={handleDeletePipelineClick}
                                         onPipelineClick={handlePipelineClick}
                                         canManage={canCustomizeDashboard}
                                     />
@@ -564,6 +577,61 @@ const Dashboard: React.FC<DashboardProps> = ({ mode = 'operations' }) => {
                             onSuccess={loadCustomSections}
                             sections={customSections}
                         />
+
+                        {/* Custom Pipeline Delete Confirmation Modal */}
+                        <AnimatePresence>
+                            {deletingPipelineConfirm && (
+                                <div className="fixed inset-0 z-[10400] flex items-center justify-center p-4">
+                                    <motion.div
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        exit={{ opacity: 0 }}
+                                        onClick={() => setDeletingPipelineConfirm(null)}
+                                        className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm"
+                                    />
+
+                                    <motion.div
+                                        initial={{ opacity: 0, scale: 0.95, y: 15 }}
+                                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                                        exit={{ opacity: 0, scale: 0.95, y: 15 }}
+                                        className="relative w-full max-w-md overflow-hidden rounded-3xl border border-gray-100 bg-white p-6 shadow-2xl"
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <div className="rounded-2xl bg-red-100 p-3 text-red-600">
+                                                <Trash2 className="h-6 w-6" />
+                                            </div>
+                                            <div>
+                                                <h3 className="text-base font-black text-gray-900">Delete Custom Pipeline</h3>
+                                                <p className="text-xs font-semibold text-gray-500">This action cannot be undone.</p>
+                                            </div>
+                                        </div>
+
+                                        <p className="mt-4 text-xs font-semibold text-gray-600 leading-relaxed">
+                                            Are you sure you want to delete pipeline <strong className="text-gray-900">&ldquo;{deletingPipelineConfirm.name}&rdquo;</strong>? It will be permanently removed from your dashboard.
+                                        </p>
+
+                                        <div className="mt-6 flex items-center gap-3">
+                                            <button
+                                                type="button"
+                                                onClick={() => setDeletingPipelineConfirm(null)}
+                                                disabled={isDeletingPipeline}
+                                                className="flex-1 rounded-xl border border-gray-200 bg-white py-2.5 text-xs font-bold text-gray-700 hover:bg-gray-50 transition-colors"
+                                            >
+                                                Cancel
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={handleConfirmDeletePipeline}
+                                                disabled={isDeletingPipeline}
+                                                className="flex-1 rounded-xl bg-red-600 py-2.5 text-xs font-black text-white hover:bg-red-700 disabled:opacity-50 transition-all shadow-md shadow-red-600/20 flex items-center justify-center gap-2 cursor-pointer"
+                                            >
+                                                {isDeletingPipeline ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Delete Pipeline'}
+                                            </button>
+                                        </div>
+                                    </motion.div>
+                                </div>
+                            )}
+                        </AnimatePresence>
 
                     </div>
                 </div>

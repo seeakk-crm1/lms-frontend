@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'react-hot-toast';
 import { X, Plus, Pencil, Trash2, LayoutGrid, Check, Loader2 } from 'lucide-react';
 import {
   PipelineSection,
@@ -64,6 +65,7 @@ export const SectionManagerModal: React.FC<SectionManagerModalProps> = ({
           layoutType,
           visibilityType,
         });
+        toast.success('Section updated successfully!');
       } else {
         await createPipelineSection({
           name: name.trim(),
@@ -71,11 +73,12 @@ export const SectionManagerModal: React.FC<SectionManagerModalProps> = ({
           layoutType,
           visibilityType,
         });
+        toast.success('Section created successfully!');
       }
       setIsCreating(false);
       onSuccess();
     } catch (err: any) {
-      alert(err?.response?.data?.error || 'Failed to save section');
+      toast.error(err?.response?.data?.error || 'Failed to save section');
     } finally {
       setIsSubmitting(false);
     }
@@ -86,10 +89,11 @@ export const SectionManagerModal: React.FC<SectionManagerModalProps> = ({
     try {
       setIsSubmitting(true);
       await deletePipelineSection(deletingSection.id, movePipelinesToId || undefined);
+      toast.success('Section deleted successfully!');
       setDeletingSection(null);
       onSuccess();
     } catch (err: any) {
-      alert(err?.response?.data?.error || 'Failed to delete section');
+      toast.error(err?.response?.data?.error || 'Failed to delete section');
     } finally {
       setIsSubmitting(false);
     }
