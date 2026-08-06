@@ -10,7 +10,7 @@ type BrandLogoProps = {
 };
 
 const BrandLogo: React.FC<BrandLogoProps> = ({
-  src = '/logo.png',
+  src = '/Seeakknewlogo.png',
   alt = 'Seeakk',
   width = 150,
   height = 50,
