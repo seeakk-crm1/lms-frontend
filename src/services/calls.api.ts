@@ -93,11 +93,30 @@ export interface UserCallSummaryRow {
   negativeOutcomes: number;
   followUpsCreated: number;
   leadsMoved: number;
+  selectedSubstages?: Array<{
+    substageId: string;
+    name: string;
+    stageName: string;
+    color: string;
+    count: number;
+  }>;
 }
 
 export interface CallSummaryReportData {
   metrics: CallSummaryMetrics;
   userSummaryList: UserCallSummaryRow[];
+  substageBreakdown?: Array<{
+    substageId: string;
+    name: string;
+    stageName: string;
+    color: string;
+    outcomeCategory: string;
+    selectedCount: number;
+    uniqueLeads: number;
+    usersCount: number;
+    connectedCalls: number;
+    notConnectedCalls: number;
+  }>;
   maxValues: {
     totalAttempts: number;
     uniqueCalls: number;

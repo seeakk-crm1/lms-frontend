@@ -1,8 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
-  ArrowDownToLine,
   BarChart3,
-  Calendar,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
@@ -11,13 +9,14 @@ import {
   Filter,
   PhoneCall,
   PhoneOff,
-  RefreshCw,
   Search,
-  Sparkles,
-  TrendingUp,
-  User,
   Users,
+  Layers,
 } from 'lucide-react';
+import ReportPageShell from '../../modules/reports/shared/ReportPageShell';
+import ReportFiltersBar from '../../modules/reports/shared/ReportFiltersBar';
+import { createDefaultReportFilters } from '../../modules/reports/shared/reportFilterDefaults';
+import { buildApiFilters, useReportUsers } from '../../modules/reports/shared/useReportUsers';
 import {
   CallSummaryReportData,
   exportCallReport,
@@ -26,16 +25,15 @@ import {
 } from '../../services/calls.api';
 
 export const CallPerformanceReportPage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'summary' | 'detailed'>('summary');
+  const [activeTab, setActiveTab] = useState<'summary' | 'substages' | 'detailed'>('summary');
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
-
-  // Filters State
-  const [datePreset, setDatePreset] = useState<'today' | 'yesterday' | 'this_week' | 'last_7' | 'this_month' | 'last_30' | 'custom'>('this_month');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
   const [connectionFilter, setConnectionFilter] = useState<'ALL' | 'CONNECTED' | 'NOT_CONNECTED'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
+
+  const [filters, setFilters] = useState(createDefaultReportFilters());
+  const { data: users = [] } = useReportUsers();
+  const apiFilters = useMemo(() => buildApiFilters(filters, users), [filters, users]);
 
   // Report Data State
   const [summaryData, setSummaryData] = useState<CallSummaryReportData | null>(null);
@@ -43,51 +41,28 @@ export const CallPerformanceReportPage: React.FC = () => {
   const [page, setPage] = useState(1);
 
   useEffect(() => {
-    applyDatePreset(datePreset);
-  }, [datePreset]);
-
-  useEffect(() => {
     loadReports();
-  }, [startDate, endDate, connectionFilter, searchQuery, page, activeTab]);
-
-  const applyDatePreset = (preset: string) => {
-    const now = new Date();
-    let start = new Date();
-    let end = new Date();
-
-    if (preset === 'today') {
-      start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      end = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    } else if (preset === 'yesterday') {
-      start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
-      end = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
-    } else if (preset === 'this_week') {
-      const day = now.getDay();
-      start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - day);
-    } else if (preset === 'last_7') {
-      start = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-    } else if (preset === 'this_month') {
-      start = new Date(now.getFullYear(), now.getMonth(), 1);
-    } else if (preset === 'last_30') {
-      start = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-    }
-
-    if (preset !== 'custom') {
-      setStartDate(start.toISOString().split('T')[0]);
-      setEndDate(end.toISOString().split('T')[0]);
-    }
-  };
+  }, [apiFilters, connectionFilter, searchQuery, page, activeTab]);
 
   const loadReports = async () => {
     setLoading(true);
     try {
+      const userIds = apiFilters.userId
+        ? Array.isArray(apiFilters.userId)
+          ? apiFilters.userId
+          : [apiFilters.userId]
+        : undefined;
+
       const filterParams: any = {
-        startDate: startDate || undefined,
-        endDate: endDate || undefined,
+        startDate: apiFilters.startDate,
+        endDate: apiFilters.endDate,
+        userIds,
+        officeId: apiFilters.officeId,
+        departmentId: apiFilters.departmentId,
         connectionStatus: connectionFilter !== 'ALL' ? connectionFilter : undefined,
       };
 
-      if (activeTab === 'summary') {
+      if (activeTab === 'summary' || activeTab === 'substages') {
         const data = await fetchCallSummaryReport(filterParams);
         setSummaryData(data);
       } else {
@@ -109,12 +84,21 @@ export const CallPerformanceReportPage: React.FC = () => {
   const handleExport = async (format: 'xlsx' | 'csv') => {
     setExporting(true);
     try {
-      const filters = {
-        startDate: startDate || undefined,
-        endDate: endDate || undefined,
+      const userIds = apiFilters.userId
+        ? Array.isArray(apiFilters.userId)
+          ? apiFilters.userId
+          : [apiFilters.userId]
+        : undefined;
+
+      const filterParams = {
+        startDate: apiFilters.startDate,
+        endDate: apiFilters.endDate,
+        userIds,
+        officeId: apiFilters.officeId,
+        departmentId: apiFilters.departmentId,
         connectionStatus: connectionFilter !== 'ALL' ? connectionFilter : undefined,
       };
-      const blobData = await exportCallReport({ format, filters });
+      const blobData = await exportCallReport({ format, filters: filterParams });
 
       const url = window.URL.createObjectURL(new Blob([blobData]));
       const link = document.createElement('a');
@@ -124,295 +108,249 @@ export const CallPerformanceReportPage: React.FC = () => {
       link.click();
       link.remove();
     } catch (err) {
-      alert('Export failed. Please try again.');
+      console.error('Export failed:', err);
     } finally {
       setExporting(false);
     }
   };
 
+  const metrics = summaryData?.metrics || {
+    totalCalls: 0,
+    uniqueCalls: 0,
+    connectedCalls: 0,
+    notConnectedCalls: 0,
+    connectionRate: 0,
+    leadsMoved: 0,
+  };
+
+  const userList = summaryData?.userSummaryList || [];
+  const substageBreakdown = summaryData?.substageBreakdown || [];
+  const maxValues = summaryData?.maxValues || {
+    totalAttempts: 1,
+    uniqueCalls: 1,
+    connectedCalls: 1,
+    notConnectedCalls: 1,
+    followUpsCreated: 1,
+    leadsMoved: 1,
+  };
+
   return (
-    <div className="space-y-6 pb-12">
-      {/* Header & Title */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 rounded-2xl bg-gradient-to-r from-slate-900 via-emerald-950 to-slate-900 text-white shadow-xl border border-emerald-900/30">
-        <div>
-          <div className="flex items-center gap-2 text-emerald-400 font-bold text-xs uppercase tracking-wider mb-1">
-            <BarChart3 className="w-4 h-4" />
-            <span>Reports & Analytics</span>
+    <ReportPageShell
+      title="Call Performance Analytics"
+      description="Track daily unique call attempts, agent connection ratios, substage transitions, and follow-up activities."
+      icon={<PhoneCall className="text-emerald-500" size={28} />}
+      filters={<ReportFiltersBar filters={filters} setFilters={setFilters} />}
+      onExportCsv={() => handleExport('xlsx')}
+    >
+      <div className="space-y-6">
+        {/* Metric Summary Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+            <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Total Attempts</p>
+            <p className="mt-1 text-2xl font-black text-gray-900">{metrics.totalCalls.toLocaleString()}</p>
           </div>
-          <h1 className="text-2xl font-black text-white tracking-wide">Call Performance Analytics</h1>
-          <p className="text-xs text-slate-300 mt-1 max-w-xl">
-            Track daily unique call attempts, agent connection ratios, substage transitions, and follow-up activities.
-          </p>
+          <div className="rounded-2xl border border-emerald-100 bg-emerald-50/50 p-4 shadow-sm">
+            <p className="text-[11px] font-bold text-emerald-700 uppercase tracking-wider">Unique Calls</p>
+            <p className="mt-1 text-2xl font-black text-emerald-700">{metrics.uniqueCalls.toLocaleString()}</p>
+          </div>
+          <div className="rounded-2xl border border-teal-100 bg-teal-50/50 p-4 shadow-sm">
+            <p className="text-[11px] font-bold text-teal-700 uppercase tracking-wider">Attended Calls</p>
+            <p className="mt-1 text-2xl font-black text-teal-700">{metrics.connectedCalls.toLocaleString()}</p>
+          </div>
+          <div className="rounded-2xl border border-rose-100 bg-rose-50/50 p-4 shadow-sm">
+            <p className="text-[11px] font-bold text-rose-700 uppercase tracking-wider">Not Attended</p>
+            <p className="mt-1 text-2xl font-black text-rose-700">{metrics.notConnectedCalls.toLocaleString()}</p>
+          </div>
+          <div className="rounded-2xl border border-purple-100 bg-purple-50/50 p-4 shadow-sm col-span-2 md:col-span-1">
+            <p className="text-[11px] font-bold text-purple-700 uppercase tracking-wider">Connection Rate</p>
+            <p className="mt-1 text-2xl font-black text-purple-700">{metrics.connectionRate}%</p>
+          </div>
         </div>
 
-        {/* Export Actions */}
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => handleExport('xlsx')}
-            disabled={exporting}
-            className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-600/20 transition flex items-center gap-2"
-          >
-            <FileSpreadsheet className="w-4 h-4" />
-            <span>{exporting ? 'Exporting...' : 'Export Excel (.xlsx)'}</span>
-          </button>
-
-          <button
-            onClick={() => handleExport('csv')}
-            disabled={exporting}
-            className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold text-xs transition flex items-center gap-2"
-          >
-            <Download className="w-4 h-4" />
-            <span>Export CSV</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Filter Controls Bar */}
-      <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-3 dark:bg-slate-900 dark:border-slate-800">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          {/* Date Range Presets */}
-          <div className="flex flex-wrap items-center gap-1.5 bg-slate-100 p-1 rounded-xl dark:bg-slate-800">
-            {[
-              { key: 'today', label: 'Today' },
-              { key: 'yesterday', label: 'Yesterday' },
-              { key: 'this_week', label: 'This Week' },
-              { key: 'last_7', label: 'Last 7 Days' },
-              { key: 'this_month', label: 'This Month' },
-              { key: 'last_30', label: 'Last 30 Days' },
-              { key: 'custom', label: 'Custom' },
-            ].map((p) => (
-              <button
-                key={p.key}
-                onClick={() => setDatePreset(p.key as any)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
-                  datePreset === p.key
-                    ? 'bg-slate-900 text-white shadow-sm dark:bg-emerald-600'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-white/50 dark:text-slate-300'
-                }`}
-              >
-                {p.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Connection Status Filter */}
+        {/* Section Navigation Tabs & Connection Filter */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-200 pb-2">
           <div className="flex items-center gap-2">
-            <Filter className="w-4 h-4 text-slate-400" />
-            <select
-              value={connectionFilter}
-              onChange={(e) => setConnectionFilter(e.target.value as any)}
-              className="px-3 py-1.5 rounded-xl border border-slate-300 text-xs font-semibold dark:bg-slate-800 dark:border-slate-700 dark:text-white"
+            <button
+              onClick={() => setActiveTab('summary')}
+              className={`px-4 py-2 text-xs font-bold rounded-xl transition ${
+                activeTab === 'summary'
+                  ? 'bg-emerald-500 text-white shadow-sm'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
             >
-              <option value="ALL">All Connections</option>
-              <option value="CONNECTED">Connected Only</option>
-              <option value="NOT_CONNECTED">Not Connected Only</option>
-            </select>
+              Summary Performance Report
+            </button>
+            <button
+              onClick={() => setActiveTab('substages')}
+              className={`px-4 py-2 text-xs font-bold rounded-xl transition ${
+                activeTab === 'substages'
+                  ? 'bg-emerald-500 text-white shadow-sm'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              Substage Breakdown ({substageBreakdown.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('detailed')}
+              className={`px-4 py-2 text-xs font-bold rounded-xl transition ${
+                activeTab === 'detailed'
+                  ? 'bg-emerald-500 text-white shadow-sm'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              Detailed Call Logs
+            </button>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <Filter className="w-3.5 h-3.5 text-gray-400" />
+              <select
+                value={connectionFilter}
+                onChange={(e) => setConnectionFilter(e.target.value as any)}
+                className="px-3 py-1.5 rounded-xl border border-gray-200 bg-white text-xs font-bold text-gray-700 shadow-sm"
+              >
+                <option value="ALL">All Connection Statuses</option>
+                <option value="CONNECTED">Attended Calls Only</option>
+                <option value="NOT_CONNECTED">Not Attended Calls Only</option>
+              </select>
+            </div>
+
+            <button
+              onClick={() => handleExport('csv')}
+              disabled={exporting}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-gray-200 bg-white text-xs font-bold text-gray-700 shadow-sm hover:bg-gray-50"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>CSV</span>
+            </button>
           </div>
         </div>
 
-        {/* Custom Date Inputs if Custom Selected */}
-        {datePreset === 'custom' && (
-          <div className="flex items-center gap-3 pt-2 border-t border-slate-100 dark:border-slate-800">
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-slate-500 font-medium">From:</span>
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="px-3 py-1 rounded-lg border border-slate-300 text-xs dark:bg-slate-800 dark:border-slate-700"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-slate-500 font-medium">To:</span>
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="px-3 py-1 rounded-lg border border-slate-300 text-xs dark:bg-slate-800 dark:border-slate-700"
-              />
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Tabs */}
-      <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800">
-        <button
-          onClick={() => setActiveTab('summary')}
-          className={`px-5 py-2.5 font-bold text-xs tracking-wide border-b-2 transition ${
-            activeTab === 'summary'
-              ? 'border-emerald-600 text-emerald-600 dark:text-emerald-400'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
-          }`}
-        >
-          Summary Performance Report
-        </button>
-        <button
-          onClick={() => setActiveTab('detailed')}
-          className={`px-5 py-2.5 font-bold text-xs tracking-wide border-b-2 transition ${
-            activeTab === 'detailed'
-              ? 'border-emerald-600 text-emerald-600 dark:text-emerald-400'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
-          }`}
-        >
-          Detailed Call Logs
-        </button>
-      </div>
-
-      {loading ? (
-        <div className="p-16 text-center text-slate-500 text-sm">Loading call performance analytics...</div>
-      ) : activeTab === 'summary' && summaryData ? (
-        <div className="space-y-6">
-          {/* Top Metric Cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-            <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-sm dark:bg-slate-900 dark:border-slate-800">
-              <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Total Attempts</div>
-              <div className="text-2xl font-black text-slate-900 mt-1 dark:text-white">{summaryData.metrics.totalCalls}</div>
-              <div className="text-[10px] text-slate-500 mt-1">All dialing attempts</div>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-emerald-50/60 border border-emerald-200 shadow-sm dark:bg-emerald-950/30 dark:border-emerald-800">
-              <div className="text-[11px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">Unique Calls</div>
-              <div className="text-2xl font-black text-emerald-950 mt-1 dark:text-emerald-200">{summaryData.metrics.uniqueCalls}</div>
-              <div className="text-[10px] text-emerald-700/80 mt-1">Distinct lead-date pairs</div>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-sm dark:bg-slate-900 dark:border-slate-800">
-              <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Calls Connected</div>
-              <div className="text-2xl font-black text-emerald-600 mt-1">{summaryData.metrics.connectedCalls}</div>
-              <div className="text-[10px] text-slate-500 mt-1">Successful conversations</div>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-sm dark:bg-slate-900 dark:border-slate-800">
-              <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Not Connected</div>
-              <div className="text-2xl font-black text-rose-600 mt-1">{summaryData.metrics.notConnectedCalls}</div>
-              <div className="text-[10px] text-slate-500 mt-1">Unanswered / busy</div>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-purple-50/60 border border-purple-200 shadow-sm dark:bg-purple-950/30 dark:border-purple-800">
-              <div className="text-[11px] font-bold uppercase tracking-wider text-purple-700 dark:text-purple-400">Connection Rate</div>
-              <div className="text-2xl font-black text-purple-950 mt-1 dark:text-purple-200">{summaryData.metrics.connectionRate}%</div>
-              <div className="text-[10px] text-purple-700/80 mt-1">Connected / Total</div>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-amber-50/60 border border-amber-200 shadow-sm dark:bg-amber-950/30 dark:border-amber-800">
-              <div className="text-[11px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">Leads Stage Moved</div>
-              <div className="text-2xl font-black text-amber-950 mt-1 dark:text-amber-200">{summaryData.metrics.leadsMoved}</div>
-              <div className="text-[10px] text-amber-700/80 mt-1">Pipeline progressions</div>
-            </div>
-          </div>
-
-          {/* User-Wise Summary Table with In-Cell Data Bars */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden dark:bg-slate-900 dark:border-slate-800">
-            <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between dark:bg-slate-800/50 dark:border-slate-800">
-              <h3 className="font-bold text-sm text-slate-900 dark:text-white">User Call Performance Breakdown</h3>
-              <span className="text-xs text-slate-500">{summaryData.userSummaryList.length} users active</span>
+        {/* Tab 1: Summary Performance Report */}
+        {activeTab === 'summary' && (
+          <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+            <div className="p-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
+              <h3 className="font-bold text-gray-900 text-sm">User Call Performance Breakdown</h3>
+              <span className="text-xs font-semibold text-gray-500">{userList.length} users active</span>
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full text-xs text-left">
-                <thead className="bg-slate-100/80 text-slate-500 font-bold uppercase tracking-wider border-b border-slate-200 dark:bg-slate-800/80 dark:border-slate-700">
+              <table className="w-full text-left text-xs text-gray-600">
+                <thead className="text-[11px] text-gray-500 uppercase bg-gray-50/80 font-black border-b border-gray-200">
                   <tr>
-                    <th className="px-4 py-3 min-w-[160px]">User Name</th>
-                    <th className="px-4 py-3 text-right min-w-[120px]">Unique Calls</th>
-                    <th className="px-4 py-3 text-right min-w-[100px]">Total Calls</th>
-                    <th className="px-4 py-3 text-right min-w-[130px]">Connected</th>
-                    <th className="px-4 py-3 text-right min-w-[120px]">Not Connected</th>
-                    <th className="px-4 py-3 text-right min-w-[130px]">Connection Rate</th>
-                    <th className="px-4 py-3 text-right min-w-[120px]">Positive</th>
-                    <th className="px-4 py-3 text-right min-w-[130px]">Follow-ups</th>
-                    <th className="px-4 py-3 text-right min-w-[130px]">Stage Moved</th>
+                    <th className="px-4 py-3 min-w-[150px]">User Name</th>
+                    <th className="px-4 py-3 min-w-[130px]">Unique Calls</th>
+                    <th className="px-4 py-3 min-w-[130px]">Total Calls</th>
+                    <th className="px-4 py-3 min-w-[130px]">Attended Calls</th>
+                    <th className="px-4 py-3 min-w-[130px]">Not Attended</th>
+                    <th className="px-4 py-3 text-center min-w-[110px]">Connection Rate</th>
+                    <th className="px-4 py-3 min-w-[200px]">Selected Substages</th>
+                    <th className="px-4 py-3 text-right min-w-[110px]">Follow-ups</th>
+                    <th className="px-4 py-3 text-right min-w-[110px]">Stage Moved</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                  {summaryData.userSummaryList.length === 0 ? (
+                <tbody className="divide-y divide-gray-100 font-semibold">
+                  {userList.length === 0 ? (
                     <tr>
-                      <td colSpan={9} className="p-8 text-center text-slate-400 italic">
-                        No call activity recorded for the selected date range.
+                      <td colSpan={9} className="px-4 py-8 text-center text-gray-400 font-medium italic">
+                        No call activity found for the selected filters.
                       </td>
                     </tr>
                   ) : (
-                    summaryData.userSummaryList.map((row) => {
-                      const maxVals = summaryData.maxValues;
-                      const uniqueBarPct = Math.min((row.uniqueCalls / maxVals.uniqueCalls) * 100, 100);
-                      const totalBarPct = Math.min((row.totalAttempts / maxVals.totalAttempts) * 100, 100);
-                      const connBarPct = Math.min((row.connectedCalls / maxVals.connectedCalls) * 100, 100);
-                      const notConnBarPct = Math.min((row.notConnectedCalls / maxVals.notConnectedCalls) * 100, 100);
-                      const rateBarPct = row.connectionRate;
+                    userList.map((user: any) => {
+                      const uniquePct = Math.min(100, Math.round((user.uniqueCalls / maxValues.uniqueCalls) * 100));
+                      const totalPct = Math.min(100, Math.round((user.totalAttempts / maxValues.totalAttempts) * 100));
+                      const connPct = Math.min(100, Math.round((user.connectedCalls / maxValues.connectedCalls) * 100));
+                      const notConnPct = Math.min(100, Math.round((user.notConnectedCalls / maxValues.notConnectedCalls) * 100));
 
                       return (
-                        <tr key={row.userId} className="hover:bg-slate-50/80 transition dark:hover:bg-slate-800/40">
-                          <td className="px-4 py-3 font-bold text-slate-900 dark:text-white">
-                            <div>{row.userName}</div>
-                            <div className="text-[10px] text-slate-400 font-normal">{row.officeName}</div>
+                        <tr key={user.userId} className="hover:bg-gray-50/80 transition-colors">
+                          <td className="px-4 py-3 font-bold text-gray-900">
+                            <div>{user.userName}</div>
+                            <div className="text-[10px] text-gray-400 font-normal">{user.officeName} • {user.departmentName}</div>
                           </td>
 
-                          {/* Unique Calls Data Bar */}
-                          <td className="px-4 py-3 text-right relative">
-                            <div
-                              className="absolute top-1 bottom-1 right-1 bg-emerald-100/70 rounded-md transition-all dark:bg-emerald-950/40"
-                              style={{ width: `${uniqueBarPct}%` }}
-                            />
-                            <span className="relative z-10 font-bold text-emerald-900 dark:text-emerald-200">
-                              {row.uniqueCalls}
+                          {/* Unique Calls Bar */}
+                          <td className="px-4 py-3">
+                            <div className="relative flex items-center justify-between h-7 px-2.5 rounded-lg bg-emerald-50/50 border border-emerald-100/60 overflow-hidden">
+                              <div
+                                className="absolute left-0 top-0 bottom-0 bg-emerald-200/60 rounded-r-md transition-all duration-300"
+                                style={{ width: `${uniquePct}%` }}
+                              />
+                              <span className="relative z-10 font-bold text-emerald-900">{user.uniqueCalls}</span>
+                            </div>
+                          </td>
+
+                          {/* Total Calls Bar */}
+                          <td className="px-4 py-3">
+                            <div className="relative flex items-center justify-between h-7 px-2.5 rounded-lg bg-blue-50/50 border border-blue-100/60 overflow-hidden">
+                              <div
+                                className="absolute left-0 top-0 bottom-0 bg-blue-200/60 rounded-r-md transition-all duration-300"
+                                style={{ width: `${totalPct}%` }}
+                              />
+                              <span className="relative z-10 font-bold text-blue-900">{user.totalAttempts}</span>
+                            </div>
+                          </td>
+
+                          {/* Attended Calls Bar */}
+                          <td className="px-4 py-3">
+                            <div className="relative flex items-center justify-between h-7 px-2.5 rounded-lg bg-teal-50/50 border border-teal-100/60 overflow-hidden">
+                              <div
+                                className="absolute left-0 top-0 bottom-0 bg-teal-200/60 rounded-r-md transition-all duration-300"
+                                style={{ width: `${connPct}%` }}
+                              />
+                              <span className="relative z-10 font-bold text-teal-900">{user.connectedCalls}</span>
+                            </div>
+                          </td>
+
+                          {/* Not Attended Bar */}
+                          <td className="px-4 py-3">
+                            <div className="relative flex items-center justify-between h-7 px-2.5 rounded-lg bg-rose-50/50 border border-rose-100/60 overflow-hidden">
+                              <div
+                                className="absolute left-0 top-0 bottom-0 bg-rose-200/60 rounded-r-md transition-all duration-300"
+                                style={{ width: `${notConnPct}%` }}
+                              />
+                              <span className="relative z-10 font-bold text-rose-900">{user.notConnectedCalls}</span>
+                            </div>
+                          </td>
+
+                          <td className="px-4 py-3 text-center">
+                            <span className="inline-block px-2.5 py-1 rounded-md bg-purple-50 text-purple-700 font-bold border border-purple-100">
+                              {user.connectionRate}%
                             </span>
                           </td>
 
-                          {/* Total Calls Data Bar */}
-                          <td className="px-4 py-3 text-right relative">
-                            <div
-                              className="absolute top-1 bottom-1 right-1 bg-slate-200/60 rounded-md transition-all dark:bg-slate-700/40"
-                              style={{ width: `${totalBarPct}%` }}
-                            />
-                            <span className="relative z-10 font-bold text-slate-900 dark:text-white">
-                              {row.totalAttempts}
-                            </span>
+                          {/* Selected Substages Badges */}
+                          <td className="px-4 py-3">
+                            {user.selectedSubstages && user.selectedSubstages.length > 0 ? (
+                              <div className="flex flex-wrap gap-1.5 max-w-xs">
+                                {user.selectedSubstages.slice(0, 3).map((sub: any) => (
+                                  <span
+                                    key={sub.substageId}
+                                    className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-bold border"
+                                    style={{
+                                      backgroundColor: `${sub.color}15`,
+                                      color: sub.color,
+                                      borderColor: `${sub.color}30`,
+                                    }}
+                                  >
+                                    {sub.name} <span className="opacity-75">({sub.count})</span>
+                                  </span>
+                                ))}
+                                {user.selectedSubstages.length > 3 && (
+                                  <span className="text-[10px] font-semibold text-gray-400 self-center">
+                                    +{user.selectedSubstages.length - 3} more
+                                  </span>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-gray-400 italic text-[11px]">None</span>
+                            )}
                           </td>
 
-                          {/* Connected Data Bar */}
-                          <td className="px-4 py-3 text-right relative">
-                            <div
-                              className="absolute top-1 bottom-1 right-1 bg-teal-100/70 rounded-md transition-all dark:bg-teal-950/40"
-                              style={{ width: `${connBarPct}%` }}
-                            />
-                            <span className="relative z-10 font-bold text-teal-800 dark:text-teal-300">
-                              {row.connectedCalls}
-                            </span>
-                          </td>
-
-                          {/* Not Connected Data Bar */}
-                          <td className="px-4 py-3 text-right relative">
-                            <div
-                              className="absolute top-1 bottom-1 right-1 bg-rose-100/60 rounded-md transition-all dark:bg-rose-950/40"
-                              style={{ width: `${notConnBarPct}%` }}
-                            />
-                            <span className="relative z-10 font-bold text-rose-700 dark:text-rose-400">
-                              {row.notConnectedCalls}
-                            </span>
-                          </td>
-
-                          {/* Connection Rate Bar */}
-                          <td className="px-4 py-3 text-right relative">
-                            <div
-                              className="absolute top-1 bottom-1 right-1 bg-purple-100/70 rounded-md transition-all dark:bg-purple-950/40"
-                              style={{ width: `${rateBarPct}%` }}
-                            />
-                            <span className="relative z-10 font-bold text-purple-900 dark:text-purple-300">
-                              {row.connectionRate}%
-                            </span>
-                          </td>
-
-                          <td className="px-4 py-3 text-right font-medium text-slate-700 dark:text-slate-300">
-                            {row.positiveOutcomes}
-                          </td>
-
-                          <td className="px-4 py-3 text-right font-medium text-slate-700 dark:text-slate-300">
-                            {row.followUpsCreated}
-                          </td>
-
-                          <td className="px-4 py-3 text-right font-bold text-amber-700 dark:text-amber-400">
-                            {row.leadsMoved}
-                          </td>
+                          <td className="px-4 py-3 text-right font-bold text-gray-800">{user.followUpsCreated}</td>
+                          <td className="px-4 py-3 text-right font-bold text-gray-800">{user.leadsMoved}</td>
                         </tr>
                       );
                     })
@@ -421,104 +359,208 @@ export const CallPerformanceReportPage: React.FC = () => {
               </table>
             </div>
           </div>
-        </div>
-      ) : activeTab === 'detailed' && detailedData ? (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden dark:bg-slate-900 dark:border-slate-800 space-y-4">
-          <div className="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between dark:bg-slate-800/50 dark:border-slate-800">
-            <div className="relative w-72">
-              <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Search lead, phone, notes..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-3 py-1.5 rounded-xl border border-slate-300 text-xs dark:bg-slate-800 dark:border-slate-700 dark:text-white"
-              />
+        )}
+
+        {/* Tab 2: Substage Breakdown */}
+        {activeTab === 'substages' && (
+          <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+            <div className="p-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
+              <h3 className="font-bold text-gray-900 text-sm">Substage Selection Breakdown</h3>
+              <span className="text-xs font-semibold text-gray-500">{substageBreakdown.length} substages selected</span>
             </div>
-            <span className="text-xs text-slate-500 font-medium">Total: {detailedData.pagination.total} records</span>
-          </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs text-left">
-              <thead className="bg-slate-100 text-slate-500 font-bold uppercase tracking-wider dark:bg-slate-800">
-                <tr>
-                  <th className="px-4 py-3">Date & Time</th>
-                  <th className="px-4 py-3">User</th>
-                  <th className="px-4 py-3">Lead Name</th>
-                  <th className="px-4 py-3">Phone</th>
-                  <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3">Main Stage</th>
-                  <th className="px-4 py-3">Substage</th>
-                  <th className="px-4 py-3">Outcome Notes</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                {detailedData.rows.length === 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs text-gray-600">
+                <thead className="text-[11px] text-gray-500 uppercase bg-gray-50/80 font-black border-b border-gray-200">
                   <tr>
-                    <td colSpan={8} className="p-8 text-center text-slate-400 italic">
-                      No detailed call records match your query.
-                    </td>
+                    <th className="px-4 py-3">Substage Name</th>
+                    <th className="px-4 py-3">Parent Lead Stage</th>
+                    <th className="px-4 py-3 text-center">Outcome Category</th>
+                    <th className="px-4 py-3 text-right">Selected Count</th>
+                    <th className="px-4 py-3 text-right">Unique Leads</th>
+                    <th className="px-4 py-3 text-right">Active Users</th>
+                    <th className="px-4 py-3 text-right">Attended Calls</th>
+                    <th className="px-4 py-3 text-right">Not Attended</th>
                   </tr>
-                ) : (
-                  detailedData.rows.map((r) => (
-                    <tr key={r.id} className="hover:bg-slate-50 transition dark:hover:bg-slate-800/40">
-                      <td className="px-4 py-3 whitespace-nowrap text-slate-500">
-                        {new Date(r.submittedAt).toLocaleString()}
+                </thead>
+                <tbody className="divide-y divide-gray-100 font-semibold">
+                  {substageBreakdown.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="px-4 py-8 text-center text-gray-400 font-medium italic">
+                        No substage selections found for the selected filters.
                       </td>
-                      <td className="px-4 py-3 font-semibold text-slate-900 dark:text-white">
-                        {r.user?.name || r.user?.email}
-                      </td>
-                      <td className="px-4 py-3 font-bold text-slate-900 dark:text-white">{r.lead?.name}</td>
-                      <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{r.lead?.phone || 'N/A'}</td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={`px-2 py-0.5 rounded font-bold ${
-                            r.connectionStatus === 'CONNECTED'
-                              ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
-                              : 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300'
-                          }`}
-                        >
-                          {r.connectionStatus}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 font-semibold text-slate-700 dark:text-slate-300">
-                        {r.targetStage?.name || r.substage?.leadStage?.name || '—'}
-                      </td>
-                      <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{r.substage?.name || '—'}</td>
-                      <td className="px-4 py-3 text-slate-500 max-w-xs truncate">{r.outcomeNotes || '—'}</td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  ) : (
+                    substageBreakdown.map((sub: any) => (
+                      <tr key={sub.substageId} className="hover:bg-gray-50/80 transition-colors">
+                        <td className="px-4 py-3 font-bold text-gray-900">
+                          <span
+                            className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold border"
+                            style={{
+                              backgroundColor: `${sub.color}15`,
+                              color: sub.color,
+                              borderColor: `${sub.color}30`,
+                            }}
+                          >
+                            {sub.name}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 font-bold text-gray-700">{sub.stageName}</td>
+                        <td className="px-4 py-3 text-center">
+                          <span
+                            className={`inline-block px-2 py-0.5 rounded text-[10px] font-black uppercase ${
+                              sub.outcomeCategory === 'POSITIVE'
+                                ? 'bg-emerald-100 text-emerald-800'
+                                : sub.outcomeCategory === 'NEGATIVE'
+                                ? 'bg-rose-100 text-rose-800'
+                                : 'bg-gray-100 text-gray-700'
+                            }`}
+                          >
+                            {sub.outcomeCategory}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-right font-black text-gray-900">{sub.selectedCount}</td>
+                        <td className="px-4 py-3 text-right font-bold text-gray-700">{sub.uniqueLeads}</td>
+                        <td className="px-4 py-3 text-right font-bold text-gray-700">{sub.usersCount}</td>
+                        <td className="px-4 py-3 text-right font-bold text-teal-700">{sub.connectedCalls}</td>
+                        <td className="px-4 py-3 text-right font-bold text-rose-700">{sub.notConnectedCalls}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
+        )}
 
-          {/* Pagination */}
-          {detailedData.pagination.totalPages > 1 && (
-            <div className="px-6 py-4 border-t border-slate-200 flex items-center justify-between dark:border-slate-800">
-              <span className="text-xs text-slate-500">
-                Page {detailedData.pagination.page} of {detailedData.pagination.totalPages}
-              </span>
-              <div className="flex items-center gap-2">
-                <button
-                  disabled={page <= 1}
-                  onClick={() => setPage(page - 1)}
-                  className="px-3 py-1 rounded-lg border border-slate-300 text-xs disabled:opacity-40"
-                >
-                  Previous
-                </button>
-                <button
-                  disabled={page >= detailedData.pagination.totalPages}
-                  onClick={() => setPage(page + 1)}
-                  className="px-3 py-1 rounded-lg border border-slate-300 text-xs disabled:opacity-40"
-                >
-                  Next
-                </button>
+        {/* Tab 3: Detailed Call Logs */}
+        {activeTab === 'detailed' && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between gap-4">
+              <div className="relative flex-1 max-w-md">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search lead name, phone, user, notes..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2 rounded-xl border border-gray-200 bg-white text-xs font-semibold text-gray-800 shadow-sm"
+                />
               </div>
             </div>
-          )}
-        </div>
-      ) : null}
-    </div>
+
+            <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs text-gray-600">
+                  <thead className="text-[11px] text-gray-500 uppercase bg-gray-50/80 font-black border-b border-gray-200">
+                    <tr>
+                      <th className="px-4 py-3">Date & Time</th>
+                      <th className="px-4 py-3">User</th>
+                      <th className="px-4 py-3">Lead Name</th>
+                      <th className="px-4 py-3">Phone</th>
+                      <th className="px-4 py-3">Connection Status</th>
+                      <th className="px-4 py-3">Target Stage</th>
+                      <th className="px-4 py-3">Selected Substage</th>
+                      <th className="px-4 py-3">Outcome Notes</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 font-semibold">
+                    {loading ? (
+                      <tr>
+                        <td colSpan={8} className="px-4 py-8 text-center text-gray-400">
+                          Loading call logs...
+                        </td>
+                      </tr>
+                    ) : !detailedData?.rows || detailedData.rows.length === 0 ? (
+                      <tr>
+                        <td colSpan={8} className="px-4 py-8 text-center text-gray-400 italic">
+                          No call logs found for the selected criteria.
+                        </td>
+                      </tr>
+                    ) : (
+                      detailedData.rows.map((row: any) => (
+                        <tr key={row.id} className="hover:bg-gray-50/80 transition-colors">
+                          <td className="px-4 py-3 text-gray-500 whitespace-nowrap">
+                            {row.submittedAt ? new Date(row.submittedAt).toLocaleString() : 'N/A'}
+                          </td>
+                          <td className="px-4 py-3 font-bold text-gray-900">
+                            <div>{row.user?.name || row.user?.email || 'N/A'}</div>
+                            <div className="text-[10px] text-gray-400 font-normal">
+                              {row.user?.office?.name || 'N/A'}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 font-bold text-gray-900">{row.lead?.name || 'N/A'}</td>
+                          <td className="px-4 py-3 text-gray-700 font-mono">{row.lead?.phone || 'N/A'}</td>
+                          <td className="px-4 py-3">
+                            <span
+                              className={`inline-block px-2 py-0.5 rounded text-[10px] font-black uppercase ${
+                                row.connectionStatus === 'CONNECTED'
+                                  ? 'bg-teal-100 text-teal-800'
+                                  : 'bg-rose-100 text-rose-800'
+                              }`}
+                            >
+                              {row.connectionStatus === 'CONNECTED' ? 'Attended' : 'Not Attended'}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 font-bold text-gray-800">
+                            {row.targetStage?.name || row.substage?.leadStage?.name || 'N/A'}
+                          </td>
+                          <td className="px-4 py-3">
+                            {row.substage ? (
+                              <span
+                                className="inline-flex items-center rounded px-2 py-0.5 text-[10px] font-bold border"
+                                style={{
+                                  backgroundColor: `${row.substage.leadStage?.color || '#3b82f6'}15`,
+                                  color: row.substage.leadStage?.color || '#3b82f6',
+                                  borderColor: `${row.substage.leadStage?.color || '#3b82f6'}30`,
+                                }}
+                              >
+                                {row.substage.name}
+                              </span>
+                            ) : (
+                              <span className="text-gray-400 italic">None</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-gray-600 max-w-xs truncate" title={row.outcomeNotes || ''}>
+                            {row.outcomeNotes || '-'}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Pagination */}
+              {detailedData?.pagination && detailedData.pagination.totalPages > 1 && (
+                <div className="p-3 border-t border-gray-100 bg-gray-50 flex items-center justify-between text-xs">
+                  <span className="text-gray-500 font-medium">
+                    Page {detailedData.pagination.page} of {detailedData.pagination.totalPages} ({detailedData.pagination.total} total)
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setPage((p) => Math.max(1, p - 1))}
+                      disabled={page === 1}
+                      className="p-1.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-40"
+                    >
+                      <ChevronLeft size={16} />
+                    </button>
+                    <button
+                      onClick={() => setPage((p) => Math.min(detailedData.pagination.totalPages, p + 1))}
+                      disabled={page === detailedData.pagination.totalPages}
+                      className="p-1.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-40"
+                    >
+                      <ChevronRight size={16} />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </ReportPageShell>
   );
 };
+
+export default CallPerformanceReportPage;

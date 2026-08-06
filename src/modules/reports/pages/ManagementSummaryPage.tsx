@@ -11,6 +11,7 @@ import FollowupExtensionsSection from '../summary/components/FollowupExtensionsS
 import FollowupHistoryTimelineSection from '../summary/components/FollowupHistoryTimelineSection';
 import FollowupLatestNotesSection from '../summary/components/FollowupLatestNotesSection';
 import FollowupPerformanceSection from '../summary/components/FollowupPerformanceSection';
+import CallPerformanceSummarySection from '../summary/components/CallPerformanceSummarySection';
 
 const ManagementSummaryPage: React.FC = () => {
   const [filters, setFilters] = useState(createDefaultReportFilters());
@@ -22,6 +23,7 @@ const ManagementSummaryPage: React.FC = () => {
       return (
         <div className="space-y-8">
           <CompanyReportView filters={apiFilters} />
+          <CallPerformanceSummarySection filters={apiFilters} />
           <FollowupPerformanceSection filters={apiFilters} />
           <FollowupLatestNotesSection filters={apiFilters} />
           <FollowupActivitySection filters={apiFilters} />
