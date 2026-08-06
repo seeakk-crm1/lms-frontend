@@ -27,6 +27,7 @@ import {
 export const CallPerformanceReportPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'summary' | 'substages' | 'detailed'>('summary');
   const [loading, setLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [connectionFilter, setConnectionFilter] = useState<'ALL' | 'CONNECTED' | 'NOT_CONNECTED'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
@@ -46,6 +47,7 @@ export const CallPerformanceReportPage: React.FC = () => {
 
   const loadReports = async () => {
     setLoading(true);
+    setHasError(false);
     try {
       const userIds = apiFilters.userId
         ? Array.isArray(apiFilters.userId)
@@ -76,6 +78,7 @@ export const CallPerformanceReportPage: React.FC = () => {
       }
     } catch (err) {
       console.error('Failed to fetch call reports:', err);
+      setHasError(true);
     } finally {
       setLoading(false);
     }
@@ -143,6 +146,19 @@ export const CallPerformanceReportPage: React.FC = () => {
       onExportCsv={() => handleExport('xlsx')}
     >
       <div className="space-y-6">
+        {hasError && (
+          <div className="rounded-3xl border border-rose-200 bg-rose-50/50 p-6 text-center space-y-3">
+            <p className="text-sm font-bold text-rose-800">Unable to load call performance analytics right now.</p>
+            <button
+              type="button"
+              onClick={() => loadReports()}
+              className="px-4 py-2 text-xs font-bold bg-rose-600 text-white rounded-xl shadow hover:bg-rose-700 transition"
+            >
+              Retry Call Report
+            </button>
+          </div>
+        )}
+
         {/* Metric Summary Cards */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
           <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">

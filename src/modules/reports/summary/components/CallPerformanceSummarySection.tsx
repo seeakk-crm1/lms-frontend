@@ -10,7 +10,7 @@ interface CallPerformanceSummarySectionProps {
 const CallPerformanceSummarySection: React.FC<CallPerformanceSummarySectionProps> = ({ filters }) => {
   const [exporting, setExporting] = useState(false);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['call-performance-summary', filters],
     queryFn: () =>
       fetchCallSummaryReport({
@@ -20,6 +20,8 @@ const CallPerformanceSummarySection: React.FC<CallPerformanceSummarySectionProps
         officeId: filters.officeId,
         departmentId: filters.departmentId,
       }),
+    staleTime: 60000,
+    retry: 1,
   });
 
   const handleExport = async (format: 'xlsx' | 'csv') => {
@@ -49,6 +51,21 @@ const CallPerformanceSummarySection: React.FC<CallPerformanceSummarySectionProps
 
   if (isLoading) {
     return <div className="h-48 animate-pulse rounded-3xl bg-gray-100 mt-6" />;
+  }
+
+  if (isError) {
+    return (
+      <div className="mt-8 rounded-3xl border border-rose-200 bg-rose-50/50 p-6 text-center space-y-3">
+        <p className="text-sm font-bold text-rose-800">Unable to load call summary performance right now.</p>
+        <button
+          type="button"
+          onClick={() => refetch()}
+          className="px-4 py-2 text-xs font-bold bg-rose-600 text-white rounded-xl shadow hover:bg-rose-700 transition"
+        >
+          Retry Call Report
+        </button>
+      </div>
+    );
   }
 
   const metrics = data?.metrics || {
