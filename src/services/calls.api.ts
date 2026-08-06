@@ -62,6 +62,7 @@ export interface SaveCallOutcomeResponse {
   isStageChanged: boolean;
   isApprovalTriggered: boolean;
   createdFollowUpId?: string | null;
+  lead?: any;
   message: string;
 }
 

@@ -139,7 +139,27 @@ export const CallOutcomeModal: React.FC<CallOutcomeModalProps> = ({
     try {
       const res = await saveCallOutcome(leadId, payload);
 
-      void queryClient.invalidateQueries();
+      if (res?.lead) {
+        queryClient.setQueryData(['lead', leadId], (prev: any) =>
+          prev ? { ...prev, ...res.lead } : res.lead,
+        );
+        queryClient.setQueriesData({ queryKey: ['leads'] }, (prev: any) => {
+          if (!prev || !prev.leads) return prev;
+          return {
+            ...prev,
+            leads: prev.leads.map((l: any) => (l.id === leadId ? { ...l, ...res.lead } : l)),
+          };
+        });
+      }
+
+      void Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['leads'], refetchType: 'all' }),
+        queryClient.invalidateQueries({ queryKey: ['lead', leadId], refetchType: 'all' }),
+        queryClient.invalidateQueries({ queryKey: ['followups'], refetchType: 'all' }),
+        queryClient.invalidateQueries({ queryKey: ['closed-leads'], refetchType: 'all' }),
+        queryClient.invalidateQueries({ queryKey: ['dashboard'], refetchType: 'all' }),
+        queryClient.invalidateQueries({ queryKey: ['lob-analysis'], refetchType: 'all' }),
+      ]);
 
       if (onSuccess) onSuccess(res);
       onClose();

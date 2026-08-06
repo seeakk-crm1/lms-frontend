@@ -96,14 +96,15 @@ const RealtimeSyncListener = () => {
     };
 
     const onLeadUpdated = () => {
-      queryClient.invalidateQueries({ queryKey: ['leads'] });
-      queryClient.invalidateQueries({ queryKey: ['lead'] });
-      queryClient.invalidateQueries({ queryKey: ['lead-meta'] });
-      queryClient.invalidateQueries({ queryKey: ['followups'] });
-      queryClient.invalidateQueries({ queryKey: ['followups', 'mandatory-continuation'] });
-      queryClient.invalidateQueries({ queryKey: ['lead-approvals'] });
-      queryClient.invalidateQueries({ queryKey: ['closed-leads'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['leads'], refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ['lead'], refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ['lead-meta'], refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ['followups'], refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ['followups', 'mandatory-continuation'], refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ['lead-approvals'], refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ['closed-leads'], refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'], refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ['lob-analysis'], refetchType: 'all' });
       refetchDashboardIfLoaded();
     };
 
@@ -122,6 +123,7 @@ const RealtimeSyncListener = () => {
     socket.on('permissions_updated', onPermissionsUpdated);
     socket.on('user_updated', onUserUpdated);
     socket.on('lead_updated', onLeadUpdated);
+    socket.on('approval_updated', onLeadUpdated);
     socket.on('report_updated', onReportUpdated);
     socket.on('attendance_updated', onAttendanceUpdated);
 
@@ -130,6 +132,7 @@ const RealtimeSyncListener = () => {
       socket.off('permissions_updated', onPermissionsUpdated);
       socket.off('user_updated', onUserUpdated);
       socket.off('lead_updated', onLeadUpdated);
+      socket.off('approval_updated', onLeadUpdated);
       socket.off('report_updated', onReportUpdated);
       socket.off('attendance_updated', onAttendanceUpdated);
     };
