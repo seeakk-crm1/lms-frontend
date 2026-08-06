@@ -178,8 +178,9 @@ function App() {
     <>
       <Toaster
         position="top-center"
-        containerStyle={{ zIndex: 11000 }}
+        containerStyle={{ zIndex: 12000 }}
         toastOptions={{
+          position: 'top-center',
           className: 'text-sm font-bold',
           style: {
             borderRadius: '16px',
