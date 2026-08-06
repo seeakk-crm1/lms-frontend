@@ -14,6 +14,7 @@ import LeadAvatar from './LeadAvatar';
 import { getImageUrl } from '../../../utils/getImageUrl';
 import { CallButton } from '../../../components/calls/CallButton';
 import { CallOutcomeModal } from '../../../components/calls/CallOutcomeModal';
+import { CallInitiatorModal } from '../../../components/calls/CallInitiatorModal';
 import { useCallTracking } from '../../../hooks/useCallTracking';
 
 interface LeadsTableProps {
@@ -479,6 +480,20 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
           </button>
         </div>
       </div>
+
+      {callTracking.isInitiatorOpen && callTracking.initiatorSession && (
+        <CallInitiatorModal
+          isOpen={callTracking.isInitiatorOpen}
+          onClose={callTracking.closeInitiator}
+          leadName={callTracking.initiatorSession.leadName}
+          leadPhone={callTracking.initiatorSession.leadPhone}
+          telUrl={callTracking.initiatorSession.telUrl}
+          currentStageName={callTracking.initiatorSession.currentStageName}
+          currentSubstageName={callTracking.initiatorSession.currentSubstageName}
+          onLaunchDialer={callTracking.launchDialer}
+          onDirectOutcome={callTracking.launchDirectOutcome}
+        />
+      )}
 
       {callTracking.isModalOpen && callTracking.activeSession && (
         <CallOutcomeModal

@@ -1,14 +1,27 @@
 import { useCallback, useEffect, useState } from 'react';
+import { toast } from 'react-hot-toast';
 import { initiateCall, InitiateCallResponse } from '../services/calls.api';
 
 export interface UseCallTrackingState {
   isModalOpen: boolean;
   isDialing: boolean;
+  isInitiatorOpen: boolean;
   activeSession: {
     callSessionId: string;
     leadId: string;
     leadName: string;
     leadPhone: string;
+    sourceContext: string;
+    followUpId?: string;
+    currentStageName?: string;
+    currentSubstageName?: string;
+  } | null;
+  initiatorSession: {
+    callSessionId: string;
+    leadId: string;
+    leadName: string;
+    leadPhone: string;
+    telUrl: string;
     sourceContext: string;
     followUpId?: string;
     currentStageName?: string;
@@ -20,7 +33,9 @@ export const useCallTracking = () => {
   const [state, setState] = useState<UseCallTrackingState>({
     isModalOpen: false,
     isDialing: false,
+    isInitiatorOpen: false,
     activeSession: null,
+    initiatorSession: null,
   });
 
   const [pendingReturnSession, setPendingReturnSession] = useState<any | null>(null);
@@ -33,6 +48,7 @@ export const useCallTracking = () => {
           ...prev,
           isModalOpen: true,
           isDialing: false,
+          isInitiatorOpen: false,
           activeSession: pendingReturnSession,
         }));
         setPendingReturnSession(null);
@@ -59,7 +75,7 @@ export const useCallTracking = () => {
       currentSubstageName?: string,
     ) => {
       if (!leadPhone || !leadPhone.trim()) {
-        alert('Lead does not have a phone number.');
+        toast.error('Lead does not have a valid phone number.');
         return;
       }
 
@@ -73,41 +89,71 @@ export const useCallTracking = () => {
           leadId,
           leadName,
           leadPhone: res.phone,
+          telUrl: res.telUrl,
           sourceContext,
           followUpId,
           currentStageName,
           currentSubstageName,
         };
 
-        // Set pending session for return listener
-        setPendingReturnSession(sessionData);
-
-        // Open dialer
-        window.location.href = res.telUrl;
-
-        // Fallback timer: Open outcome modal after 2.5 seconds if tab didn't lose focus
-        setTimeout(() => {
-          setState((prev) => {
-            if (!prev.isModalOpen && pendingReturnSession) {
-              return {
-                ...prev,
-                isModalOpen: true,
-                isDialing: false,
-                activeSession: sessionData,
-              };
-            }
-            return prev;
-          });
-        }, 2500);
+        // Open in-app Call Initiator Modal
+        setState((prev) => ({
+          ...prev,
+          isDialing: false,
+          isInitiatorOpen: true,
+          initiatorSession: sessionData,
+        }));
       } catch (err: any) {
         console.error('Call initiation failed:', err);
         const msg = err.response?.data?.message || 'Failed to initiate call.';
-        alert(msg);
+        toast.error(msg);
         setState((prev) => ({ ...prev, isDialing: false }));
       }
     },
-    [pendingReturnSession],
+    [],
   );
+
+  const launchDialer = useCallback(() => {
+    if (!state.initiatorSession) return;
+    const session = state.initiatorSession;
+
+    setPendingReturnSession(session);
+    setState((prev) => ({ ...prev, isInitiatorOpen: false }));
+
+    // Trigger device dialer
+    window.location.href = session.telUrl;
+
+    // Fallback timer: Open outcome modal after 2.5 seconds if tab didn't lose focus
+    setTimeout(() => {
+      setState((prev) => {
+        if (!prev.isModalOpen && session) {
+          return {
+            ...prev,
+            isModalOpen: true,
+            isDialing: false,
+            activeSession: session,
+          };
+        }
+        return prev;
+      });
+    }, 2500);
+  }, [state.initiatorSession]);
+
+  const launchDirectOutcome = useCallback(() => {
+    if (!state.initiatorSession) return;
+    const session = state.initiatorSession;
+
+    setState((prev) => ({
+      ...prev,
+      isInitiatorOpen: false,
+      isModalOpen: true,
+      activeSession: session,
+    }));
+  }, [state.initiatorSession]);
+
+  const closeInitiator = useCallback(() => {
+    setState((prev) => ({ ...prev, isInitiatorOpen: false, initiatorSession: null }));
+  }, []);
 
   const closeModal = useCallback(() => {
     setState((prev) => ({
@@ -121,6 +167,9 @@ export const useCallTracking = () => {
   return {
     ...state,
     startCall,
+    launchDialer,
+    launchDirectOutcome,
+    closeInitiator,
     closeModal,
   };
 };
