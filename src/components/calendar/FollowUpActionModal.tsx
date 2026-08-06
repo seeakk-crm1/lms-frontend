@@ -18,6 +18,7 @@ interface Props {
   onOpenLead: (followUp: any) => void;
   onMarkCompleted: (followUp: any) => void;
   onSnooze: (followUp: any) => void;
+  isMandatory?: boolean;
 }
 
 const getStatusColor = (status: string) => {
@@ -37,7 +38,15 @@ const getStatusColor = (status: string) => {
   }
 };
 
-const FollowUpActionModal: React.FC<Props> = ({ isOpen, followUp, onClose, onOpenLead, onMarkCompleted, onSnooze }) => {
+const FollowUpActionModal: React.FC<Props> = ({
+  isOpen,
+  followUp,
+  onClose,
+  onOpenLead,
+  onMarkCompleted,
+  onSnooze,
+  isMandatory = true,
+}) => {
   const isEditingFromFollowup = useFollowupWorkflowStore((state) => state.isEditingFromFollowup);
   const typeLabel = useMemo(() => (followUp ? formatFollowUpTypeLabel(followUp.type) : ''), [followUp]);
   const isCompleted = followUp?.status === 'COMPLETED';
@@ -76,7 +85,7 @@ const FollowUpActionModal: React.FC<Props> = ({ isOpen, followUp, onClose, onOpe
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          onClick={onClose}
+          onClick={isMandatory ? undefined : onClose}
           className="absolute inset-0 bg-gray-900/55 backdrop-blur-sm"
           aria-label="Close follow-up actions"
         />
@@ -91,9 +100,11 @@ const FollowUpActionModal: React.FC<Props> = ({ isOpen, followUp, onClose, onOpe
             <div>
               <h3 className="text-lg font-black text-gray-900">Follow-up Reminder</h3>
             </div>
-            <button onClick={onClose} className="rounded-xl border border-gray-200 p-2 text-gray-400 hover:bg-gray-50 transition-colors">
-              <X className="h-4 w-4" />
-            </button>
+            {!isMandatory && (
+              <button onClick={onClose} className="rounded-xl border border-gray-200 p-2 text-gray-400 hover:bg-gray-50 transition-colors">
+                <X className="h-4 w-4" />
+              </button>
+            )}
           </div>
 
           <div className="overflow-y-auto overflow-x-hidden p-5 flex-1 space-y-5 bg-gray-50/50">

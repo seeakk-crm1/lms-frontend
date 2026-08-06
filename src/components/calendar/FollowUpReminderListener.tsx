@@ -12,6 +12,7 @@ import type { FollowUp, FollowUpReminderItem } from '../../types/followup.types'
 import FollowUpActionModal from './FollowUpActionModal';
 import CompleteFollowUpModal from './CompleteFollowUpModal';
 import SnoozeFollowUpModal from './SnoozeFollowUpModal';
+import { useMandatoryNavigationLock } from '../../hooks/useMandatoryNavigationLock';
 
 const storageKey = 'followupReminderSeenAt';
 
@@ -158,6 +159,8 @@ const FollowUpReminderListener: React.FC = () => {
     }
   }, [active, queue]);
 
+  useMandatoryNavigationLock(Boolean(active || completionTarget || snoozeTarget));
+
   if (!workflowEnabled) {
     return null;
   }
@@ -167,14 +170,13 @@ const FollowUpReminderListener: React.FC = () => {
       <FollowUpActionModal
         isOpen={Boolean(active)}
         followUp={active}
-        onClose={() => setActive(null)}
+        isMandatory={true}
+        onClose={() => undefined}
         onOpenLead={(followUp) => {
           navigate('/leads', { state: { openLeadId: followUp.leadId } });
-          setActive(null);
         }}
         onMarkCompleted={(followUp) => {
           setCompletionTarget(followUp);
-          setActive(null);
         }}
         onSnooze={(followUp) => {
           setSnoozeTarget(followUp);
@@ -182,23 +184,31 @@ const FollowUpReminderListener: React.FC = () => {
           setRecentDescription('');
           setSnoozeReasonId('');
           setReminderActionType('SNOOZE');
-          setActive(null);
         }}
       />
       <CompleteFollowUpModal
         isOpen={Boolean(completionTarget)}
         followUp={completionTarget}
         isSubmitting={completeMutation.isPending}
+        stackAboveMandatoryGate
+        isMandatory={true}
         onClose={() => setCompletionTarget(null)}
         onSubmit={async (payload) => {
           if (!completionTarget) return;
-          await completeMutation.mutateAsync({ id: completionTarget.id, payload });
-          setCompletionTarget(null);
+          try {
+            await completeMutation.mutateAsync({ id: completionTarget.id, payload });
+            setCompletionTarget(null);
+            setActive(null);
+          } catch (err) {
+            console.error('Completion failed:', err);
+          }
         }}
       />
       <SnoozeFollowUpModal
         isOpen={Boolean(snoozeTarget)}
         followUp={snoozeTarget}
+        stackAboveMandatoryGate
+        isMandatory={true}
         value={snoozeDateTime}
         onChange={setSnoozeDateTime}
         recentDescription={recentDescription}
@@ -210,10 +220,6 @@ const FollowUpReminderListener: React.FC = () => {
         isSubmitting={snoozeMutation.isPending}
         onClose={() => {
           setSnoozeTarget(null);
-          setSnoozeDateTime('');
-          setRecentDescription('');
-          setSnoozeReasonId('');
-          setReminderActionType('SNOOZE');
         }}
         onSubmit={async () => {
           const hasInput = snoozeReasonId || recentDescription.trim();
@@ -229,20 +235,25 @@ const FollowUpReminderListener: React.FC = () => {
           }
           const proceed = await confirmIfWeeklyOff(date);
           if (!proceed) return;
-          await snoozeMutation.mutateAsync({
-            id: snoozeTarget.id,
-            payload: {
-              scheduledAt: date.toISOString(),
-              recentDescription: recentDescription.trim() || undefined,
-              extensionReasonId: snoozeReasonId || undefined,
-              reminderActionType,
-            },
-          });
-          setSnoozeTarget(null);
-          setSnoozeDateTime('');
-          setRecentDescription('');
-          setSnoozeReasonId('');
-          setReminderActionType('SNOOZE');
+          try {
+            await snoozeMutation.mutateAsync({
+              id: snoozeTarget.id,
+              payload: {
+                scheduledAt: date.toISOString(),
+                recentDescription: recentDescription.trim() || undefined,
+                extensionReasonId: snoozeReasonId || undefined,
+                reminderActionType,
+              },
+            });
+            setSnoozeTarget(null);
+            setSnoozeDateTime('');
+            setRecentDescription('');
+            setSnoozeReasonId('');
+            setReminderActionType('SNOOZE');
+            setActive(null);
+          } catch (err) {
+            console.error('Snooze extension failed:', err);
+          }
         }}
       />
       {WeeklyOffScheduleModal}
