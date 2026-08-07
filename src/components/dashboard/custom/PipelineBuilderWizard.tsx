@@ -92,7 +92,8 @@ export const PipelineBuilderWizard: React.FC<PipelineBuilderWizardProps> = ({
       setVisibilityType(editPipeline.visibilityType);
       setClickAction(editPipeline.clickAction || 'OPEN_LEADS');
     } else {
-      setSectionId(initialSectionId || sections[0]?.id || '');
+      const defaultSec = initialSectionId || (sections && sections.length > 0 ? sections[0].id : '');
+      setSectionId(defaultSec);
       setName('');
       setDescription('');
       setMetricType('LEAD_COUNT');
@@ -104,6 +105,13 @@ export const PipelineBuilderWizard: React.FC<PipelineBuilderWizardProps> = ({
     }
     setStep(1);
   }, [editPipeline, initialSectionId, sections, isOpen]);
+
+  // Ensure sectionId is set when sections load asynchronously
+  useEffect(() => {
+    if (!sectionId && sections && sections.length > 0) {
+      setSectionId(sections[0].id);
+    }
+  }, [sections, sectionId]);
 
   // Live preview fetch on Step 4 or when filters change
   useEffect(() => {
@@ -256,15 +264,19 @@ export const PipelineBuilderWizard: React.FC<PipelineBuilderWizardProps> = ({
                     Dashboard Section <span className="text-red-500">*</span>
                   </label>
                   <select
-                    value={sectionId}
+                    value={sectionId || (sections && sections.length > 0 ? sections[0].id : '')}
                     onChange={(e) => setSectionId(e.target.value)}
                     className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-semibold text-gray-800 focus:bg-white focus:border-emerald-500 focus:outline-none transition-all"
                   >
-                    {sections.map((sec) => (
-                      <option key={sec.id} value={sec.id}>
-                        {sec.name} ({sec.layoutType})
-                      </option>
-                    ))}
+                    {sections.length === 0 ? (
+                      <option value="">Default Dashboard Section</option>
+                    ) : (
+                      sections.map((sec) => (
+                        <option key={sec.id} value={sec.id}>
+                          {sec.name} ({sec.layoutType})
+                        </option>
+                      ))
+                    )}
                   </select>
                 </div>
 
@@ -475,6 +487,111 @@ export const PipelineBuilderWizard: React.FC<PipelineBuilderWizardProps> = ({
                   </div>
                 ) : (
                   <div className="space-y-6">
+                    {/* Exact Visual Widget Card Preview */}
+                    <div className="rounded-3xl border border-emerald-200 bg-gradient-to-br from-white to-emerald-50/20 p-6 shadow-sm">
+                      <div className="mb-4 flex items-center justify-between border-b border-gray-100 pb-3">
+                        <div className="flex items-center gap-2">
+                          <span className="h-3 w-3 rounded-full bg-emerald-500 animate-pulse" />
+                          <span className="text-sm font-black text-gray-900">
+                            {name || 'Widget Live Preview'}
+                          </span>
+                        </div>
+                        <span className="rounded-full bg-emerald-100 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-emerald-800">
+                          {displayType.replace('_', ' ')}
+                        </span>
+                      </div>
+
+                      {displayType === 'REVENUE_CARD' || metricType.includes('REVENUE') ? (
+                        <div className="py-2">
+                          <div className="flex items-baseline gap-2">
+                            <span className="text-3xl font-black text-gray-900">
+                              {formatCurrency(previewData.metrics?.totalExpectedRevenue || 0)}
+                            </span>
+                            <span className="text-xs font-bold text-gray-400">Expected Revenue</span>
+                          </div>
+                          <div className="mt-3 flex items-center justify-between text-xs font-semibold text-gray-500 border-t border-gray-100 pt-3">
+                            <span>Closed: <strong className="text-emerald-600 font-black">{formatCurrency(previewData.metrics?.totalClosedRevenue || 0)}</strong></span>
+                            <span>Count: <strong className="text-gray-900 font-black">{previewData.metrics?.count || 0}</strong></span>
+                          </div>
+                        </div>
+                      ) : displayType === 'PERCENTAGE_CARD' || metricType === 'CONVERSION_RATE' ? (
+                        <div className="py-2">
+                          <div className="flex items-baseline gap-2">
+                            <span className="text-4xl font-black text-emerald-600">{previewData.metrics?.secondaryMetric || 0}%</span>
+                            <span className="text-xs font-bold text-gray-400">Conversion Rate</span>
+                          </div>
+                          <div className="mt-3 flex items-center justify-between text-xs font-semibold text-gray-500 border-t border-gray-100 pt-3">
+                            <span>Matching Leads: <strong className="text-gray-900 font-black">{previewData.metrics?.count || 0}</strong></span>
+                          </div>
+                        </div>
+                      ) : displayType === 'STAGE_BAR' || metricType === 'STAGE_DISTRIBUTION' ? (
+                        <div className="py-2">
+                          <div className="mb-2 flex items-center justify-between text-xs font-bold text-gray-700">
+                            <span>Total Leads Distribution</span>
+                            <span className="text-base font-black text-gray-900">{previewData.metrics?.count || 0}</span>
+                          </div>
+                          {previewData.metrics?.stageBreakdown && previewData.metrics.stageBreakdown.length > 0 ? (
+                            <div className="space-y-3">
+                              <div className="flex h-3.5 w-full overflow-hidden rounded-full bg-gray-100">
+                                {previewData.metrics.stageBreakdown.map((sb: any, idx: number) => (
+                                  <div
+                                    key={idx}
+                                    style={{
+                                      width: `${(previewData.metrics?.count || 0) > 0 ? (sb.count / previewData.metrics.count) * 100 : 0}%`,
+                                      backgroundColor: sb.color || '#10b981',
+                                    }}
+                                    title={`${sb.name}: ${sb.count}`}
+                                  />
+                                ))}
+                              </div>
+                              <div className="flex flex-wrap gap-2 text-xs font-bold text-gray-600">
+                                {previewData.metrics.stageBreakdown.map((sb: any, idx: number) => (
+                                  <span key={idx} className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-xl border border-gray-200 shadow-2xs">
+                                    <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: sb.color || '#10b981' }} />
+                                    {sb.name} ({sb.count})
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="h-3.5 w-full rounded-full bg-emerald-200 animate-pulse" />
+                          )}
+                        </div>
+                      ) : displayType === 'HORIZONTAL_BAR' ? (
+                        <div className="py-2 space-y-2">
+                          <div className="flex items-center justify-between text-xs font-bold">
+                            <span>Total Matching Count</span>
+                            <span className="text-emerald-600 font-black">{previewData.metrics?.count || 0}</span>
+                          </div>
+                          <div className="h-4 w-full bg-emerald-500 rounded-full" />
+                          <div className="h-4 w-3/4 bg-emerald-400 rounded-full" />
+                          <div className="h-4 w-1/2 bg-emerald-300 rounded-full" />
+                        </div>
+                      ) : displayType === 'PROGRESS_BAR' ? (
+                        <div className="py-2 space-y-2">
+                          <div className="flex justify-between text-xs font-bold text-gray-700">
+                            <span>Target Goal Progress</span>
+                            <span className="text-emerald-600 font-black">{previewData.metrics?.secondaryMetric || 0}%</span>
+                          </div>
+                          <div className="h-4 w-full bg-gray-100 rounded-full overflow-hidden">
+                            <div className="h-full bg-emerald-500 rounded-full transition-all" style={{ width: `${Math.min(100, previewData.metrics?.secondaryMetric || 0)}%` }} />
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="py-2">
+                          <div className="flex items-baseline gap-2">
+                            <span className="text-4xl font-black text-gray-900">{previewData.metrics?.count || 0}</span>
+                            <span className="text-xs font-bold uppercase tracking-wider text-gray-400">Matching Leads</span>
+                          </div>
+                          {(previewData.metrics?.totalExpectedRevenue || 0) > 0 && (
+                            <p className="mt-2 text-xs font-bold text-emerald-600">
+                              Revenue Value: {formatCurrency(previewData.metrics?.totalExpectedRevenue || 0)}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
                     {/* Metric Cards Summary */}
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                       <div className="rounded-2xl border border-emerald-100 bg-emerald-50/50 p-4">
