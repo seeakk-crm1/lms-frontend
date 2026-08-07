@@ -17,25 +17,38 @@ interface FilterBuilderProps {
 }
 
 export const STANDARD_FIELDS = [
-  { group: 'Standard Fields', id: 'name', label: 'Lead Name', type: 'text' },
-  { group: 'Standard Fields', id: 'email', label: 'Email Address', type: 'text' },
-  { group: 'Standard Fields', id: 'phone', label: 'Phone Number', type: 'text' },
-  { group: 'Standard Fields', id: 'companyName', label: 'Company Name', type: 'text' },
-  { group: 'Standard Fields', id: 'address', label: 'Address', type: 'text' },
-  { group: 'Standard Fields', id: 'stageId', label: 'Lead Stage', type: 'stage_select' },
-  { group: 'Standard Fields', id: 'substageId', label: 'Lead Substage', type: 'substage_select' },
-  { group: 'Standard Fields', id: 'sourceId', label: 'Lead Source', type: 'source_select' },
-  { group: 'Standard Fields', id: 'lifecycleId', label: 'Lead Lifecycle', type: 'lifecycle_select' },
-  { group: 'Standard Fields', id: 'assignedToId', label: 'Assigned User', type: 'user_select' },
-  { group: 'Standard Fields', id: 'officeId', label: 'Office', type: 'office_select' },
-  { group: 'Standard Fields', id: 'departmentId', label: 'Department', type: 'department_select' },
-  { group: 'Standard Fields', id: 'leadStatus', label: 'Lead Status', type: 'status_select' },
-  { group: 'Standard Fields', id: 'isClosed', label: 'Is Closed', type: 'boolean' },
-  { group: 'Standard Fields', id: 'isLOB', label: 'Is LOB', type: 'boolean' },
-  { group: 'Standard Fields', id: 'expectedRevenue', label: 'Expected Revenue (₹)', type: 'number' },
-  { group: 'Standard Fields', id: 'createdAt', label: 'Created Date', type: 'date' },
-  { group: 'Standard Fields', id: 'nextFollowUpAt', label: 'Next Follow-Up Date', type: 'date' },
-  { group: 'Standard Fields', id: 'closedAt', label: 'Closed Date', type: 'date' },
+  // Lead Details
+  { group: 'Lead Details', id: 'name', label: 'Lead Name', type: 'text' },
+  { group: 'Lead Details', id: 'email', label: 'Email Address', type: 'text' },
+  { group: 'Lead Details', id: 'phone', label: 'Phone Number', type: 'text' },
+  { group: 'Lead Details', id: 'companyName', label: 'Company Name', type: 'text' },
+  { group: 'Lead Details', id: 'address', label: 'Address', type: 'text' },
+  { group: 'Lead Details', id: 'leadStatus', label: 'Lead Status', type: 'status_select' },
+  { group: 'Lead Details', id: 'totalAmount', label: 'Total Amount (₹)', type: 'number' },
+  { group: 'Lead Details', id: 'expectedRevenue', label: 'Expected Revenue (₹)', type: 'number' },
+
+  // User & Structure
+  { group: 'Users & Organization', id: 'assignedToId', label: 'Assigned User', type: 'user_select' },
+  { group: 'Users & Organization', id: 'createdById', label: 'Lead Owner / Created By', type: 'user_select' },
+  { group: 'Users & Organization', id: 'supervisorId', label: 'Supervisor', type: 'user_select' },
+  { group: 'Users & Organization', id: 'officeId', label: 'Office Location', type: 'office_select' },
+  { group: 'Users & Organization', id: 'departmentId', label: 'Department', type: 'department_select' },
+
+  // Stage & Source
+  { group: 'Lead Stage & Source', id: 'stageId', label: 'Lead Stage', type: 'stage_select' },
+  { group: 'Lead Stage & Source', id: 'substageId', label: 'Lead Substage', type: 'substage_select' },
+  { group: 'Lead Stage & Source', id: 'sourceId', label: 'Lead Source', type: 'source_select' },
+  { group: 'Lead Stage & Source', id: 'lifecycleId', label: 'Lead Lifecycle', type: 'lifecycle_select' },
+
+  // Dates & Follow-Ups
+  { group: 'Dates & Timeline', id: 'createdAt', label: 'Created Date', type: 'date' },
+  { group: 'Dates & Timeline', id: 'nextFollowUpAt', label: 'Next Follow-Up Date', type: 'date' },
+  { group: 'Dates & Timeline', id: 'closedAt', label: 'Closed Date', type: 'date' },
+  { group: 'Dates & Timeline', id: 'updatedAt', label: 'Last Updated Date', type: 'date' },
+
+  // LOB & Status
+  { group: 'LOB & System', id: 'isClosed', label: 'Is Closed', type: 'boolean' },
+  { group: 'LOB & System', id: 'isLOB', label: 'Is Loss of Business (LOB)', type: 'boolean' },
 ];
 
 export const OPERATOR_OPTIONS: Record<string, Array<{ id: string; label: string }>> = {
