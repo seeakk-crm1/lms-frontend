@@ -57,9 +57,10 @@ const ReportPageShell: React.FC<ReportPageShellProps> = ({
               <button
                 type="button"
                 onClick={printReport}
+                title="Download the complete filtered report as a scrollable HTML file."
                 className="flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-600"
               >
-                <Download size={16} /> Download HTML Report
+                <Download size={16} /> Download Interactive Report
               </button>
             </div>
           </div>

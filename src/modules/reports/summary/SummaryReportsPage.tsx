@@ -38,7 +38,7 @@ const SummaryReportsPage: React.FC = () => {
       const link = document.createElement('a');
       link.href = url;
       const dateStr = filters.startDate ? filters.startDate : format(new Date(), 'yyyy-MM-dd');
-      link.setAttribute('download', `Seeakk_Summary_Report_${dateStr}.html`);
+      link.setAttribute('download', `Seeakk_Summary_Report_Interactive_${dateStr}.html`);
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -94,9 +94,10 @@ const SummaryReportsPage: React.FC = () => {
               <button 
                 onClick={handleExportHtml}
                 disabled={exporting}
+                title="Download the complete filtered report as a scrollable HTML file."
                 className="flex items-center gap-2 px-4 py-2 bg-emerald-600 border border-emerald-600 text-white rounded-xl hover:bg-emerald-700 font-bold text-sm shadow-sm transition-all"
               >
-                <Download size={16} /> {exporting ? 'Preparing Full Report...' : 'Download HTML Report'}
+                <Download size={16} /> {exporting ? 'Preparing Full Report...' : 'Download Interactive Report'}
               </button>
             </div>
           </div>
