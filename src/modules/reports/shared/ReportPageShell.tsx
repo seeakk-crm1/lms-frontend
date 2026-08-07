@@ -59,7 +59,7 @@ const ReportPageShell: React.FC<ReportPageShellProps> = ({
                 onClick={printReport}
                 className="flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-600"
               >
-                <Download size={16} /> Download PDF
+                <Download size={16} /> Download HTML Report
               </button>
             </div>
           </div>

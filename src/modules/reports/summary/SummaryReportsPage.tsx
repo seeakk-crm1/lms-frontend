@@ -30,16 +30,19 @@ const SummaryReportsPage: React.FC = () => {
     }
   });
 
-  const handleExportPdf = async () => {
+  const handleExportHtml = async () => {
     setExporting(true);
     try {
       const blobData = await exportSummaryReport(filters);
-      const text = await blobData.text();
-      const win = window.open('', '_blank');
-      if (win) {
-        win.document.write(text);
-        win.document.close();
-      }
+      const url = window.URL.createObjectURL(new Blob([blobData], { type: 'text/html' }));
+      const link = document.createElement('a');
+      link.href = url;
+      const dateStr = filters.startDate ? filters.startDate : format(new Date(), 'yyyy-MM-dd');
+      link.setAttribute('download', `Seeakk_Summary_Report_${dateStr}.html`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
     } catch (err) {
       console.error('Export failed:', err);
     } finally {
@@ -89,11 +92,11 @@ const SummaryReportsPage: React.FC = () => {
             
             <div className="flex items-center gap-3">
               <button 
-                onClick={handleExportPdf}
+                onClick={handleExportHtml}
                 disabled={exporting}
                 className="flex items-center gap-2 px-4 py-2 bg-emerald-600 border border-emerald-600 text-white rounded-xl hover:bg-emerald-700 font-bold text-sm shadow-sm transition-all"
               >
-                <Download size={16} /> {exporting ? 'Preparing Report...' : 'Download PDF'}
+                <Download size={16} /> {exporting ? 'Preparing Full Report...' : 'Download HTML Report'}
               </button>
             </div>
           </div>
