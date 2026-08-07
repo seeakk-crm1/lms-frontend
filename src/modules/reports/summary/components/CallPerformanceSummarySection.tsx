@@ -162,7 +162,7 @@ const CallPerformanceSummarySection: React.FC<CallPerformanceSummarySectionProps
       <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
         <div className="p-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
           <h4 className="font-bold text-gray-900 text-sm">User Call Performance Breakdown</h4>
-          <span className="text-xs font-semibold text-gray-500">{usersList.length} users active</span>
+          <span className="text-xs font-semibold text-gray-500">{usersList.length} user{usersList.length === 1 ? '' : 's'} in report</span>
         </div>
 
         <div className="overflow-x-auto">

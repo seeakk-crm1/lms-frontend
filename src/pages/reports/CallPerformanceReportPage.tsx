@@ -261,7 +261,7 @@ export const CallPerformanceReportPage: React.FC = () => {
           <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
             <div className="p-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
               <h3 className="font-bold text-gray-900 text-sm">User Call Performance Breakdown</h3>
-              <span className="text-xs font-semibold text-gray-500">{userList.length} users active</span>
+              <span className="text-xs font-semibold text-gray-500">{userList.length} user{userList.length === 1 ? '' : 's'} in report</span>
             </div>
 
             <div className="overflow-x-auto">
