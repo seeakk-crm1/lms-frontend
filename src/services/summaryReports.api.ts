@@ -11,6 +11,7 @@ export interface SummaryFilters {
   role?: string;
   leadSource?: string;
   leadStage?: string;
+  substageIds?: string[];
   branchId?: string;
   officeId?: string;
   departmentId?: string;

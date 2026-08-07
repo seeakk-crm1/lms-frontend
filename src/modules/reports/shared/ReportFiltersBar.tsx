@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { Calendar, Filter, User } from 'lucide-react';
 import { endOfDay, format, startOfDay, startOfMonth, startOfWeek, subDays } from 'date-fns';
+import { useQuery } from '@tanstack/react-query';
 import { useLeadMetaQuery } from '../../../hooks/useLeads';
 import MultiSearchableSelect from '../../../components/MultiSearchableSelect';
 import type { ReportFilterState } from './reportFilterDefaults';
@@ -8,6 +9,7 @@ import { useReportMetaOptions } from './useReportUsers';
 import OfficeFilterSelect from '../../../components/OfficeFilterSelect';
 import useAuthStore from '../../../store/useAuthStore';
 import { canUseOfficeFilter } from '../../../utils/officeFilterAccess';
+import { fetchGroupedSubstages } from '../../../services/substages.api';
 
 interface ReportFiltersBarProps {
   filters: ReportFilterState;
@@ -19,6 +21,25 @@ const ReportFiltersBar: React.FC<ReportFiltersBarProps> = ({ filters, setFilters
   const { data: leadMeta } = useLeadMetaQuery();
   const currentUser = useAuthStore((state) => state.user);
   const showOfficeFilter = canUseOfficeFilter(currentUser);
+
+  const { data: groupedSubstages = [] } = useQuery({
+    queryKey: ['grouped-substages'],
+    queryFn: fetchGroupedSubstages,
+    staleTime: 5 * 60_000,
+  });
+
+  const substageOptions = useMemo(() => {
+    const options: Array<{ value: string; label: string }> = [];
+    (groupedSubstages || []).forEach((group) => {
+      (group.substages || []).forEach((sub) => {
+        options.push({
+          value: sub.id,
+          label: `${sub.name} (${group.name})`,
+        });
+      });
+    });
+    return options;
+  }, [groupedSubstages]);
 
   const stageOptions = useMemo(
     () => (leadMeta?.stages || []).map((item) => ({ value: item.id, label: item.label })),
@@ -190,6 +211,16 @@ const ReportFiltersBar: React.FC<ReportFiltersBarProps> = ({ filters, setFilters
           <option value="">All Lead Stages</option>
           {stageOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
         </select>
+
+        <div className="md:col-span-2">
+          <MultiSearchableSelect
+            name="reportSubstages"
+            options={substageOptions}
+            values={filters.substageIds || []}
+            onChange={(values) => setFilters((prev) => ({ ...prev, substageIds: values, page: 1 }))}
+            placeholder="Select substages to compare"
+          />
+        </div>
       </div>
     </div>
   );

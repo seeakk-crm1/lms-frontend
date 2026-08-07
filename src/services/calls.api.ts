@@ -93,6 +93,7 @@ export interface UserCallSummaryRow {
   negativeOutcomes: number;
   followUpsCreated: number;
   leadsMoved: number;
+  substageCounts?: Record<string, number>;
   selectedSubstages?: Array<{
     substageId: string;
     name: string;
@@ -104,6 +105,13 @@ export interface UserCallSummaryRow {
 
 export interface CallSummaryReportData {
   metrics: CallSummaryMetrics;
+  selectedSubstages?: Array<{
+    id: string;
+    name: string;
+    parentStageId?: string;
+    parentStageName?: string;
+    color: string;
+  }>;
   userSummaryList: UserCallSummaryRow[];
   substageBreakdown?: Array<{
     substageId: string;
@@ -124,6 +132,7 @@ export interface CallSummaryReportData {
     notConnectedCalls: number;
     followUpsCreated: number;
     leadsMoved: number;
+    substageCounts?: Record<string, number>;
   };
 }
 

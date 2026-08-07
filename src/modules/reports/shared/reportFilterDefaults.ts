@@ -6,6 +6,7 @@ export type ReportUserMode = 'all' | 'single' | 'multiple';
 export interface ReportFilterState extends SummaryFilters {
   userMode?: ReportUserMode;
   supervisorId?: string;
+  substageIds?: string[];
   revenueMin?: string;
 }
 

@@ -87,6 +87,8 @@ const CallPerformanceSummarySection: React.FC<CallPerformanceSummarySectionProps
     leadsMoved: 1,
   };
 
+  const selectedSubstagesList = data?.selectedSubstages || [];
+
   return (
     <div className="mt-8 space-y-6 print:break-inside-avoid">
       {/* Section Header */}
@@ -150,7 +152,7 @@ const CallPerformanceSummarySection: React.FC<CallPerformanceSummarySectionProps
         </div>
       </div>
 
-      {/* User Call Performance Breakdown Table (With In-Cell Data Bars) */}
+      {/* User Call Performance Breakdown Table (With Dynamic In-Cell Data Bars per Substage) */}
       <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
         <div className="p-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
           <h4 className="font-bold text-gray-900 text-sm">User Call Performance Breakdown</h4>
@@ -167,7 +169,19 @@ const CallPerformanceSummarySection: React.FC<CallPerformanceSummarySectionProps
                 <th className="px-4 py-3 min-w-[130px]">Attended Calls</th>
                 <th className="px-4 py-3 min-w-[130px]">Not Attended</th>
                 <th className="px-4 py-3 text-center min-w-[110px]">Connection Rate</th>
-                <th className="px-4 py-3 min-w-[200px]">Selected Substages</th>
+                {selectedSubstagesList.map((sub) => (
+                  <th key={sub.id} className="px-4 py-3 min-w-[140px]">
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: sub.color || '#3b82f6' }} />
+                      <div>
+                        <div className="font-black text-gray-900 leading-tight">{sub.name}</div>
+                        {sub.parentStageName && (
+                          <div className="text-[9px] text-gray-400 font-normal lowercase">{sub.parentStageName}</div>
+                        )}
+                      </div>
+                    </div>
+                  </th>
+                ))}
                 <th className="px-4 py-3 text-right min-w-[110px]">Follow-ups</th>
                 <th className="px-4 py-3 text-right min-w-[110px]">Stage Moved</th>
               </tr>
@@ -175,7 +189,7 @@ const CallPerformanceSummarySection: React.FC<CallPerformanceSummarySectionProps
             <tbody className="divide-y divide-gray-100 font-semibold">
               {usersList.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="px-4 py-8 text-center text-gray-400 font-medium italic">
+                  <td colSpan={8 + selectedSubstagesList.length} className="px-4 py-8 text-center text-gray-400 font-medium italic">
                     No call activity found for the selected filters.
                   </td>
                 </tr>
@@ -243,33 +257,35 @@ const CallPerformanceSummarySection: React.FC<CallPerformanceSummarySectionProps
                         </span>
                       </td>
 
-                      {/* Selected Substages Badges */}
-                      <td className="px-4 py-3">
-                        {user.selectedSubstages && user.selectedSubstages.length > 0 ? (
-                          <div className="flex flex-wrap gap-1.5 max-w-xs">
-                            {user.selectedSubstages.slice(0, 3).map((sub: any) => (
-                              <span
-                                key={sub.substageId}
-                                className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-bold border"
+                      {/* Dynamic Substage Columns */}
+                      {selectedSubstagesList.map((sub) => {
+                        const count = user.substageCounts?.[sub.id] || 0;
+                        const maxCount = maxValues.substageCounts?.[sub.id] || 1;
+                        const barPct = Math.min(100, Math.round((count / maxCount) * 100));
+
+                        return (
+                          <td key={sub.id} className="px-4 py-3">
+                            <div
+                              className="relative flex items-center justify-between h-7 px-2.5 rounded-lg border overflow-hidden"
+                              style={{
+                                backgroundColor: `${sub.color || '#3b82f6'}10`,
+                                borderColor: `${sub.color || '#3b82f6'}30`,
+                              }}
+                            >
+                              <div
+                                className="absolute left-0 top-0 bottom-0 rounded-r-md transition-all duration-300"
                                 style={{
-                                  backgroundColor: `${sub.color}15`,
-                                  color: sub.color,
-                                  borderColor: `${sub.color}30`,
+                                  width: `${barPct}%`,
+                                  backgroundColor: `${sub.color || '#3b82f6'}35`,
                                 }}
-                              >
-                                {sub.name} <span className="opacity-75">({sub.count})</span>
+                              />
+                              <span className="relative z-10 font-bold" style={{ color: sub.color || '#1e293b' }}>
+                                {count}
                               </span>
-                            ))}
-                            {user.selectedSubstages.length > 3 && (
-                              <span className="text-[10px] font-semibold text-gray-400 self-center">
-                                +{user.selectedSubstages.length - 3} more
-                              </span>
-                            )}
-                          </div>
-                        ) : (
-                          <span className="text-gray-400 italic text-[11px]">None</span>
-                        )}
-                      </td>
+                            </div>
+                          </td>
+                        );
+                      })}
 
                       <td className="px-4 py-3 text-right font-bold text-gray-800">{user.followUpsCreated}</td>
                       <td className="px-4 py-3 text-right font-bold text-gray-800">{user.leadsMoved}</td>
