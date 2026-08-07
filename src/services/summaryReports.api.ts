@@ -112,3 +112,10 @@ export const fetchCompanySummary = async (filters: SummaryFilters) => {
   const { data } = await api.get(`/reports/summary/company-summary?${buildQuery(filters)}`);
   return data;
 };
+
+export const exportSummaryReport = async (filters: SummaryFilters) => {
+  const response = await api.post(`/reports/summary/export?${buildQuery(filters)}`, filters, {
+    responseType: 'blob',
+  });
+  return response.data;
+};

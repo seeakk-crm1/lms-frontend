@@ -8,7 +8,10 @@ import api from '../../../services/api';
 import { FileText, Download } from 'lucide-react';
 import { format } from 'date-fns';
 
+import { exportSummaryReport } from '../../../services/summaryReports.api';
+
 const SummaryReportsPage: React.FC = () => {
+  const [exporting, setExporting] = useState(false);
   const [filters, setFilters] = useState<any>({
     startDate: format(new Date(), 'yyyy-MM-dd'),
     endDate: format(new Date(), 'yyyy-MM-dd'),
@@ -27,8 +30,21 @@ const SummaryReportsPage: React.FC = () => {
     }
   });
 
-  const handlePrint = () => {
-    window.print();
+  const handleExportPdf = async () => {
+    setExporting(true);
+    try {
+      const blobData = await exportSummaryReport(filters);
+      const text = await blobData.text();
+      const win = window.open('', '_blank');
+      if (win) {
+        win.document.write(text);
+        win.document.close();
+      }
+    } catch (err) {
+      console.error('Export failed:', err);
+    } finally {
+      setExporting(false);
+    }
   };
 
   const renderContent = () => {
@@ -73,10 +89,11 @@ const SummaryReportsPage: React.FC = () => {
             
             <div className="flex items-center gap-3">
               <button 
-                onClick={handlePrint}
-                className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 font-bold text-sm shadow-sm transition-all"
+                onClick={handleExportPdf}
+                disabled={exporting}
+                className="flex items-center gap-2 px-4 py-2 bg-emerald-600 border border-emerald-600 text-white rounded-xl hover:bg-emerald-700 font-bold text-sm shadow-sm transition-all"
               >
-                <Download size={16} /> Export PDF
+                <Download size={16} /> {exporting ? 'Preparing Report...' : 'Download PDF'}
               </button>
             </div>
           </div>
