@@ -57,3 +57,59 @@ body {
         background-position: 0 0;
     }
 }
+
+/* Global Print Styles for Multi-Page PDF & Print Export */
+@media print {
+    html, body, #root, .h-screen, .h-full, main, .overflow-hidden, .overflow-y-auto, .flex-1 {
+        height: auto !important;
+        min-height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
+        position: static !important;
+    }
+
+    .print\:hidden {
+        display: none !important;
+    }
+
+    .print\:block {
+        display: block !important;
+    }
+
+    .print\:p-0 {
+        padding: 0 !important;
+    }
+
+    .print\:bg-white {
+        background-color: #ffffff !important;
+    }
+
+    .print\:shadow-none {
+        box-shadow: none !important;
+    }
+
+    .print\:border-none {
+        border: none !important;
+    }
+
+    .print\:break-inside-avoid {
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+    }
+
+    .print\:break-before-page {
+        break-before: page !important;
+        page-break-before: always !important;
+    }
+
+    /* Prevent breaking table rows across page breaks */
+    tr {
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+    }
+
+    /* Repeat table headers at top of every printed page */
+    thead {
+        display: table-header-group !important;
+    }
+}

@@ -37,7 +37,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
     }, [mobileMenuOpen, closeMobileMenu]);
 
     return (
-        <div className="h-screen w-full bg-gray-50 flex overflow-hidden font-sans text-gray-900 selection:bg-emerald-200 selection:text-emerald-900">
+        <div className="h-screen w-full bg-gray-50 flex overflow-hidden font-sans text-gray-900 selection:bg-emerald-200 selection:text-emerald-900 print:h-auto print:overflow-visible print:bg-white print:static">
             {/* Desktop Sidebar */}
             <DashboardSidebar
                 isCollapsed={isSidebarCollapsed}
@@ -74,7 +74,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
             </AnimatePresence>
 
             {/* Main Content Area */}
-            <main className="flex-1 flex flex-col h-full overflow-hidden relative">
+            <main className="flex-1 flex flex-col h-full overflow-hidden relative print:h-auto print:overflow-visible print:static">
                 <DashboardHeader isMobileMenuOpen={mobileMenuOpen} onToggleMobileMenu={toggleMobileMenu} />
                 {children}
             </main>
