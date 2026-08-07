@@ -10,6 +10,7 @@ interface CallPerformanceSummarySectionProps {
 
 const CallPerformanceSummarySection: React.FC<CallPerformanceSummarySectionProps> = ({ filters }) => {
   const [exporting, setExporting] = useState(false);
+  const [showExportMenu, setShowExportMenu] = useState(false);
 
   const userIds = filters.userId
     ? Array.isArray(filters.userId)
@@ -37,14 +38,29 @@ const CallPerformanceSummarySection: React.FC<CallPerformanceSummarySectionProps
     retry: 1,
   });
 
-  const handleExport = async (format: 'xlsx' | 'csv') => {
+  const handleExport = async (format: 'xlsx' | 'csv' | 'pdf' | 'html') => {
     setExporting(true);
+    setShowExportMenu(false);
     try {
       const blobData = await exportCallReport({ format, filters: filterParams });
-      const url = window.URL.createObjectURL(new Blob([blobData]));
+
+      if (format === 'pdf') {
+        const text = await blobData.text();
+        const win = window.open('', '_blank');
+        if (win) {
+          win.document.write(text);
+          win.document.close();
+        }
+        return;
+      }
+
+      const extension = format === 'html' ? 'html' : format;
+      const mimeType = format === 'html' ? 'text/html' : format === 'csv' ? 'text/csv' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+
+      const url = window.URL.createObjectURL(new Blob([blobData], { type: mimeType }));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `call_summary_report_${Date.now()}.${format}`);
+      link.setAttribute('download', `Seeakk_Call_Performance_${format === 'html' ? 'Interactive_' : ''}${Date.now()}.${extension}`);
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -64,9 +80,8 @@ const CallPerformanceSummarySection: React.FC<CallPerformanceSummarySectionProps
       <div className="mt-8 rounded-3xl border border-rose-200 bg-rose-50/50 p-6 text-center space-y-3">
         <p className="text-sm font-bold text-rose-800">Unable to load call summary performance right now.</p>
         <button
-          type="button"
           onClick={() => refetch()}
-          className="px-4 py-2 text-xs font-bold bg-rose-600 text-white rounded-xl shadow hover:bg-rose-700 transition"
+          className="px-4 py-2 bg-rose-600 text-white font-bold text-xs rounded-xl hover:bg-rose-700 transition"
         >
           Retry Call Report
         </button>
@@ -111,26 +126,54 @@ const CallPerformanceSummarySection: React.FC<CallPerformanceSummarySectionProps
           </div>
         </div>
 
-        {/* Action Export Buttons */}
-        <div className="flex items-center gap-2">
+        {/* Unified Export Dropdown */}
+        <div className="relative">
           <button
             type="button"
-            onClick={() => handleExport('xlsx')}
+            onClick={() => setShowExportMenu(!showExportMenu)}
             disabled={exporting}
-            className="flex items-center gap-2 rounded-xl bg-emerald-500 px-3.5 py-2 text-xs font-bold text-white shadow-sm hover:bg-emerald-600 transition"
-          >
-            <FileSpreadsheet size={14} />
-            <span>{exporting ? 'Exporting...' : 'Export Excel (.xlsx)'}</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => handleExport('csv')}
-            disabled={exporting}
-            className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3.5 py-2 text-xs font-bold text-gray-700 shadow-sm hover:bg-gray-50 transition"
+            className="flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-emerald-700 transition"
           >
             <Download size={14} />
-            <span>Export CSV</span>
+            <span>{exporting ? 'Preparing Report...' : 'Export Report'}</span>
           </button>
+
+          {showExportMenu && (
+            <div className="absolute right-0 mt-2 w-52 rounded-2xl border border-gray-100 bg-white p-1.5 shadow-xl z-50 animate-in fade-in zoom-in-95">
+              <button
+                type="button"
+                onClick={() => handleExport('pdf')}
+                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-bold text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 transition"
+              >
+                <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-rose-100 text-rose-600 font-extrabold text-[10px]">PDF</span>
+                <span>PDF Report</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleExport('html')}
+                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-bold text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 transition"
+              >
+                <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-blue-100 text-blue-600 font-extrabold text-[10px]">HTML</span>
+                <span>Interactive HTML</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleExport('xlsx')}
+                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-bold text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 transition"
+              >
+                <FileSpreadsheet size={16} className="text-emerald-600" />
+                <span>Excel (.xlsx)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleExport('csv')}
+                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-bold text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 transition"
+              >
+                <Download size={16} className="text-gray-500" />
+                <span>CSV File (.csv)</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
 

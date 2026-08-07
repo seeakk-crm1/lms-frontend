@@ -171,7 +171,7 @@ export const fetchCallDetailedReport = async (params: Record<string, any>) => {
   return res.data.data;
 };
 
-export const exportCallReport = async (payload: { format: 'xlsx' | 'csv'; filters?: Record<string, any> }) => {
+export const exportCallReport = async (payload: { format: 'xlsx' | 'csv' | 'pdf' | 'html'; filters?: Record<string, any> }) => {
   const response = await api.post('/reports/calls/export', payload, {
     responseType: 'blob',
   });
