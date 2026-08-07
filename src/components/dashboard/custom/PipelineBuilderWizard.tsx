@@ -373,6 +373,30 @@ export const PipelineBuilderWizard: React.FC<PipelineBuilderWizardProps> = ({
                         desc: 'Best for: Lead Stage Breakdown',
                         recommendedFor: ['STAGE_DISTRIBUTION'],
                       },
+                      {
+                        id: 'HORIZONTAL_BAR',
+                        label: 'Horizontal Bar Chart',
+                        desc: 'Best for: User & Branch Comparisons',
+                        recommendedFor: ['LEAD_COUNT', 'STAGE_DISTRIBUTION'],
+                      },
+                      {
+                        id: 'MINI_TABLE',
+                        label: 'Mini Table View',
+                        desc: 'Best for: Detailed Breakdown & Lists',
+                        recommendedFor: ['STAGE_DISTRIBUTION', 'TOTAL_EXPECTED_REVENUE'],
+                      },
+                      {
+                        id: 'PROGRESS_BAR',
+                        label: 'Progress Bar',
+                        desc: 'Best for: Target Tracking & Goals',
+                        recommendedFor: ['CONVERSION_RATE', 'TOTAL_CLOSED_REVENUE'],
+                      },
+                      {
+                        id: 'STATUS_CARD',
+                        label: 'Status Indicator Card',
+                        desc: 'Best for: Overdue & Priority Status',
+                        recommendedFor: ['OVERDUE_FOLLOWUP_COUNT', 'LOB_COUNT'],
+                      },
                     ].map((d) => {
                       const isRecommended = d.recommendedFor.includes(metricType);
                       return (
