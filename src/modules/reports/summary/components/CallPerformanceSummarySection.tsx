@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { PhoneCall, CheckCircle2, PhoneOff, Percent, FileSpreadsheet, Download, Layers } from 'lucide-react';
 import { fetchCallSummaryReport, exportCallReport } from '../../../../services/calls.api';
+import { getCallMetricBarWidth } from '../../../../utils/barWidthUtils';
 
 interface CallPerformanceSummarySectionProps {
   filters: any;
@@ -195,10 +196,10 @@ const CallPerformanceSummarySection: React.FC<CallPerformanceSummarySectionProps
                 </tr>
               ) : (
                 usersList.map((user: any) => {
-                  const uniquePct = Math.min(100, Math.round((user.uniqueCalls / maxValues.uniqueCalls) * 100));
-                  const totalPct = Math.min(100, Math.round((user.totalAttempts / maxValues.totalAttempts) * 100));
-                  const connPct = Math.min(100, Math.round((user.connectedCalls / maxValues.connectedCalls) * 100));
-                  const notConnPct = Math.min(100, Math.round((user.notConnectedCalls / maxValues.notConnectedCalls) * 100));
+                  const totalPct = user.totalAttempts > 0 ? 100 : 0;
+                  const uniquePct = getCallMetricBarWidth(user.uniqueCalls, user.totalAttempts);
+                  const connPct = getCallMetricBarWidth(user.connectedCalls, user.totalAttempts);
+                  const notConnPct = getCallMetricBarWidth(user.notConnectedCalls, user.totalAttempts);
 
                   return (
                     <tr key={user.userId} className="hover:bg-gray-50/80 transition-colors">
@@ -260,8 +261,7 @@ const CallPerformanceSummarySection: React.FC<CallPerformanceSummarySectionProps
                       {/* Dynamic Substage Columns */}
                       {selectedSubstagesList.map((sub) => {
                         const count = user.substageCounts?.[sub.id] || 0;
-                        const maxCount = maxValues.substageCounts?.[sub.id] || 1;
-                        const barPct = Math.min(100, Math.round((count / maxCount) * 100));
+                        const barPct = getCallMetricBarWidth(count, user.totalAttempts);
 
                         return (
                           <td key={sub.id} className="px-4 py-3">
