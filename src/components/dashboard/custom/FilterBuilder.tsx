@@ -278,6 +278,11 @@ export const FilterBuilder: React.FC<FilterBuilderProps> = ({
     }
 
     if (cond.field === 'substageId') {
+      const selectedStageCond = conditions.find((c) => c.field === 'stageId');
+      const filteredSubstages = selectedStageCond?.value
+        ? substages.filter((sub) => sub.leadStageId === selectedStageCond.value)
+        : substages;
+
       return (
         <select
           value={cond.value || ''}
@@ -285,7 +290,7 @@ export const FilterBuilder: React.FC<FilterBuilderProps> = ({
           className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-800 focus:border-emerald-500 focus:outline-none"
         >
           <option value="">-- Select Substage --</option>
-          {substages.map((sub) => (
+          {filteredSubstages.map((sub) => (
             <option key={sub.id} value={sub.id}>
               {sub.name}
             </option>

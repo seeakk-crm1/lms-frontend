@@ -16,6 +16,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import type { Pipeline } from '../../../services/customPipelines.api';
+import { PipelineWidgetRenderer } from './PipelineWidgetRenderer';
 import { formatCurrency } from '../../../utils/currency';
 
 interface CustomPipelineCardProps {
@@ -152,75 +153,12 @@ export const CustomPipelineCard: React.FC<CustomPipelineCardProps> = ({
 
       {/* Main Metric Display Body */}
       <div className="mt-4">
-        {pipeline.displayType === 'REVENUE_CARD' || pipeline.metricType.includes('REVENUE') ? (
-          <div>
-            <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-black text-gray-900">
-                {formatCurrency(metrics.totalExpectedRevenue)}
-              </span>
-              <span className="text-xs font-bold text-gray-400">Expected</span>
-            </div>
-            <div className="mt-2 flex items-center justify-between text-xs font-semibold text-gray-500 border-t border-gray-100 pt-2">
-              <span>Closed: <strong className="text-emerald-600 font-black">{formatCurrency(metrics.totalClosedRevenue)}</strong></span>
-              <span>Count: <strong className="text-gray-900 font-black">{metrics.count}</strong></span>
-            </div>
-          </div>
-        ) : pipeline.displayType === 'PERCENTAGE_CARD' || pipeline.metricType === 'CONVERSION_RATE' ? (
-          <div>
-            <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-black text-emerald-600">{metrics.secondaryMetric}%</span>
-              <span className="text-xs font-bold text-gray-400">Conversion Rate</span>
-            </div>
-            <div className="mt-2 flex items-center justify-between text-xs font-semibold text-gray-500 border-t border-gray-100 pt-2">
-              <span>Matching Leads: <strong className="text-gray-900 font-black">{metrics.count}</strong></span>
-            </div>
-          </div>
-        ) : pipeline.displayType === 'STAGE_BAR' || pipeline.metricType === 'STAGE_DISTRIBUTION' ? (
-          <div>
-            <div className="mb-2 flex items-center justify-between text-xs font-bold text-gray-700">
-              <span>Total Leads</span>
-              <span className="text-base font-black text-gray-900">{metrics.count}</span>
-            </div>
-            {metrics.stageBreakdown && metrics.stageBreakdown.length > 0 ? (
-              <div className="space-y-2">
-                <div className="flex h-2.5 w-full overflow-hidden rounded-full bg-gray-100">
-                  {metrics.stageBreakdown.map((sb, idx) => (
-                    <div
-                      key={idx}
-                      style={{
-                        width: `${metrics.count > 0 ? (sb.count / metrics.count) * 100 : 0}%`,
-                        backgroundColor: sb.color,
-                      }}
-                      title={`${sb.name}: ${sb.count}`}
-                    />
-                  ))}
-                </div>
-                <div className="flex flex-wrap gap-2 text-[10px] font-bold text-gray-500">
-                  {metrics.stageBreakdown.slice(0, 3).map((sb, idx) => (
-                    <span key={idx} className="flex items-center gap-1">
-                      <span className="h-2 w-2 rounded-full" style={{ backgroundColor: sb.color }} />
-                      {sb.name} ({sb.count})
-                    </span>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <p className="text-xs font-semibold text-gray-400">No stage distribution data</p>
-            )}
-          </div>
-        ) : (
-          <div>
-            <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-black text-gray-900">{metrics.count}</span>
-              <span className="text-xs font-bold uppercase tracking-wider text-gray-400">Matching Leads</span>
-            </div>
-            {metrics.totalExpectedRevenue > 0 && (
-              <p className="mt-1 text-xs font-bold text-emerald-600">
-                Revenue Value: {formatCurrency(metrics.totalExpectedRevenue)}
-              </p>
-            )}
-          </div>
-        )}
+        <PipelineWidgetRenderer
+          displayType={pipeline.displayType}
+          metricType={pipeline.metricType}
+          metrics={metrics}
+          name={pipeline.name}
+        />
       </div>
 
       {/* Footer info & CTA link */}
