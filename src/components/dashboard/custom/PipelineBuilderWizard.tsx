@@ -301,20 +301,24 @@ export const PipelineBuilderWizard: React.FC<PipelineBuilderWizardProps> = ({
 
             {step === 2 && (
               <div className="space-y-6">
+                {/* 1. Metric Selection with Category Badges */}
                 <div>
-                  <label className="block text-xs font-black uppercase tracking-wider text-gray-600 mb-3">
-                    1. What Do You Want To Measure? (Metric)
-                  </label>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                    <label className="block text-xs font-black uppercase tracking-wider text-gray-700">
+                      1. What Do You Want To Measure? (Metric)
+                    </label>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                     {[
-                      { id: 'LEAD_COUNT', label: 'Number Of Leads', desc: 'Total matching leads count' },
-                      { id: 'TOTAL_EXPECTED_REVENUE', label: 'Total Revenue', desc: 'Sum of expected revenue (₹)' },
-                      { id: 'TOTAL_CLOSED_REVENUE', label: 'Closed Revenue', desc: 'Sum of won revenue' },
-                      { id: 'AVERAGE_REVENUE', label: 'Average Revenue', desc: 'Average revenue per lead' },
-                      { id: 'CONVERSION_RATE', label: 'Conversion Rate %', desc: 'Won leads ratio %' },
-                      { id: 'LOB_COUNT', label: 'Loss of Business (LOB)', desc: 'Count of LOB leads' },
-                      { id: 'OVERDUE_FOLLOWUP_COUNT', label: 'Overdue Follow-Ups', desc: 'Pending overdue follow-ups' },
-                      { id: 'STAGE_DISTRIBUTION', label: 'Leads By Stage', desc: 'Lead counts by pipeline stage' },
+                      { id: 'LEAD_COUNT', label: 'Number Of Leads', category: 'Leads', desc: 'Total matching leads count' },
+                      { id: 'TOTAL_EXPECTED_REVENUE', label: 'Total Revenue', category: 'Sales & Revenue', desc: 'Sum of expected revenue (₹)' },
+                      { id: 'TOTAL_CLOSED_REVENUE', label: 'Closed Revenue', category: 'Sales & Revenue', desc: 'Sum of won revenue (₹)' },
+                      { id: 'AVERAGE_REVENUE', label: 'Average Revenue', category: 'Sales & Revenue', desc: 'Average revenue per lead' },
+                      { id: 'CONVERSION_RATE', label: 'Conversion Rate %', category: 'Sales & Revenue', desc: 'Won leads ratio %' },
+                      { id: 'LOB_COUNT', label: 'Loss of Business (LOB)', category: 'Leads', desc: 'Count of LOB leads' },
+                      { id: 'OVERDUE_FOLLOWUP_COUNT', label: 'Overdue Follow-Ups', category: 'Follow-Ups', desc: 'Pending overdue follow-ups' },
+                      { id: 'STAGE_DISTRIBUTION', label: 'Leads By Stage', category: 'Stages', desc: 'Lead counts by pipeline stage' },
                     ].map((m) => (
                       <button
                         key={m.id}
@@ -326,6 +330,11 @@ export const PipelineBuilderWizard: React.FC<PipelineBuilderWizardProps> = ({
                             : 'border-gray-200 bg-white hover:border-gray-300'
                         }`}
                       >
+                        <div className="flex items-center justify-between gap-1 mb-1">
+                          <span className="text-[9px] font-black uppercase tracking-wider text-emerald-600 bg-emerald-100/60 px-2 py-0.5 rounded-md">
+                            {m.category}
+                          </span>
+                        </div>
                         <p className="text-xs font-black text-gray-900">{m.label}</p>
                         <p className="mt-1 text-[11px] font-semibold text-gray-500">{m.desc}</p>
                       </button>
@@ -333,31 +342,64 @@ export const PipelineBuilderWizard: React.FC<PipelineBuilderWizardProps> = ({
                   </div>
                 </div>
 
+                {/* 2. Visual Display Card Selector with Smart Recommendations */}
                 <div>
-                  <label className="block text-xs font-black uppercase tracking-wider text-gray-600 mb-3">
+                  <label className="block text-xs font-black uppercase tracking-wider text-gray-700 mb-3">
                     2. How Do You Want To See It? (Display Card Style)
                   </label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                     {[
-                      { id: 'COMPACT_CARD', label: 'Number Card', desc: 'Best for: Total Leads, Follow-Ups' },
-                      { id: 'REVENUE_CARD', label: 'Revenue Metric Card', desc: 'Best for: Expected & Closed Revenue' },
-                      { id: 'PERCENTAGE_CARD', label: 'Percentage Card', desc: 'Best for: Conversion Rate %' },
-                      { id: 'STAGE_BAR', label: 'Stage Distribution Bar', desc: 'Best for: Lead Stage Breakdown' },
-                    ].map((d) => (
-                      <button
-                        key={d.id}
-                        type="button"
-                        onClick={() => setDisplayType(d.id)}
-                        className={`p-3.5 text-left rounded-2xl border transition-all ${
-                          displayType === d.id
-                            ? 'border-emerald-500 bg-emerald-500 text-white shadow-sm'
-                            : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
-                        }`}
-                      >
-                        <p className="text-xs font-black">{d.label}</p>
-                        <p className={`mt-0.5 text-[10px] ${displayType === d.id ? 'text-emerald-100' : 'text-gray-400'}`}>{d.desc}</p>
-                      </button>
-                    ))}
+                      {
+                        id: 'COMPACT_CARD',
+                        label: 'Number Card',
+                        desc: 'Best for: Total Leads, Follow-Ups',
+                        recommendedFor: ['LEAD_COUNT', 'LOB_COUNT', 'OVERDUE_FOLLOWUP_COUNT'],
+                      },
+                      {
+                        id: 'REVENUE_CARD',
+                        label: 'Revenue Metric Card',
+                        desc: 'Best for: Expected & Closed Revenue',
+                        recommendedFor: ['TOTAL_EXPECTED_REVENUE', 'TOTAL_CLOSED_REVENUE', 'AVERAGE_REVENUE'],
+                      },
+                      {
+                        id: 'PERCENTAGE_CARD',
+                        label: 'Percentage Card',
+                        desc: 'Best for: Conversion Rate %',
+                        recommendedFor: ['CONVERSION_RATE'],
+                      },
+                      {
+                        id: 'STAGE_BAR',
+                        label: 'Stage Distribution Bar',
+                        desc: 'Best for: Lead Stage Breakdown',
+                        recommendedFor: ['STAGE_DISTRIBUTION'],
+                      },
+                    ].map((d) => {
+                      const isRecommended = d.recommendedFor.includes(metricType);
+                      return (
+                        <button
+                          key={d.id}
+                          type="button"
+                          onClick={() => setDisplayType(d.id)}
+                          className={`p-3.5 text-left rounded-2xl border transition-all relative ${
+                            displayType === d.id
+                              ? 'border-emerald-500 bg-emerald-500 text-white shadow-md'
+                              : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+                          }`}
+                        >
+                          {isRecommended && (
+                            <span className={`absolute top-2.5 right-2.5 text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                              displayType === d.id ? 'bg-white/20 text-white' : 'bg-emerald-100 text-emerald-800'
+                            }`}>
+                              ⭐ Recommended
+                            </span>
+                          )}
+                          <p className="text-xs font-black">{d.label}</p>
+                          <p className={`mt-1 text-[10px] font-semibold ${displayType === d.id ? 'text-emerald-100' : 'text-gray-400'}`}>
+                            {d.desc}
+                          </p>
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
