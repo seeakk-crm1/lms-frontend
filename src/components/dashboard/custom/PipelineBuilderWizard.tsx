@@ -252,13 +252,13 @@ export const PipelineBuilderWizard: React.FC<PipelineBuilderWizardProps> = ({
             {step === 1 && (
               <div className="space-y-5">
                 <div>
-                  <label className="block text-xs font-black uppercase tracking-wider text-gray-600 mb-2">
-                    Dashboard Section <span className="text-red-500">*</span>
+                  <label className="block text-xs font-black uppercase tracking-wider text-gray-600">
+                    Target Section Heading <span className="text-red-500">*</span>
                   </label>
                   <select
                     value={sectionId}
                     onChange={(e) => setSectionId(e.target.value)}
-                    className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-semibold text-gray-800 focus:bg-white focus:border-emerald-500 focus:outline-none transition-all"
+                    className="mt-1.5 w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-semibold text-gray-800 focus:bg-white focus:border-emerald-500 focus:outline-none transition-all"
                   >
                     {sections.map((sec) => (
                       <option key={sec.id} value={sec.id}>
@@ -270,18 +270,15 @@ export const PipelineBuilderWizard: React.FC<PipelineBuilderWizardProps> = ({
 
                 <div>
                   <label className="block text-xs font-black uppercase tracking-wider text-gray-600">
-                    Widget / Pipeline Name <span className="text-red-500">*</span>
+                    Pipeline Title <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="e.g. Qualified Leads This Month"
+                    placeholder="e.g. PQL Follow-Ups Due Today"
                     className="mt-1.5 w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-semibold text-gray-800 focus:bg-white focus:border-emerald-500 focus:outline-none transition-all"
                   />
-                  <p className="mt-1 text-[11px] font-semibold text-gray-400">
-                    Give this dashboard item a simple name so you can identify it later.
-                  </p>
                 </div>
 
                 <div>
@@ -303,13 +300,13 @@ export const PipelineBuilderWizard: React.FC<PipelineBuilderWizardProps> = ({
               <div className="space-y-6">
                 <div>
                   <label className="block text-xs font-black uppercase tracking-wider text-gray-600 mb-3">
-                    What Should This Widget Show? (Metric)
+                    Select Metric Type
                   </label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     {[
-                      { id: 'LEAD_COUNT', label: 'Total Leads', desc: 'Total count of matching leads' },
-                      { id: 'TOTAL_EXPECTED_REVENUE', label: 'Expected Revenue Total', desc: 'Sum of expected revenue (₹)' },
-                      { id: 'TOTAL_CLOSED_REVENUE', label: 'Closed Revenue Total', desc: 'Sum of won revenue' },
+                      { id: 'LEAD_COUNT', label: 'Lead Count', desc: 'Total matching leads count' },
+                      { id: 'TOTAL_EXPECTED_REVENUE', label: 'Total Expected Revenue', desc: 'Sum of expected revenue (₹)' },
+                      { id: 'TOTAL_CLOSED_REVENUE', label: 'Total Closed Revenue', desc: 'Sum of won revenue' },
                       { id: 'AVERAGE_REVENUE', label: 'Average Revenue', desc: 'Average revenue per lead' },
                       { id: 'CONVERSION_RATE', label: 'Conversion Rate %', desc: 'Won leads ratio %' },
                       { id: 'LOB_COUNT', label: 'Loss of Business (LOB)', desc: 'Count of LOB leads' },
@@ -339,23 +336,22 @@ export const PipelineBuilderWizard: React.FC<PipelineBuilderWizardProps> = ({
                   </label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                     {[
-                      { id: 'COMPACT_CARD', label: 'Number Card', desc: 'Clean count & value card' },
-                      { id: 'REVENUE_CARD', label: 'Revenue Metric Card', desc: 'Prominent currency display' },
-                      { id: 'PERCENTAGE_CARD', label: 'Percentage Card', desc: 'Ratio & rate display' },
-                      { id: 'STAGE_BAR', label: 'Stage Distribution Bar', desc: 'Visual stage breakdown' },
+                      { id: 'COMPACT_CARD', label: 'Compact Metric Card' },
+                      { id: 'REVENUE_CARD', label: 'Revenue Metric Card' },
+                      { id: 'PERCENTAGE_CARD', label: 'Percentage Card' },
+                      { id: 'STAGE_BAR', label: 'Stage Distribution Bar' },
                     ].map((d) => (
                       <button
                         key={d.id}
                         type="button"
                         onClick={() => setDisplayType(d.id)}
-                        className={`p-3.5 text-left rounded-2xl border transition-all ${
+                        className={`p-3 text-center rounded-2xl border text-xs font-black transition-all ${
                           displayType === d.id
                             ? 'border-emerald-500 bg-emerald-500 text-white shadow-sm'
                             : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
                         }`}
                       >
-                        <p className="text-xs font-black">{d.label}</p>
-                        <p className={`mt-0.5 text-[10px] ${displayType === d.id ? 'text-emerald-100' : 'text-gray-400'}`}>{d.desc}</p>
+                        {d.label}
                       </button>
                     ))}
                   </div>
