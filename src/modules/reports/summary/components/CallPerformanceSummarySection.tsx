@@ -11,16 +11,28 @@ interface CallPerformanceSummarySectionProps {
 const CallPerformanceSummarySection: React.FC<CallPerformanceSummarySectionProps> = ({ filters }) => {
   const [exporting, setExporting] = useState(false);
 
+  const userIds = filters.userId
+    ? Array.isArray(filters.userId)
+      ? filters.userId
+      : [filters.userId]
+    : undefined;
+
+  const filterParams = {
+    startDate: filters.startDate,
+    endDate: filters.endDate,
+    userIds,
+    substageIds: filters.substageIds,
+    supervisorId: filters.supervisorId,
+    officeId: filters.officeId,
+    departmentId: filters.departmentId,
+    leadSource: filters.leadSource,
+    leadStage: filters.leadStage,
+    role: filters.role,
+  };
+
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ['call-performance-summary', filters],
-    queryFn: () =>
-      fetchCallSummaryReport({
-        startDate: filters.startDate,
-        endDate: filters.endDate,
-        userIds: filters.userId ? (Array.isArray(filters.userId) ? filters.userId : [filters.userId]) : undefined,
-        officeId: filters.officeId,
-        departmentId: filters.departmentId,
-      }),
+    queryKey: ['call-performance-summary', filterParams],
+    queryFn: () => fetchCallSummaryReport(filterParams),
     staleTime: 60000,
     retry: 1,
   });
@@ -28,13 +40,6 @@ const CallPerformanceSummarySection: React.FC<CallPerformanceSummarySectionProps
   const handleExport = async (format: 'xlsx' | 'csv') => {
     setExporting(true);
     try {
-      const filterParams = {
-        startDate: filters.startDate,
-        endDate: filters.endDate,
-        userIds: filters.userId ? (Array.isArray(filters.userId) ? filters.userId : [filters.userId]) : undefined,
-        officeId: filters.officeId,
-        departmentId: filters.departmentId,
-      };
       const blobData = await exportCallReport({ format, filters: filterParams });
       const url = window.URL.createObjectURL(new Blob([blobData]));
       const link = document.createElement('a');

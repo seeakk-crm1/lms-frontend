@@ -60,8 +60,13 @@ export const CallPerformanceReportPage: React.FC = () => {
         startDate: apiFilters.startDate,
         endDate: apiFilters.endDate,
         userIds,
+        substageIds: apiFilters.substageIds,
+        supervisorId: apiFilters.supervisorId,
         officeId: apiFilters.officeId,
         departmentId: apiFilters.departmentId,
+        leadSource: apiFilters.leadSource,
+        leadStage: apiFilters.leadStage,
+        role: apiFilters.role,
         connectionStatus: connectionFilter !== 'ALL' ? connectionFilter : undefined,
       };
 
@@ -98,8 +103,13 @@ export const CallPerformanceReportPage: React.FC = () => {
         startDate: apiFilters.startDate,
         endDate: apiFilters.endDate,
         userIds,
+        substageIds: apiFilters.substageIds,
+        supervisorId: apiFilters.supervisorId,
         officeId: apiFilters.officeId,
         departmentId: apiFilters.departmentId,
+        leadSource: apiFilters.leadSource,
+        leadStage: apiFilters.leadStage,
+        role: apiFilters.role,
         connectionStatus: connectionFilter !== 'ALL' ? connectionFilter : undefined,
       };
       const blobData = await exportCallReport({ format, filters: filterParams });
