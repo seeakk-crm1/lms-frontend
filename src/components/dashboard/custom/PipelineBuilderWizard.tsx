@@ -113,24 +113,43 @@ export const PipelineBuilderWizard: React.FC<PipelineBuilderWizardProps> = ({
     }
   }, [sections, sectionId]);
 
-  // Live preview fetch on Step 4 or when filters change
+  // Live preview fetch with 300ms debounce on Step 4 or when filters change
   useEffect(() => {
-    if (isOpen && step === 4) {
+    if (!isOpen || step !== 4) return;
+
+    console.log('[Dashboard Customization] Filter Changed', {
+      metricType,
+      filterLogic,
+      filtersCount: filtersJson.length,
+      filtersJson,
+    });
+
+    const timer = setTimeout(() => {
       fetchPreview();
-    }
+    }, 300);
+
+    return () => clearTimeout(timer);
   }, [step, isOpen, filtersJson, filterLogic, metricType]);
 
   const fetchPreview = async () => {
     try {
       setIsPreviewLoading(true);
+      console.log('[Dashboard Customization] Preview Request Started', {
+        metricType,
+        filterLogic,
+        filtersJson,
+      });
+
       const data = await previewPipeline({
         filtersJson,
         filterLogic,
         metricType,
       });
+
+      console.log('[Dashboard Customization] Preview Response Received', data);
       setPreviewData(data);
     } catch (err) {
-      console.error('Failed to load live preview', err);
+      console.error('[Dashboard Customization] Failed to load live preview', err);
     } finally {
       setIsPreviewLoading(false);
     }
