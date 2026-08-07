@@ -411,8 +411,91 @@ export const FilterBuilder: React.FC<FilterBuilderProps> = ({
     );
   };
 
+  const activeDateCond = conditions.find((c) =>
+    ['createdAt', 'updatedAt', 'nextFollowUpAt', 'closedAt', 'stageEnteredAt'].includes(c.field),
+  );
+
+  const applyQuickDatePreset = (preset: string) => {
+    let targetOp = 'THIS_MONTH';
+    let targetVal: any = '';
+
+    if (preset === 'TODAY') targetOp = 'TODAY';
+    if (preset === 'THIS_WEEK') targetOp = 'THIS_WEEK';
+    if (preset === 'THIS_MONTH') targetOp = 'THIS_MONTH';
+    if (preset === 'LAST_30_DAYS') {
+      targetOp = 'LAST_N_DAYS';
+      targetVal = 30;
+    }
+    if (preset === 'THIS_QUARTER') targetOp = 'THIS_QUARTER';
+    if (preset === 'THIS_YEAR') targetOp = 'THIS_YEAR';
+    if (preset === 'CUSTOM') targetOp = 'IN_RANGE';
+
+    const targetField = activeDateCond ? activeDateCond.field : 'createdAt';
+    const dateIdx = conditions.findIndex((c) => c.field === targetField);
+
+    let updated: FilterConditionInput[];
+    if (dateIdx >= 0) {
+      updated = conditions.map((c, i) =>
+        i === dateIdx ? { ...c, operator: targetOp, value: targetVal } : c,
+      );
+    } else {
+      updated = [...conditions, { field: 'createdAt', operator: targetOp, value: targetVal }];
+    }
+
+    onChange(updated, filterLogic);
+  };
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      {/* 1. Quick Date Filter & Presets Card */}
+      <div className="rounded-2xl border border-emerald-200/80 bg-gradient-to-br from-white to-emerald-50/30 p-4 shadow-sm">
+        <div className="flex items-center justify-between gap-2 border-b border-gray-100 pb-3">
+          <div className="flex items-center gap-2">
+            <Calendar className="h-4 w-4 text-emerald-600" />
+            <h4 className="text-xs font-black uppercase tracking-wider text-gray-800">
+              Quick Business Date Filter & Range Presets
+            </h4>
+          </div>
+          <span className="text-[10px] font-bold text-gray-400">One-click date filtering</span>
+        </div>
+
+        <div className="mt-3 flex flex-wrap gap-2">
+          {[
+            { id: 'TODAY', label: 'Today' },
+            { id: 'THIS_WEEK', label: 'This Week' },
+            { id: 'THIS_MONTH', label: 'This Month' },
+            { id: 'LAST_30_DAYS', label: 'Last 30 Days' },
+            { id: 'THIS_QUARTER', label: 'This Quarter' },
+            { id: 'THIS_YEAR', label: 'This Year' },
+            { id: 'CUSTOM', label: 'Custom Range 📅' },
+          ].map((preset) => {
+            const isActive =
+              (preset.id === 'TODAY' && activeDateCond?.operator === 'TODAY') ||
+              (preset.id === 'THIS_WEEK' && activeDateCond?.operator === 'THIS_WEEK') ||
+              (preset.id === 'THIS_MONTH' && activeDateCond?.operator === 'THIS_MONTH') ||
+              (preset.id === 'LAST_30_DAYS' && activeDateCond?.operator === 'LAST_N_DAYS') ||
+              (preset.id === 'THIS_QUARTER' && activeDateCond?.operator === 'THIS_QUARTER') ||
+              (preset.id === 'THIS_YEAR' && activeDateCond?.operator === 'THIS_YEAR') ||
+              (preset.id === 'CUSTOM' && activeDateCond?.operator === 'IN_RANGE');
+
+            return (
+              <button
+                key={preset.id}
+                type="button"
+                onClick={() => applyQuickDatePreset(preset.id)}
+                className={`rounded-xl px-3 py-1.5 text-xs font-bold transition-all ${
+                  isActive
+                    ? 'bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-500/20'
+                    : 'bg-white text-gray-700 border border-gray-200 hover:border-emerald-500/40 hover:bg-emerald-50/50'
+                }`}
+              >
+                {preset.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       <div className="flex items-center justify-between gap-4 rounded-2xl border border-emerald-100 bg-emerald-50/40 p-4">
         <div>
           <h4 className="text-xs font-black uppercase tracking-wider text-emerald-900 flex items-center gap-2">
