@@ -600,9 +600,9 @@ const Dashboard: React.FC<DashboardProps> = ({ mode = 'operations' }) => {
                             sections={customSections}
                             initialSectionId={activeSectionIdForBuilder}
                             editPipeline={editingPipeline}
-                            stages={filterMeta.stages.map((s) => ({ id: s.value, name: s.label }))}
-                            sources={filterMeta.sources.map((s) => ({ id: s.value, name: s.label }))}
-                            users={userOptions.map((u) => ({ id: u.value, name: u.label }))}
+                            stages={useMemo(() => filterMeta.stages.map((s) => ({ id: s.value, name: s.label })), [filterMeta.stages])}
+                            sources={useMemo(() => filterMeta.sources.map((s) => ({ id: s.value, name: s.label })), [filterMeta.sources])}
+                            users={useMemo(() => userOptions.map((u) => ({ id: u.value, name: u.label })), [userOptions])}
                         />
 
                         <SectionManagerModal

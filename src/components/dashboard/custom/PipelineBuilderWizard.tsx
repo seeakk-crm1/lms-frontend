@@ -64,131 +64,181 @@ export const PipelineBuilderWizard: React.FC<PipelineBuilderWizardProps> = ({
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isPreviewLoading, setIsPreviewLoading] = useState(false);
+  const [showDiscardModal, setShowDiscardModal] = useState(false);
   const [previewData, setPreviewData] = useState<{
     metrics?: any;
     sampleLeads?: any[];
     appliedFiltersCount?: number;
   }>({});
 
-  // Form State
-  const [sectionId, setSectionId] = useState(initialSectionId || sections[0]?.id || '');
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [metricType, setMetricType] = useState<string>('LEAD_COUNT');
-  const [displayType, setDisplayType] = useState<string>('COMPACT_CARD');
-  const [filtersJson, setFiltersJson] = useState<FilterConditionInput[]>([]);
-  const [segmentsJson, setSegmentsJson] = useState<
-    Array<{
+  // Single Authoritative Form Draft State
+  const [draft, setDraft] = useState<{
+    sectionId: string;
+    name: string;
+    description: string;
+    metricType: string;
+    displayType: string;
+    filtersJson: FilterConditionInput[];
+    segmentsJson: Array<{
       id?: string;
       label: string;
       metricType?: string;
       filtersJson: FilterConditionInput[];
       filterLogic?: 'AND' | 'OR';
       color?: string;
-    }>
-  >([]);
-  const [filterLogic, setFilterLogic] = useState<'AND' | 'OR'>('AND');
-  const [visibilityType, setVisibilityType] = useState<string>('PRIVATE');
-  const [clickAction, setClickAction] = useState<string>('OPEN_LEADS');
+    }>;
+    filterLogic: 'AND' | 'OR';
+    visibilityType: string;
+    clickAction: string;
+  }>({
+    sectionId: initialSectionId || (sections && sections.length > 0 ? sections[0].id : ''),
+    name: '',
+    description: '',
+    metricType: 'LEAD_COUNT',
+    displayType: 'COMPACT_CARD',
+    filtersJson: [],
+    segmentsJson: [],
+    filterLogic: 'AND',
+    visibilityType: 'PRIVATE',
+    clickAction: 'OPEN_LEADS',
+  });
 
+  const wasOpenRef = React.useRef(false);
+  const initialDraftRef = React.useRef<typeof draft | null>(null);
+  const DRAFT_STORAGE_KEY = 'seeakk.customPipelineDraft';
+
+  // Strict Form Initialization Rule: ONLY run when isOpen transitions from false -> true or editPipeline.id changes
   useEffect(() => {
-    if (editPipeline) {
-      setSectionId(editPipeline.sectionId);
-      setName(editPipeline.name);
-      setDescription(editPipeline.description || '');
-      setMetricType(editPipeline.metricType);
-      setDisplayType(editPipeline.displayType);
-      setFiltersJson(editPipeline.filtersJson || []);
-      setSegmentsJson(editPipeline.segmentsJson || []);
-      setFilterLogic(editPipeline.filterLogic || 'AND');
-      setVisibilityType(editPipeline.visibilityType);
-      setClickAction(editPipeline.clickAction || 'OPEN_LEADS');
-    } else {
-      const defaultSec = initialSectionId || (sections && sections.length > 0 ? sections[0].id : '');
-      setSectionId(defaultSec);
-      setName('');
-      setDescription('');
-      setMetricType('LEAD_COUNT');
-      setDisplayType('COMPACT_CARD');
-      setFiltersJson([]);
-      setSegmentsJson([]);
-      setFilterLogic('AND');
-      setVisibilityType('PRIVATE');
-      setClickAction('OPEN_LEADS');
+    if (isOpen && !wasOpenRef.current) {
+      wasOpenRef.current = true;
+      setStep(1);
+
+      if (editPipeline) {
+        const editDraft = {
+          sectionId: editPipeline.sectionId,
+          name: editPipeline.name,
+          description: editPipeline.description || '',
+          metricType: editPipeline.metricType || 'LEAD_COUNT',
+          displayType: editPipeline.displayType || 'COMPACT_CARD',
+          filtersJson: editPipeline.filtersJson || [],
+          segmentsJson: editPipeline.segmentsJson || [],
+          filterLogic: (editPipeline.filterLogic as 'AND' | 'OR') || 'AND',
+          visibilityType: editPipeline.visibilityType || 'PRIVATE',
+          clickAction: editPipeline.clickAction || 'OPEN_LEADS',
+        };
+        setDraft(editDraft);
+        initialDraftRef.current = editDraft;
+      } else {
+        const defaultSec = initialSectionId || (sections && sections.length > 0 ? sections[0].id : '');
+        let restoredDraft: typeof draft | null = null;
+        try {
+          const raw = sessionStorage.getItem(DRAFT_STORAGE_KEY);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed && typeof parsed === 'object' && parsed.draft) {
+              restoredDraft = parsed.draft;
+            }
+          }
+        } catch (e) {
+          // ignore
+        }
+
+        const freshDraft = restoredDraft || {
+          sectionId: defaultSec,
+          name: '',
+          description: '',
+          metricType: 'LEAD_COUNT',
+          displayType: 'COMPACT_CARD',
+          filtersJson: [],
+          segmentsJson: [],
+          filterLogic: 'AND' as const,
+          visibilityType: 'PRIVATE',
+          clickAction: 'OPEN_LEADS',
+        };
+
+        setDraft(freshDraft);
+        initialDraftRef.current = restoredDraft ? { ...freshDraft, name: '' } : freshDraft;
+
+        if (restoredDraft) {
+          toast('Restored unsaved custom pipeline draft', { icon: '📝', id: 'restored-pipeline-draft' });
+        }
+      }
+    } else if (!isOpen && wasOpenRef.current) {
+      wasOpenRef.current = false;
     }
-    setStep(1);
-  }, [editPipeline, initialSectionId, sections, isOpen]);
+  }, [isOpen, editPipeline?.id]);
+
+  // Auto-save draft to sessionStorage while editing a new pipeline
+  useEffect(() => {
+    if (isOpen && !editPipeline) {
+      const isDirty = Boolean(
+        initialDraftRef.current && JSON.stringify(draft) !== JSON.stringify(initialDraftRef.current)
+      );
+      if (isDirty) {
+        try {
+          sessionStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify({ draft, updatedAt: Date.now() }));
+        } catch (e) {
+          // ignore
+        }
+      }
+    }
+  }, [draft, isOpen, editPipeline]);
 
   // When switching to PIE_CHART, automatically initialize 2 default segments if empty
   useEffect(() => {
-    if (displayType === 'PIE_CHART' && segmentsJson.length === 0) {
+    if (draft.displayType === 'PIE_CHART' && (!draft.segmentsJson || draft.segmentsJson.length === 0)) {
       const defaultStage1 = stages[0]?.id || '';
       const defaultStage2 = stages[1]?.id || defaultStage1;
-      setSegmentsJson([
-        {
-          label: 'New Leads',
-          metricType: 'LEAD_COUNT',
-          filtersJson: defaultStage1 ? [{ field: 'stageId', operator: 'EQUALS', value: defaultStage1 }] : [],
-          filterLogic: 'AND',
-          color: '#10B981',
-        },
-        {
-          label: 'Qualified Leads',
-          metricType: 'LEAD_COUNT',
-          filtersJson: defaultStage2 ? [{ field: 'stageId', operator: 'EQUALS', value: defaultStage2 }] : [],
-          filterLogic: 'AND',
-          color: '#3B82F6',
-        },
-      ]);
+      setDraft((prev) => ({
+        ...prev,
+        segmentsJson: [
+          {
+            label: 'New Leads',
+            metricType: 'LEAD_COUNT',
+            filtersJson: defaultStage1 ? [{ field: 'stageId', operator: 'EQUALS', value: defaultStage1 }] : [],
+            filterLogic: 'AND',
+            color: '#10B981',
+          },
+          {
+            label: 'Qualified Leads',
+            metricType: 'LEAD_COUNT',
+            filtersJson: defaultStage2 ? [{ field: 'stageId', operator: 'EQUALS', value: defaultStage2 }] : [],
+            filterLogic: 'AND',
+            color: '#3B82F6',
+          },
+        ],
+      }));
     }
-  }, [displayType, segmentsJson.length, stages]);
+  }, [draft.displayType, draft.segmentsJson?.length]);
 
-  // Ensure sectionId is set when sections load asynchronously
+  // Ensure sectionId is set when sections load asynchronously if empty
   useEffect(() => {
-    if (!sectionId && sections && sections.length > 0) {
-      setSectionId(sections[0].id);
+    if (!draft.sectionId && sections && sections.length > 0) {
+      setDraft((prev) => ({ ...prev, sectionId: sections[0].id }));
     }
-  }, [sections, sectionId]);
+  }, [sections?.length, draft.sectionId]);
 
   // Live preview fetch with 300ms debounce on Step 4 or when filters change
   useEffect(() => {
     if (!isOpen || step !== 4) return;
-
-    console.log('[Dashboard Customization] Filter Changed', {
-      metricType,
-      displayType,
-      filterLogic,
-      filtersCount: filtersJson.length,
-      segmentsCount: segmentsJson.length,
-    });
 
     const timer = setTimeout(() => {
       fetchPreview();
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [step, isOpen, filtersJson, segmentsJson, filterLogic, metricType, displayType]);
+  }, [step, isOpen, draft.filtersJson, draft.segmentsJson, draft.filterLogic, draft.metricType, draft.displayType]);
 
   const fetchPreview = async () => {
     try {
       setIsPreviewLoading(true);
-      console.log('[Dashboard Customization] Preview Request Started', {
-        metricType,
-        displayType,
-        filterLogic,
-        filtersJson,
-        segmentsJson,
-      });
-
       const data = await previewPipeline({
-        filtersJson,
-        segmentsJson: displayType === 'PIE_CHART' ? segmentsJson : undefined,
-        displayType,
-        filterLogic,
-        metricType,
+        filtersJson: draft.filtersJson,
+        segmentsJson: draft.displayType === 'PIE_CHART' ? draft.segmentsJson : undefined,
+        displayType: draft.displayType,
+        filterLogic: draft.filterLogic,
+        metricType: draft.metricType,
       });
-
-      console.log('[Dashboard Customization] Preview Response Received', data);
       setPreviewData(data);
     } catch (err) {
       console.error('[Dashboard Customization] Failed to load live preview', err);
@@ -197,13 +247,34 @@ export const PipelineBuilderWizard: React.FC<PipelineBuilderWizardProps> = ({
     }
   };
 
+  const handleRequestClose = () => {
+    const isDirty = Boolean(
+      initialDraftRef.current && JSON.stringify(draft) !== JSON.stringify(initialDraftRef.current)
+    );
+    if (isDirty) {
+      setShowDiscardModal(true);
+    } else {
+      forceClose();
+    }
+  };
+
+  const forceClose = () => {
+    try {
+      sessionStorage.removeItem(DRAFT_STORAGE_KEY);
+    } catch (e) {
+      // ignore
+    }
+    setShowDiscardModal(false);
+    onClose();
+  };
+
   const handleSubmit = async () => {
-    if (displayType === 'PIE_CHART') {
-      if (segmentsJson.length < 2) {
+    if (draft.displayType === 'PIE_CHART') {
+      if (!draft.segmentsJson || draft.segmentsJson.length < 2) {
         toast.error('Add at least 2 data segments to create a Pie / Donut Chart.');
         return;
       }
-      const invalidLabel = segmentsJson.some((s) => !s.label.trim());
+      const invalidLabel = draft.segmentsJson.some((s) => !s.label.trim());
       if (invalidLabel) {
         toast.error('Please enter a label for every data segment.');
         return;
@@ -214,32 +285,37 @@ export const PipelineBuilderWizard: React.FC<PipelineBuilderWizardProps> = ({
       setIsSubmitting(true);
       if (editPipeline) {
         await updatePipeline(editPipeline.id, {
-          sectionId,
-          name: name.trim(),
-          description: description.trim() || undefined,
-          metricType,
-          displayType,
-          filtersJson,
-          segmentsJson: displayType === 'PIE_CHART' ? segmentsJson : undefined,
-          filterLogic,
-          visibilityType,
-          clickAction,
+          sectionId: draft.sectionId,
+          name: draft.name.trim(),
+          description: draft.description.trim() || undefined,
+          metricType: draft.metricType,
+          displayType: draft.displayType,
+          filtersJson: draft.filtersJson,
+          segmentsJson: draft.displayType === 'PIE_CHART' ? draft.segmentsJson : undefined,
+          filterLogic: draft.filterLogic,
+          visibilityType: draft.visibilityType,
+          clickAction: draft.clickAction,
         });
         toast.success('Pipeline updated successfully!');
       } else {
         await createPipeline({
-          sectionId,
-          name: name.trim(),
-          description: description.trim() || undefined,
-          metricType,
-          displayType,
-          filtersJson,
-          segmentsJson: displayType === 'PIE_CHART' ? segmentsJson : undefined,
-          filterLogic,
-          visibilityType,
-          clickAction,
+          sectionId: draft.sectionId,
+          name: draft.name.trim(),
+          description: draft.description.trim() || undefined,
+          metricType: draft.metricType,
+          displayType: draft.displayType,
+          filtersJson: draft.filtersJson,
+          segmentsJson: draft.displayType === 'PIE_CHART' ? draft.segmentsJson : undefined,
+          filterLogic: draft.filterLogic,
+          visibilityType: draft.visibilityType,
+          clickAction: draft.clickAction,
         });
         toast.success('Pipeline created successfully!');
+      }
+      try {
+        sessionStorage.removeItem(DRAFT_STORAGE_KEY);
+      } catch (e) {
+        // ignore
       }
       onSuccess();
       onClose();
@@ -286,7 +362,7 @@ export const PipelineBuilderWizard: React.FC<PipelineBuilderWizardProps> = ({
             </div>
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleRequestClose}
               className="rounded-xl border border-gray-200 p-2 text-gray-400 hover:bg-gray-50 hover:text-gray-700 transition-all"
             >
               <X className="h-5 w-5" />
@@ -339,8 +415,8 @@ export const PipelineBuilderWizard: React.FC<PipelineBuilderWizardProps> = ({
                     Dashboard Section <span className="text-red-500">*</span>
                   </label>
                   <select
-                    value={sectionId || (sections && sections.length > 0 ? sections[0].id : '')}
-                    onChange={(e) => setSectionId(e.target.value)}
+                    value={draft.sectionId || (sections && sections.length > 0 ? sections[0].id : '')}
+                    onChange={(e) => setDraft((prev) => ({ ...prev, sectionId: e.target.value }))}
                     className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-semibold text-gray-800 focus:bg-white focus:border-emerald-500 focus:outline-none transition-all"
                   >
                     {sections.length === 0 ? (
@@ -361,8 +437,8 @@ export const PipelineBuilderWizard: React.FC<PipelineBuilderWizardProps> = ({
                   </label>
                   <input
                     type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    value={draft.name ?? ''}
+                    onChange={(e) => setDraft((prev) => ({ ...prev, name: e.target.value }))}
                     placeholder="e.g. Qualified Leads This Month"
                     className="mt-1.5 w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-semibold text-gray-800 focus:bg-white focus:border-emerald-500 focus:outline-none transition-all"
                   />
@@ -377,8 +453,8 @@ export const PipelineBuilderWizard: React.FC<PipelineBuilderWizardProps> = ({
                   </label>
                   <textarea
                     rows={3}
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
+                    value={draft.description ?? ''}
+                    onChange={(e) => setDraft((prev) => ({ ...prev, description: e.target.value }))}
                     placeholder="Provide context or explanation for this pipeline view..."
                     className="mt-1.5 w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-semibold text-gray-800 focus:bg-white focus:border-emerald-500 focus:outline-none transition-all"
                   />
@@ -410,9 +486,9 @@ export const PipelineBuilderWizard: React.FC<PipelineBuilderWizardProps> = ({
                       <button
                         key={m.id}
                         type="button"
-                        onClick={() => setMetricType(m.id)}
+                        onClick={() => setDraft((prev) => ({ ...prev, metricType: m.id }))}
                         className={`p-4 text-left rounded-2xl border transition-all ${
-                          metricType === m.id
+                          draft.metricType === m.id
                             ? 'border-emerald-500 bg-emerald-50/50 shadow-md ring-2 ring-emerald-500/20'
                             : 'border-gray-200 bg-white hover:border-gray-300'
                         }`}
@@ -491,27 +567,27 @@ export const PipelineBuilderWizard: React.FC<PipelineBuilderWizardProps> = ({
                         recommendedFor: ['STAGE_DISTRIBUTION', 'LEAD_COUNT'],
                       },
                     ].map((d) => {
-                      const isRecommended = d.recommendedFor.includes(metricType);
+                      const isRecommended = d.recommendedFor.includes(draft.metricType);
                       return (
                         <button
                           key={d.id}
                           type="button"
-                          onClick={() => setDisplayType(d.id)}
+                          onClick={() => setDraft((prev) => ({ ...prev, displayType: d.id }))}
                           className={`p-3.5 text-left rounded-2xl border transition-all relative ${
-                            displayType === d.id
+                            draft.displayType === d.id
                               ? 'border-emerald-500 bg-emerald-500 text-white shadow-md'
                               : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
                           }`}
                         >
                           {isRecommended && (
                             <span className={`absolute top-2.5 right-2.5 text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${
-                              displayType === d.id ? 'bg-white/20 text-white' : 'bg-emerald-100 text-emerald-800'
+                              draft.displayType === d.id ? 'bg-white/20 text-white' : 'bg-emerald-100 text-emerald-800'
                             }`}>
                               ⭐ Recommended
                             </span>
                           )}
                           <p className="text-xs font-black">{d.label}</p>
-                          <p className={`mt-1 text-[10px] font-semibold ${displayType === d.id ? 'text-emerald-100' : 'text-gray-400'}`}>
+                          <p className={`mt-1 text-[10px] font-semibold ${draft.displayType === d.id ? 'text-emerald-100' : 'text-gray-400'}`}>
                             {d.desc}
                           </p>
                         </button>
@@ -523,7 +599,7 @@ export const PipelineBuilderWizard: React.FC<PipelineBuilderWizardProps> = ({
             )}
 
             {step === 3 && (
-              displayType === 'PIE_CHART' ? (
+              draft.displayType === 'PIE_CHART' ? (
                 <div className="space-y-6">
                   {/* Multi-Data Banner */}
                   <div className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4">
@@ -538,7 +614,7 @@ export const PipelineBuilderWizard: React.FC<PipelineBuilderWizardProps> = ({
 
                   {/* Segments List */}
                   <div className="space-y-5">
-                    {segmentsJson.map((seg, idx) => (
+                    {(draft.segmentsJson || []).map((seg, idx) => (
                       <div
                         key={idx}
                         className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm space-y-4 relative"
@@ -554,11 +630,14 @@ export const PipelineBuilderWizard: React.FC<PipelineBuilderWizardProps> = ({
                             </span>
                           </div>
 
-                          {segmentsJson.length > 2 && (
+                          {(draft.segmentsJson || []).length > 2 && (
                             <button
                               type="button"
                               onClick={() => {
-                                setSegmentsJson(segmentsJson.filter((_, i) => i !== idx));
+                                setDraft((prev) => ({
+                                  ...prev,
+                                  segmentsJson: (prev.segmentsJson || []).filter((_, i) => i !== idx),
+                                }));
                               }}
                               className="text-xs font-bold text-red-500 hover:text-red-700 hover:underline transition-colors"
                             >
@@ -574,11 +653,11 @@ export const PipelineBuilderWizard: React.FC<PipelineBuilderWizardProps> = ({
                             </label>
                             <input
                               type="text"
-                              value={seg.label}
+                              value={seg.label ?? ''}
                               onChange={(e) => {
-                                const next = [...segmentsJson];
-                                next[idx].label = e.target.value;
-                                setSegmentsJson(next);
+                                const next = [...(draft.segmentsJson || [])];
+                                next[idx] = { ...next[idx], label: e.target.value };
+                                setDraft((prev) => ({ ...prev, segmentsJson: next }));
                               }}
                               placeholder="e.g. New Leads, Qualified, Won Revenue"
                               className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-semibold text-gray-800 focus:bg-white focus:border-emerald-500 focus:outline-none"
@@ -592,9 +671,9 @@ export const PipelineBuilderWizard: React.FC<PipelineBuilderWizardProps> = ({
                             <select
                               value={seg.metricType || 'LEAD_COUNT'}
                               onChange={(e) => {
-                                const next = [...segmentsJson];
-                                next[idx].metricType = e.target.value;
-                                setSegmentsJson(next);
+                                const next = [...(draft.segmentsJson || [])];
+                                next[idx] = { ...next[idx], metricType: e.target.value };
+                                setDraft((prev) => ({ ...prev, segmentsJson: next }));
                               }}
                               className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-semibold text-gray-800 focus:bg-white focus:border-emerald-500 focus:outline-none"
                             >
@@ -615,10 +694,9 @@ export const PipelineBuilderWizard: React.FC<PipelineBuilderWizardProps> = ({
                             conditions={seg.filtersJson || []}
                             filterLogic={seg.filterLogic || 'AND'}
                             onChange={(conds, logic) => {
-                              const next = [...segmentsJson];
-                              next[idx].filtersJson = conds;
-                              next[idx].filterLogic = logic;
-                              setSegmentsJson(next);
+                              const next = [...(draft.segmentsJson || [])];
+                              next[idx] = { ...next[idx], filtersJson: conds, filterLogic: logic };
+                              setDraft((prev) => ({ ...prev, segmentsJson: next }));
                             }}
                             stages={stages}
                             substages={substages}
@@ -639,16 +717,20 @@ export const PipelineBuilderWizard: React.FC<PipelineBuilderWizardProps> = ({
                     type="button"
                     onClick={() => {
                       const DEFAULT_COLORS = ['#10B981', '#3B82F6', '#8B5CF6', '#F59E0B', '#EF4444', '#EC4899', '#06B6D4'];
-                      setSegmentsJson([
-                        ...segmentsJson,
-                        {
-                          label: `Segment ${segmentsJson.length + 1}`,
-                          metricType: 'LEAD_COUNT',
-                          filtersJson: [],
-                          filterLogic: 'AND',
-                          color: DEFAULT_COLORS[segmentsJson.length % DEFAULT_COLORS.length],
-                        },
-                      ]);
+                      const currentSegs = draft.segmentsJson || [];
+                      setDraft((prev) => ({
+                        ...prev,
+                        segmentsJson: [
+                          ...currentSegs,
+                          {
+                            label: `Segment ${currentSegs.length + 1}`,
+                            metricType: 'LEAD_COUNT',
+                            filtersJson: [],
+                            filterLogic: 'AND',
+                            color: DEFAULT_COLORS[currentSegs.length % DEFAULT_COLORS.length],
+                          },
+                        ],
+                      }));
                     }}
                     className="w-full py-3 rounded-2xl border-2 border-dashed border-emerald-300 bg-emerald-50/30 text-emerald-700 text-xs font-black hover:bg-emerald-50 transition-all flex items-center justify-center gap-2"
                   >
@@ -657,11 +739,10 @@ export const PipelineBuilderWizard: React.FC<PipelineBuilderWizardProps> = ({
                 </div>
               ) : (
                 <FilterBuilder
-                  conditions={filtersJson}
-                  filterLogic={filterLogic}
+                  conditions={draft.filtersJson || []}
+                  filterLogic={draft.filterLogic || 'AND'}
                   onChange={(conds, logic) => {
-                    setFiltersJson(conds);
-                    setFilterLogic(logic);
+                    setDraft((prev) => ({ ...prev, filtersJson: conds, filterLogic: logic }));
                   }}
                   stages={stages}
                   substages={substages}
@@ -708,18 +789,18 @@ export const PipelineBuilderWizard: React.FC<PipelineBuilderWizardProps> = ({
                         <div className="flex items-center gap-2">
                           <span className="h-3 w-3 rounded-full bg-emerald-500 animate-pulse" />
                           <span className="text-sm font-black text-gray-900">
-                            {name || 'Widget Live Preview'}
+                            {draft.name || 'Widget Live Preview'}
                           </span>
                         </div>
                         <span className="rounded-full bg-emerald-100 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-emerald-800">
-                          {displayType.replace('_', ' ')}
+                          {(draft.displayType || 'COMPACT_CARD').replace('_', ' ')}
                         </span>
                       </div>
 
                       {/* Exact Visual Widget Card Preview via Shared Renderer */}
                       <PipelineWidgetRenderer
-                        displayType={displayType}
-                        metricType={metricType}
+                        displayType={draft.displayType}
+                        metricType={draft.metricType}
                         metrics={previewData.metrics || {
                           count: 0,
                           totalExpectedRevenue: 0,
@@ -728,7 +809,7 @@ export const PipelineBuilderWizard: React.FC<PipelineBuilderWizardProps> = ({
                           secondaryMetric: 0,
                           stageBreakdown: [],
                         }}
-                        name={name || 'Widget Live Preview'}
+                        name={draft.name || 'Widget Live Preview'}
                       />
                     </div>
 
@@ -746,7 +827,7 @@ export const PipelineBuilderWizard: React.FC<PipelineBuilderWizardProps> = ({
                       </div>
                       <div className="rounded-2xl border border-purple-100 bg-purple-50/50 p-4">
                         <p className="text-[10px] font-black uppercase tracking-wider text-purple-700">Applied Filters</p>
-                        <p className="mt-1 text-2xl font-black text-purple-900">{filtersJson.length} Conditions</p>
+                        <p className="mt-1 text-2xl font-black text-purple-900">{(draft.filtersJson || []).length} Conditions</p>
                       </div>
                     </div>
 
@@ -802,9 +883,9 @@ export const PipelineBuilderWizard: React.FC<PipelineBuilderWizardProps> = ({
                       <button
                         key={v.id}
                         type="button"
-                        onClick={() => setVisibilityType(v.id)}
+                        onClick={() => setDraft((prev) => ({ ...prev, visibilityType: v.id }))}
                         className={`w-full p-4 text-left rounded-2xl border transition-all ${
-                          visibilityType === v.id
+                          draft.visibilityType === v.id
                             ? 'border-emerald-500 bg-emerald-50/50 ring-2 ring-emerald-500/20'
                             : 'border-gray-200 bg-white hover:border-gray-300'
                         }`}
@@ -835,7 +916,7 @@ export const PipelineBuilderWizard: React.FC<PipelineBuilderWizardProps> = ({
               <button
                 type="button"
                 onClick={() => setStep(step + 1)}
-                disabled={!name.trim() && step === 1}
+                disabled={!draft.name?.trim() && step === 1}
                 className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-500 px-5 py-2.5 text-xs font-black text-white shadow-md hover:bg-emerald-600 disabled:opacity-50 transition-all"
               >
                 Next Step
@@ -845,7 +926,7 @@ export const PipelineBuilderWizard: React.FC<PipelineBuilderWizardProps> = ({
               <button
                 type="button"
                 onClick={handleSubmit}
-                disabled={isSubmitting || !name.trim()}
+                disabled={isSubmitting || !draft.name?.trim()}
                 className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-6 py-2.5 text-xs font-black text-white shadow-lg shadow-emerald-500/20 hover:bg-emerald-600 disabled:opacity-50 transition-all"
               >
                 {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
@@ -855,6 +936,55 @@ export const PipelineBuilderWizard: React.FC<PipelineBuilderWizardProps> = ({
           </div>
         </motion.div>
       </div>
+
+      {/* Discard Changes Confirmation Modal */}
+      {showDiscardModal && (
+        <div className="fixed inset-0 z-[10500] flex items-center justify-center p-4">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowDiscardModal(false)}
+            className="absolute inset-0 bg-gray-900/70 backdrop-blur-sm"
+          />
+
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+            className="relative flex w-full max-w-md flex-col overflow-hidden rounded-3xl border border-gray-100 bg-white p-6 shadow-2xl"
+          >
+            <div className="mb-4 flex items-center gap-3">
+              <div className="rounded-2xl bg-red-100 p-3 text-red-600">
+                <X className="h-6 w-6" />
+              </div>
+              <div>
+                <h4 className="text-base font-black text-gray-900">Discard Unsaved Changes?</h4>
+                <p className="text-xs font-semibold text-gray-500">
+                  You have entered custom pipeline configuration changes. If you close now, all unsaved changes will be lost.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-4 flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setShowDiscardModal(false)}
+                className="rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-gray-50 transition-all"
+              >
+                Keep Editing
+              </button>
+              <button
+                type="button"
+                onClick={forceClose}
+                className="rounded-xl bg-red-500 px-5 py-2.5 text-xs font-black text-white shadow-md shadow-red-500/20 hover:bg-red-600 transition-all"
+              >
+                Discard Changes
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </AnimatePresence>
   );
 };
