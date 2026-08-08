@@ -106,16 +106,7 @@ const sidebarMenus: SidebarSection[] = [
                 ]
             },
             {
-                icon: FileText, label: 'Reports',
-                subItems: [
-                    { label: 'Activity Reports', path: '/reports/activity', requiredPermissions: ['REPORTS_VIEW', 'REPORTS_GENERATE'] },
-                    { label: 'Summary Reports', path: '/reports/summary', requiredPermissions: ['REPORTS_VIEW', 'REPORTS_GENERATE'] },
-                    { label: 'Revenue Reports', path: '/reports/revenue', requiredPermissions: ['REPORTS_VIEW', 'REPORTS_GENERATE'] },
-                    { label: 'Lead Reports', path: '/reports/leads', requiredPermissions: ['REPORTS_VIEW', 'REPORTS_GENERATE'] },
-                    { label: 'Followup Reports', path: '/reports/followups', requiredPermissions: ['REPORTS_VIEW', 'REPORTS_GENERATE'] },
-                    { label: 'Attendance Reports', path: '/reports/attendance', requiredPermissions: ['REPORTS_VIEW', 'REPORTS_GENERATE'] },
-                    { label: 'Export Center', path: '/reports/export', requiredPermissions: ['REPORTS_VIEW', 'REPORTS_GENERATE'] },
-                ]
+                icon: FileText, label: 'Reports', path: '/reports', requiredPermissions: ['REPORTS_VIEW', 'REPORTS_GENERATE']
             },
             { icon: Table2, label: 'Sheets', path: '/sheets', requiredPermissions: ['SHEETS_VIEW'] },
             { icon: FileBarChart, label: 'LOB Analysis', path: '/lob-analysis', requiredPermissions: ['LOB_ANALYSIS_VIEW'] }
@@ -194,21 +185,27 @@ const MenuItem: React.FC<MenuItemProps> = ({ item, isCollapsed, isActive, setAct
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: 'auto' }}
                         exit={{ opacity: 0, height: 0 }}
-                        className="overflow-hidden"
+                        className="pl-9 pr-2 py-1 space-y-1 overflow-hidden"
                     >
-                        <div className="flex flex-col gap-1 mt-1 pl-10 pr-3">
-                            {item.subItems!.map((sub, idx) => (
-                                <Link 
-                                    key={idx} 
-                                    to={sub.path} 
-                                    onClick={() => onNavigate?.()}
-                                    className={`flex items-center gap-2 text-xs font-medium py-2 transition-colors ${location.pathname === sub.path ? 'text-emerald-600' : 'text-gray-500 hover:text-emerald-600'}`}
+                        {item.subItems?.map((sub, idx) => {
+                            const isSubActive = location.pathname === sub.path;
+                            return (
+                                <button
+                                    key={idx}
+                                    onClick={() => {
+                                        navigate(sub.path);
+                                        onNavigate?.();
+                                    }}
+                                    className={`w-full flex items-center justify-between px-3 py-2 text-xs rounded-lg transition-all ${isSubActive
+                                            ? 'bg-emerald-500 text-white font-bold shadow-xs'
+                                            : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100/80 font-medium'
+                                        }`}
                                 >
-                                    <div className={`w-1 h-1 rounded-full ${location.pathname === sub.path ? 'bg-emerald-500' : 'bg-gray-300'}`}></div>
-                                    {sub.label}
-                                </Link>
-                            ))}
-                        </div>
+                                    <span>{sub.label}</span>
+                                    {isSubActive && <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />}
+                                </button>
+                            );
+                        })}
                     </motion.div>
                 )}
             </AnimatePresence>
@@ -223,7 +220,7 @@ interface DashboardSidebarProps {
     onNavigate?: () => void;
 }
 
-const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ isCollapsed, toggleCollapsed, isMobile = false, onNavigate }) => {
+export const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ isCollapsed, toggleCollapsed, isMobile = false, onNavigate }) => {
     const [activeMenu, setActiveMenu] = useState<string | null>('Dashboard');
     const location = useLocation();
     const navigate = useNavigate();
@@ -232,7 +229,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ isCollapsed, toggle
 
     const handleLogout = () => {
         logout();
-        navigate('/login', { replace: true });
+        navigate('/login');
         onNavigate?.();
     };
 
@@ -301,18 +298,25 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ isCollapsed, toggle
                         {!isCollapsed && (
                             <p className="px-3 text-[10px] font-bold tracking-widest text-gray-400 mb-2">{section.title}</p>
                         )}
-                        {section.items.map((item, i) => (
-                            <MenuItem
-                                key={i}
-                                item={item}
-                                isCollapsed={isCollapsed}
-                                isActive={location.pathname === item.path || (item.label === 'Dashboard' && location.pathname === '/dashboard')}
-                                activeMenu={activeMenu}
-                                setActiveMenu={setActiveMenu}
-                                toggleCollapsed={toggleCollapsed}
-                                onNavigate={onNavigate}
-                            />
-                        ))}
+                        {section.items.map((item, i) => {
+                            const isItemActive =
+                                location.pathname === item.path ||
+                                (item.label === 'Dashboard' && location.pathname === '/dashboard') ||
+                                (item.label === 'Reports' && location.pathname.startsWith('/reports'));
+
+                            return (
+                                <MenuItem
+                                    key={i}
+                                    item={item}
+                                    isCollapsed={isCollapsed}
+                                    isActive={isItemActive}
+                                    activeMenu={activeMenu}
+                                    setActiveMenu={setActiveMenu}
+                                    toggleCollapsed={toggleCollapsed}
+                                    onNavigate={onNavigate}
+                                />
+                            );
+                        })}
                     </div>
                 ))}
             </div>

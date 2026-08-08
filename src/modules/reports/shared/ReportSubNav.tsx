@@ -18,7 +18,6 @@ const tabs = [
   { to: '/reports/leads', label: 'Lead Reports', icon: Briefcase },
   { to: '/reports/followups', label: 'Followup Reports', icon: PhoneCall },
   { to: '/reports/attendance', label: 'Attendance Reports', icon: CalendarCheck },
-  { to: '/reports/export', label: 'Export Center', icon: Download },
 ];
 
 const ReportSubNav: React.FC = () => (

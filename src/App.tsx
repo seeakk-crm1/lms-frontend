@@ -66,7 +66,7 @@ import LeadReportsPage from './modules/reports/pages/LeadReportsPage';
 import FollowupReportsPage from './modules/reports/pages/FollowupReportsPage';
 import AttendanceReportsPage from './modules/reports/pages/AttendanceReportsPage';
 import { CallPerformanceReportPage } from './pages/reports/CallPerformanceReportPage';
-import ExportCenterPage from './modules/reports/pages/ExportCenterPage';
+import ReportsIndexRedirect from './modules/reports/pages/ReportsIndexRedirect';
 import LOBReasonsPage from './modules/lob-reasons/pages/LOBReasonsPage';
 import FollowUpExtensionReasonsPage from './modules/followup-extension-reasons/pages/FollowUpExtensionReasonsPage';
 import AttendancePage from './pages/attendance/AttendancePage';
@@ -391,7 +391,7 @@ function App() {
           </PermissionRoute>
         } />
 
-        <Route path="/reports" element={<Navigate to="/reports/activity" replace />} />
+        <Route path="/reports" element={<ReportsIndexRedirect />} />
         <Route path="/reports/activity" element={
           <PermissionRoute permissions={['REPORTS_VIEW', 'REPORTS_GENERATE']}>
             <ActivityReportsPage />
@@ -432,12 +432,8 @@ function App() {
             <CallPerformanceReportPage />
           </PermissionRoute>
         } />
-        <Route path="/reports/export" element={
-          <PermissionRoute permissions={['REPORTS_VIEW', 'REPORTS_GENERATE']}>
-            <ExportCenterPage />
-          </PermissionRoute>
-        } />
-        <Route path="/reports/download" element={<Navigate to="/reports/export" replace />} />
+        <Route path="/reports/export" element={<Navigate to="/reports/activity" replace />} />
+        <Route path="/reports/download" element={<Navigate to="/reports/activity" replace />} />
         <Route path="/reports/types" element={<Navigate to="/reports/activity" replace />} />
         <Route path="/admin/report-types" element={<Navigate to="/reports/activity" replace />} />
 
