@@ -77,6 +77,16 @@ export const PipelineBuilderWizard: React.FC<PipelineBuilderWizardProps> = ({
   const [metricType, setMetricType] = useState<string>('LEAD_COUNT');
   const [displayType, setDisplayType] = useState<string>('COMPACT_CARD');
   const [filtersJson, setFiltersJson] = useState<FilterConditionInput[]>([]);
+  const [segmentsJson, setSegmentsJson] = useState<
+    Array<{
+      id?: string;
+      label: string;
+      metricType?: string;
+      filtersJson: FilterConditionInput[];
+      filterLogic?: 'AND' | 'OR';
+      color?: string;
+    }>
+  >([]);
   const [filterLogic, setFilterLogic] = useState<'AND' | 'OR'>('AND');
   const [visibilityType, setVisibilityType] = useState<string>('PRIVATE');
   const [clickAction, setClickAction] = useState<string>('OPEN_LEADS');
@@ -89,6 +99,7 @@ export const PipelineBuilderWizard: React.FC<PipelineBuilderWizardProps> = ({
       setMetricType(editPipeline.metricType);
       setDisplayType(editPipeline.displayType);
       setFiltersJson(editPipeline.filtersJson || []);
+      setSegmentsJson(editPipeline.segmentsJson || []);
       setFilterLogic(editPipeline.filterLogic || 'AND');
       setVisibilityType(editPipeline.visibilityType);
       setClickAction(editPipeline.clickAction || 'OPEN_LEADS');
@@ -100,12 +111,37 @@ export const PipelineBuilderWizard: React.FC<PipelineBuilderWizardProps> = ({
       setMetricType('LEAD_COUNT');
       setDisplayType('COMPACT_CARD');
       setFiltersJson([]);
+      setSegmentsJson([]);
       setFilterLogic('AND');
       setVisibilityType('PRIVATE');
       setClickAction('OPEN_LEADS');
     }
     setStep(1);
   }, [editPipeline, initialSectionId, sections, isOpen]);
+
+  // When switching to PIE_CHART, automatically initialize 2 default segments if empty
+  useEffect(() => {
+    if (displayType === 'PIE_CHART' && segmentsJson.length === 0) {
+      const defaultStage1 = stages[0]?.id || '';
+      const defaultStage2 = stages[1]?.id || defaultStage1;
+      setSegmentsJson([
+        {
+          label: 'New Leads',
+          metricType: 'LEAD_COUNT',
+          filtersJson: defaultStage1 ? [{ field: 'stageId', operator: 'EQUALS', value: defaultStage1 }] : [],
+          filterLogic: 'AND',
+          color: '#10B981',
+        },
+        {
+          label: 'Qualified Leads',
+          metricType: 'LEAD_COUNT',
+          filtersJson: defaultStage2 ? [{ field: 'stageId', operator: 'EQUALS', value: defaultStage2 }] : [],
+          filterLogic: 'AND',
+          color: '#3B82F6',
+        },
+      ]);
+    }
+  }, [displayType, segmentsJson.length, stages]);
 
   // Ensure sectionId is set when sections load asynchronously
   useEffect(() => {
@@ -120,9 +156,10 @@ export const PipelineBuilderWizard: React.FC<PipelineBuilderWizardProps> = ({
 
     console.log('[Dashboard Customization] Filter Changed', {
       metricType,
+      displayType,
       filterLogic,
       filtersCount: filtersJson.length,
-      filtersJson,
+      segmentsCount: segmentsJson.length,
     });
 
     const timer = setTimeout(() => {
@@ -130,19 +167,23 @@ export const PipelineBuilderWizard: React.FC<PipelineBuilderWizardProps> = ({
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [step, isOpen, filtersJson, filterLogic, metricType]);
+  }, [step, isOpen, filtersJson, segmentsJson, filterLogic, metricType, displayType]);
 
   const fetchPreview = async () => {
     try {
       setIsPreviewLoading(true);
       console.log('[Dashboard Customization] Preview Request Started', {
         metricType,
+        displayType,
         filterLogic,
         filtersJson,
+        segmentsJson,
       });
 
       const data = await previewPipeline({
         filtersJson,
+        segmentsJson: displayType === 'PIE_CHART' ? segmentsJson : undefined,
+        displayType,
         filterLogic,
         metricType,
       });
@@ -157,6 +198,18 @@ export const PipelineBuilderWizard: React.FC<PipelineBuilderWizardProps> = ({
   };
 
   const handleSubmit = async () => {
+    if (displayType === 'PIE_CHART') {
+      if (segmentsJson.length < 2) {
+        toast.error('Add at least 2 data segments to create a Pie / Donut Chart.');
+        return;
+      }
+      const invalidLabel = segmentsJson.some((s) => !s.label.trim());
+      if (invalidLabel) {
+        toast.error('Please enter a label for every data segment.');
+        return;
+      }
+    }
+
     try {
       setIsSubmitting(true);
       if (editPipeline) {
@@ -167,6 +220,7 @@ export const PipelineBuilderWizard: React.FC<PipelineBuilderWizardProps> = ({
           metricType,
           displayType,
           filtersJson,
+          segmentsJson: displayType === 'PIE_CHART' ? segmentsJson : undefined,
           filterLogic,
           visibilityType,
           clickAction,
@@ -180,6 +234,7 @@ export const PipelineBuilderWizard: React.FC<PipelineBuilderWizardProps> = ({
           metricType,
           displayType,
           filtersJson,
+          segmentsJson: displayType === 'PIE_CHART' ? segmentsJson : undefined,
           filterLogic,
           visibilityType,
           clickAction,
@@ -468,22 +523,156 @@ export const PipelineBuilderWizard: React.FC<PipelineBuilderWizardProps> = ({
             )}
 
             {step === 3 && (
-              <FilterBuilder
-                conditions={filtersJson}
-                filterLogic={filterLogic}
-                onChange={(conds, logic) => {
-                  setFiltersJson(conds);
-                  setFilterLogic(logic);
-                }}
-                stages={stages}
-                substages={substages}
-                sources={sources}
-                lifecycles={lifecycles}
-                users={users}
-                offices={offices}
-                departments={departments}
-                dynamicFields={dynamicFields}
-              />
+              displayType === 'PIE_CHART' ? (
+                <div className="space-y-6">
+                  {/* Multi-Data Banner */}
+                  <div className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4">
+                    <div className="flex items-center gap-2 text-xs font-black text-emerald-900">
+                      <Sparkles className="h-4 w-4 text-emerald-600" />
+                      <span>Pie / Donut Chart Multi-Data Configuration Mode</span>
+                    </div>
+                    <p className="mt-1 text-xs font-semibold text-emerald-700">
+                      Define 2 or more independent data segments. Each segment has its own label, metric, and filter rules to form the slices of your pie chart.
+                    </p>
+                  </div>
+
+                  {/* Segments List */}
+                  <div className="space-y-5">
+                    {segmentsJson.map((seg, idx) => (
+                      <div
+                        key={idx}
+                        className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm space-y-4 relative"
+                      >
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 pb-3">
+                          <div className="flex items-center gap-3">
+                            <span
+                              className="h-4 w-4 rounded-full shrink-0 shadow-xs"
+                              style={{ backgroundColor: seg.color || '#10B981' }}
+                            />
+                            <span className="text-xs font-black uppercase tracking-wider text-gray-800">
+                              Data Segment {idx + 1}
+                            </span>
+                          </div>
+
+                          {segmentsJson.length > 2 && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSegmentsJson(segmentsJson.filter((_, i) => i !== idx));
+                              }}
+                              className="text-xs font-bold text-red-500 hover:text-red-700 hover:underline transition-colors"
+                            >
+                              Remove Segment
+                            </button>
+                          )}
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-xs font-black uppercase tracking-wider text-gray-600 mb-1">
+                              Segment Label <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                              type="text"
+                              value={seg.label}
+                              onChange={(e) => {
+                                const next = [...segmentsJson];
+                                next[idx].label = e.target.value;
+                                setSegmentsJson(next);
+                              }}
+                              placeholder="e.g. New Leads, Qualified, Won Revenue"
+                              className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-semibold text-gray-800 focus:bg-white focus:border-emerald-500 focus:outline-none"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-black uppercase tracking-wider text-gray-600 mb-1">
+                              Segment Metric
+                            </label>
+                            <select
+                              value={seg.metricType || 'LEAD_COUNT'}
+                              onChange={(e) => {
+                                const next = [...segmentsJson];
+                                next[idx].metricType = e.target.value;
+                                setSegmentsJson(next);
+                              }}
+                              className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-semibold text-gray-800 focus:bg-white focus:border-emerald-500 focus:outline-none"
+                            >
+                              <option value="LEAD_COUNT">Number of Leads</option>
+                              <option value="TOTAL_EXPECTED_REVENUE">Total Expected Revenue (₹)</option>
+                              <option value="TOTAL_CLOSED_REVENUE">Total Closed Revenue (₹)</option>
+                              <option value="AVERAGE_REVENUE">Average Revenue (₹)</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        {/* Per-Segment Independent FilterBuilder */}
+                        <div className="pt-2">
+                          <label className="block text-xs font-black uppercase tracking-wider text-gray-500 mb-2">
+                            Segment Filters
+                          </label>
+                          <FilterBuilder
+                            conditions={seg.filtersJson || []}
+                            filterLogic={seg.filterLogic || 'AND'}
+                            onChange={(conds, logic) => {
+                              const next = [...segmentsJson];
+                              next[idx].filtersJson = conds;
+                              next[idx].filterLogic = logic;
+                              setSegmentsJson(next);
+                            }}
+                            stages={stages}
+                            substages={substages}
+                            sources={sources}
+                            lifecycles={lifecycles}
+                            users={users}
+                            offices={offices}
+                            departments={departments}
+                            dynamicFields={dynamicFields}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Add Segment Button */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const DEFAULT_COLORS = ['#10B981', '#3B82F6', '#8B5CF6', '#F59E0B', '#EF4444', '#EC4899', '#06B6D4'];
+                      setSegmentsJson([
+                        ...segmentsJson,
+                        {
+                          label: `Segment ${segmentsJson.length + 1}`,
+                          metricType: 'LEAD_COUNT',
+                          filtersJson: [],
+                          filterLogic: 'AND',
+                          color: DEFAULT_COLORS[segmentsJson.length % DEFAULT_COLORS.length],
+                        },
+                      ]);
+                    }}
+                    className="w-full py-3 rounded-2xl border-2 border-dashed border-emerald-300 bg-emerald-50/30 text-emerald-700 text-xs font-black hover:bg-emerald-50 transition-all flex items-center justify-center gap-2"
+                  >
+                    + Add Data Segment
+                  </button>
+                </div>
+              ) : (
+                <FilterBuilder
+                  conditions={filtersJson}
+                  filterLogic={filterLogic}
+                  onChange={(conds, logic) => {
+                    setFiltersJson(conds);
+                    setFilterLogic(logic);
+                  }}
+                  stages={stages}
+                  substages={substages}
+                  sources={sources}
+                  lifecycles={lifecycles}
+                  users={users}
+                  offices={offices}
+                  departments={departments}
+                  dynamicFields={dynamicFields}
+                />
+              )
             )}
 
             {step === 4 && (

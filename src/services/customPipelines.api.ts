@@ -27,6 +27,15 @@ export interface PipelineSection {
   shares?: any[];
 }
 
+export interface PipelineSegment {
+  id?: string;
+  label: string;
+  metricType?: string;
+  filtersJson: FilterConditionInput[];
+  filterLogic?: 'AND' | 'OR';
+  color?: string;
+}
+
 export interface PipelineMetrics {
   count: number;
   totalExpectedRevenue: number;
@@ -34,6 +43,7 @@ export interface PipelineMetrics {
   averageRevenue: number;
   secondaryMetric: number;
   stageBreakdown: Array<{ stageId: string; name: string; color: string; count: number }>;
+  segments?: Array<{ label: string; value: number; color?: string; metricType?: string }>;
   lastRefreshedAt: string;
 }
 
@@ -61,8 +71,10 @@ export interface Pipeline {
     | 'MINI_TABLE'
     | 'STAGE_BAR'
     | 'PERCENTAGE_CARD'
-    | 'REVENUE_CARD';
+    | 'REVENUE_CARD'
+    | 'PIE_CHART';
   filtersJson: FilterConditionInput[];
+  segmentsJson?: PipelineSegment[];
   filterLogic: 'AND' | 'OR';
   visibilityType: 'PRIVATE' | 'SHARED' | 'WORKSPACE';
   sortOrder: number;
@@ -127,6 +139,7 @@ export const createPipeline = async (payload: {
   metricType?: string;
   displayType?: string;
   filtersJson?: FilterConditionInput[];
+  segmentsJson?: PipelineSegment[];
   filterLogic?: 'AND' | 'OR';
   visibilityType?: string;
   clickAction?: string;
@@ -146,6 +159,7 @@ export const updatePipeline = async (
     metricType?: string;
     displayType?: string;
     filtersJson?: FilterConditionInput[];
+    segmentsJson?: PipelineSegment[];
     filterLogic?: 'AND' | 'OR';
     visibilityType?: string;
     status?: string;
@@ -169,6 +183,8 @@ export const duplicatePipeline = async (id: string): Promise<Pipeline> => {
 
 export const previewPipeline = async (payload: {
   filtersJson: FilterConditionInput[];
+  segmentsJson?: PipelineSegment[];
+  displayType?: string;
   filterLogic: 'AND' | 'OR';
   metricType?: string;
 }): Promise<{

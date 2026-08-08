@@ -13,6 +13,12 @@ export interface PipelineWidgetMetrics {
     color: string;
     count: number;
   }>;
+  segments?: Array<{
+    label: string;
+    value: number;
+    color?: string;
+    metricType?: string;
+  }>;
   lastRefreshedAt?: string;
 }
 
@@ -192,8 +198,10 @@ export const PipelineWidgetRenderer: React.FC<PipelineWidgetRendererProps> = ({
   }
 
   if (displayType === 'PIE_CHART') {
-    const slices =
-      stageBreakdown.length > 0
+    const rawSegments = metrics?.segments;
+    const slices = (Array.isArray(rawSegments) && rawSegments.length > 0)
+      ? rawSegments.map((s) => ({ name: s.label, count: s.value, color: s.color || '#10b981' }))
+      : stageBreakdown.length > 0
         ? stageBreakdown
         : [
             { name: 'Qualified', count: Math.ceil(count * 0.45) || 1, color: '#10b981' },
