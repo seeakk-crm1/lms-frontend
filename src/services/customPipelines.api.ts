@@ -88,8 +88,8 @@ export interface Pipeline {
 }
 
 export const getPipelineSections = async (): Promise<PipelineSection[]> => {
-  const { data } = await api.get('/dashboard/pipeline-sections');
-  return data.data;
+  const { data } = await api.get('/dashboard/pipeline-sections', { _suppressGlobalErrorToast: true } as any);
+  return data.data || [];
 };
 
 export const createPipelineSection = async (payload: {
