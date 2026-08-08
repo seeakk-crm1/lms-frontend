@@ -211,12 +211,15 @@ export const PipelineBuilderWizard: React.FC<PipelineBuilderWizardProps> = ({
     }
   }, [draft.displayType, draft.segmentsJson?.length]);
 
-  // Ensure sectionId is set when sections load asynchronously if empty
+  // Ensure sectionId is always synchronized to a valid section in sections
   useEffect(() => {
-    if (!draft.sectionId && sections && sections.length > 0) {
-      setDraft((prev) => ({ ...prev, sectionId: sections[0].id }));
+    if (sections && sections.length > 0) {
+      const isValidSection = sections.some((sec) => sec.id === draft.sectionId);
+      if (!isValidSection) {
+        setDraft((prev) => ({ ...prev, sectionId: sections[0].id }));
+      }
     }
-  }, [sections?.length, draft.sectionId]);
+  }, [sections, draft.sectionId]);
 
   // Live preview fetch with 300ms debounce on Step 4 or when filters change
   useEffect(() => {
@@ -320,7 +323,16 @@ export const PipelineBuilderWizard: React.FC<PipelineBuilderWizardProps> = ({
       onSuccess();
       onClose();
     } catch (err: any) {
-      toast.error(err?.response?.data?.error || 'Failed to save custom pipeline');
+      const serverError = err?.response?.data?.error || err?.response?.data?.message;
+      const validationErrors = err?.response?.data?.errors;
+      let detailedMsg = serverError || 'Failed to save custom pipeline';
+      if (validationErrors && typeof validationErrors === 'object') {
+        const firstField = Object.keys(validationErrors)[0];
+        if (firstField && Array.isArray(validationErrors[firstField]) && validationErrors[firstField].length > 0) {
+          detailedMsg = `${firstField}: ${validationErrors[firstField][0]}`;
+        }
+      }
+      toast.error(detailedMsg);
     } finally {
       setIsSubmitting(false);
     }
