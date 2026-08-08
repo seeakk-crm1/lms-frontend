@@ -72,6 +72,7 @@ export const OPERATOR_OPTIONS: Record<string, Array<{ id: string; label: string 
     { id: 'LESS_THAN', label: 'Less Than (<)' },
     { id: 'LESS_THAN_OR_EQUAL', label: 'Less Than or Equal (≤)' },
     { id: 'IN_RANGE', label: 'In Range (Min-Max)' },
+    { id: 'NOT_IN_RANGE', label: 'Exclude Range (Not Between)' },
     { id: 'IS_EMPTY', label: 'Is Empty' },
     { id: 'IS_NOT_EMPTY', label: 'Is Not Empty' },
   ],
@@ -220,7 +221,7 @@ export const FilterBuilder: React.FC<FilterBuilderProps> = ({
       );
     }
 
-    if (cond.operator === 'IN_RANGE' && fieldType === 'number') {
+    if ((cond.operator === 'IN_RANGE' || cond.operator === 'NOT_IN_RANGE') && fieldType === 'number') {
       const minVal = typeof cond.value === 'object' && cond.value ? cond.value.min ?? '' : '';
       const maxVal = typeof cond.value === 'object' && cond.value ? cond.value.max ?? '' : '';
 

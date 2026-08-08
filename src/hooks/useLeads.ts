@@ -263,6 +263,12 @@ export const useDynamicFieldsQuery = (enabled = true) => {
   });
 };
 
+const notifyLeadMutated = () => {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('seeakk:leads-updated'));
+  }
+};
+
 export const useCreateLeadMutation = () => {
   const queryClient = useQueryClient();
 
@@ -279,6 +285,8 @@ export const useCreateLeadMutation = () => {
         });
       queryClient.invalidateQueries({ queryKey: ['leads'] });
       queryClient.invalidateQueries({ queryKey: ['followups'] });
+      queryClient.invalidateQueries({ queryKey: ['custom-pipelines'] });
+      notifyLeadMutated();
       toast.success('Lead created successfully');
     },
     onError: (error: any) => {
@@ -312,6 +320,8 @@ export const useUpdateLeadMutation = () => {
       queryClient.invalidateQueries({ queryKey: ['lead-approvals'] });
       queryClient.invalidateQueries({ queryKey: ['followups'] });
       queryClient.invalidateQueries({ queryKey: ['lead-remarks', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ['custom-pipelines'] });
+      notifyLeadMutated();
       if (response?.approvalRequired) {
         toast.success(response.message || 'Approval request created successfully. Other fields updated.');
         return;
@@ -356,6 +366,8 @@ export const useChangeLeadStageMutation = () => {
       queryClient.invalidateQueries({ queryKey: ['followups'] });
       queryClient.invalidateQueries({ queryKey: ['lead-approvals'] });
       queryClient.invalidateQueries({ queryKey: ['closed-leads'] });
+      queryClient.invalidateQueries({ queryKey: ['custom-pipelines'] });
+      notifyLeadMutated();
 
       if (_data?.approvalRequired) {
         toast.success(_data?.message || 'Approval request created successfully');
@@ -384,6 +396,8 @@ export const useDeleteLeadMutation = () => {
       );
       queryClient.removeQueries({ queryKey: ['lead', leadId] });
       queryClient.invalidateQueries({ queryKey: ['leads'] });
+      queryClient.invalidateQueries({ queryKey: ['custom-pipelines'] });
+      notifyLeadMutated();
       toast.success('Lead archived successfully');
     },
     onError: (error: any) => {

@@ -134,6 +134,27 @@ const Dashboard: React.FC<DashboardProps> = ({ mode = 'operations' }) => {
 
     useEffect(() => {
         void loadCustomSections();
+
+        const handleFocus = () => {
+            void loadCustomSections();
+        };
+
+        const handleLeadUpdate = () => {
+            void loadCustomSections();
+        };
+
+        window.addEventListener('focus', handleFocus);
+        window.addEventListener('seeakk:leads-updated', handleLeadUpdate);
+
+        const intervalId = setInterval(() => {
+            void loadCustomSections();
+        }, 20000);
+
+        return () => {
+            window.removeEventListener('focus', handleFocus);
+            window.removeEventListener('seeakk:leads-updated', handleLeadUpdate);
+            clearInterval(intervalId);
+        };
     }, [loadCustomSections]);
 
     const canCustomizeDashboard = hasAnyPermission(user?.permissions || [], [
@@ -144,9 +165,22 @@ const Dashboard: React.FC<DashboardProps> = ({ mode = 'operations' }) => {
     ]);
 
     const handlePipelineClick = (pipeline: Pipeline) => {
-        const firstStageFilter = pipeline.filtersJson?.find((f) => f.field === 'stageId' && f.operator === 'EQUALS');
-        const stageId = firstStageFilter ? firstStageFilter.value : undefined;
-        navigate('/leads', { state: { customPipeline: pipeline, stageId } });
+        const stageFilter = pipeline.filtersJson?.find((f) => f.field === 'stageId');
+        const userFilter = pipeline.filtersJson?.find((f) => f.field === 'assignedToId');
+        const sourceFilter = pipeline.filtersJson?.find((f) => f.field === 'sourceId');
+        const officeFilter = pipeline.filtersJson?.find((f) => f.field === 'officeId');
+
+        navigate('/leads', {
+            state: {
+                customPipeline: pipeline,
+                stageId: stageFilter ? stageFilter.value : undefined,
+                assignedToId: userFilter ? userFilter.value : undefined,
+                sourceId: sourceFilter ? sourceFilter.value : undefined,
+                officeId: officeFilter ? officeFilter.value : undefined,
+                filtersJson: pipeline.filtersJson,
+                filterLogic: pipeline.filterLogic,
+            },
+        });
     };
 
     const handleEditPipeline = (pipeline: Pipeline) => {

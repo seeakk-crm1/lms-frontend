@@ -159,12 +159,27 @@ const LeadsPage: React.FC = () => {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const stageFromQuery = params.get('stageId') || params.get('stage');
-    const stageFromState = (location.state as { stageId?: string; stage?: string } | null)?.stageId || (location.state as { stageId?: string; stage?: string } | null)?.stage;
-    const targetStage = stageFromQuery || stageFromState;
-    if (targetStage && filters.stage !== targetStage) {
-      setFilters({ stage: targetStage });
+    const locState = location.state as {
+      stageId?: string;
+      assignedToId?: string;
+      sourceId?: string;
+      officeId?: string;
+    } | null;
+    const stageFromState = locState?.stageId;
+    const assignedToFromState = locState?.assignedToId;
+    const sourceFromState = locState?.sourceId;
+    const officeFromState = locState?.officeId;
+
+    const nextFilters: any = {};
+    if (stageFromQuery || stageFromState) nextFilters.stage = stageFromQuery || stageFromState;
+    if (assignedToFromState) nextFilters.assignedTo = assignedToFromState;
+    if (sourceFromState) nextFilters.source = sourceFromState;
+    if (officeFromState) nextFilters.officeId = officeFromState;
+
+    if (Object.keys(nextFilters).length > 0) {
+      setFilters(nextFilters);
     }
-  }, [location.search, location.state, filters.stage, setFilters]);
+  }, [location.search, location.state, setFilters]);
 
   useEffect(() => {
     const state = location.state as { fromQuickAdd?: boolean } | null;
