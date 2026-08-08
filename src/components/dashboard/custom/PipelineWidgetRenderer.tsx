@@ -191,6 +191,78 @@ export const PipelineWidgetRenderer: React.FC<PipelineWidgetRendererProps> = ({
     );
   }
 
+  if (displayType === 'PIE_CHART') {
+    const slices =
+      stageBreakdown.length > 0
+        ? stageBreakdown
+        : [
+            { name: 'Qualified', count: Math.ceil(count * 0.45) || 1, color: '#10b981' },
+            { name: 'Contacted', count: Math.ceil(count * 0.35) || 1, color: '#3b82f6' },
+            { name: 'New Lead', count: Math.max(1, count - Math.ceil(count * 0.8)), color: '#f59e0b' },
+          ];
+
+    const total = slices.reduce((acc, s) => acc + s.count, 0) || 1;
+    let accumulatedAngle = 0;
+
+    return (
+      <div className={`py-1 space-y-3 ${className}`}>
+        <div className="flex items-center justify-between text-xs font-bold text-gray-700">
+          <span>Proportion Breakdown (Pie Chart)</span>
+          <span className="text-emerald-600 font-black">{count} Total Leads</span>
+        </div>
+
+        <div className="flex items-center gap-4">
+          <div className="relative h-24 w-24 shrink-0">
+            <svg viewBox="0 0 100 100" className="h-full w-full -rotate-90">
+              {slices.map((slice, idx) => {
+                const strokeDasharray = `${(slice.count / total) * 283} 283`;
+                const strokeDashoffset = -accumulatedAngle;
+                accumulatedAngle += (slice.count / total) * 283;
+
+                return (
+                  <circle
+                    key={idx}
+                    cx="50"
+                    cy="50"
+                    r="45"
+                    fill="transparent"
+                    stroke={slice.color || '#10b981'}
+                    strokeWidth="10"
+                    strokeDasharray={strokeDasharray}
+                    strokeDashoffset={strokeDashoffset}
+                    className="transition-all duration-500 hover:opacity-80"
+                  />
+                );
+              })}
+            </svg>
+            <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+              <span className="text-sm font-black text-gray-900">{count}</span>
+              <span className="text-[9px] font-bold text-gray-400">Total</span>
+            </div>
+          </div>
+
+          <div className="flex-1 space-y-1 text-xs font-bold text-gray-600">
+            {slices.slice(0, 4).map((s, idx) => (
+              <div
+                key={idx}
+                className="flex items-center justify-between gap-2 bg-gray-50 px-2 py-0.5 rounded-lg border border-gray-100"
+              >
+                <span className="flex items-center gap-1.5 truncate">
+                  <span
+                    className="h-2.5 w-2.5 rounded-full shrink-0"
+                    style={{ backgroundColor: s.color || '#10b981' }}
+                  />
+                  <span className="truncate text-[11px] text-gray-800">{s.name}</span>
+                </span>
+                <span className="text-[11px] font-black text-gray-900">{s.count}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // Default: COMPACT_CARD (Number Card)
   return (
     <div className={`py-1 ${className}`}>

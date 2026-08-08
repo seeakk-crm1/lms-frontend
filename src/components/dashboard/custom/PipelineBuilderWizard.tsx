@@ -429,6 +429,12 @@ export const PipelineBuilderWizard: React.FC<PipelineBuilderWizardProps> = ({
                         desc: 'Best for: Overdue & Priority Status',
                         recommendedFor: ['OVERDUE_FOLLOWUP_COUNT', 'LOB_COUNT'],
                       },
+                      {
+                        id: 'PIE_CHART',
+                        label: 'Pie / Donut Chart',
+                        desc: 'Best for: Stage & Category Proportions',
+                        recommendedFor: ['STAGE_DISTRIBUTION', 'LEAD_COUNT'],
+                      },
                     ].map((d) => {
                       const isRecommended = d.recommendedFor.includes(metricType);
                       return (
