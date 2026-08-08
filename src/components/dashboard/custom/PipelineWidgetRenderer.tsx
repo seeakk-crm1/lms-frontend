@@ -241,27 +241,22 @@ export const PipelineWidgetRenderer: React.FC<PipelineWidgetRendererProps> = ({
             </div>
           </div>
 
-          <div className="flex-1 space-y-1.5 text-xs font-bold text-gray-600">
-            {slices.slice(0, 5).map((s, idx) => {
-              const pct = total > 0 ? ((s.count / total) * 100).toFixed(1) : '0';
-              return (
-                <div
-                  key={idx}
-                  className="flex items-center justify-between gap-2 bg-gray-50/80 px-2.5 py-1 rounded-lg border border-gray-100"
-                >
-                  <span className="flex items-center gap-1.5 truncate">
-                    <span
-                      className="h-2.5 w-2.5 rounded-full shrink-0"
-                      style={{ backgroundColor: s.color || '#10b981' }}
-                    />
-                    <span className="truncate text-[11px] text-gray-800">{s.name}</span>
-                  </span>
-                  <span className="text-[11px] font-black text-gray-900">
-                    {s.count} <span className="text-[10px] text-gray-400 font-semibold">({pct}%)</span>
-                  </span>
-                </div>
-              );
-            })}
+          <div className="flex-1 space-y-1 text-xs font-bold text-gray-600">
+            {slices.slice(0, 4).map((s, idx) => (
+              <div
+                key={idx}
+                className="flex items-center justify-between gap-2 bg-gray-50 px-2 py-0.5 rounded-lg border border-gray-100"
+              >
+                <span className="flex items-center gap-1.5 truncate">
+                  <span
+                    className="h-2.5 w-2.5 rounded-full shrink-0"
+                    style={{ backgroundColor: s.color || '#10b981' }}
+                  />
+                  <span className="truncate text-[11px] text-gray-800">{s.name}</span>
+                </span>
+                <span className="text-[11px] font-black text-gray-900">{s.count}</span>
+              </div>
+            ))}
           </div>
         </div>
       </div>
