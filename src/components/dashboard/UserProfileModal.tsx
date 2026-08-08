@@ -1,15 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useForm, Controller } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { X, User as UserIcon, Mail, Phone, Lock, Eye, EyeOff, KeyRound, Check, Shield } from 'lucide-react';
+import { X, User as UserIcon, Mail, Phone, Lock, Eye, EyeOff, KeyRound, Check, Shield, Camera, Trash2, Loader2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import useAuthStore from '../../store/useAuthStore';
 import api from '../../services/api';
 import { getPrimaryRoleName } from '../../utils/permissions';
 import PhoneInput from '../common/PhoneInput';
 import { validatePhoneStr } from '../../utils/phoneUtils';
+import { getImageUrl } from '../../utils/getImageUrl';
+import { uploadUserProfileImage, removeUserProfileImage } from '../../services/users.api';
 
 const schema = z
   .object({
@@ -52,6 +54,47 @@ interface UserProfileModalProps {
 const UserProfileModal: React.FC<UserProfileModalProps> = ({ open, onClose, initialTab = 'profile' }) => {
   const { user, updateUser } = useAuthStore();
   const [activeTab, setActiveTab] = useState<'profile' | 'security'>('profile');
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [imgError, setImgError] = useState(false);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+
+  const avatarUrl = getImageUrl(user?.profileImageUrl);
+
+  useEffect(() => {
+    setImgError(false);
+  }, [user?.profileImageUrl]);
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user?.id) return;
+    setIsUploadingImage(true);
+    try {
+      const res = await uploadUserProfileImage(user.id, file);
+      if (res?.profileImageUrl) {
+        updateUser({ profileImageUrl: res.profileImageUrl });
+        toast.success('Profile photo updated successfully!');
+      }
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Failed to upload profile photo.');
+    } finally {
+      setIsUploadingImage(false);
+      if (imageInputRef.current) imageInputRef.current.value = '';
+    }
+  };
+
+  const handleRemoveImage = async () => {
+    if (!user?.id || !user.profileImageUrl) return;
+    setIsUploadingImage(true);
+    try {
+      await removeUserProfileImage(user.id);
+      updateUser({ profileImageUrl: null });
+      toast.success('Profile photo removed.');
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Failed to remove profile photo.');
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -205,11 +248,40 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({ open, onClose, init
               <div className="shrink-0 border-b border-gray-100 bg-[radial-gradient(circle_at_top,_rgba(16,185,129,0.10),_transparent_40%)] px-5 py-5 sm:px-7 sm:py-6">
                 <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
                   <div className="flex items-center gap-4 pr-8">
-                    <div className="relative shrink-0">
-                      <div className="flex h-14 w-14 items-center justify-center rounded-[20px] bg-gradient-to-br from-emerald-500 to-emerald-600 text-lg font-black text-white shadow-sm">
-                        {initials}
+                    <div className="relative shrink-0 group">
+                      <input
+                        ref={imageInputRef}
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        className="hidden"
+                        onChange={handleImageUpload}
+                      />
+                      <div className="flex h-16 w-16 items-center justify-center rounded-[22px] bg-gradient-to-br from-emerald-500 to-emerald-600 text-xl font-black text-white shadow-md overflow-hidden relative border-2 border-white">
+                        {avatarUrl && !imgError ? (
+                          <img
+                            src={avatarUrl}
+                            alt={user?.name || 'User Profile'}
+                            className="w-full h-full object-cover"
+                            onError={() => setImgError(true)}
+                          />
+                        ) : (
+                          initials
+                        )}
+                        {isUploadingImage && (
+                          <div className="absolute inset-0 bg-black/50 flex items-center justify-center text-white">
+                            <Loader2 className="h-5 w-5 animate-spin" />
+                          </div>
+                        )}
                       </div>
-                      <div className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white bg-emerald-400" />
+                      <button
+                        type="button"
+                        onClick={() => imageInputRef.current?.click()}
+                        disabled={isUploadingImage}
+                        className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-emerald-500 text-white shadow-md hover:bg-emerald-600 transition-colors"
+                        title="Upload new profile photo"
+                      >
+                        <Camera size={13} />
+                      </button>
                     </div>
                     <div className="min-w-0">
                       <p className="text-[11px] font-black uppercase tracking-[0.24em] text-emerald-500">

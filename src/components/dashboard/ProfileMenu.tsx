@@ -73,6 +73,13 @@ const ProfileMenu: React.FC = () => {
     }
   };
 
+  const [imgError, setImgError] = useState(false);
+  const avatarUrl = getImageUrl(user?.profileImageUrl);
+
+  useEffect(() => {
+    setImgError(false);
+  }, [user?.profileImageUrl]);
+
   return (
     <>
       <div ref={containerRef} className="relative">
@@ -104,8 +111,13 @@ const ProfileMenu: React.FC = () => {
                 isMenuOpen ? 'scale-[1.02] ring-emerald-100 shadow-lg shadow-emerald-500/20' : 'group-hover:ring-emerald-100'
               }`}
             >
-              {user?.profileImageUrl ? (
-                <img src={getImageUrl(user.profileImageUrl)} alt={displayName} className="w-full h-full object-cover" />
+              {avatarUrl && !imgError ? (
+                <img
+                  src={avatarUrl}
+                  alt={displayName}
+                  className="w-full h-full object-cover"
+                  onError={() => setImgError(true)}
+                />
               ) : (
                 displayName.charAt(0).toUpperCase()
               )}
@@ -129,8 +141,13 @@ const ProfileMenu: React.FC = () => {
                 <div className="flex items-start gap-4">
                   <div className="relative mt-0.5">
                     <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600 text-lg font-black text-white shadow-lg shadow-emerald-500/20 overflow-hidden">
-                      {user?.profileImageUrl ? (
-                        <img src={getImageUrl(user.profileImageUrl)} alt={displayName} className="w-full h-full object-cover" />
+                      {avatarUrl && !imgError ? (
+                        <img
+                          src={avatarUrl}
+                          alt={displayName}
+                          className="w-full h-full object-cover"
+                          onError={() => setImgError(true)}
+                        />
                       ) : (
                         initials
                       )}
