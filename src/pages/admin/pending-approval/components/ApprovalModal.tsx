@@ -204,6 +204,53 @@ const ApprovalModal: React.FC<ApprovalModalProps> = ({
                 </div>
               )}
 
+              {/* LOB Information Card */}
+              {(() => {
+                const lobReason =
+                  (approval as any).lob?.lobReason ||
+                  (approval as any).lob?.reason ||
+                  (approval.requestData as any)?.lobReason ||
+                  (approval.requestData as any)?.lobReasonName ||
+                  (approval.requestData as any)?.reasonName;
+
+                const lobDescription =
+                  (approval as any).lob?.lobDescription ||
+                  (approval as any).lob?.description ||
+                  (approval.requestData as any)?.lobDescription ||
+                  (approval.requestData as any)?.lobRemarks ||
+                  (approval.requestData as any)?.remarks;
+
+                const isLobStage = Boolean(approval.toStage?.isLOB || lobReason || lobDescription);
+
+                if (!isLobStage) return null;
+
+                return (
+                  <div className="mt-5 rounded-2xl border border-rose-100 bg-rose-50/40 p-4 sm:p-5">
+                    <div className="text-[11px] font-black uppercase tracking-[0.2em] text-rose-800">
+                      LOB Information
+                    </div>
+                    <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                      <div className="sm:col-span-2">
+                        <div className="text-[10px] font-black uppercase tracking-[0.18em] text-rose-600/80">
+                          LOB Reason
+                        </div>
+                        <div className="mt-1 text-sm font-black text-gray-900">
+                          {lobReason || 'Not provided for this approval request'}
+                        </div>
+                      </div>
+                      <div className="sm:col-span-2">
+                        <div className="text-[10px] font-black uppercase tracking-[0.18em] text-rose-600/80">
+                          Description
+                        </div>
+                        <div className="mt-1 text-sm font-semibold text-gray-800 whitespace-pre-wrap leading-relaxed">
+                          {lobDescription || 'No description provided.'}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
               {stageRuleEntries.length > 0 ? (
                 <div className="mt-5 rounded-2xl border border-emerald-100 bg-emerald-50/40 p-4">
                   <div className="text-[11px] font-black uppercase tracking-[0.2em] text-emerald-800">Submitted stage data</div>

@@ -291,6 +291,13 @@ export interface LeadApprovalListItem {
   requestedBy: LeadApprovalActor | null;
   assignedTo: LeadApprovalActor | null;
   approvedBy?: LeadApprovalActor | null;
+  lob?: {
+    reasonId?: string | null;
+    reason?: string | null;
+    lobReason?: string | null;
+    description?: string | null;
+    lobDescription?: string | null;
+  } | null;
 }
 
 export interface LeadApprovalFilters {
