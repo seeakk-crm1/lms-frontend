@@ -51,7 +51,7 @@ const DeleteLeadModal: React.FC<DeleteLeadModalProps> = ({
   const modalNode = (
     <AnimatePresence>
       {isOpen ? (
-        <div className="fixed inset-0 z-[10300] flex items-end justify-center p-0 sm:items-center sm:p-4">
+        <div className="fixed inset-0 z-[10600] flex items-end justify-center p-0 sm:items-center sm:p-4">
           <motion.button
             type="button"
             aria-label="Close lead removal modal"

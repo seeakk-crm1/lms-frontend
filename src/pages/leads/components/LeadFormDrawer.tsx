@@ -1948,7 +1948,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
       {lobExitModalOpen &&
         typeof document !== 'undefined' &&
         createPortal(
-          <div className="fixed inset-0 z-[10300] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+          <div className="fixed inset-0 z-[10500] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
             <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
               <h3 className="text-lg font-black text-gray-900 mb-2">Return From LOB</h3>
               <p className="text-xs font-semibold text-gray-500 mb-4">
@@ -2017,7 +2017,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
       {totalAmountReasonModalOpen &&
         typeof document !== 'undefined' &&
         createPortal(
-          <div className="fixed inset-0 z-[10400] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+          <div className="fixed inset-0 z-[10500] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
             <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
               <h3 className="text-lg font-black text-gray-900 mb-2">Reason for Amount Modification</h3>
               <p className="text-xs font-semibold text-gray-500 mb-4">
@@ -2085,7 +2085,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
       {previewModalOpen && previewImageUrl &&
         typeof document !== 'undefined' &&
         createPortal(
-          <div className="fixed inset-0 z-[10400] flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
+          <div className="fixed inset-0 z-[10600] flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
             <div className="relative max-w-2xl w-full rounded-3xl bg-white p-4 shadow-2xl">
               <button
                 type="button"

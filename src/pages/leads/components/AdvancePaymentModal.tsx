@@ -36,12 +36,24 @@ const AdvancePaymentModal: React.FC<AdvancePaymentModalProps> = ({
     if (isOpen) {
       console.log('[Diagnostic] Portal Mounted');
       console.log('[Diagnostic] Popup Opened', { popup: 'AdvancePaymentModal' });
+
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') {
+          e.stopPropagation();
+          e.stopImmediatePropagation();
+          onClose();
+        }
+      };
+
+      window.addEventListener('keydown', handleKeyDown, true);
+
       return () => {
         console.log('[Diagnostic] Popup Closed', { popup: 'AdvancePaymentModal' });
         console.log('[Diagnostic] Portal Unmounted');
+        window.removeEventListener('keydown', handleKeyDown, true);
       };
     }
-  }, [isOpen]);
+  }, [isOpen, onClose]);
 
   const handleProofChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -113,8 +125,17 @@ const AdvancePaymentModal: React.FC<AdvancePaymentModalProps> = ({
   if (!isOpen) return null;
 
   const content = (
-    <div className="fixed inset-0 z-[10300] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
+    <div className="fixed inset-0 z-[10500] flex items-center justify-center p-4">
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          onClose();
+        }}
+        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        aria-label="Close modal backdrop"
+      />
+      <div className="relative w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
         <h3 className="text-lg font-black text-gray-900 mb-4">Request Advance Payment</h3>
         <div className="space-y-4">
           <div>

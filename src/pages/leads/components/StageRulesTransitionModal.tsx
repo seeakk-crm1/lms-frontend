@@ -102,10 +102,26 @@ const StageRulesTransitionModal: React.FC<StageRulesTransitionModalProps> = ({
     onConfirm(payload);
   }, [onConfirm, sortedRules, values]);
 
+  useEffect(() => {
+    if (isOpen) {
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') {
+          e.stopPropagation();
+          e.stopImmediatePropagation();
+          onClose();
+        }
+      };
+      window.addEventListener('keydown', handleKeyDown, true);
+      return () => {
+        window.removeEventListener('keydown', handleKeyDown, true);
+      };
+    }
+  }, [isOpen, onClose]);
+
   const modalNode = (
     <AnimatePresence>
       {isOpen ? (
-        <div className="fixed inset-0 z-[10300] flex items-end justify-center bg-gray-900/60 p-0 backdrop-blur-sm sm:items-center sm:p-4">
+        <div className="fixed inset-0 z-[10500] flex items-end justify-center bg-gray-900/60 p-0 backdrop-blur-sm sm:items-center sm:p-4">
           <motion.div
             initial={{ opacity: 0, scale: 0.96, y: 16 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}

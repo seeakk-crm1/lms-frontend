@@ -39,12 +39,24 @@ const LOBModal: React.FC<LOBModalProps> = ({
     if (isOpen) {
       console.log('[Diagnostic] Portal Mounted');
       console.log('[Diagnostic] Popup Opened', { popup: 'LOBModal' });
+
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') {
+          e.stopPropagation();
+          e.stopImmediatePropagation();
+          onClose();
+        }
+      };
+
+      window.addEventListener('keydown', handleKeyDown, true);
+
       return () => {
         console.log('[Diagnostic] Popup Closed', { popup: 'LOBModal' });
         console.log('[Diagnostic] Portal Unmounted');
+        window.removeEventListener('keydown', handleKeyDown, true);
       };
     }
-  }, [isOpen]);
+  }, [isOpen, onClose]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -83,12 +95,15 @@ const LOBModal: React.FC<LOBModalProps> = ({
   const modalNode = (
     <AnimatePresence>
       {isOpen ? (
-        <div className="fixed inset-0 z-[10300] flex items-end justify-center p-0 sm:items-center sm:p-4">
+        <div className="fixed inset-0 z-[10500] flex items-end justify-center p-0 sm:items-center sm:p-4">
           <motion.button
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={onClose}
+            onClick={(e) => {
+              e.stopPropagation();
+              onClose();
+            }}
             className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm"
             aria-label="Close LOB modal"
           />

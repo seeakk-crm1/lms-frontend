@@ -71,7 +71,7 @@ const LeadSlaDecisionModal: React.FC<LeadSlaDecisionModalProps> = ({
   const modalNode = (
     <AnimatePresence>
       {isOpen && lead ? (
-        <div className="fixed inset-0 z-[10300] flex items-end justify-center p-0 sm:items-center sm:p-4">
+        <div className="fixed inset-0 z-[10500] flex items-end justify-center p-0 sm:items-center sm:p-4">
           <motion.button
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}

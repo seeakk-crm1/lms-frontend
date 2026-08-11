@@ -89,7 +89,7 @@ const RevenueEditModal: React.FC<RevenueEditModalProps> = ({ isOpen, lead, isSub
   const modalNode = (
     <AnimatePresence>
       {isOpen ? (
-        <div className="fixed inset-0 z-[10300] flex items-center justify-center bg-gray-900/60 p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[10500] flex items-center justify-center bg-gray-900/60 p-4 backdrop-blur-sm">
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
