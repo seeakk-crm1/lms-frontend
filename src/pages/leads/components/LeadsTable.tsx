@@ -127,7 +127,7 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
                   />
                 </motion.th>
               )}
-              {['Lead Name', 'Next Follow-Up', 'Assigned To', 'Stage', 'Lead Life Cycle', 'Total Amount', 'Advance Amount', 'Last Remark', 'Source', 'Created Date', 'Actions'].map((heading) => (
+              {['Lead Name', 'Next Follow-Up', 'Assigned To', 'Stage', 'Last Remark', 'Total Amount', 'Advance Amount', 'Lead Life Cycle', 'Source', 'Created Date', 'Actions'].map((heading) => (
                 <th
                   key={heading}
                   className={`px-6 py-4 text-[11px] font-black uppercase tracking-[0.22em] text-gray-400 ${['Total Amount', 'Advance Amount', 'Last Remark'].includes(heading) ? 'cursor-pointer hover:text-emerald-500 transition-colors select-none' : ''}`}
@@ -329,8 +329,10 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
                       {lead.stage?.name || 'No stage'}
                     </span>
                   </td>
-                  <td className="px-6 py-5 text-sm font-semibold text-gray-600">
-                    {lead.lifecycle?.name || 'No lifecycle'}
+                  <td className="px-6 py-5">
+                    <div className="text-sm font-semibold text-gray-600 max-w-[200px] truncate" title={lead.lastRemark || 'No Remarks'}>
+                      {lead.lastRemark || '—'}
+                    </div>
                   </td>
                   <td className="px-6 py-5">
                     <div className="text-sm font-black text-gray-900">
@@ -342,10 +344,8 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
                       {formatCurrency(lead.advanceAmount || 0)}
                     </div>
                   </td>
-                  <td className="px-6 py-5">
-                    <div className="text-sm font-semibold text-gray-600 max-w-[200px] truncate" title={lead.lastRemark || 'No Remarks'}>
-                      {lead.lastRemark || '—'}
-                    </div>
+                  <td className="px-6 py-5 text-sm font-semibold text-gray-600">
+                    {lead.lifecycle?.name || 'No lifecycle'}
                   </td>
                   <td className="px-6 py-5 text-sm font-semibold text-gray-600">
                     {lead.source?.name || 'Unknown'}
