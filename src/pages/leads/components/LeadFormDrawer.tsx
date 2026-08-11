@@ -84,7 +84,7 @@ const fromLeadToForm = (lead: LeadListItem): LeadFormValues => ({
   nextFollowUpType: (lead.nextFollowUpType as FollowUpType) || 'CALL',
   followUpDescription: lead.followUpDescription || '',
   reasonId: lead.lobLogs?.[0]?.reasonId || '',
-  leadRemarks: lead.remarks || '',
+  leadRemarks: '',
   remarks: lead.lobLogs?.[0]?.remarks || '',
   dynamicValues: fromSavedDynamicValues(lead),
   products: (lead.products || []).map((item) => ({
