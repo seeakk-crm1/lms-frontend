@@ -362,7 +362,20 @@ export interface LeadMetaOptions {
   canAssignOtherUsers: boolean;
 }
 
-export type TimelineEventType = 'AUDIT' | 'ACTIVITY' | 'STAGE_CHANGE' | 'AMOUNT_CHANGE' | 'PAYMENT' | 'PAYMENT_APPROVAL' | 'PAYMENT_REJECTION' | 'LOB' | 'FIELD_UPDATE';
+export type TimelineEventType =
+  | 'AUDIT'
+  | 'ACTIVITY'
+  | 'STAGE_CHANGE'
+  | 'SUBSTAGE_CHANGE'
+  | 'CONNECTION_STATUS_CHANGE'
+  | 'PRIORITY_CHANGE'
+  | 'FOLLOWUP_EXTENDED'
+  | 'AMOUNT_CHANGE'
+  | 'PAYMENT'
+  | 'PAYMENT_APPROVAL'
+  | 'PAYMENT_REJECTION'
+  | 'LOB'
+  | 'FIELD_UPDATE';
 
 export interface TimelineEvent {
   id: string;

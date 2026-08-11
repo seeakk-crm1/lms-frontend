@@ -14,6 +14,10 @@ interface LeadHistoryDrawerProps {
 
 const getEventIcon = (eventType: string) => {
   switch (eventType) {
+    case 'SUBSTAGE_CHANGE': return <RefreshCw className="w-5 h-5 text-emerald-500" />;
+    case 'CONNECTION_STATUS_CHANGE': return <Activity className="w-5 h-5 text-blue-500" />;
+    case 'PRIORITY_CHANGE': return <Activity className="w-5 h-5 text-amber-500" />;
+    case 'FOLLOWUP_EXTENDED': return <Clock className="w-5 h-5 text-purple-500" />;
     case 'ACTIVITY': return <Activity className="w-5 h-5 text-blue-500" />;
     case 'STAGE_CHANGE': return <RefreshCw className="w-5 h-5 text-indigo-500" />;
     case 'AMOUNT_CHANGE': return <DollarSign className="w-5 h-5 text-green-500" />;
@@ -72,9 +76,14 @@ const LeadHistoryDrawer: React.FC<LeadHistoryDrawerProps> = ({ isOpen, leadId, o
       } else if (filterType === 'Assignment Changes') {
         matchesFilter = event.eventType === 'FIELD_UPDATE' && event.changes?.some(c => c.fieldKey === 'assignedToId') || false;
       } else if (filterType === 'Follow-up Changes') {
-        matchesFilter = event.eventType === 'FIELD_UPDATE' && event.changes?.some(c => c.fieldKey === 'nextFollowUpAt') || false;
+        matchesFilter = event.eventType === 'FOLLOWUP_EXTENDED' || Boolean(event.eventType === 'FIELD_UPDATE' && event.changes?.some(c => c.fieldKey === 'nextFollowUpAt'));
+      } else if (filterType === 'Substage Changes') {
+        matchesFilter = event.eventType === 'SUBSTAGE_CHANGE';
+      } else if (filterType === 'Connection Status') {
+        matchesFilter = event.eventType === 'CONNECTION_STATUS_CHANGE';
+      } else if (filterType === 'Priority Changes') {
+        matchesFilter = event.eventType === 'PRIORITY_CHANGE';
       } else if (filterType === 'Dynamic Fields') {
-        // dynamic fields use uuid for fieldKey
         matchesFilter = event.eventType === 'FIELD_UPDATE' && event.changes?.some(c => c.fieldKey.length > 20) || false;
       } else if (filterType === 'PAYMENT') {
         matchesFilter = ['PAYMENT', 'PAYMENT_APPROVAL', 'PAYMENT_REJECTION', 'AMOUNT_CHANGE'].includes(event.eventType);
@@ -99,7 +108,7 @@ const LeadHistoryDrawer: React.FC<LeadHistoryDrawerProps> = ({ isOpen, leadId, o
       const timeStr = dt.toLocaleTimeString();
       const userStr = e.user?.name || 'System';
       const eventTypeStr = e.eventType;
-      const reasonStr = (e.reason || e.description || '').replace(/"/g, '""');
+      const reasonStr = ((e as any).reason || e.description || '').replace(/"/g, '""');
 
       if (e.changes && e.changes.length > 0) {
         e.changes.forEach(change => {
@@ -109,14 +118,13 @@ const LeadHistoryDrawer: React.FC<LeadHistoryDrawerProps> = ({ isOpen, leadId, o
           rows.push(`"${dateStr}","${timeStr}","${fieldStr}","${oldStr}","${newStr}","${userStr}","${reasonStr}","${eventTypeStr}"`);
         });
       } else {
-        // Handle events without explicit field changes (e.g., generic ACTIVITY)
         let fieldStr = '';
         let oldStr = '';
         let newStr = '';
         
         if (e.eventType === 'STAGE_CHANGE') {
           fieldStr = 'Stage';
-          oldStr = e.metadata?.fromStageId || 'None'; // Could be mapped to name if available
+          oldStr = e.metadata?.fromStageId || 'None';
           newStr = e.metadata?.toStageId || 'None';
         } else if (e.eventType === 'AMOUNT_CHANGE') {
           fieldStr = 'Total Amount';
@@ -181,8 +189,11 @@ const LeadHistoryDrawer: React.FC<LeadHistoryDrawerProps> = ({ isOpen, leadId, o
             <option value="ALL">All Events</option>
             <option value="FIELD_UPDATE">Field Updates</option>
             <option value="STAGE_CHANGE">Stage Changes</option>
+            <option value="Substage Changes">Substage Changes</option>
+            <option value="Connection Status">Connection Status</option>
+            <option value="Priority Changes">Priority Changes</option>
+            <option value="Follow-up Changes">Follow-up Extension</option>
             <option value="PAYMENT">Payment Changes</option>
-            <option value="Follow-up Changes">Follow-up Changes</option>
             <option value="Assignment Changes">Assignment Changes</option>
             <option value="Remarks">Remarks</option>
             <option value="Dynamic Fields">Dynamic Fields</option>
@@ -237,7 +248,9 @@ const LeadHistoryDrawer: React.FC<LeadHistoryDrawerProps> = ({ isOpen, leadId, o
                         {event.changes.map((change, idx) => (
                           <div key={idx} className="text-sm flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
                             <span className="font-medium text-gray-700 min-w-[120px]">
-                              {String(change.fieldKey).replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}:
+                              {String(change.fieldKey).includes(' ')
+                                ? String(change.fieldKey)
+                                : String(change.fieldKey).replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}:
                             </span>
                             <div className="flex items-center flex-1 gap-2 flex-wrap">
                               <span className="bg-red-50 text-red-700 px-2 py-0.5 rounded text-xs truncate max-w-[200px]" title={String(change.oldValue || 'None')}>
@@ -250,6 +263,13 @@ const LeadHistoryDrawer: React.FC<LeadHistoryDrawerProps> = ({ isOpen, leadId, o
                             </div>
                           </div>
                         ))}
+                      </div>
+                    )}
+
+                    {(event as any).reason && (
+                      <div className="mb-3 rounded-lg border border-amber-100 bg-amber-50/80 p-2.5 text-xs font-semibold text-gray-700">
+                        <span className="font-bold text-amber-800">Reason: </span>
+                        {(event as any).reason}
                       </div>
                     )}
                     
