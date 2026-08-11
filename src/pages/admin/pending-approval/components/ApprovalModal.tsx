@@ -4,6 +4,7 @@ import { CheckCircle2, Clock3, History, ShieldAlert, X } from 'lucide-react';
 import type { LeadApprovalAction, LeadApprovalListItem } from '../../../../types/lead.types';
 import StatusBadge from './StatusBadge';
 import { formatPhoneWithFlag } from '../../../../utils/phoneUtils';
+import { formatCurrency, getWorkspaceCurrencySymbol } from '../../../../utils/currency';
 
 interface ApprovalModalProps {
   approval: LeadApprovalListItem | null;
@@ -178,7 +179,7 @@ const ApprovalModal: React.FC<ApprovalModalProps> = ({
                   <div>
                     <div className="text-[11px] font-black uppercase tracking-[0.18em] text-gray-400">Advance Amount</div>
                     <div className="mt-2 text-sm font-black text-gray-900">
-                      ${(approval.requestData as any)?.amount?.toFixed(2)}
+                      {formatCurrency((approval.requestData as any)?.amount)}
                     </div>
                   </div>
                   <div>
@@ -288,7 +289,7 @@ const ApprovalModal: React.FC<ApprovalModalProps> = ({
                 <div className="rounded-2xl border border-emerald-100 bg-emerald-50/20 p-4">
                   <div className="text-[11px] font-black uppercase tracking-[0.2em] text-emerald-800">Approved Closure Revenue</div>
                   <div className="mt-2 text-lg font-black text-emerald-950">
-                    ${new Intl.NumberFormat('en-US', { minimumFractionDigits: 2 }).format(
+                    {formatCurrency(
                       Number((approval.lead as any)?.totalAmount || (approval.lead as any)?.generatedRevenue || (approval.lead as any)?.earnedRevenue || 0)
                     )}
                   </div>
@@ -309,7 +310,7 @@ const ApprovalModal: React.FC<ApprovalModalProps> = ({
               {isClosedWonStage && isPending ? (
                 <div>
                   <label className="mb-2 block text-[11px] font-black uppercase tracking-[0.22em] text-gray-400">
-                    Earned Revenue ($) <span className="text-rose-500">*</span>
+                    Earned Revenue ({getWorkspaceCurrencySymbol()}) <span className="text-rose-500">*</span>
                   </label>
                   <input
                     type="text"

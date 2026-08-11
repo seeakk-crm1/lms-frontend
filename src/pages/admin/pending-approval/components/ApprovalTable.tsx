@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight, ChevronsUpDown } from 'lucide-react';
 import type { LeadApprovalListItem } from '../../../../types/lead.types';
 import ApprovalRow from './ApprovalRow';
 import StatusBadge from './StatusBadge';
+import { formatCurrency } from '../../../../utils/currency';
 
 interface ApprovalTableProps {
   items: LeadApprovalListItem[];
@@ -147,7 +148,7 @@ const ApprovalTable: React.FC<ApprovalTableProps> = ({
                   <div className="text-lg font-black text-gray-900">{approval.lead?.name || 'Unknown lead'}</div>
                   <div className="mt-1 text-sm font-semibold text-gray-500">
                     {approval.type === 'ADVANCE_PAYMENT'
-                      ? `Advance Request: ${(approval.requestData as any)?.amount?.toFixed(2)}`
+                      ? `Advance Request: ${formatCurrency((approval.requestData as any)?.amount)}`
                       : `${approval.fromStage?.name || 'Unknown'} to ${approval.toStage?.name || 'Unknown'}`}
                   </div>
                 </div>

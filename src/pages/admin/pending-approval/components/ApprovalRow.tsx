@@ -5,6 +5,7 @@ import { CheckCircle2, History } from 'lucide-react';
 import type { LeadApprovalListItem } from '../../../../types/lead.types';
 import StatusBadge from './StatusBadge';
 import { formatPhoneWithFlag } from '../../../../utils/phoneUtils';
+import { formatCurrency } from '../../../../utils/currency';
 
 interface ApprovalRowProps {
   approval: LeadApprovalListItem;
@@ -69,7 +70,7 @@ const ApprovalRow: React.FC<ApprovalRowProps> = ({ approval, canAct, onReview, o
       </td>
       <td className="px-6 py-5 text-sm font-semibold text-gray-600">
         {approval.type === 'ADVANCE_PAYMENT'
-          ? `Advance Request: ${(approval.requestData as any)?.amount?.toFixed(2)}`
+          ? `Advance Request: ${formatCurrency((approval.requestData as any)?.amount)}`
           : approval.toStage?.name || 'Unknown'}
       </td>
       <td className="px-6 py-5">
