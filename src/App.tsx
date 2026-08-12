@@ -49,6 +49,7 @@ import TargetCyclePage from './modules/admin/target-cycle/TargetCyclePage';
 import LeadDynamicsPage from './modules/admin/lead-dynamics/LeadDynamicsPage';
 import OfficePage from './pages/admin/office/OfficePage';
 import MetaAdsSettingsPage from './pages/settings/MetaAdsSettingsPage';
+import TelephonySettingsPage from './pages/settings/TelephonySettingsPage';
 import LeadLifeCyclePage from './pages/admin/lead-life-cycle/LeadLifeCyclePage';
 import HolidayPage from './pages/admin/holidays/HolidayPage';
 import CalendarPage from './pages/calendar/CalendarPage';
@@ -328,6 +329,16 @@ function App() {
         <Route path="/settings/meta-ads" element={
           <PermissionRoute permissions={['LEAD_SOURCES_VIEW', 'SYSTEM_CONFIG']}>
             <MetaAdsSettingsPage />
+          </PermissionRoute>
+        } />
+        <Route path="/admin/telephony" element={
+          <PermissionRoute permissions={['SYSTEM_CONFIG']}>
+            <TelephonySettingsPage />
+          </PermissionRoute>
+        } />
+        <Route path="/settings/telephony" element={
+          <PermissionRoute permissions={['SYSTEM_CONFIG']}>
+            <TelephonySettingsPage />
           </PermissionRoute>
         } />
         <Route path="/admin/products" element={

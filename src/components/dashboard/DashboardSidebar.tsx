@@ -120,6 +120,7 @@ const sidebarMenus: SidebarSection[] = [
                 icon: Settings, label: 'Settings',
                 subItems: [
                     { label: 'Meta Ads', path: '/admin/meta-ads', requiredPermissions: ['LEAD_SOURCES_VIEW', 'SYSTEM_CONFIG'] },
+                    { label: 'Telephony', path: '/admin/telephony', requiredPermissions: ['SYSTEM_CONFIG'] },
                 ]
             }
         ]
