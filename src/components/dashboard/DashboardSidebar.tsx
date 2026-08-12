@@ -115,7 +115,13 @@ const sidebarMenus: SidebarSection[] = [
     {
         title: 'SYSTEM',
         items: [
-            { icon: Unplug, label: 'Unlock Staff', path: '/unlock-staff', requiredPermissions: ['USERS_UNLOCK', 'USERS_EDIT', 'SYSTEM_CONFIG'] }
+            { icon: Unplug, label: 'Unlock Staff', path: '/unlock-staff', requiredPermissions: ['USERS_UNLOCK', 'USERS_EDIT', 'SYSTEM_CONFIG'] },
+            {
+                icon: Settings, label: 'Settings',
+                subItems: [
+                    { label: 'Meta Ads', path: '/admin/meta-ads', requiredPermissions: ['LEAD_SOURCES_VIEW', 'SYSTEM_CONFIG'] },
+                ]
+            }
         ]
     }
 ];

@@ -48,6 +48,7 @@ import RosterPage from './modules/admin/roster/RosterPage';
 import TargetCyclePage from './modules/admin/target-cycle/TargetCyclePage';
 import LeadDynamicsPage from './modules/admin/lead-dynamics/LeadDynamicsPage';
 import OfficePage from './pages/admin/office/OfficePage';
+import MetaAdsSettingsPage from './pages/settings/MetaAdsSettingsPage';
 import LeadLifeCyclePage from './pages/admin/lead-life-cycle/LeadLifeCyclePage';
 import HolidayPage from './pages/admin/holidays/HolidayPage';
 import CalendarPage from './pages/calendar/CalendarPage';
@@ -317,6 +318,16 @@ function App() {
         <Route path="/admin/lead-source" element={
           <PermissionRoute permissions={['LEAD_SOURCES_VIEW', 'SYSTEM_CONFIG']}>
             <LeadSourceListPage />
+          </PermissionRoute>
+        } />
+        <Route path="/admin/meta-ads" element={
+          <PermissionRoute permissions={['LEAD_SOURCES_VIEW', 'SYSTEM_CONFIG']}>
+            <MetaAdsSettingsPage />
+          </PermissionRoute>
+        } />
+        <Route path="/settings/meta-ads" element={
+          <PermissionRoute permissions={['LEAD_SOURCES_VIEW', 'SYSTEM_CONFIG']}>
+            <MetaAdsSettingsPage />
           </PermissionRoute>
         } />
         <Route path="/admin/products" element={
