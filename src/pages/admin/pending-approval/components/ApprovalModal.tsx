@@ -110,7 +110,8 @@ const ApprovalModal: React.FC<ApprovalModalProps> = ({
             aria-modal="true"
             aria-labelledby="lead-approval-modal-title"
           >
-            <div className="border-b border-gray-100 p-4 sm:p-6 lg:p-8">
+            {/* Fixed Header */}
+            <div className="flex-shrink-0 border-b border-gray-100 p-4 sm:p-6 lg:p-8">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-center gap-3">
                   <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 sm:h-12 sm:w-12">
@@ -136,8 +137,11 @@ const ApprovalModal: React.FC<ApprovalModalProps> = ({
                   <X className="h-5 w-5" />
                 </button>
               </div>
+            </div>
 
-              <div className="mt-6 grid gap-4 md:grid-cols-2">
+            {/* Single Scrollable Body */}
+            <div className="flex-1 min-h-0 space-y-5 overflow-y-auto p-4 sm:space-y-6 sm:p-6 lg:p-8">
+              <div className="grid gap-4 md:grid-cols-2">
                 <div className="rounded-2xl border border-gray-100 bg-gray-50/80 p-4">
                   <div className="text-[11px] font-black uppercase tracking-[0.2em] text-gray-400">Lead</div>
                   <div className="mt-2 text-lg font-black text-gray-900">{approval.lead?.name || 'Unknown lead'}</div>
@@ -158,7 +162,7 @@ const ApprovalModal: React.FC<ApprovalModalProps> = ({
               </div>
 
               {!isAdvancePayment ? (
-                <div className="mt-5 grid gap-3 rounded-2xl border border-gray-100 bg-white p-4 sm:grid-cols-2 md:grid-cols-3">
+                <div className="grid gap-3 rounded-2xl border border-gray-100 bg-white p-4 sm:grid-cols-2 md:grid-cols-3">
                   <div>
                     <div className="text-[11px] font-black uppercase tracking-[0.18em] text-gray-400">From Stage</div>
                     <div className="mt-2 text-sm font-black text-gray-900">{approval.fromStage?.name || 'Unknown'}</div>
@@ -175,7 +179,7 @@ const ApprovalModal: React.FC<ApprovalModalProps> = ({
                   </div>
                 </div>
               ) : (
-                <div className="mt-5 grid gap-3 rounded-2xl border border-gray-100 bg-white p-4 sm:grid-cols-2 md:grid-cols-3">
+                <div className="grid gap-3 rounded-2xl border border-gray-100 bg-white p-4 sm:grid-cols-2 md:grid-cols-3">
                   <div>
                     <div className="text-[11px] font-black uppercase tracking-[0.18em] text-gray-400">Advance Amount</div>
                     <div className="mt-2 text-sm font-black text-gray-900">
@@ -226,7 +230,7 @@ const ApprovalModal: React.FC<ApprovalModalProps> = ({
                 if (!isLobStage) return null;
 
                 return (
-                  <div className="mt-5 rounded-2xl border border-rose-100 bg-rose-50/40 p-4 sm:p-5">
+                  <div className="rounded-2xl border border-rose-100 bg-rose-50/40 p-4 sm:p-5">
                     <div className="text-[11px] font-black uppercase tracking-[0.2em] text-rose-800">
                       LOB Information
                     </div>
@@ -253,7 +257,7 @@ const ApprovalModal: React.FC<ApprovalModalProps> = ({
               })()}
 
               {stageRuleEntries.length > 0 ? (
-                <div className="mt-5 rounded-2xl border border-emerald-100 bg-emerald-50/40 p-4">
+                <div className="rounded-2xl border border-emerald-100 bg-emerald-50/40 p-4">
                   <div className="text-[11px] font-black uppercase tracking-[0.2em] text-emerald-800">Submitted stage data</div>
                   <ul className="mt-3 space-y-2">
                     {stageRuleEntries.map((entry, index) => (
@@ -265,9 +269,7 @@ const ApprovalModal: React.FC<ApprovalModalProps> = ({
                   </ul>
                 </div>
               ) : null}
-            </div>
 
-            <div className="flex-1 space-y-5 overflow-y-auto p-4 sm:space-y-6 sm:p-6 lg:p-8">
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="rounded-2xl border border-gray-100 bg-gray-50/70 p-4">
                   <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.18em] text-gray-400">
@@ -392,7 +394,10 @@ const ApprovalModal: React.FC<ApprovalModalProps> = ({
                   Comments are mandatory so the approval decision remains traceable in audit logs and lead activity history.
                 </p>
               </div>
+            </div>
 
+            {/* Fixed Footer */}
+            <div className="flex-shrink-0 border-t border-gray-100 bg-white p-4 sm:px-6 sm:py-5 lg:px-8">
               <div className="flex flex-col gap-3 sm:flex-row">
                 <button
                   type="button"
