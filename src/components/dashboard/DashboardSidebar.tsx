@@ -195,7 +195,10 @@ const MenuItem: React.FC<MenuItemProps> = ({ item, isCollapsed, isActive, setAct
                         className="pl-9 pr-2 py-1 space-y-1 overflow-hidden"
                     >
                         {item.subItems?.map((sub, idx) => {
-                            const isSubActive = location.pathname === sub.path;
+                            const isSubActive =
+                                location.pathname === sub.path ||
+                                (sub.path === '/admin/meta-ads' && location.pathname === '/settings/meta-ads') ||
+                                (sub.path === '/admin/telephony' && location.pathname === '/settings/telephony');
                             return (
                                 <button
                                     key={idx}
@@ -233,6 +236,17 @@ export const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ isCollapsed,
     const navigate = useNavigate();
     const logout = useAuthStore((state) => state.logout);
     const user = useAuthStore((state) => state.user);
+
+    React.useEffect(() => {
+        for (const section of sidebarMenus) {
+            for (const item of section.items) {
+                if (item.subItems?.some((sub) => sub.path === location.pathname || (sub.path === '/admin/meta-ads' && location.pathname === '/settings/meta-ads') || (sub.path === '/admin/telephony' && location.pathname === '/settings/telephony'))) {
+                    setActiveMenu(item.label);
+                    return;
+                }
+            }
+        }
+    }, [location.pathname]);
 
     const handleLogout = () => {
         logout();
@@ -309,7 +323,8 @@ export const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ isCollapsed,
                             const isItemActive =
                                 location.pathname === item.path ||
                                 (item.label === 'Dashboard' && location.pathname === '/dashboard') ||
-                                (item.label === 'Reports' && location.pathname.startsWith('/reports'));
+                                (item.label === 'Reports' && location.pathname.startsWith('/reports')) ||
+                                Boolean(item.subItems?.some((sub) => sub.path === location.pathname || (sub.path === '/admin/meta-ads' && location.pathname === '/settings/meta-ads') || (sub.path === '/admin/telephony' && location.pathname === '/settings/telephony')));
 
                             return (
                                 <MenuItem

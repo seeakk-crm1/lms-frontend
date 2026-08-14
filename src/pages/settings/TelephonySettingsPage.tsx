@@ -20,6 +20,7 @@ import {
   TelephonySettingsData,
   TelephonyProviderConfigItem,
 } from '../../services/telephony.api';
+import DashboardLayout from '../../components/dashboard/DashboardLayout';
 
 const TelephonySettingsPage: React.FC = () => {
   const [settings, setSettings] = useState<TelephonySettingsData | null>(null);
@@ -130,7 +131,8 @@ const TelephonySettingsPage: React.FC = () => {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
+    <DashboardLayout>
+      <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto w-full">
       {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
         <div className="space-y-1">
@@ -544,7 +546,8 @@ const TelephonySettingsPage: React.FC = () => {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </DashboardLayout>
   );
 };
 
