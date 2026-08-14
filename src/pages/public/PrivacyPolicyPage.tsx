@@ -228,7 +228,10 @@ const PrivacyPolicyPage: React.FC = () => {
                   <h2 className="text-xl font-bold text-slate-900">Data Deletion</h2>
                 </div>
                 <p>
-                  Customer organizations or users may request data deletion or account removal by submitting a request to <strong>{CONTACT_EMAIL}</strong> or via authorized workspace administrative tools. Upon verified request, Seeakk will process data deletion in accordance with applicable contractual terms and legal retention requirements.
+                  Customer organizations or users may request data deletion or account removal by submitting a request to <strong>{CONTACT_EMAIL}</strong>, via authorized workspace administrative tools, or by visiting our dedicated{' '}
+                  <Link to="/data-deletion" className="text-emerald-600 font-semibold hover:underline">
+                    User Data Deletion Page
+                  </Link>. Upon verified request, Seeakk will process data deletion in accordance with applicable contractual terms and legal retention requirements.
                 </p>
               </section>
 

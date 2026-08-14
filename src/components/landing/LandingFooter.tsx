@@ -108,6 +108,7 @@ const LandingFooter: React.FC = () => {
             <div className="flex gap-6">
               <Link to="/privacy-policy" className="hover:text-white transition-colors">Privacy Policy</Link>
               <Link to="/terms" className="hover:text-white transition-colors">Terms of Service</Link>
+              <Link to="/data-deletion" className="hover:text-white transition-colors">Data Deletion</Link>
               <a href="#security" className="hover:text-white transition-colors">Security & Compliance</a>
             </div>
           </div>

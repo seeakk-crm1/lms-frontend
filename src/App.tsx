@@ -32,6 +32,7 @@ import { installNetworkRecovery } from './services/networkRecovery';
 import Login from './pages/Login';
 import PrivacyPolicyPage from './pages/public/PrivacyPolicyPage';
 import TermsOfServicePage from './pages/public/TermsOfServicePage';
+import DataDeletionPage from './pages/public/DataDeletionPage';
 import InvitePage from './pages/InvitePage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
@@ -250,6 +251,7 @@ function App() {
 
         <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
         <Route path="/terms" element={<TermsOfServicePage />} />
+        <Route path="/data-deletion" element={<DataDeletionPage />} />
 
         <Route path="/login" element={
           <PublicRoute>
