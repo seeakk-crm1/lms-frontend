@@ -30,6 +30,8 @@ import LocationTrackingClient from './components/location/LocationTrackingClient
 import { shouldRunAuthenticatedWorkflow } from './utils/publicRoutes';
 import { installNetworkRecovery } from './services/networkRecovery';
 import Login from './pages/Login';
+import PrivacyPolicyPage from './pages/public/PrivacyPolicyPage';
+import TermsOfServicePage from './pages/public/TermsOfServicePage';
 import InvitePage from './pages/InvitePage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
@@ -245,6 +247,9 @@ function App() {
             <LandingFooter />
           </div>
         } />
+
+        <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+        <Route path="/terms" element={<TermsOfServicePage />} />
 
         <Route path="/login" element={
           <PublicRoute>

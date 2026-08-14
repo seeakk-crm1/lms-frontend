@@ -3,6 +3,8 @@ export const isPublicMarketingRoute = (pathname: string): boolean => {
   const normalized = (pathname || '/').replace(/\/+$/, '') || '/';
 
   if (normalized === '/') return true;
+  if (normalized === '/privacy-policy') return true;
+  if (normalized === '/terms') return true;
   if (normalized === '/login' || normalized.startsWith('/login/')) return true;
   if (normalized.startsWith('/invite')) return true;
   if (normalized === '/activate-account') return true;
