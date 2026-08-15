@@ -71,7 +71,34 @@ export const testTelephonyProviderConnection = async (providerKey: string): Prom
   return response.data.data;
 };
 
+export interface TelephonyUserMappingItem {
+  userId: string;
+  userName: string;
+  userEmail: string;
+  userPhone: string;
+  providerKey: string;
+  providerAgentId: string;
+  providerPhoneNumber: string;
+  enabled: boolean;
+}
+
 export const getRecordingPlayback = async (sessionId: string): Promise<{ url: string; recordingAvailable: boolean }> => {
   const response = await api.get(`/telephony/recordings/${sessionId}/play`);
   return response.data.data;
+};
+
+export const getTelephonyUserMappings = async (providerKey: string = 'KNOWLARITY'): Promise<TelephonyUserMappingItem[]> => {
+  const response = await api.get('/telephony/user-mappings', { params: { providerKey } });
+  return response.data.data;
+};
+
+export const saveTelephonyUserMapping = async (payload: {
+  providerKey: string;
+  userId: string;
+  providerAgentId?: string;
+  providerPhoneNumber?: string;
+  enabled?: boolean;
+}): Promise<any> => {
+  const response = await api.put('/telephony/user-mappings', payload);
+  return response.data;
 };

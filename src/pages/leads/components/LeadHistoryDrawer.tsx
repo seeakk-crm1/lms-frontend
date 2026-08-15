@@ -266,6 +266,28 @@ const LeadHistoryDrawer: React.FC<LeadHistoryDrawerProps> = ({ isOpen, leadId, o
                       </div>
                     )}
 
+                    {(event as any).metadata?.recordingUrl && (
+                      <div className="my-3 p-3 bg-emerald-50/60 border border-emerald-200 rounded-xl space-y-2">
+                        <div className="flex items-center justify-between text-xs font-bold text-emerald-900">
+                          <span className="flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                            <span>Call Recording ({(event as any).metadata.provider || 'Knowlarity'})</span>
+                          </span>
+                          {(event as any).metadata.duration ? (
+                            <span className="font-mono text-[11px] text-slate-500">
+                              {Math.floor((event as any).metadata.duration / 60)}m {(event as any).metadata.duration % 60}s
+                            </span>
+                          ) : null}
+                        </div>
+                        <audio
+                          controls
+                          controlsList="nodownload"
+                          src={(event as any).metadata.recordingUrl}
+                          className="w-full h-8 rounded-lg outline-none"
+                        />
+                      </div>
+                    )}
+
                     {(event as any).reason && (
                       <div className="mb-3 rounded-lg border border-amber-100 bg-amber-50/80 p-2.5 text-xs font-semibold text-gray-700">
                         <span className="font-bold text-amber-800">Reason: </span>
