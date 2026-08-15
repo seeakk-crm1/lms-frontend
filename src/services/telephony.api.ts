@@ -71,6 +71,11 @@ export const testTelephonyProviderConnection = async (providerKey: string): Prom
   return response.data.data;
 };
 
+export const getProviderAgents = async (providerKey: string = 'KNOWLARITY'): Promise<Array<{ id: string; name: string; extension?: string; phone?: string }>> => {
+  const response = await api.get(`/telephony/providers/${providerKey}/agents`);
+  return response.data.data;
+};
+
 export interface TelephonyUserMappingItem {
   userId: string;
   userName: string;
