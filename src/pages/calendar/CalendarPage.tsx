@@ -14,7 +14,6 @@ import CalendarView from '../../components/calendar/CalendarView';
 import CompleteFollowUpModal from '../../components/calendar/CompleteFollowUpModal';
 import FollowUpActionModal from '../../components/calendar/FollowUpActionModal';
 import SnoozeFollowUpModal from '../../components/calendar/SnoozeFollowUpModal';
-import WhatsAppTemplateSelector from '../../components/common/WhatsAppTemplateSelector';
 import {
   useCompleteFollowUpMutation,
   useCreateFollowUpMutation,
@@ -45,8 +44,6 @@ type ScheduleFormValues = z.infer<typeof scheduleSchema>;
 
 const CalendarPage: React.FC = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [createWhatsappTemplateId, setCreateWhatsappTemplateId] = useState<string | null>(null);
-  const [createWhatsappReminderEnabled, setCreateWhatsappReminderEnabled] = useState<boolean>(false);
   const [actionFollowUp, setActionFollowUp] = useState<FollowUp | null>(null);
   const [snoozeFollowUpItem, setSnoozeFollowUpItem] = useState<FollowUp | null>(null);
   const [snoozeDateTime, setSnoozeDateTime] = useState('');
@@ -177,16 +174,12 @@ const CalendarPage: React.FC = () => {
         type: values.type,
         scheduledAt: new Date(values.scheduledAt).toISOString(),
         ...(values.description?.trim() ? { description: values.description.trim() } : {}),
-        ...(createWhatsappTemplateId ? { whatsappTemplateId: createWhatsappTemplateId } : {}),
-        whatsappReminderEnabled: createWhatsappReminderEnabled,
       };
       await createMutation.mutateAsync(payload);
       reset();
-      setCreateWhatsappTemplateId(null);
-      setCreateWhatsappReminderEnabled(false);
       setIsCreateModalOpen(false);
     },
-    [confirmIfWeeklyOff, createMutation, createWhatsappReminderEnabled, createWhatsappTemplateId, reset],
+    [confirmIfWeeklyOff, createMutation, reset],
   );
 
   return (
@@ -448,12 +441,7 @@ const CalendarPage: React.FC = () => {
                   />
                 </div>
 
-                <WhatsAppTemplateSelector
-                  selectedTemplateId={createWhatsappTemplateId}
-                  onSelectTemplate={setCreateWhatsappTemplateId}
-                  reminderEnabled={createWhatsappReminderEnabled}
-                  onToggleReminder={setCreateWhatsappReminderEnabled}
-                />
+
 
                 <div className="flex flex-col gap-3 sm:flex-row">
                   <button
