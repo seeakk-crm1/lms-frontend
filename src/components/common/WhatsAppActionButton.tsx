@@ -90,6 +90,16 @@ const WhatsAppActionButton: React.FC<WhatsAppActionButtonProps> = ({
       <button
         type="button"
         onClick={handleClick}
+        onMouseDown={(e) => {
+          if (stopPropagation) {
+            e.stopPropagation();
+          }
+        }}
+        onPointerDown={(e) => {
+          if (stopPropagation) {
+            e.stopPropagation();
+          }
+        }}
         disabled={isDisabled}
         className={`${variantClasses[variant]} ${className}`.trim()}
         title={tooltip}
