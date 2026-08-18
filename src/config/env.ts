@@ -20,7 +20,7 @@ const requireEnv = (key: string): string => {
 
 export const normalizeOriginUrl = (raw: string): string => raw.trim().replace(/\/+$/, '');
 
-const defaultLocalApi = 'http://localhost:5000/api';
+const defaultLocalApi = 'http://localhost:5001/api';
 
 const getOptionalEnv = (key: string): string => {
   const value = (import.meta.env as Record<string, string | undefined>)[key];

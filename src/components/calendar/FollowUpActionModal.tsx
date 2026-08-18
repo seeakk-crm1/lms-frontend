@@ -1,7 +1,8 @@
 import React, { useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { CheckCircle2, Clock3, X, PhoneCall, Building2, Calendar, Tag, AlertCircle, FileText, ArrowRight } from 'lucide-react';
+import { CheckCircle2, Clock3, X, PhoneCall, Building2, Calendar, Tag, AlertCircle, FileText, ArrowRight, MessageSquare } from 'lucide-react';
 import { format } from 'date-fns';
+import toast from 'react-hot-toast';
 import { formatFollowUpTypeLabel } from '../../modules/followups/followUpTypeUi';
 import type { FollowUp } from '../../types/followup.types';
 import WhatsAppActionButton from '../common/WhatsAppActionButton';
@@ -10,6 +11,8 @@ import { formatPhoneWithFlag } from '../../utils/phoneUtils';
 import LeadAvatar from '../../pages/leads/components/LeadAvatar';
 import FollowUpContextCard from './FollowUpContextCard';
 import { useFollowupWorkflowStore } from '../../store/followupWorkflowStore';
+import { buildWhatsAppClickToChatUrl } from '../../utils/renderWhatsAppTemplate';
+import { useRecordWhatsAppOpenedMutation } from '../../hooks/useWhatsAppTemplates';
 
 interface Props {
   isOpen: boolean;
@@ -47,6 +50,7 @@ const FollowUpActionModal: React.FC<Props> = ({
   onSnooze,
   isMandatory = true,
 }) => {
+  const recordWhatsAppOpenedMut = useRecordWhatsAppOpenedMutation();
   const isEditingFromFollowup = useFollowupWorkflowStore((state) => state.isEditingFromFollowup);
   const typeLabel = useMemo(() => (followUp ? formatFollowUpTypeLabel(followUp.type) : ''), [followUp]);
   const isCompleted = followUp?.status === 'COMPLETED';
@@ -236,6 +240,60 @@ const FollowUpActionModal: React.FC<Props> = ({
                 </div>
               </div>
             </div>
+
+            {/* WhatsApp Message Ready Card (if reminder enabled & message ready) */}
+            {(followUp.whatsappReminderEnabled || followUp.renderedWhatsAppMessage) && (followUp.renderedWhatsAppMessage || followUp.whatsappTemplateSnapshot || followUp.whatsappTemplate?.message) ? (
+              <div className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-5 shadow-sm space-y-3.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-emerald-900 font-black text-sm">
+                    <MessageSquare className="h-5 w-5 text-emerald-600" />
+                    <span>WhatsApp Message Ready</span>
+                  </div>
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-100 px-2.5 py-0.5 rounded-full">
+                    Pre-filled Prompt
+                  </span>
+                </div>
+
+                <div className="rounded-xl bg-white p-4 border border-emerald-100 shadow-sm space-y-2">
+                  <p className="text-xs font-semibold text-gray-800 whitespace-pre-wrap leading-relaxed">
+                    {followUp.renderedWhatsAppMessage || followUp.whatsappTemplateSnapshot || followUp.whatsappTemplate?.message}
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-between gap-3 pt-1">
+                  <p className="text-xs font-bold text-emerald-900">
+                    Do you want to send this message?
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <a
+                      href={
+                        followUp.clickToChatUrl ||
+                        buildWhatsAppClickToChatUrl(
+                          leadPhone,
+                          followUp.renderedWhatsAppMessage || followUp.whatsappTemplateSnapshot || followUp.whatsappTemplate?.message
+                        ) ||
+                        '#'
+                      }
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => {
+                        if (!leadPhone) {
+                          toast.error("Unable to open WhatsApp. Please update the lead's mobile number.");
+                          return;
+                        }
+                        if (recordWhatsAppOpenedMut) {
+                          recordWhatsAppOpenedMut.mutate(followUp.id);
+                        }
+                      }}
+                      className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white shadow-md shadow-emerald-600/20 hover:bg-emerald-700 transition-colors"
+                    >
+                      <MessageSquare className="h-3.5 w-3.5" />
+                      Open WhatsApp
+                    </a>
+                  </div>
+                </div>
+              </div>
+            ) : null}
 
             <div className="px-5 mt-2 mb-4">
               <FollowUpContextCard leadId={leadId} />

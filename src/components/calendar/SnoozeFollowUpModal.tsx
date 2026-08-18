@@ -11,6 +11,8 @@ import {
   maxDateTimeLocalFromLifecycleLimit,
 } from '../../modules/followups/followupLifecycleUi';
 
+import WhatsAppTemplateSelector from '../common/WhatsAppTemplateSelector';
+
 interface Props {
   isOpen: boolean;
   followUp: FollowUp | null;
@@ -22,6 +24,10 @@ interface Props {
   onSelectedReasonIdChange: (value: string) => void;
   reminderActionType: 'SNOOZE' | 'REMIND_LATER';
   onReminderActionTypeChange: (value: 'SNOOZE' | 'REMIND_LATER') => void;
+  whatsappTemplateId?: string | null;
+  onWhatsappTemplateIdChange?: (id: string | null) => void;
+  whatsappReminderEnabled?: boolean;
+  onWhatsappReminderEnabledChange?: (enabled: boolean) => void;
   onClose: () => void;
   onSubmit: () => void;
   isSubmitting?: boolean;
@@ -42,6 +48,10 @@ const SnoozeFollowUpModal: React.FC<Props> = ({
   onSelectedReasonIdChange,
   reminderActionType,
   onReminderActionTypeChange,
+  whatsappTemplateId = null,
+  onWhatsappTemplateIdChange,
+  whatsappReminderEnabled = false,
+  onWhatsappReminderEnabledChange,
   onClose,
   onSubmit,
   isSubmitting = false,
@@ -233,6 +243,16 @@ const SnoozeFollowUpModal: React.FC<Props> = ({
                   className="mt-1.5 w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-semibold text-gray-800 outline-none focus:border-amber-500 focus:bg-white focus:ring-2 focus:ring-amber-500/20 resize-y"
                 />
               </div>
+
+              {onWhatsappTemplateIdChange && onWhatsappReminderEnabledChange && (
+                <WhatsAppTemplateSelector
+                  selectedTemplateId={whatsappTemplateId}
+                  onSelectTemplate={onWhatsappTemplateIdChange}
+                  reminderEnabled={whatsappReminderEnabled}
+                  onToggleReminder={onWhatsappReminderEnabledChange}
+                  leadName={followUp?.lead?.name || (followUp as any)?.leadName}
+                />
+              )}
 
               <div className="flex gap-3 pt-2">
                 {!isLockedMandatory && (

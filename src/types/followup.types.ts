@@ -74,6 +74,12 @@ export interface FollowUp {
   completedAfterOverdue?: boolean;
   extendedAfterOverdue?: boolean;
   overdueStatus?: CalendarOverdueStatus;
+  whatsappTemplateId?: string | null;
+  whatsappTemplateSnapshot?: string | null;
+  whatsappReminderEnabled?: boolean;
+  whatsappReminderStatus?: string | null;
+  renderedWhatsAppMessage?: string | null;
+  clickToChatUrl?: string | null;
   createdAt: string;
   updatedAt: string;
   user: FollowUpUser;
@@ -182,6 +188,7 @@ export interface FollowUpReminderItem {
   leadCompanyName?: string | null;
   leadProfileImage?: string | null;
   leadPhone?: string | null;
+  normalizedPhone?: string | null;
   leadStage?: {
     name: string;
     color: string;
@@ -198,6 +205,12 @@ export interface FollowUpReminderItem {
   minutesUntil: number;
   priority?: string | null;
   status: FollowUpStatus;
+  whatsappTemplateId?: string | null;
+  whatsappTemplateSnapshot?: string | null;
+  whatsappReminderEnabled?: boolean;
+  whatsappReminderStatus?: string | null;
+  renderedWhatsAppMessage?: string | null;
+  clickToChatUrl?: string | null;
   user: FollowUpUser;
 }
 
@@ -234,6 +247,8 @@ export interface CreateFollowUpInput {
   type: FollowUpType;
   scheduledAt: string;
   description?: string;
+  whatsappTemplateId?: string | null;
+  whatsappReminderEnabled?: boolean;
 }
 
 export interface CompleteFollowUpInput {
@@ -246,6 +261,8 @@ export interface SnoozeFollowUpInput {
   recentDescription?: string;
   extensionReasonId?: string;
   reminderActionType: 'SNOOZE' | 'REMIND_LATER';
+  whatsappTemplateId?: string | null;
+  whatsappReminderEnabled?: boolean;
 }
 
 export interface LifecycleExtensionLimit {

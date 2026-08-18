@@ -121,6 +121,7 @@ const sidebarMenus: SidebarSection[] = [
                 subItems: [
                     { label: 'Meta Ads', path: '/admin/meta-ads', requiredPermissions: ['LEAD_SOURCES_VIEW', 'SYSTEM_CONFIG'] },
                     { label: 'Telephony', path: '/admin/telephony', requiredPermissions: ['SYSTEM_CONFIG'] },
+                    { label: 'WhatsApp Templates', path: '/settings/whatsapp-templates', requiredPermissions: ['WHATSAPP_TEMPLATES_VIEW', 'SYSTEM_CONFIG', 'manage_followup_settings', 'LEADS_VIEW_ALL', 'LEADS_VIEW_OWN', 'LEADS_VIEW_TEAM'] },
                 ]
             }
         ]

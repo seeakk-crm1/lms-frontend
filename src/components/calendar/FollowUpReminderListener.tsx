@@ -89,6 +89,8 @@ const FollowUpReminderListener: React.FC = () => {
   const [recentDescription, setRecentDescription] = useState('');
   const [snoozeReasonId, setSnoozeReasonId] = useState('');
   const [reminderActionType, setReminderActionType] = useState<'SNOOZE' | 'REMIND_LATER'>('SNOOZE');
+  const [snoozeWhatsappTemplateId, setSnoozeWhatsappTemplateId] = useState<string | null>(null);
+  const [snoozeWhatsappReminderEnabled, setSnoozeWhatsappReminderEnabled] = useState<boolean>(false);
 
   const items = useMemo(() => query.data?.data?.items || [], [query.data]);
   const toFollowUp = (item: FollowUpReminderItem): FollowUp => ({
@@ -184,6 +186,8 @@ const FollowUpReminderListener: React.FC = () => {
           setRecentDescription('');
           setSnoozeReasonId('');
           setReminderActionType('SNOOZE');
+          setSnoozeWhatsappTemplateId(followUp.whatsappTemplateId || null);
+          setSnoozeWhatsappReminderEnabled(Boolean(followUp.whatsappReminderEnabled));
         }}
       />
       <CompleteFollowUpModal
@@ -217,6 +221,10 @@ const FollowUpReminderListener: React.FC = () => {
         onSelectedReasonIdChange={setSnoozeReasonId}
         reminderActionType={reminderActionType}
         onReminderActionTypeChange={setReminderActionType}
+        whatsappTemplateId={snoozeWhatsappTemplateId}
+        onWhatsappTemplateIdChange={setSnoozeWhatsappTemplateId}
+        whatsappReminderEnabled={snoozeWhatsappReminderEnabled}
+        onWhatsappReminderEnabledChange={setSnoozeWhatsappReminderEnabled}
         isSubmitting={snoozeMutation.isPending}
         onClose={() => {
           setSnoozeTarget(null);
@@ -243,6 +251,8 @@ const FollowUpReminderListener: React.FC = () => {
                 recentDescription: recentDescription.trim() || undefined,
                 extensionReasonId: snoozeReasonId || undefined,
                 reminderActionType,
+                whatsappTemplateId: snoozeWhatsappTemplateId || undefined,
+                whatsappReminderEnabled: snoozeWhatsappReminderEnabled,
               },
             });
             setSnoozeTarget(null);
@@ -250,6 +260,8 @@ const FollowUpReminderListener: React.FC = () => {
             setRecentDescription('');
             setSnoozeReasonId('');
             setReminderActionType('SNOOZE');
+            setSnoozeWhatsappTemplateId(null);
+            setSnoozeWhatsappReminderEnabled(false);
             setActive(null);
           } catch (err) {
             console.error('Snooze extension failed:', err);
