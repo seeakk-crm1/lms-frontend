@@ -268,6 +268,8 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
                           </div>
                           <WhatsAppActionButton
                             phone={lead.phone}
+                            lead={lead}
+                            source="Lead List"
                             variant="inline"
                             stopPropagation
                             requiredPermissions={LEAD_WHATSAPP_PERMISSIONS}
@@ -364,6 +366,8 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
                         <>
                           <WhatsAppActionButton
                             phone={lead.phone}
+                            lead={lead}
+                            source="Lead List"
                             variant="table"
                             stopPropagation
                             requiredPermissions={LEAD_WHATSAPP_PERMISSIONS}

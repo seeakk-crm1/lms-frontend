@@ -75,7 +75,9 @@ export const useDeleteWhatsAppTemplateMutation = () => {
 
 export const useRecordWhatsAppOpenedMutation = () => {
   return useMutation({
-    mutationFn: (followUpId: string) => recordWhatsAppOpened(followUpId),
+    mutationFn: (
+      payload: string | { followUpId?: string; leadId?: string; mode?: 'TEMPLATE' | 'DIRECT'; templateName?: string; source?: string }
+    ) => recordWhatsAppOpened(payload),
     onError: (error: any) => {
       console.warn('Failed to log WhatsApp opening activity:', error);
     },

@@ -145,6 +145,9 @@ const FollowUpActionModal: React.FC<Props> = ({
                       <div className="flex-1 sm:flex-none *:w-full *:justify-center *:rounded-full">
                         <WhatsAppActionButton
                           phone={leadPhone}
+                          lead={followUp?.lead || { id: leadId, name: leadName, phone: leadPhone, companyName: leadCompany, stage: followUp?.leadStage }}
+                          followup={followUp}
+                          source="Follow-up Popup"
                           variant="cta"
                           stopPropagation={false}
                           requiredPermissions={LEAD_WHATSAPP_PERMISSIONS}

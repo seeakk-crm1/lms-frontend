@@ -36,29 +36,42 @@ export const SAMPLE_PREVIEW_CONTEXT: RenderContext = {
 
 export const renderWhatsAppTemplate = (
   templateText: string | null | undefined,
-  context: RenderContext = SAMPLE_PREVIEW_CONTEXT
+  context: RenderContext = SAMPLE_PREVIEW_CONTEXT,
+  options?: { emptyFallback?: string }
 ): string => {
   if (!templateText) return '';
 
   return templateText.replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (match, varName) => {
+    let val: string | null | undefined;
     switch (varName) {
       case 'lead_name':
-        return context.leadName || match;
+        val = context.leadName;
+        break;
       case 'mobile':
-        return context.mobile || match;
+        val = context.mobile;
+        break;
       case 'assigned_user':
-        return context.assignedUser || match;
+        val = context.assignedUser;
+        break;
       case 'company_name':
-        return context.companyName || match;
+        val = context.companyName;
+        break;
       case 'followup_date':
-        return context.followupDate || match;
+        val = context.followupDate;
+        break;
       case 'followup_time':
-        return context.followupTime || match;
+        val = context.followupTime;
+        break;
       case 'lead_stage':
-        return context.leadStage || match;
+        val = context.leadStage;
+        break;
       default:
         return match;
     }
+    if (val !== undefined && val !== null && val.trim() !== '') {
+      return val.trim();
+    }
+    return options?.emptyFallback !== undefined ? options.emptyFallback : match;
   });
 };
 

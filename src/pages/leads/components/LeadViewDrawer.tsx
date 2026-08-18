@@ -262,6 +262,8 @@ const LeadViewDrawer: React.FC<LeadViewDrawerProps> = ({
                         <span className="font-medium">{resolvedLead.phone ? formatPhoneWithFlag(resolvedLead.phone) : 'No phone'}</span>
                         <WhatsAppActionButton
                           phone={resolvedLead.phone}
+                          lead={resolvedLead}
+                          source="Lead Details"
                           variant="compact"
                           stopPropagation={false}
                           requiredPermissions={LEAD_WHATSAPP_PERMISSIONS}
@@ -303,6 +305,8 @@ const LeadViewDrawer: React.FC<LeadViewDrawerProps> = ({
                       <FollowUpBadge value={resolvedLead.nextFollowUpAt || null} />
                       <WhatsAppActionButton
                         phone={resolvedLead.phone}
+                        lead={resolvedLead}
+                        source="Lead Details"
                         variant="compact"
                         stopPropagation={false}
                         requiredPermissions={LEAD_WHATSAPP_PERMISSIONS}

@@ -37,6 +37,9 @@ export const deleteWhatsAppTemplate = async (id: string): Promise<WhatsAppTempla
   return response.data?.data;
 };
 
-export const recordWhatsAppOpened = async (followUpId: string): Promise<void> => {
-  await api.post('/whatsapp-templates/record-opened', { followUpId });
+export const recordWhatsAppOpened = async (
+  payload: string | { followUpId?: string; leadId?: string; mode?: 'TEMPLATE' | 'DIRECT'; templateName?: string; source?: string }
+): Promise<void> => {
+  const data = typeof payload === 'string' ? { followUpId: payload } : payload;
+  await api.post('/whatsapp-templates/record-opened', data);
 };

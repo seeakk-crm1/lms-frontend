@@ -1,23 +1,20 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import useAuthStore from '../../store/useAuthStore';
 import { hasAnyPermission } from '../../utils/permission.util';
 import {
-  maskPhoneForAudit,
   normalizePhoneForWhatsApp,
-  openWhatsAppChat,
   type OpenWhatsAppOptions,
 } from '../../utils/whatsapp';
-import {
-  logWhatsAppClick,
-  type LogWhatsAppClickPayload,
-  type WhatsAppAuditEntityType,
-} from '../../services/whatsappAudit.api';
+import { type WhatsAppAuditEntityType, type LogWhatsAppClickPayload } from '../../services/whatsappAudit.api';
 import WhatsAppIcon from './WhatsAppIcon';
+import WhatsAppMessageComposerModal from './WhatsAppMessageComposerModal';
 
 export type WhatsAppActionVariant = 'table' | 'inline' | 'compact' | 'cta';
 
 export type WhatsAppActionButtonProps = {
   phone?: string | null;
+  lead?: any;
+  followup?: any;
   variant?: WhatsAppActionVariant;
   className?: string;
   disabled?: boolean;
@@ -27,6 +24,7 @@ export type WhatsAppActionButtonProps = {
   audit?: Omit<LogWhatsAppClickPayload, 'phoneMasked'> & { entityType: WhatsAppAuditEntityType };
   openOptions?: OpenWhatsAppOptions;
   title?: string;
+  source?: string;
 };
 
 const variantClasses: Record<WhatsAppActionVariant, string> = {
@@ -42,6 +40,8 @@ const variantClasses: Record<WhatsAppActionVariant, string> = {
 
 const WhatsAppActionButton: React.FC<WhatsAppActionButtonProps> = ({
   phone,
+  lead,
+  followup,
   variant = 'table',
   className = '',
   disabled = false,
@@ -50,15 +50,18 @@ const WhatsAppActionButton: React.FC<WhatsAppActionButtonProps> = ({
   audit,
   openOptions,
   title,
+  source,
 }) => {
   const permissions = useAuthStore((s) => s.user?.permissions || []);
+  const [isComposerOpen, setIsComposerOpen] = useState(false);
 
   const canUse = useMemo(() => {
     if (!requiredPermissions?.length) return true;
     return hasAnyPermission(permissions, [...requiredPermissions]);
   }, [permissions, requiredPermissions]);
 
-  const digits = useMemo(() => normalizePhoneForWhatsApp(phone, openOptions), [phone, openOptions]);
+  const rawPhone = phone || lead?.phone || lead?.leadPhone || followup?.leadPhone || null;
+  const digits = useMemo(() => normalizePhoneForWhatsApp(rawPhone, openOptions), [rawPhone, openOptions]);
   const hasNumber = Boolean(digits);
   const isDisabled = disabled || !hasNumber;
 
@@ -75,34 +78,39 @@ const WhatsAppActionButton: React.FC<WhatsAppActionButtonProps> = ({
         event.preventDefault();
       }
       if (!hasNumber) return;
-
-      const opened = openWhatsAppChat(phone, openOptions);
-      if (!opened) return;
-
-      if (audit?.entityId) {
-        logWhatsAppClick({
-          ...audit,
-          phoneMasked: maskPhoneForAudit(phone),
-        });
-      }
+      setIsComposerOpen(true);
     },
-    [audit, hasNumber, openOptions, phone, stopPropagation],
+    [hasNumber, stopPropagation],
   );
 
   if (!canUse) return null;
 
   return (
-    <button
-      type="button"
-      onClick={handleClick}
-      disabled={isDisabled}
-      className={`${variantClasses[variant]} ${className}`.trim()}
-      title={tooltip}
-      aria-label={tooltip}
-    >
-      <WhatsAppIcon className={variant === 'inline' ? 'h-3.5 w-3.5' : 'h-4 w-4'} />
-      {variant === 'cta' ? <span>Chat on WhatsApp</span> : null}
-    </button>
+    <>
+      <button
+        type="button"
+        onClick={handleClick}
+        disabled={isDisabled}
+        className={`${variantClasses[variant]} ${className}`.trim()}
+        title={tooltip}
+        aria-label={tooltip}
+      >
+        <WhatsAppIcon className={variant === 'inline' ? 'h-3.5 w-3.5' : 'h-4 w-4'} />
+        {variant === 'cta' ? <span>Chat on WhatsApp</span> : null}
+      </button>
+
+      {isComposerOpen && (
+        <WhatsAppMessageComposerModal
+          isOpen={isComposerOpen}
+          onClose={() => setIsComposerOpen(false)}
+          phone={rawPhone}
+          lead={lead}
+          followup={followup}
+          source={source || (followup ? 'Follow-up Popup' : 'Lead List')}
+          audit={audit}
+        />
+      )}
+    </>
   );
 };
 
