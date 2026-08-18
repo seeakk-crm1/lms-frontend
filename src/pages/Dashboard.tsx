@@ -32,6 +32,10 @@ import { CustomDashboardSection } from '../components/dashboard/custom/CustomDas
 import { PipelineBuilderWizard } from '../components/dashboard/custom/PipelineBuilderWizard';
 import { SectionManagerModal } from '../components/dashboard/custom/SectionManagerModal';
 
+import DashboardCustomizerDrawer from '../components/dashboard/DashboardCustomizerDrawer';
+import { useDashboardPreferencesQuery } from '../hooks/useDashboardPreferences';
+import { SlidersHorizontal } from 'lucide-react';
+
 interface DashboardProps {
     mode?: 'admin' | 'operations';
 }
@@ -115,10 +119,13 @@ const Dashboard: React.FC<DashboardProps> = ({ mode = 'operations' }) => {
     const [isLoadingCustomSections, setIsLoadingCustomSections] = useState(false);
     const [isBuilderOpen, setIsBuilderOpen] = useState(false);
     const [isSectionManagerOpen, setIsSectionManagerOpen] = useState(false);
+    const [isCustomizerDrawerOpen, setIsCustomizerDrawerOpen] = useState(false);
     const [activeSectionIdForBuilder, setActiveSectionIdForBuilder] = useState<string | undefined>(undefined);
     const [editingPipeline, setEditingPipeline] = useState<Pipeline | null>(null);
     const [deletingPipelineConfirm, setDeletingPipelineConfirm] = useState<Pipeline | null>(null);
     const [isDeletingPipeline, setIsDeletingPipeline] = useState(false);
+
+    const { data: preferencesData } = useDashboardPreferencesQuery();
 
     const loadCustomSections = useCallback(async () => {
         try {
@@ -157,12 +164,15 @@ const Dashboard: React.FC<DashboardProps> = ({ mode = 'operations' }) => {
         };
     }, [loadCustomSections]);
 
-    const canCustomizeDashboard = hasAnyPermission(user?.permissions || [], [
-        'DASHBOARD_CUSTOM_MANAGE_SECTIONS',
-        'DASHBOARD_CUSTOM_CREATE_OWN',
-        'DASHBOARD_CUSTOM_VIEW',
-        'SYSTEM_CONFIG',
-    ]);
+    const canCustomizeDashboard =
+        preferencesData?.canCustomize ??
+        hasAnyPermission(user?.permissions || [], [
+            'DASHBOARD_CUSTOMIZE',
+            'DASHBOARD_CUSTOM_MANAGE_SECTIONS',
+            'DASHBOARD_CUSTOM_CREATE_OWN',
+            'DASHBOARD_CUSTOM_VIEW',
+            'SYSTEM_CONFIG',
+        ]);
 
     const handlePipelineClick = (pipeline: Pipeline) => {
         const stageFilter = pipeline.filtersJson?.find((f) => f.field === 'stageId');
@@ -358,6 +368,39 @@ const Dashboard: React.FC<DashboardProps> = ({ mode = 'operations' }) => {
         void fetchDashboardData(patch);
     }, [fetchDashboardData]);
 
+    const orderedSections = useMemo(() => {
+        const rawSections = preferencesData?.sections;
+        if (!rawSections || rawSections.length === 0) {
+            return [
+                { key: 'followup_capacity', isVisible: true, displayOrder: 1 },
+                { key: 'cards_group', isVisible: true, displayOrder: 2 },
+                { key: 'growth_and_pipeline', isVisible: true, displayOrder: 3 },
+                { key: 'product_performance', isVisible: true, displayOrder: 4 },
+                { key: 'grid_widgets_group', isVisible: true, displayOrder: 5 },
+            ];
+        }
+        const visibleSorted = [...rawSections]
+            .filter((s) => s.isVisible)
+            .sort((a, b) => a.displayOrder - b.displayOrder);
+
+        const items: { key: string; isVisible: boolean; displayOrder: number }[] = [
+            { key: 'cards_group', isVisible: true, displayOrder: 0.5 },
+        ];
+
+        visibleSorted.forEach((sec) => {
+            if (sec.key === 'recent_activity' || sec.key === 'lob_analysis' || sec.key === 'calendar_widget') {
+                if (!items.some((i) => i.key === 'grid_widgets_group')) {
+                    items.push({ key: 'grid_widgets_group', isVisible: true, displayOrder: sec.displayOrder });
+                }
+            } else {
+                items.push(sec);
+            }
+        });
+
+        items.sort((a, b) => a.displayOrder - b.displayOrder);
+        return items;
+    }, [preferencesData?.sections]);
+
     return (
         <DashboardLayout>
             <div className="flex-1 overflow-x-hidden overflow-y-auto custom-scrollbar relative">
@@ -384,14 +427,10 @@ const Dashboard: React.FC<DashboardProps> = ({ mode = 'operations' }) => {
                                             <>
                                                 <button
                                                     type="button"
-                                                    onClick={() => {
-                                                        setEditingPipeline(null);
-                                                        setActiveSectionIdForBuilder(undefined);
-                                                        setIsBuilderOpen(true);
-                                                    }}
+                                                    onClick={() => setIsCustomizerDrawerOpen(true)}
                                                     className="inline-flex items-center gap-2 rounded-2xl bg-emerald-500 px-4 py-2.5 text-xs font-black text-white shadow-md shadow-emerald-500/20 hover:bg-emerald-600 transition-all active:scale-95 cursor-pointer"
                                                 >
-                                                    <Sparkles className="h-4 w-4" />
+                                                    <SlidersHorizontal className="h-4 w-4" />
                                                     Customize Dashboard
                                                 </button>
                                                 <button
@@ -493,34 +532,45 @@ const Dashboard: React.FC<DashboardProps> = ({ mode = 'operations' }) => {
                             </div>
                         ) : null}
 
-                        {canSeeMetrics && (
-                            <div className="mb-6">
-                                <FollowUpCapacityWidget />
-                            </div>
-                        )}
-
-                        {canSeeMetrics && <KPICards />}
-
-                        {canSeeGrowth && (
-                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                                <LeadGrowthChart />
-                                <PipelineStages />
-                            </div>
-                        )}
-
-                        {canSeeMetrics && (
-                            <div className="mb-6">
-                                <ProductPerformanceWidget />
-                            </div>
-                        )}
-
-                        {(canSeeActivity || canSeeLOB || canSeeCalendar) && (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {canSeeActivity && <RecentActivityWidget />}
-                                {canSeeLOB && <LOBAnalysisWidget />}
-                                {canSeeCalendar && <CalendarWidget />}
-                            </div>
-                        )}
+                        {/* Render Sections Dynamically Based on Preferences */}
+                        {orderedSections.map((sec) => {
+                            if (!sec.isVisible) return null;
+                            switch (sec.key) {
+                                case 'followup_capacity':
+                                    return canSeeMetrics ? (
+                                        <div key="followup_capacity" className="mb-6">
+                                            <FollowUpCapacityWidget />
+                                        </div>
+                                    ) : null;
+                                case 'cards_group':
+                                    return canSeeMetrics ? (
+                                        <KPICards key="cards_group" cardPreferences={preferencesData?.cards} />
+                                    ) : null;
+                                case 'growth_and_pipeline':
+                                    return canSeeGrowth ? (
+                                        <div key="growth_and_pipeline" className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                            <LeadGrowthChart />
+                                            <PipelineStages />
+                                        </div>
+                                    ) : null;
+                                case 'product_performance':
+                                    return canSeeMetrics ? (
+                                        <div key="product_performance" className="mb-6">
+                                            <ProductPerformanceWidget />
+                                        </div>
+                                    ) : null;
+                                case 'grid_widgets_group':
+                                    return (canSeeActivity || canSeeLOB || canSeeCalendar) ? (
+                                        <div key="grid_widgets_group" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                            {canSeeActivity && (preferencesData?.sections?.find(s => s.key === 'recent_activity')?.isVisible ?? true) && <RecentActivityWidget />}
+                                            {canSeeLOB && (preferencesData?.sections?.find(s => s.key === 'lob_analysis')?.isVisible ?? true) && <LOBAnalysisWidget />}
+                                            {canSeeCalendar && (preferencesData?.sections?.find(s => s.key === 'calendar_widget')?.isVisible ?? true) && <CalendarWidget />}
+                                        </div>
+                                    ) : null;
+                                default:
+                                    return null;
+                            }
+                        })}
 
                         {/* Custom Dashboard Pipeline Sections */}
                         {customSections.length > 0 ? (
@@ -666,6 +716,12 @@ const Dashboard: React.FC<DashboardProps> = ({ mode = 'operations' }) => {
                                 </div>
                             )}
                         </AnimatePresence>
+
+                        <DashboardCustomizerDrawer
+                            isOpen={isCustomizerDrawerOpen}
+                            onClose={() => setIsCustomizerDrawerOpen(false)}
+                            preferencesData={preferencesData}
+                        />
 
                     </div>
                 </div>

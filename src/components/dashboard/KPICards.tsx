@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, Variants } from 'framer-motion';
 import { TrendingUp, Users, Target, CheckCircle2, IndianRupee, LucideIcon } from 'lucide-react';
 import useDashboardStore from '../../store/useDashboardStore';
+import type { DashboardPreferenceItem } from '../../types/dashboardPreferences.types';
 
 const iconMap: Record<string, LucideIcon> = {
     Target, Users, CheckCircle2, TrendingUp, IndianRupee
@@ -53,10 +54,54 @@ const getKpiRoute = (title: string): string | null => {
     return null;
 };
 
-const KPICards: React.FC = () => {
+const titleToKeyMap: Record<string, string> = {
+    "today's leads": 'today_leads',
+    "total leads": 'total_leads',
+    "closed leads": 'closed_leads',
+    "expected revenue": 'expected_revenue',
+    "revenue": 'revenue',
+    "total advance": 'total_advance',
+    "active users": 'active_users',
+};
+
+export interface KPICardsProps {
+    cardPreferences?: DashboardPreferenceItem[];
+}
+
+const KPICards: React.FC<KPICardsProps> = ({ cardPreferences }) => {
     const navigate = useNavigate();
     const kpiData = useDashboardStore((state) => state.kpiData);
     const isLoading = useDashboardStore((state) => state.isLoading);
+
+    const orderedKpiCards = useMemo(() => {
+        if (!cardPreferences || cardPreferences.length === 0) {
+            return kpiData.map((kpi) => ({
+                ...kpi,
+                displayTitle: kpi.title,
+                originalTitle: kpi.title,
+            }));
+        }
+
+        const kpiMapByKey = new Map<string, any>();
+        kpiData.forEach((kpi) => {
+            const key = titleToKeyMap[kpi.title.trim().toLowerCase()] || kpi.title;
+            kpiMapByKey.set(key, kpi);
+        });
+
+        const visiblePrefs = cardPreferences.filter((p) => p.isVisible);
+
+        return visiblePrefs
+            .map((pref) => {
+                const kpi = kpiMapByKey.get(pref.key);
+                if (!kpi) return null;
+                return {
+                    ...kpi,
+                    displayTitle: pref.displayTitle || pref.customTitle || kpi.title,
+                    originalTitle: kpi.title,
+                };
+            })
+            .filter(Boolean);
+    }, [kpiData, cardPreferences]);
 
     // Skeletons
     if (isLoading) {
@@ -76,6 +121,10 @@ const KPICards: React.FC = () => {
         );
     }
 
+    if (orderedKpiCards.length === 0) {
+        return null;
+    }
+
     return (
         <motion.div
             variants={container}
@@ -83,9 +132,9 @@ const KPICards: React.FC = () => {
             animate="show"
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
         >
-            {kpiData.map((kpi, idx) => {
+            {orderedKpiCards.map((kpi: any, idx: number) => {
                 const IconComponent = iconMap[kpi.iconName] || Target;
-                const route = getKpiRoute(kpi.title);
+                const route = getKpiRoute(kpi.originalTitle || kpi.title);
                 const isClickable = Boolean(route);
 
                 const handleClick = () => {
@@ -103,7 +152,7 @@ const KPICards: React.FC = () => {
 
                 return (
                     <motion.div
-                        key={idx}
+                        key={kpi.originalTitle || idx}
                         variants={itemVariants}
                         whileHover={isClickable ? { y: -4, boxShadow: '0 20px 40px -15px rgba(16,185,129,0.15)' } : undefined}
                         onClick={handleClick}
@@ -124,7 +173,12 @@ const KPICards: React.FC = () => {
                         </div>
 
                         <div className="relative z-10">
-                            <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">{kpi.title}</p>
+                            <p
+                                className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1 truncate"
+                                title={kpi.displayTitle !== kpi.originalTitle ? `Original metric: ${kpi.originalTitle}` : undefined}
+                            >
+                                {kpi.displayTitle}
+                            </p>
                             <h3 className="text-[32px] font-extrabold text-gray-900 leading-tight mb-2 tracking-tight">{kpi.value}</h3>
 
                             <div className="flex items-center gap-1.5">
