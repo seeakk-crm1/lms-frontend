@@ -25,6 +25,7 @@ const statusOptions = [
 const starredOptions = [
   { value: 'ALL', label: 'All Leads' },
   { value: 'STARRED', label: 'Starred Leads' },
+  { value: 'DUPLICATES', label: 'Duplicate Leads' },
 ];
 
 const LeadFilters: React.FC<LeadFiltersProps> = ({

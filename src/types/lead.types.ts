@@ -99,7 +99,7 @@ export interface LeadFilters {
   source?: string;
   officeId?: string;
   status?: 'OPEN' | 'CLOSED' | 'LOB' | 'ACTIVE' | 'ARCHIVED';
-  starred?: 'ALL' | 'STARRED';
+  starred?: 'ALL' | 'STARRED' | 'DUPLICATES';
   createdFrom?: string;
   createdTo?: string;
 }
