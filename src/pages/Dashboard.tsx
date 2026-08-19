@@ -164,14 +164,24 @@ const Dashboard: React.FC<DashboardProps> = ({ mode = 'operations' }) => {
         };
     }, [loadCustomSections]);
 
+    const userRoleName = typeof user?.role === 'string' ? user.role : user?.role?.name || (user as any)?.roleName || '';
+    const isSuperAdmin =
+        Boolean(user?.isSuperadmin) ||
+        user?.permissions?.includes('SUPERADMIN') ||
+        userRoleName.toUpperCase() === 'SUPERADMIN';
+
     const canCustomizeDashboard =
-        preferencesData?.canCustomize ??
+        isSuperAdmin ||
+        Boolean(preferencesData?.canCustomize) ||
         hasAnyPermission(user?.permissions || [], [
             'DASHBOARD_CUSTOMIZE',
             'DASHBOARD_CUSTOM_MANAGE_SECTIONS',
             'DASHBOARD_CUSTOM_CREATE_OWN',
             'DASHBOARD_CUSTOM_VIEW',
             'SYSTEM_CONFIG',
+            'manage_followup_settings',
+            'LEADS_VIEW_ALL',
+            'DASHBOARD_VIEW_ALL',
         ]);
 
     const handlePipelineClick = (pipeline: Pipeline) => {
