@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-hot-toast';
 import {
@@ -250,7 +251,17 @@ export const PipelineBuilderWizard: React.FC<PipelineBuilderWizardProps> = ({
     }
   };
 
-  const handleRequestClose = () => {
+  const forceClose = useCallback(() => {
+    try {
+      sessionStorage.removeItem(DRAFT_STORAGE_KEY);
+    } catch (e) {
+      // ignore
+    }
+    setShowDiscardModal(false);
+    onClose();
+  }, [onClose]);
+
+  const handleRequestClose = useCallback(() => {
     const isDirty = Boolean(
       initialDraftRef.current && JSON.stringify(draft) !== JSON.stringify(initialDraftRef.current)
     );
@@ -259,17 +270,19 @@ export const PipelineBuilderWizard: React.FC<PipelineBuilderWizardProps> = ({
     } else {
       forceClose();
     }
-  };
+  }, [draft, forceClose]);
 
-  const forceClose = () => {
-    try {
-      sessionStorage.removeItem(DRAFT_STORAGE_KEY);
-    } catch (e) {
-      // ignore
-    }
-    setShowDiscardModal(false);
-    onClose();
-  };
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        handleRequestClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown, true);
+    return () => window.removeEventListener('keydown', handleKeyDown, true);
+  }, [isOpen, handleRequestClose]);
 
   const handleSubmit = async () => {
     if (draft.displayType === 'PIE_CHART') {
@@ -340,18 +353,23 @@ export const PipelineBuilderWizard: React.FC<PipelineBuilderWizardProps> = ({
 
   if (!isOpen) return null;
 
-  return (
+  const modalNode = (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[10300] flex items-center justify-center p-4">
+      <div
+        onClick={(e) => {
+          e.stopPropagation();
+          if (e.target === e.currentTarget) {
+            handleRequestClose();
+          }
+        }}
+        onMouseDown={(e) => e.stopPropagation()}
+        onPointerDown={(e) => e.stopPropagation()}
+        className="fixed inset-0 z-[10500] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm"
+      >
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={onClose}
-          className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm"
-        />
-
-        <motion.div
+          onClick={(e) => e.stopPropagation()}
+          onMouseDown={(e) => e.stopPropagation()}
+          onPointerDown={(e) => e.stopPropagation()}
           initial={{ opacity: 0, scale: 0.95, y: 15 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 15 }}
@@ -951,16 +969,19 @@ export const PipelineBuilderWizard: React.FC<PipelineBuilderWizardProps> = ({
 
       {/* Discard Changes Confirmation Modal */}
       {showDiscardModal && (
-        <div className="fixed inset-0 z-[10500] flex items-center justify-center p-4">
+        <div
+          onClick={(e) => {
+            e.stopPropagation();
+            if (e.target === e.currentTarget) setShowDiscardModal(false);
+          }}
+          onMouseDown={(e) => e.stopPropagation()}
+          onPointerDown={(e) => e.stopPropagation()}
+          className="fixed inset-0 z-[10700] flex items-center justify-center p-4 bg-gray-900/70 backdrop-blur-sm"
+        >
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setShowDiscardModal(false)}
-            className="absolute inset-0 bg-gray-900/70 backdrop-blur-sm"
-          />
-
-          <motion.div
+            onClick={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+            onPointerDown={(e) => e.stopPropagation()}
             initial={{ opacity: 0, scale: 0.95, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 10 }}
@@ -999,4 +1020,8 @@ export const PipelineBuilderWizard: React.FC<PipelineBuilderWizardProps> = ({
       )}
     </AnimatePresence>
   );
+
+  return typeof document !== 'undefined' ? createPortal(modalNode, document.body) : modalNode;
 };
+
+export default PipelineBuilderWizard;

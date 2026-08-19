@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-hot-toast';
 import {
@@ -161,18 +162,23 @@ export const SectionManagerModal: React.FC<SectionManagerModalProps> = ({
 
   if (!isOpen) return null;
 
-  return (
+  const modalNode = (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[10300] flex items-center justify-center p-4">
+      <div
+        onClick={(e) => {
+          e.stopPropagation();
+          if (e.target === e.currentTarget) {
+            onClose();
+          }
+        }}
+        onMouseDown={(e) => e.stopPropagation()}
+        onPointerDown={(e) => e.stopPropagation()}
+        className="fixed inset-0 z-[10300] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm"
+      >
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={onClose}
-          className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm"
-        />
-
-        <motion.div
+          onClick={(e) => e.stopPropagation()}
+          onMouseDown={(e) => e.stopPropagation()}
+          onPointerDown={(e) => e.stopPropagation()}
           initial={{ opacity: 0, scale: 0.95, y: 15 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 15 }}
@@ -546,6 +552,8 @@ export const SectionManagerModal: React.FC<SectionManagerModalProps> = ({
       </div>
     </AnimatePresence>
   );
+
+  return typeof document !== 'undefined' ? createPortal(modalNode, document.body) : modalNode;
 };
 
 export default SectionManagerModal;
