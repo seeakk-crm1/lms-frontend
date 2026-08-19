@@ -49,6 +49,8 @@ export interface LeadListItem {
   stage: Pick<LeadStage, 'id' | 'name' | 'color' | 'isLOB' | 'isClosed'> | null;
   lifecycle: Pick<LeadLifeCycle, 'id' | 'name' | 'isDefault'> | null;
   source: Pick<LeadSource, 'id' | 'name' | 'status'> | null;
+  office?: { id: string; name: string } | null;
+  status?: string;
   createdBy: Pick<User, 'id' | 'email' | 'name' | 'username' | 'profileImageUrl'> & { displayName?: string };
   closedBy?: (Pick<User, 'id' | 'email' | 'name' | 'username' | 'profileImageUrl'> & { displayName?: string }) | null;
   lobLogs: Array<{

@@ -1,6 +1,6 @@
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Download, Filter, Plus, TrendingUp, Upload } from 'lucide-react';
+import { Download, Filter, Plus, TrendingUp, Upload, SlidersHorizontal } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useLocation, useNavigate } from 'react-router-dom';
 import DashboardLayout from '../../components/dashboard/DashboardLayout';
@@ -10,6 +10,8 @@ import LeadFilters from './components/LeadFilters';
 import LeadSlaDecisionModal from './components/LeadSlaDecisionModal';
 import LeadsTable from './components/LeadsTable';
 import { ExportLeadsModal } from './components/ExportLeadsModal';
+import { LeadTableColumnsModal } from './components/LeadTableColumnsModal';
+import { useLeadTableColumns } from '../../hooks/useLeadTableColumns';
 import { getLeadById } from '../../services/leads.api';
 import { createSheetFromLeadExport } from '../../services/sheets.api';
 import {
@@ -88,6 +90,12 @@ const LeadsPage: React.FC = () => {
 
   const { data, isLoading, isFetching, isError } = useLeadsQuery();
   const { data: meta } = useLeadMetaQuery();
+  const storeDynamicFields = useLeadStore((state: any) => state.dynamicFields);
+  const activeDynamicFields = useMemo(() => meta?.dynamicFields || storeDynamicFields || [], [meta?.dynamicFields, storeDynamicFields]);
+
+  const [isColumnsModalOpen, setIsColumnsModalOpen] = useState(false);
+  const { allColumns, visibleColumns, selectedKeys, saveColumns, resetToDefault } = useLeadTableColumns(activeDynamicFields);
+
   const exportMutation = useExportLeads();
   const exportXlsxMutation = useExportLeadsXlsx();
   const importToSheetsMutation = useMutation({
@@ -601,6 +609,15 @@ const LeadsPage: React.FC = () => {
 
                 <button
                   type="button"
+                  onClick={() => setIsColumnsModalOpen(true)}
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-black text-gray-700 shadow-sm transition-all hover:border-emerald-200 hover:text-emerald-600 cursor-pointer"
+                >
+                  <SlidersHorizontal className="h-4 w-4 text-emerald-600" />
+                  <span>Columns</span>
+                </button>
+
+                <button
+                  type="button"
                   onClick={() => setShowFilters((value) => !value)}
                   className={`inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3 text-sm font-black transition-all ${
                     showFilters
@@ -676,6 +693,7 @@ const LeadsPage: React.FC = () => {
               totalPages={pagination.totalPages}
               isSelectionMode={isSelectionMode}
               selectedIds={selectedLeadIds}
+              visibleColumns={visibleColumns}
               onToggleSelection={handleToggleSelection}
               onSelectAll={handleSelectAll}
               onPageChange={(value: number) => setPagination({ page: value })}
@@ -688,6 +706,15 @@ const LeadsPage: React.FC = () => {
             />
           </div>
         </div>
+
+        <LeadTableColumnsModal
+          isOpen={isColumnsModalOpen}
+          onClose={() => setIsColumnsModalOpen(false)}
+          allColumns={allColumns}
+          selectedKeys={selectedKeys}
+          onSave={saveColumns}
+          onReset={resetToDefault}
+        />
 
         <Suspense fallback={null}>
           <LeadFormDrawer
