@@ -6,6 +6,9 @@ import { useOrganisationChartStore } from './organisationChart.store';
 
 interface OrganisationTreeProps {
   roots: OrganisationChartNode[];
+  isEditMode?: boolean;
+  onMoveNode?: (userId: string, supervisorId: string | null) => Promise<void>;
+  includeInactive?: boolean;
 }
 
 type FlatNode = {
@@ -41,7 +44,12 @@ const flattenNodes = (roots: OrganisationChartNode[]): FlatNode[] => {
   return output;
 };
 
-const OrganisationTree: React.FC<OrganisationTreeProps> = ({ roots }) => {
+const OrganisationTree: React.FC<OrganisationTreeProps> = ({
+  roots,
+  isEditMode = false,
+  onMoveNode,
+  includeInactive = false,
+}) => {
   const {
     expandedNodes,
     searchQuery,
@@ -139,6 +147,10 @@ const OrganisationTree: React.FC<OrganisationTreeProps> = ({ roots }) => {
               pathIds={pathIds}
               onToggle={toggleNode}
               onSelect={setSelectedNode}
+              isEditMode={isEditMode}
+              onMoveNode={onMoveNode}
+              parentById={parentById}
+              includeInactive={includeInactive}
             />
           ))}
         </motion.div>

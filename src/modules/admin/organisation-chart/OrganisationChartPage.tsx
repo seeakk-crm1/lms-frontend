@@ -1,12 +1,16 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { ChevronDownSquare, ChevronUpSquare, GitBranch, Search, Users } from 'lucide-react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import toast from 'react-hot-toast';
 import DashboardLayout from '../../../components/dashboard/DashboardLayout';
 import OrganisationTree from './OrganisationTree';
 import { useOrganisationChartQuery } from './useOrganisationChartQuery';
 import { useOrganisationChartStore } from './organisationChart.store';
 import { OrganisationChartNode } from './types';
 import UserSidePanel from './UserSidePanel';
+import useAuthStore from '../../../store/useAuthStore';
+import api from '../../../services/api';
 
 const collectNodeIds = (roots: OrganisationChartNode[]): string[] => {
   const ids: string[] = [];
@@ -47,7 +51,13 @@ const TreeSkeleton: React.FC = () => (
 );
 
 const OrganisationChartPage: React.FC = () => {
+  const { user } = useAuthStore();
+  const canManage = useMemo(() => {
+    return user?.permissions?.includes('ORGANISATION_CHART_MANAGE') || user?.permissions?.includes('SYSTEM_CONFIG');
+  }, [user]);
+
   const [includeInactive, setIncludeInactive] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
 
   const { searchQuery, setSearch, expandAll, collapseAll } = useOrganisationChartStore();
   const { data, isLoading, isFetching, isError, error, refetch } = useOrganisationChartQuery(includeInactive);
@@ -63,6 +73,25 @@ const OrganisationChartPage: React.FC = () => {
   const handleCollapseAll = useCallback(() => {
     collapseAll();
   }, [collapseAll]);
+
+  const queryClient = useQueryClient();
+  const moveMutation = useMutation({
+    mutationFn: async ({ userId, supervisorId }: { userId: string; supervisorId: string | null }) => {
+      return api.patch('/admin/organisation-chart/move', { userId, supervisorId });
+    },
+    onSuccess: () => {
+      toast.success('Organisation reporting structure updated.');
+      queryClient.invalidateQueries({ queryKey: ['organisation-chart'] });
+    },
+    onError: (error: any) => {
+      const msg = error?.response?.data?.message || 'Failed to update reporting structure.';
+      toast.error(msg);
+    },
+  });
+
+  const handleMoveNode = useCallback(async (userId: string, supervisorId: string | null) => {
+    await moveMutation.mutateAsync({ userId, supervisorId });
+  }, [moveMutation]);
 
   return (
     <DashboardLayout>
@@ -141,7 +170,7 @@ const OrganisationChartPage: React.FC = () => {
             </label>
           </div>
 
-          <div className="flex flex-wrap items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4 print:hidden">
             <button
               type="button"
               onClick={() => window.print()}
@@ -149,6 +178,19 @@ const OrganisationChartPage: React.FC = () => {
             >
               Print / PDF
             </button>
+            {canManage && (
+              <button
+                type="button"
+                onClick={() => setIsEditMode(!isEditMode)}
+                className={`inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-bold shadow-sm transition-all ${
+                  isEditMode
+                    ? 'bg-emerald-600 border-emerald-600 text-white hover:bg-emerald-700 shadow-emerald-100'
+                    : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                {isEditMode ? 'Finish Editing' : 'Manage Hierarchy'}
+              </button>
+            )}
           </div>
 
           {isLoading || isFetching ? (
@@ -170,10 +212,21 @@ const OrganisationChartPage: React.FC = () => {
                 <p className="text-xs font-black uppercase tracking-widest text-gray-400">Hierarchy Tree</p>
                 <span className="text-xs font-bold text-gray-500 inline-flex items-center gap-1">
                   <GitBranch className="w-3.5 h-3.5" />
-                  Read only
+                  {isEditMode ? (
+                    <span className="text-emerald-600 font-extrabold animate-pulse">
+                      Editing hierarchy (Drag users to change reporting structure)
+                    </span>
+                  ) : (
+                    'Read only'
+                  )}
                 </span>
               </div>
-              <OrganisationTree roots={roots} />
+              <OrganisationTree
+                roots={roots}
+                isEditMode={isEditMode}
+                onMoveNode={handleMoveNode}
+                includeInactive={includeInactive}
+              />
             </div>
           )}
 
