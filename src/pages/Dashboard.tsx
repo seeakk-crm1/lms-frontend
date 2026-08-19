@@ -670,6 +670,17 @@ const Dashboard: React.FC<DashboardProps> = ({ mode = 'operations' }) => {
                             onClose={() => setIsSectionManagerOpen(false)}
                             onSuccess={loadCustomSections}
                             sections={customSections}
+                            onAddPipeline={(secId) => {
+                                setEditingPipeline(null);
+                                setActiveSectionIdForBuilder(secId);
+                                setIsBuilderOpen(true);
+                            }}
+                            onEditPipeline={(pipeline) => {
+                                setEditingPipeline(pipeline);
+                                setActiveSectionIdForBuilder(pipeline.sectionId);
+                                setIsBuilderOpen(true);
+                            }}
+                            onDeletePipeline={handleDeletePipelineClick}
                         />
 
                         {/* Custom Pipeline Delete Confirmation Modal */}
