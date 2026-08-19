@@ -122,6 +122,7 @@ const sidebarMenus: SidebarSection[] = [
                     { label: 'Meta Ads', path: '/admin/meta-ads', requiredPermissions: ['LEAD_SOURCES_VIEW', 'SYSTEM_CONFIG'] },
                     { label: 'Telephony', path: '/admin/telephony', requiredPermissions: ['SYSTEM_CONFIG'] },
                     { label: 'WhatsApp Templates', path: '/settings/whatsapp-templates', requiredPermissions: ['WHATSAPP_TEMPLATES_VIEW', 'SYSTEM_CONFIG', 'manage_followup_settings', 'LEADS_VIEW_ALL', 'LEADS_VIEW_OWN', 'LEADS_VIEW_TEAM'] },
+                    { label: 'Automations', path: '/settings/automations', requiredPermissions: ['AUTOMATION_VIEW', 'SYSTEM_CONFIG'] },
                 ]
             }
         ]
@@ -198,6 +199,7 @@ const MenuItem: React.FC<MenuItemProps> = ({ item, isCollapsed, isActive, setAct
                         {item.subItems?.map((sub, idx) => {
                             const isSubActive =
                                 location.pathname === sub.path ||
+                                (sub.path === '/settings/automations' && location.pathname.startsWith('/settings/automations')) ||
                                 (sub.path === '/admin/meta-ads' && location.pathname === '/settings/meta-ads') ||
                                 (sub.path === '/admin/telephony' && location.pathname === '/settings/telephony');
                             return (
@@ -241,7 +243,7 @@ export const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ isCollapsed,
     React.useEffect(() => {
         for (const section of sidebarMenus) {
             for (const item of section.items) {
-                if (item.subItems?.some((sub) => sub.path === location.pathname || (sub.path === '/admin/meta-ads' && location.pathname === '/settings/meta-ads') || (sub.path === '/admin/telephony' && location.pathname === '/settings/telephony'))) {
+                if (item.subItems?.some((sub) => sub.path === location.pathname || (sub.path === '/settings/automations' && location.pathname.startsWith('/settings/automations')) || (sub.path === '/admin/meta-ads' && location.pathname === '/settings/meta-ads') || (sub.path === '/admin/telephony' && location.pathname === '/settings/telephony'))) {
                     setActiveMenu(item.label);
                     return;
                 }

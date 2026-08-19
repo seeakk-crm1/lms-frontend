@@ -48,6 +48,9 @@ import LeadStagesListPage from './pages/LeadStagesListPage';
 import StageRulesListPage from './pages/StageRulesListPage';
 import OrganisationChartPage from './modules/admin/organisation-chart/OrganisationChartPage';
 import RosterPage from './modules/admin/roster/RosterPage';
+import { AutomationsPage } from './pages/settings/AutomationsPage';
+import { CreateWorkflowPage } from './pages/settings/CreateWorkflowPage';
+import { WorkflowRunsPage } from './pages/settings/WorkflowRunsPage';
 import TargetCyclePage from './modules/admin/target-cycle/TargetCyclePage';
 import LeadDynamicsPage from './modules/admin/lead-dynamics/LeadDynamicsPage';
 import OfficePage from './pages/admin/office/OfficePage';
@@ -357,6 +360,26 @@ function App() {
         <Route path="/admin/whatsapp-templates" element={
           <PermissionRoute permissions={['WHATSAPP_TEMPLATES_VIEW', 'SYSTEM_CONFIG', 'manage_followup_settings', 'LEADS_VIEW_ALL', 'LEADS_VIEW_OWN', 'LEADS_VIEW_TEAM']}>
             <WhatsAppTemplatesPage />
+          </PermissionRoute>
+        } />
+        <Route path="/settings/automations" element={
+          <PermissionRoute permissions={['AUTOMATION_VIEW', 'SYSTEM_CONFIG']}>
+            <AutomationsPage />
+          </PermissionRoute>
+        } />
+        <Route path="/settings/automations/create" element={
+          <PermissionRoute permissions={['AUTOMATION_CREATE', 'SYSTEM_CONFIG']}>
+            <CreateWorkflowPage />
+          </PermissionRoute>
+        } />
+        <Route path="/settings/automations/edit/:id" element={
+          <PermissionRoute permissions={['AUTOMATION_EDIT', 'SYSTEM_CONFIG']}>
+            <CreateWorkflowPage />
+          </PermissionRoute>
+        } />
+        <Route path="/settings/automations/runs/:id" element={
+          <PermissionRoute permissions={['AUTOMATION_VIEW_RUNS', 'SYSTEM_CONFIG']}>
+            <WorkflowRunsPage />
           </PermissionRoute>
         } />
         <Route path="/admin/products" element={
