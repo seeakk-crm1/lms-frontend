@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import DashboardLayout from '../../components/dashboard/DashboardLayout';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
   ArrowLeft, Plus, Trash2, HelpCircle, Save, Info, AlertTriangle, 
@@ -304,7 +305,9 @@ export const CreateWorkflowPage: React.FC = () => {
   const isAllValid = isNameDone && isTriggerDone && isActionsDone;
 
   return (
-    <div className="p-6 max-w-7xl mx-auto flex flex-col lg:flex-row gap-6">
+    <DashboardLayout>
+      <div className="flex-1 overflow-x-hidden overflow-y-auto custom-scrollbar relative p-4 md:p-8">
+        <div className="p-6 max-w-7xl mx-auto flex flex-col lg:flex-row gap-6">
       
       {/* Left side: Main Editor */}
       <div className="flex-1 space-y-6">
@@ -1202,6 +1205,8 @@ export const CreateWorkflowPage: React.FC = () => {
       </div>
 
     </div>
+      </div>
+    </DashboardLayout>
   );
 };
 
