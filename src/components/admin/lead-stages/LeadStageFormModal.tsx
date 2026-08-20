@@ -266,13 +266,22 @@ const LeadStageFormModal: React.FC<LeadStageFormModalProps> = ({
   );
 
   const formSubmit = async (data: LeadStageFormValues) => {
-    await onSubmit({
+    const payload: any = {
       ...data,
       name: data.name.trim(),
       stageShortForm: data.stageShortForm || null,
       showInCalendar: Boolean(data.showInCalendar),
       ruleAssignments: Array.from(new Map(data.ruleAssignments.map((rule) => [rule.ruleId, rule])).values()),
-    });
+    };
+
+    if (!payload.isApprovalRequired) {
+      delete payload.approvalRuleId;
+      delete payload.approvalRules;
+      delete payload.approverRuleId;
+      delete payload.approvalConfiguration;
+    }
+
+    await onSubmit(payload);
   };
 
   const modalSkeleton = useMemo(
