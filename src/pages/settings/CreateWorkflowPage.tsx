@@ -21,24 +21,31 @@ import toast from 'react-hot-toast';
 
 const TRIGGERS = [
   { id: 'lead.created', label: 'When a lead is created' },
-  { id: 'lead.updated', label: 'When a lead is updated' },
-  { id: 'lead.stage_changed', label: 'When lead stage changes' },
-  { id: 'lead.assigned', label: 'When a lead is assigned/reassigned' },
-  { id: 'followup.created', label: 'When a follow-up is created' },
-  { id: 'followup.completed', label: 'When a follow-up is completed' },
+  { id: 'lead.stage_changed', label: 'When lead stage is changed' },
+  { id: 'lead.source_changed', label: 'When lead source is changed' },
+  { id: 'meta.lead_resolved', label: 'When a Meta Lead submission is resolved to a CRM lead' },
+  { id: 'telephony.incoming_received', label: 'When an incoming call is received' },
+  { id: 'telephony.incoming_missed', label: 'When an incoming call is missed' },
 ];
 
 const FIELDS = [
   { id: 'name', label: 'Lead Name', type: 'STRING' },
-  { id: 'phone', label: 'Phone Number', type: 'STRING' },
-  { id: 'email', label: 'Email Address', type: 'STRING' },
+  { id: 'phone', label: 'Mobile', type: 'STRING' },
+  { id: 'email', label: 'Email', type: 'STRING' },
   { id: 'stageId', label: 'Lead Stage', type: 'SELECT', provider: 'stages' },
+  { id: 'previousStageId', label: 'Previous Stage', type: 'SELECT', provider: 'stages' },
+  { id: 'newStageId', label: 'New Stage', type: 'SELECT', provider: 'stages' },
   { id: 'sourceId', label: 'Lead Source', type: 'SELECT', provider: 'sources' },
   { id: 'expectedRevenue', label: 'Expected Revenue', type: 'NUMBER' },
   { id: 'isClosed', label: 'Is Closed', type: 'BOOLEAN' },
   { id: 'isLOB', label: 'Is LOB', type: 'BOOLEAN' },
+  { id: 'assignedToId', label: 'Assigned To', type: 'SELECT', provider: 'users' },
+  { id: 'createdById', label: 'Created By', type: 'SELECT', provider: 'users' },
   { id: 'createdAt', label: 'Created Date', type: 'DATE' },
   { id: 'updatedAt', label: 'Updated Date', type: 'DATE' },
+  { id: 'nextFollowUpAt', label: 'Next Follow-Up', type: 'DATE' },
+  { id: 'lastRemark', label: 'Last Remark', type: 'STRING' },
+  { id: 'hoursSinceLastActivity', label: 'Hours Since Last Activity', type: 'NUMBER' },
 ];
 
 const ACTIONS = [
@@ -51,10 +58,10 @@ const ACTIONS = [
 
 const OPERATORS_BY_TYPE: Record<string, string[]> = {
   STRING: ['Equals', 'Does Not Equal', 'Contains', 'Does Not Contain', 'Starts With', 'Ends With', 'Is Empty', 'Is Not Empty'],
-  SELECT: ['Equals', 'Does Not Equal', 'Is Any Of', 'Is None Of'],
-  NUMBER: ['Greater Than', 'Greater Than or Equal', 'Less Than', 'Less Than or Equal', 'Equals', 'Does Not Equal'],
+  SELECT: ['Equals', 'Does Not Equal', 'Is Any Of', 'Is None Of', 'Is Empty', 'Is Not Empty'],
+  NUMBER: ['Equals', 'Does Not Equal', 'Greater Than', 'Greater Than or Equal', 'Less Than', 'Less Than or Equal', 'Between', 'Is Empty', 'Is Not Empty'],
   BOOLEAN: ['Is True', 'Is False'],
-  DATE: ['Before', 'After', 'Is Empty', 'Is Not Empty'],
+  DATE: ['Is Before', 'Is After', 'Is On or Before', 'Is On or After', 'Between', 'Is Today', 'Is Yesterday', 'Is Tomorrow', 'Within Last X Days', 'Within Next X Days', 'Is Empty', 'Is Not Empty'],
 };
 
 // Types mapping frontend models
@@ -402,7 +409,10 @@ export const CreateWorkflowPage: React.FC = () => {
         <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
           <div className="flex justify-between items-center border-b border-slate-100 pb-2">
             <h3 className="text-sm font-semibold text-slate-900">
-              3. IF (Optional Conditions Tree)
+              3. IF ({(() => {
+                const total = conditionGroups.reduce((acc, curr) => acc + (curr.rules?.length || 0), 0);
+                return `${total} condition${total !== 1 ? 's' : ''}`;
+              })()})
             </h3>
             <button
               onClick={addConditionGroup}
@@ -441,6 +451,14 @@ export const CreateWorkflowPage: React.FC = () => {
                       const currentField = FIELDS.find(f => f.id === rule.field);
                       const operators = currentField ? OPERATORS_BY_TYPE[currentField.type] : [];
 
+                      // Limit previousStageId and newStageId to stage_changed trigger context
+                      const visibleFields = FIELDS.filter(f => {
+                        if (f.id === 'previousStageId' || f.id === 'newStageId') {
+                          return triggerType === 'lead.stage_changed';
+                        }
+                        return true;
+                      });
+
                       return (
                         <div key={rIdx} className="flex flex-wrap items-center gap-2">
                           {/* AND indicator */}
@@ -452,7 +470,7 @@ export const CreateWorkflowPage: React.FC = () => {
                             onChange={(e) => updateRule(gIdx, rIdx, 'field', e.target.value)}
                             className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs focus:outline-none"
                           >
-                            {FIELDS.map(f => (
+                            {visibleFields.map(f => (
                               <option key={f.id} value={f.id}>{f.label}</option>
                             ))}
                           </select>
@@ -468,14 +486,58 @@ export const CreateWorkflowPage: React.FC = () => {
                             ))}
                           </select>
 
-                          {/* Value input (depends on field data type) */}
-                          {!['Is Empty', 'Is Not Empty', 'Is True', 'Is False'].includes(rule.operator) && (
+                          {/* Value input (depends on field data type and operator) */}
+                          {!['Is Empty', 'Is Not Empty', 'Is True', 'Is False', 'Is Today', 'Is Yesterday', 'Is Tomorrow'].includes(rule.operator) && (
                             <>
-                              {currentField?.type === 'SELECT' ? (
+                              {rule.operator === 'Between' ? (
+                                <div className="inline-flex gap-1.5 items-center">
+                                  <input
+                                    type={currentField?.type === 'DATE' ? 'date' : 'number'}
+                                    value={Array.isArray(rule.value) ? rule.value[0] || '' : ''}
+                                    onChange={(e) => {
+                                      const prev = Array.isArray(rule.value) ? rule.value : [];
+                                      updateRule(gIdx, rIdx, 'value', [e.target.value, prev[1] || '']);
+                                    }}
+                                    placeholder="Min"
+                                    className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs focus:outline-none w-24"
+                                  />
+                                  <span className="text-slate-400 font-medium">to</span>
+                                  <input
+                                    type={currentField?.type === 'DATE' ? 'date' : 'number'}
+                                    value={Array.isArray(rule.value) ? rule.value[1] || '' : ''}
+                                    onChange={(e) => {
+                                      const prev = Array.isArray(rule.value) ? rule.value : [];
+                                      updateRule(gIdx, rIdx, 'value', [prev[0] || '', e.target.value]);
+                                    }}
+                                    placeholder="Max"
+                                    className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs focus:outline-none w-24"
+                                  />
+                                </div>
+                              ) : ['Is Any Of', 'Is None Of'].includes(rule.operator) && currentField?.type === 'SELECT' ? (
+                                <select
+                                  multiple
+                                  value={Array.isArray(rule.value) ? rule.value : (rule.value ? [rule.value] : [])}
+                                  onChange={(e) => {
+                                    const opts = Array.from(e.target.selectedOptions, option => option.value);
+                                    updateRule(gIdx, rIdx, 'value', opts);
+                                  }}
+                                  className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs focus:outline-none min-w-[120px]"
+                                >
+                                  {currentField.provider === 'stages' && meta?.stages.map(s => (
+                                    <option key={s.id} value={s.id}>{s.name}</option>
+                                  ))}
+                                  {currentField.provider === 'sources' && meta?.sources.map(s => (
+                                    <option key={s.id} value={s.id}>{s.name}</option>
+                                  ))}
+                                  {currentField.provider === 'users' && meta?.users.map(u => (
+                                    <option key={u.id} value={u.id}>{u.name}</option>
+                                  ))}
+                                </select>
+                              ) : currentField?.type === 'SELECT' ? (
                                 <select
                                   value={rule.value || ''}
                                   onChange={(e) => updateRule(gIdx, rIdx, 'value', e.target.value)}
-                                  className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs focus:outline-none"
+                                  className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs focus:outline-none min-w-[120px]"
                                 >
                                   <option value="">Select Option</option>
                                   {currentField.provider === 'stages' && meta?.stages.map(s => (
@@ -483,6 +545,9 @@ export const CreateWorkflowPage: React.FC = () => {
                                   ))}
                                   {currentField.provider === 'sources' && meta?.sources.map(s => (
                                     <option key={s.id} value={s.id}>{s.name}</option>
+                                  ))}
+                                  {currentField.provider === 'users' && meta?.users.map(u => (
+                                    <option key={u.id} value={u.id}>{u.name}</option>
                                   ))}
                                 </select>
                               ) : currentField?.type === 'DATE' ? (
@@ -631,18 +696,60 @@ export const CreateWorkflowPage: React.FC = () => {
                       )}
 
                       {act.actionType === 'assign_user' && (
-                        <div>
-                          <label className="block text-xs font-semibold text-slate-400 mb-1">Assign To User</label>
-                          <select
-                            value={act.actionConfig.assignedToId || ''}
-                            onChange={(e) => updateActionConfig(index, 'assignedToId', e.target.value)}
-                            className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-xs focus:outline-none max-w-sm"
-                          >
-                            <option value="">Select User</option>
-                            {meta?.users.map(u => (
-                              <option key={u.id} value={u.id}>{u.name}</option>
-                            ))}
-                          </select>
+                        <div className="space-y-3">
+                          <div className="grid gap-3 sm:grid-cols-2">
+                            <div>
+                              <label className="block text-xs font-semibold text-slate-400 mb-1">Assignment Strategy</label>
+                              <select
+                                value={act.actionConfig.strategy || 'specific'}
+                                onChange={(e) => {
+                                  updateActionConfig(index, 'strategy', e.target.value);
+                                  updateActionConfig(index, 'assignedToId', '');
+                                  updateActionConfig(index, 'userIds', []);
+                                }}
+                                className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-xs focus:outline-none"
+                              >
+                                <option value="specific">Specific User</option>
+                                <option value="round_robin">Round Robin Rotation</option>
+                                <option value="least_assigned">Load Based (Least Assigned)</option>
+                                <option value="random">Random Selection</option>
+                              </select>
+                            </div>
+
+                            {(act.actionConfig.strategy === 'specific' || !act.actionConfig.strategy) ? (
+                              <div>
+                                <label className="block text-xs font-semibold text-slate-400 mb-1">Assign to User</label>
+                                <select
+                                  value={act.actionConfig.assignedToId || ''}
+                                  onChange={(e) => updateActionConfig(index, 'assignedToId', e.target.value)}
+                                  className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-xs focus:outline-none"
+                                >
+                                  <option value="">Select User</option>
+                                  {meta?.users.map(u => (
+                                    <option key={u.id} value={u.id}>{u.name}</option>
+                                  ))}
+                                </select>
+                              </div>
+                            ) : (
+                              <div>
+                                <label className="block text-xs font-semibold text-slate-400 mb-1">Eligible Users Pool (Multi-Select)</label>
+                                <select
+                                  multiple
+                                  value={act.actionConfig.userIds || []}
+                                  onChange={(e) => {
+                                    const opts = Array.from(e.target.selectedOptions, option => option.value);
+                                    updateActionConfig(index, 'userIds', opts);
+                                  }}
+                                  className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-xs focus:outline-none h-24"
+                                >
+                                  {meta?.users.map(u => (
+                                    <option key={u.id} value={u.id}>{u.name}</option>
+                                  ))}
+                                </select>
+                                <p className="text-[10px] text-slate-400 mt-1">Hold Cmd/Ctrl to select multiple users</p>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       )}
 
@@ -753,6 +860,254 @@ export const CreateWorkflowPage: React.FC = () => {
                           <option value="hours">Hours</option>
                           <option value="days">Days</option>
                         </select>
+                        <div className="flex gap-1 ml-2">
+                          <button
+                            type="button"
+                            onClick={() => updateActionDelay(index, 30, 'minutes')}
+                            className="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-[10px] text-slate-600 rounded font-semibold transition"
+                          >
+                            30m
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => updateActionDelay(index, 1, 'hours')}
+                            className="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-[10px] text-slate-600 rounded font-semibold transition"
+                          >
+                            1h
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => updateActionDelay(index, 2, 'hours')}
+                            className="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-[10px] text-slate-600 rounded font-semibold transition"
+                          >
+                            2h
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => updateActionDelay(index, 24, 'hours')}
+                            className="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-[10px] text-slate-600 rounded font-semibold transition"
+                          >
+                            24h
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Run Only If re-check conditions panel */}
+                      <div className="pt-3 border-t border-slate-100 mt-3">
+                        <details className="group">
+                          <summary className="text-xs font-semibold text-slate-600 hover:text-slate-800 cursor-pointer flex items-center justify-between">
+                            <span>Conditional Execution (Run only if...)</span>
+                            <span className="text-[10px] text-indigo-600 group-open:hidden">Configure conditions ▼</span>
+                            <span className="text-[10px] text-indigo-600 hidden group-open:inline">Hide conditions ▲</span>
+                          </summary>
+                          
+                          <div className="pt-3 pl-2 space-y-3">
+                            <p className="text-[10px] text-slate-400">
+                              Evaluate additional criteria on the lead right before executing this step.
+                            </p>
+                            
+                            {(() => {
+                              let runIfGroups: ConditionGroup[] = [];
+                              try {
+                                runIfGroups = act.runIfConfig ? JSON.parse(act.runIfConfig) : [];
+                              } catch (e) {}
+
+                              const updateRunIf = (newGroups: ConditionGroup[]) => {
+                                updateActionConfig(index, 'runIfConfig', newGroups.length > 0 ? JSON.stringify(newGroups) : null);
+                              };
+
+                              const addGroup = () => {
+                                updateRunIf([...runIfGroups, { rules: [{ field: 'name', operator: 'Equals', value: '' }] }]);
+                              };
+
+                              const removeGroup = (gIdx: number) => {
+                                updateRunIf(runIfGroups.filter((_, idx) => idx !== gIdx));
+                              };
+
+                              const addRule = (gIdx: number) => {
+                                const updated = [...runIfGroups];
+                                updated[gIdx].rules.push({ field: 'name', operator: 'Equals', value: '' });
+                                updateRunIf(updated);
+                              };
+
+                              const removeRule = (gIdx: number, rIdx: number) => {
+                                const updated = [...runIfGroups];
+                                updated[gIdx].rules = updated[gIdx].rules.filter((_, idx) => idx !== rIdx);
+                                if (updated[gIdx].rules.length === 0) {
+                                  updateRunIf(runIfGroups.filter((_, idx) => idx !== gIdx));
+                                } else {
+                                  updateRunIf(updated);
+                                }
+                              };
+
+                              const updateRuleLocal = (gIdx: number, rIdx: number, key: keyof ConditionRule, val: any) => {
+                                const updated = [...runIfGroups];
+                                const rule = updated[gIdx].rules[rIdx];
+                                rule[key] = val;
+                                if (key === 'field') {
+                                  const fieldDef = FIELDS.find(f => f.id === val);
+                                  const ops = fieldDef ? OPERATORS_BY_TYPE[fieldDef.type] : [];
+                                  rule.operator = ops[0] || 'Equals';
+                                  rule.value = '';
+                                }
+                                updateRunIf(updated);
+                              };
+
+                              return (
+                                <div className="space-y-3">
+                                  {runIfGroups.length === 0 ? (
+                                    <div className="text-[11px] text-slate-400 italic flex justify-between items-center">
+                                      <span>Always executes this step after delay.</span>
+                                      <button type="button" onClick={addGroup} className="text-indigo-600 font-semibold hover:underline">+ Add Condition Group</button>
+                                    </div>
+                                  ) : (
+                                    <div className="space-y-3">
+                                      {runIfGroups.map((group, gIdx) => (
+                                        <div key={gIdx} className="rounded border border-slate-100 bg-slate-50 p-2 relative space-y-2">
+                                          <div className="flex justify-between items-center text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                                            <span>Group {gIdx > 0 ? '(OR)' : ''}</span>
+                                            <button type="button" onClick={() => removeGroup(gIdx)} className="text-red-500 hover:text-red-600 lowercase font-medium">remove</button>
+                                          </div>
+
+                                          <div className="space-y-2">
+                                            {group.rules.map((rule, rIdx) => {
+                                              const currentField = FIELDS.find(f => f.id === rule.field);
+                                              const operators = currentField ? OPERATORS_BY_TYPE[currentField.type] : [];
+
+                                              return (
+                                                <div key={rIdx} className="flex flex-wrap items-center gap-1.5 text-[11px]">
+                                                  {rIdx > 0 && <span className="font-bold text-slate-400">AND</span>}
+                                                  
+                                                  <select
+                                                    value={rule.field}
+                                                    onChange={(e) => updateRuleLocal(gIdx, rIdx, 'field', e.target.value)}
+                                                    className="rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[11px] focus:outline-none"
+                                                  >
+                                                    {FIELDS.map(f => (
+                                                      <option key={f.id} value={f.id}>{f.label}</option>
+                                                    ))}
+                                                  </select>
+
+                                                  <select
+                                                    value={rule.operator}
+                                                    onChange={(e) => updateRuleLocal(gIdx, rIdx, 'operator', e.target.value)}
+                                                    className="rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[11px] focus:outline-none"
+                                                  >
+                                                    {operators.map(op => (
+                                                      <option key={op} value={op}>{op}</option>
+                                                    ))}
+                                                  </select>
+
+                                                  {!['Is Empty', 'Is Not Empty', 'Is True', 'Is False', 'Is Today', 'Is Yesterday', 'Is Tomorrow'].includes(rule.operator) && (
+                                                    <>
+                                                      {rule.operator === 'Between' ? (
+                                                        <div className="inline-flex gap-1 items-center">
+                                                          <input
+                                                            type={currentField?.type === 'DATE' ? 'date' : 'number'}
+                                                            value={Array.isArray(rule.value) ? rule.value[0] || '' : ''}
+                                                            onChange={(e) => {
+                                                              const prev = Array.isArray(rule.value) ? rule.value : [];
+                                                              updateRuleLocal(gIdx, rIdx, 'value', [e.target.value, prev[1] || '']);
+                                                            }}
+                                                            placeholder="Min"
+                                                            className="rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[11px] focus:outline-none w-16"
+                                                          />
+                                                          <span className="text-slate-400 font-medium">to</span>
+                                                          <input
+                                                            type={currentField?.type === 'DATE' ? 'date' : 'number'}
+                                                            value={Array.isArray(rule.value) ? rule.value[1] || '' : ''}
+                                                            onChange={(e) => {
+                                                              const prev = Array.isArray(rule.value) ? rule.value : [];
+                                                              updateRuleLocal(gIdx, rIdx, 'value', [prev[0] || '', e.target.value]);
+                                                            }}
+                                                            placeholder="Max"
+                                                            className="rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[11px] focus:outline-none w-16"
+                                                          />
+                                                        </div>
+                                                      ) : ['Is Any Of', 'Is None Of'].includes(rule.operator) && currentField?.type === 'SELECT' ? (
+                                                        <select
+                                                          multiple
+                                                          value={Array.isArray(rule.value) ? rule.value : (rule.value ? [rule.value] : [])}
+                                                          onChange={(e) => {
+                                                            const opts = Array.from(e.target.selectedOptions, option => option.value);
+                                                            updateRuleLocal(gIdx, rIdx, 'value', opts);
+                                                          }}
+                                                          className="rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[11px] focus:outline-none"
+                                                        >
+                                                          {currentField.provider === 'stages' && meta?.stages.map(s => (
+                                                            <option key={s.id} value={s.id}>{s.name}</option>
+                                                          ))}
+                                                          {currentField.provider === 'sources' && meta?.sources.map(s => (
+                                                            <option key={s.id} value={s.id}>{s.name}</option>
+                                                          ))}
+                                                          {currentField.provider === 'users' && meta?.users.map(u => (
+                                                            <option key={u.id} value={u.id}>{u.name}</option>
+                                                          ))}
+                                                        </select>
+                                                      ) : currentField?.type === 'SELECT' ? (
+                                                        <select
+                                                          value={rule.value || ''}
+                                                          onChange={(e) => updateRuleLocal(gIdx, rIdx, 'value', e.target.value)}
+                                                          className="rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[11px] focus:outline-none"
+                                                        >
+                                                          <option value="">Select Option</option>
+                                                          {currentField.provider === 'stages' && meta?.stages.map(s => (
+                                                            <option key={s.id} value={s.id}>{s.name}</option>
+                                                          ))}
+                                                          {currentField.provider === 'sources' && meta?.sources.map(s => (
+                                                            <option key={s.id} value={s.id}>{s.name}</option>
+                                                          ))}
+                                                          {currentField.provider === 'users' && meta?.users.map(u => (
+                                                            <option key={u.id} value={u.id}>{u.name}</option>
+                                                          ))}
+                                                        </select>
+                                                      ) : currentField?.type === 'DATE' ? (
+                                                        <input
+                                                          type="date"
+                                                          value={rule.value || ''}
+                                                          onChange={(e) => updateRuleLocal(gIdx, rIdx, 'value', e.target.value)}
+                                                          className="rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[11px] focus:outline-none"
+                                                        />
+                                                      ) : currentField?.type === 'NUMBER' ? (
+                                                        <input
+                                                          type="number"
+                                                          value={rule.value || ''}
+                                                          onChange={(e) => updateRuleLocal(gIdx, rIdx, 'value', e.target.value)}
+                                                          placeholder="0"
+                                                          className="rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[11px] focus:outline-none w-16"
+                                                        />
+                                                      ) : (
+                                                        <input
+                                                          type="text"
+                                                          value={rule.value || ''}
+                                                          onChange={(e) => updateRuleLocal(gIdx, rIdx, 'value', e.target.value)}
+                                                          placeholder="value..."
+                                                          className="rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[11px] focus:outline-none"
+                                                        />
+                                                      )}
+                                                    </>
+                                                  )}
+
+                                                  <button type="button" onClick={() => removeRule(gIdx, rIdx)} className="text-red-500 hover:text-red-600 ml-1">×</button>
+                                                </div>
+                                              );
+                                            })}
+                                          </div>
+
+                                          <button type="button" onClick={() => addRule(gIdx)} className="text-[10px] text-indigo-600 font-semibold hover:underline">+ Add Condition (AND)</button>
+                                        </div>
+                                      ))}
+
+                                      <div className="flex gap-2">
+                                        <button type="button" onClick={addGroup} className="text-[10px] text-indigo-600 font-semibold hover:underline">+ Add OR Group</button>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })()}
+                          </div>
+                        </details>
                       </div>
 
                     </div>
