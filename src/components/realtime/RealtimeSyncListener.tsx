@@ -104,6 +104,7 @@ const RealtimeSyncListener = () => {
       queryClient.invalidateQueries({ queryKey: ['lead-approvals'], refetchType: 'all' });
       queryClient.invalidateQueries({ queryKey: ['closed-leads'], refetchType: 'all' });
       queryClient.invalidateQueries({ queryKey: ['dashboard'], refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-header'], refetchType: 'all' });
       queryClient.invalidateQueries({ queryKey: ['lob-analysis'], refetchType: 'all' });
       refetchDashboardIfLoaded();
     };

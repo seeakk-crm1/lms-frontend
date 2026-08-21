@@ -11,13 +11,14 @@ import useAuthStore from '../../store/useAuthStore';
 import { formatFollowUpTypeLabel } from '../../modules/followups/followUpTypeUi';
 import { hasPermission } from '../../utils/permissions';
 import type { LeadApprovalListResponse } from '../../types/lead.types';
+import { getNotifications } from '../../services/attendance.api';
 
 type NotificationEntry = {
   id: string;
   title: string;
   body: string;
   meta: string;
-  category: 'mandatory' | 'approval' | 'followup';
+  category: 'mandatory' | 'approval' | 'followup' | 'system';
   onClick: () => void;
 };
 
@@ -62,6 +63,13 @@ const NotificationBell: React.FC = () => {
     },
   });
 
+  const notificationsQuery = useQuery({
+    queryKey: ['dashboard-header', 'notifications'],
+    queryFn: () => getNotifications(),
+    enabled: isAuthenticated,
+    staleTime: 10_000,
+  });
+
   useEffect(() => {
     if (!isOpen) return undefined;
 
@@ -92,11 +100,27 @@ const NotificationBell: React.FC = () => {
   const approvalCount = approvalsQuery.data?.pagination?.total ?? 0;
   const mandatoryCount = mandatoryItems.length || mandatoryFollowupCount || 0;
   const followUpCount = followUpAlerts.length;
-  const totalCount = mandatoryCount + approvalCount + followUpCount;
+  const generalNotifications = notificationsQuery.data?.data ?? [];
+  const unreadGeneralCount = generalNotifications.filter((n: any) => !n.isRead).length;
+  const totalCount = mandatoryCount + approvalCount + followUpCount + unreadGeneralCount;
   const totalCountLabel = totalCount > 99 ? '99+' : String(totalCount);
 
   const notifications = useMemo<NotificationEntry[]>(() => {
     const nextNotifications: NotificationEntry[] = [];
+
+    generalNotifications.slice(0, 5).forEach((item: any) => {
+      nextNotifications.push({
+        id: `system-${item.id}`,
+        title: item.title,
+        body: item.message,
+        meta: formatRelativeTime(item.createdAt),
+        category: 'system',
+        onClick: () => {
+          setIsOpen(false);
+          navigate('/attendance');
+        },
+      });
+    });
 
     if (mandatoryCount > 0) {
       if (mandatoryItems.length > 0) {
@@ -169,7 +193,7 @@ const NotificationBell: React.FC = () => {
     return nextNotifications.slice(0, 6);
   }, [approvalItems, followUpAlerts, mandatoryCount, mandatoryItems, navigate]);
 
-  const isLoading = mandatoryQuery.isLoading || approvalsQuery.isLoading || alertsQuery.isLoading;
+  const isLoading = mandatoryQuery.isLoading || approvalsQuery.isLoading || alertsQuery.isLoading || notificationsQuery.isLoading;
 
   return (
     <div ref={containerRef} className="relative">
@@ -246,6 +270,8 @@ const NotificationBell: React.FC = () => {
                         <AlertTriangle size={16} />
                       ) : item.category === 'approval' ? (
                         <ShieldAlert size={16} />
+                      ) : item.category === 'system' ? (
+                        <Bell size={16} />
                       ) : (
                         <CalendarClock size={16} />
                       );
@@ -255,7 +281,9 @@ const NotificationBell: React.FC = () => {
                         ? 'bg-amber-50 text-amber-600'
                         : item.category === 'approval'
                           ? 'bg-violet-50 text-violet-600'
-                          : 'bg-emerald-50 text-emerald-600';
+                          : item.category === 'system'
+                            ? 'bg-indigo-50 text-indigo-600'
+                            : 'bg-emerald-50 text-emerald-600';
 
                     return (
                       <button
