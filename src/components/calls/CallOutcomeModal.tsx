@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   AlertCircle,
@@ -228,7 +229,7 @@ export const CallOutcomeModal: React.FC<CallOutcomeModalProps> = ({
     setErrorMsg('LOB return was not completed. Select a return reason or choose another outcome.');
   };
 
-  return (
+  const content = (
     <>
       <div className="fixed inset-0 z-[10200] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm animate-fadeIn">
         <div className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100 flex flex-col max-h-[90vh]">
@@ -639,4 +640,6 @@ export const CallOutcomeModal: React.FC<CallOutcomeModalProps> = ({
       />
     </>
   );
+
+  return typeof document !== 'undefined' ? createPortal(content, document.body) : content;
 };

@@ -24,6 +24,8 @@ import FollowUpContextCard from './FollowUpContextCard';
 import WhatsAppActionButton from '../common/WhatsAppActionButton';
 import { LEAD_WHATSAPP_PERMISSIONS } from '../../constants/whatsappPermissions';
 import { formatPhoneWithFlag } from '../../utils/phoneUtils';
+import { useCallTracking } from '../../hooks/useCallTracking';
+import { CallOutcomeModal } from '../calls/CallOutcomeModal';
 
 interface Props {
   children: React.ReactNode;
@@ -37,6 +39,7 @@ const MandatoryOverdueFollowUpGate: React.FC<Props> = ({ children }) => {
   const completeMutation = useCompleteFollowUpMutation();
   const snoozeMutation = useSnoozeFollowUpMutation();
   const { confirmIfWeeklyOff, WeeklyOffScheduleModal } = useWeeklyOffScheduleGuard();
+  const callTracking = useCallTracking();
 
   const [queueIndex, setQueueIndex] = useState(0);
   const [completeTarget, setCompleteTarget] = useState<FollowUp | null>(null);
@@ -269,13 +272,29 @@ const MandatoryOverdueFollowUpGate: React.FC<Props> = ({ children }) => {
                                     <div className="flex items-center gap-2 shrink-0">
                                       {validPhone ? (
                                         <>
-                                          <a
-                                            href={`tel:${validPhone.replace(/[^0-9+]/g, '')}`}
-                                            className="inline-flex items-center justify-center gap-1.5 rounded-full bg-blue-50 px-3.5 py-1.5 text-xs font-bold text-blue-600 hover:bg-blue-100 transition-colors ring-1 ring-blue-100"
+                                          <button
+                                            type="button"
+                                            disabled={callTracking.isDialing}
+                                            onClick={() => {
+                                              if (!validPhone) return;
+                                              callTracking.startCall(
+                                                activeItem.leadId,
+                                                activeItem.leadName,
+                                                validPhone,
+                                                'FOLLOW_UP_POPUP',
+                                                activeItem.id,
+                                                activeItem.leadStage?.name,
+                                              );
+                                            }}
+                                            className="inline-flex items-center justify-center gap-1.5 rounded-full bg-blue-50 px-3.5 py-1.5 text-xs font-bold text-blue-600 hover:bg-blue-100 transition-colors ring-1 ring-blue-100 disabled:opacity-50 cursor-pointer"
                                           >
-                                            <PhoneCall className="h-3.5 w-3.5" />
+                                            {callTracking.isDialing ? (
+                                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                            ) : (
+                                              <PhoneCall className="h-3.5 w-3.5" />
+                                            )}
                                             Call
-                                          </a>
+                                          </button>
                                           <WhatsAppActionButton
                                             phone={validPhone}
                                             variant="cta"
@@ -545,6 +564,25 @@ const MandatoryOverdueFollowUpGate: React.FC<Props> = ({ children }) => {
       />
 
       {WeeklyOffScheduleModal}
+
+      {callTracking.isModalOpen && callTracking.activeSession && (
+        <CallOutcomeModal
+          isOpen={callTracking.isModalOpen}
+          onClose={callTracking.closeModal}
+          callSessionId={callTracking.activeSession.callSessionId}
+          leadId={callTracking.activeSession.leadId}
+          leadName={callTracking.activeSession.leadName}
+          leadPhone={callTracking.activeSession.leadPhone}
+          sourceContext={callTracking.activeSession.sourceContext as any}
+          followUpId={callTracking.activeSession.followUpId}
+          currentStageName={callTracking.activeSession.currentStageName}
+          currentSubstageName={callTracking.activeSession.currentSubstageName}
+          onSuccess={() => {
+            invalidateOverdue();
+            void query.refetch();
+          }}
+        />
+      )}
     </>
   );
 };
