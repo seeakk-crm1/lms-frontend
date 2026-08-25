@@ -18,7 +18,6 @@ import {
 import toast from 'react-hot-toast';
 import useAuthStore from '../../store/useAuthStore';
 import { hasPermission } from '../../utils/permission.util';
-import { subscribeAttendanceRefresh } from '../../utils/attendanceRefresh';
 import * as attendanceApi from '../../services/attendance.api';
 
 export interface CalendarDayDetail {
@@ -39,8 +38,6 @@ export interface CalendarDayDetail {
   statusLabel: string;
   checkInTime: string | null;
   checkOutTime: string | null;
-  checkInTimestamp?: string | null;
-  checkOutTimestamp?: string | null;
   workingHours: number;
   breakTimeMinutes: number;
   lateMinutes: number;
@@ -379,8 +376,6 @@ const AttendanceCalendarWidget: React.FC = () => {
       fetchCalendar();
     }
   }, [currentMonth, currentYear, selectedUserId, selectedOfficeId]);
-
-  useEffect(() => subscribeAttendanceRefresh(() => void fetchCalendar()), []);
 
   // Handle User Change
   const handleUserSelect = (userId: string) => {
