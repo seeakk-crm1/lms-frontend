@@ -1,6 +1,7 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
+import { formatAttendanceTime } from '../../../../utils/attendanceTimezone';
 import { User as UserIcon } from 'lucide-react';
 import {
   fetchAttendanceSummary,
@@ -91,8 +92,8 @@ const ManagementSummaryView: React.FC<ManagementSummaryViewProps> = ({ filters, 
         {attendance?.checkInTime ? (
           <p>
             <strong>Working Hours:</strong>{' '}
-            {attendance.checkInTime ? format(new Date(attendance.checkInTime), 'hh:mm a') : '-'}
-            {attendance.checkOutTime ? ` to ${format(new Date(attendance.checkOutTime), 'hh:mm a')}` : ''}
+            {formatAttendanceTime(attendance.checkInTime)}
+            {attendance.checkOutTime ? ` to ${formatAttendanceTime(attendance.checkOutTime)}` : ''}
           </p>
         ) : null}
       </div>

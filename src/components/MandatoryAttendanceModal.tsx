@@ -10,6 +10,7 @@ import {
 } from '../utils/attendanceGeolocation';
 import toast from 'react-hot-toast';
 import TargetLockDetails, { type TargetLockDetailsData } from './TargetLockDetails';
+import { formatAttendanceDateTime } from '../utils/attendanceTimezone';
 
 interface OfficeLocationProfile {
   id: string;
@@ -285,7 +286,7 @@ export const MandatoryAttendanceModal: React.FC<MandatoryAttendanceModalProps> =
             ) : (
               <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-4 text-sm text-emerald-800">
                 <p className="font-bold">Check-in recorded</p>
-                <p className="mt-1">{status.record?.checkInTime ? new Date(status.record.checkInTime).toLocaleString() : '--'}</p>
+                <p className="mt-1">{formatAttendanceDateTime(status.record?.checkInTime)}</p>
               </div>
             )}
 

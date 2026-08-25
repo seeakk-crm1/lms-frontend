@@ -19,6 +19,7 @@ import toast from 'react-hot-toast';
 import useAuthStore from '../../store/useAuthStore';
 import { hasPermission } from '../../utils/permission.util';
 import * as attendanceApi from '../../services/attendance.api';
+import { formatAttendanceTime } from '../../utils/attendanceTimezone';
 
 export interface CalendarDayDetail {
   date: string;
@@ -1089,14 +1090,14 @@ const AttendanceCalendarWidget: React.FC = () => {
                 <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/60">
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Check-In Time</span>
                   <span className="text-base font-black text-slate-900 mt-1 block">
-                    {selectedDayPopup.checkInTime || '—'}
+                    {formatAttendanceTime(selectedDayPopup.checkInTime)}
                   </span>
                 </div>
 
                 <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/60">
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Check-Out Time</span>
                   <span className="text-base font-black text-slate-900 mt-1 block">
-                    {selectedDayPopup.checkOutTime || '—'}
+                    {formatAttendanceTime(selectedDayPopup.checkOutTime)}
                   </span>
                 </div>
 

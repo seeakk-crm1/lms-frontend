@@ -37,6 +37,7 @@ import {
   captureAttendanceLocation,
   previewDistanceMeters,
 } from '../../utils/attendanceGeolocation';
+import { formatAttendanceTime, formatAttendanceDateTime } from '../../utils/attendanceTimezone';
 
 const AttendancePage: React.FC = () => {
   const { user } = useAuthStore();
@@ -934,15 +935,11 @@ const AttendancePage: React.FC = () => {
                       <p className="text-sm font-black">Attendance Approved & Checked Out</p>
                       <p className="mt-2 text-xs font-semibold">
                         Type: {todayStatus.record?.attendanceType?.replace(/_/g, ' ')} · Check-in:{' '}
-                        {todayStatus.record?.checkInTime
-                          ? new Date(todayStatus.record.checkInTime).toLocaleString()
-                          : '—'}
+                        {formatAttendanceDateTime(todayStatus.record?.checkInTime)}
                       </p>
                       <p className="mt-1 text-xs">
                         Check-out:{' '}
-                        {todayStatus.record?.checkOutTime
-                          ? new Date(todayStatus.record.checkOutTime).toLocaleString()
-                          : '—'}
+                        {formatAttendanceDateTime(todayStatus.record?.checkOutTime)}
                       </p>
                       <p className="mt-1 text-xs font-bold text-emerald-950">
                         Total Working Hours: {todayStatus.record?.workingHours ?? '—'}
@@ -955,15 +952,11 @@ const AttendancePage: React.FC = () => {
                     <p className="text-xs">You have checked out and submitted your daily work summary.</p>
                     <div className="mt-2 text-xs font-semibold">
                       Check-in:{' '}
-                      {todayStatus.record?.checkInTime
-                        ? new Date(todayStatus.record.checkInTime).toLocaleString()
-                        : '—'}
+                      {formatAttendanceDateTime(todayStatus.record?.checkInTime)}
                     </div>
                     <div className="text-xs">
                       Check-out:{' '}
-                      {todayStatus.record?.checkOutTime
-                        ? new Date(todayStatus.record.checkOutTime).toLocaleString()
-                        : '—'}
+                      {formatAttendanceDateTime(todayStatus.record?.checkOutTime)}
                     </div>
                     <button
                       onClick={() => {
@@ -999,9 +992,7 @@ const AttendancePage: React.FC = () => {
                     <p className="text-sm font-black">You are Checked In</p>
                     <p className="text-xs font-semibold">
                       Type: {todayStatus.record?.attendanceType?.replace(/_/g, ' ')} · Checked-in at:{' '}
-                      {todayStatus.record?.checkInTime
-                        ? new Date(todayStatus.record.checkInTime).toLocaleTimeString()
-                        : '—'}
+                      {formatAttendanceTime(todayStatus.record?.checkInTime)}
                     </p>
                     <button
                       onClick={() => {
@@ -1024,9 +1015,7 @@ const AttendancePage: React.FC = () => {
                       <p className="text-sm font-black">Attendance Approved</p>
                       <p className="mt-2 text-xs font-semibold">
                         Type: {todayStatus.record?.attendanceType?.replace(/_/g, ' ')} · Check-in:{' '}
-                        {todayStatus.record?.checkInTime
-                          ? new Date(todayStatus.record.checkInTime).toLocaleString()
-                          : '—'}
+                        {formatAttendanceDateTime(todayStatus.record?.checkInTime)}
                       </p>
                       <p className="mt-1 text-xs">
                         Location: {todayStatus.record?.geoLocation || '—'}
@@ -1045,9 +1034,7 @@ const AttendancePage: React.FC = () => {
                     <p className="text-sm font-black">Attendance Pending Approval</p>
                     <p className="mt-2 text-xs font-semibold">
                       Submitted as {todayStatus.record?.attendanceType?.replace(/_/g, ' ')} at{' '}
-                      {todayStatus.record?.checkInTime
-                        ? new Date(todayStatus.record.checkInTime).toLocaleString()
-                        : '—'}
+                      {formatAttendanceDateTime(todayStatus.record?.checkInTime)}
                     </p>
                     <p className="mt-1 text-xs text-amber-700">You cannot submit again until your supervisor reviews this request.</p>
                   </div>
@@ -1468,10 +1455,10 @@ const AttendancePage: React.FC = () => {
                           <td className="p-4">
                             <div>
                               <p className="font-semibold text-gray-800">
-                                In: {record.checkInTime ? new Date(record.checkInTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—'}
+                                In: {formatAttendanceTime(record.checkInTime)}
                               </p>
                               <p className="text-[10px] text-gray-500 mt-0.5">
-                                Out: {record.checkOutTime ? new Date(record.checkOutTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—'}
+                                Out: {formatAttendanceTime(record.checkOutTime)}
                               </p>
                               {record.workingHours != null && (
                                 <p className="text-[10px] text-emerald-600 font-bold mt-0.5">

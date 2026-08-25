@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { fetchAttendanceSummary, SummaryFilters } from '../../../../services/summaryReports.api';
 import { Clock } from 'lucide-react';
 import { format } from 'date-fns';
+import { formatAttendanceTime } from '../../../../utils/attendanceTimezone';
 
 interface AttendanceActivitySectionProps {
   filters: SummaryFilters;
@@ -39,8 +40,8 @@ const AttendanceActivitySection: React.FC<AttendanceActivitySectionProps> = ({ f
                 <tr key={att.id} className="border-b border-gray-50 hover:bg-gray-50">
                   <td className="px-6 py-4 font-bold text-gray-900">{att.user?.name || '-'}</td>
                   <td className="px-6 py-4">{format(new Date(att.date), 'dd MMM yyyy')}</td>
-                  <td className="px-6 py-4">{att.checkInTime ? format(new Date(att.checkInTime), 'hh:mm a') : '-'}</td>
-                  <td className="px-6 py-4">{att.checkOutTime ? format(new Date(att.checkOutTime), 'hh:mm a') : '-'}</td>
+                  <td className="px-6 py-4">{formatAttendanceTime(att.checkInTime)}</td>
+                  <td className="px-6 py-4">{formatAttendanceTime(att.checkOutTime)}</td>
                   <td className="px-6 py-4">
                     <span className="px-2 py-1 rounded-md text-xs font-bold bg-gray-100 text-gray-600">
                       {att.status || 'PRESENT'}
