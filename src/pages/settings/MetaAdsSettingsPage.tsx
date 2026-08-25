@@ -115,7 +115,7 @@ const MetaAdsSettingsPage: React.FC = () => {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [statusRes, connectionsRes, automationsRes, activityRes, stagesRes, sourcesRes, usersRes, leadFieldsRes] = await Promise.all([
+      const results = await Promise.allSettled([
         getMetaStatus(),
         getMetaConnections(),
         getMetaAutomations(),
@@ -126,14 +126,50 @@ const MetaAdsSettingsPage: React.FC = () => {
         getSeeakkLeadFields(),
       ]);
 
-      setStatus(statusRes);
-      setConnections(connectionsRes || []);
-      setAutomations(automationsRes || []);
-      setSyncLogs(activityRes || []);
-      setStages(Array.isArray(stagesRes) ? stagesRes : (stagesRes as any)?.data || []);
-      setSources(Array.isArray(sourcesRes) ? sourcesRes : (sourcesRes as any)?.data || []);
-      setUsers(Array.isArray(usersRes?.users) ? usersRes.users : Array.isArray(usersRes) ? usersRes : []);
-      setSeeakkFields(leadFieldsRes || []);
+      const [statusRes, connectionsRes, automationsRes, activityRes, stagesRes, sourcesRes, usersRes, leadFieldsRes] = results;
+
+      if (statusRes.status === 'fulfilled') {
+        setStatus(statusRes.value);
+      } else {
+        console.error('Failed to load Meta Status:', statusRes.reason);
+      }
+
+      if (connectionsRes.status === 'fulfilled') {
+        setConnections(connectionsRes.value || []);
+      } else {
+        console.error('Failed to load Meta Connections:', connectionsRes.reason);
+      }
+
+      if (automationsRes.status === 'fulfilled') {
+        setAutomations(automationsRes.value || []);
+      } else {
+        console.error('Failed to load Meta Automations:', automationsRes.reason);
+      }
+
+      if (activityRes.status === 'fulfilled') {
+        setSyncLogs(activityRes.value || []);
+      } else {
+        console.error('Failed to load Meta Sync Activity:', activityRes.reason);
+      }
+
+      if (stagesRes.status === 'fulfilled') {
+        const val = stagesRes.value;
+        setStages(Array.isArray(val) ? val : (val as any)?.data || []);
+      }
+
+      if (sourcesRes.status === 'fulfilled') {
+        const val = sourcesRes.value;
+        setSources(Array.isArray(val) ? val : (val as any)?.data || []);
+      }
+
+      if (usersRes.status === 'fulfilled') {
+        const val = usersRes.value;
+        setUsers(Array.isArray(val?.users) ? val.users : Array.isArray(val) ? val : []);
+      }
+
+      if (leadFieldsRes.status === 'fulfilled') {
+        setSeeakkFields(leadFieldsRes.value || []);
+      }
     } catch (err: any) {
       console.error('Failed to load Meta Ads settings data:', err);
     } finally {
