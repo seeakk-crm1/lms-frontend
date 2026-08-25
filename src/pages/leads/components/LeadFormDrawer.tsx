@@ -1063,6 +1063,10 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, sel
 
         Object.keys(fieldsMapping).forEach(key => {
           if (changedFields.has(key)) {
+            // Prevent clearing Lead Name in bulk edit
+            if (key === 'name' && !fieldsMapping[key]) {
+              return;
+            }
             bulkPayload[key] = fieldsMapping[key];
           }
         });
@@ -1336,14 +1340,14 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, sel
 
                       <div className="grid gap-4 md:grid-cols-2">
                         <div className="md:col-span-2">
-                          <FieldLabel fieldKey="name" label="Lead Name" required />
+                          <FieldLabel fieldKey="name" label="Lead Name" required={mode !== 'bulk-edit'} />
                           <input
                             type="text"
                             value={formValues.name}
                             onChange={(event) => handleFieldChange('name', event.target.value)}
                             className={inputClassName}
                             placeholder="Enter lead or account name"
-                            required
+                            required={mode !== 'bulk-edit'}
                           />
                           <ErrorText field="name" />
                         </div>
