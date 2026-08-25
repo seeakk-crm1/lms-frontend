@@ -505,6 +505,13 @@ const LeadsPage: React.FC = () => {
                     >
                       <span className="text-xs font-black text-indigo-700">{selectedLeadIds.length} Selected</span>
                       <button 
+                        onClick={() => useLeadStore.getState().openBulkEditDrawer()}
+                        className="text-xs font-bold text-emerald-600 hover:text-emerald-700 transition-colors"
+                      >
+                        Edit Selected
+                      </button>
+                      <div className="w-px h-3 bg-indigo-200"></div>
+                      <button 
                         onClick={handleBulkDeleteOpen}
                         disabled={bulkDeleteMutation.isPending}
                         className="text-xs font-bold text-rose-600 hover:text-rose-700 transition-colors disabled:opacity-50"
@@ -721,7 +728,9 @@ const LeadsPage: React.FC = () => {
             isOpen={drawerState.isOpen}
             mode={drawerState.mode}
             lead={selectedLead}
+            selectedLeadIds={selectedLeadIds}
             onClose={closeDrawer}
+            onSuccess={() => setSelectedLeadIds([])}
           />
           <LeadViewDrawer
             isOpen={Boolean(viewLead)}

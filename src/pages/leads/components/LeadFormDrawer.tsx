@@ -6,7 +6,7 @@ import { AlertCircle, CalendarClock, Save, Sparkles, X, Banknote, PlusCircle, Fi
 import { toast } from 'react-hot-toast';
 import SearchableSelect from '../../../components/SearchableSelect';
 import PhoneInput from '../../../components/common/PhoneInput';
-import { useChangeLeadStageMutation, useCreateLeadMutation, useLeadDetailQuery, useLeadMetaQuery, useUpdateLeadMutation, useLeadRemarksQuery } from '../../../hooks/useLeads';
+import { useChangeLeadStageMutation, useCreateLeadMutation, useLeadDetailQuery, useLeadMetaQuery, useUpdateLeadMutation, useLeadRemarksQuery, useBulkUpdateLeadsMutation } from '../../../hooks/useLeads';
 import type { LeadDynamicField } from '../../../modules/admin/lead-dynamics/types';
 import { useLeadStore, createEmptyLeadFormValues } from '../../../store/leadStore';
 import { useFollowupWorkflowStore } from '../../../store/followupWorkflowStore';
@@ -37,9 +37,11 @@ import { normalizeAmount } from '../../../utils/amountUtils';
 
 interface LeadFormDrawerProps {
   isOpen: boolean;
-  mode: 'create' | 'edit';
+  mode: 'create' | 'edit' | 'bulk-edit';
   lead: LeadListItem | null;
+  selectedLeadIds?: string[];
   onClose: () => void;
+  onSuccess?: () => void;
 }
 
 const inputClassName =
@@ -231,7 +233,7 @@ const buildValidationMap = (errors?: ValidationErrorItem[] | Record<string, stri
 const getValidationMessage = (errors: ValidationErrorMap, ...fields: string[]) =>
   fields.map((field) => errors[field]).find(Boolean) || '';
 
-const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onClose }) => {
+const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, selectedLeadIds, onClose, onSuccess }) => {
   const queryClient = useQueryClient();
   const { data: meta, isLoading: metaLoading } = useLeadMetaQuery(isOpen);
   const { data: leadDetails, isLoading: leadLoading } = useLeadDetailQuery(lead?.id, isOpen && mode === 'edit');
@@ -240,6 +242,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
   const setDynamicFields = useLeadStore((state) => state.setDynamicFields);
   const createMutation = useCreateLeadMutation();
   const updateMutation = useUpdateLeadMutation();
+  const bulkUpdateMutation = useBulkUpdateLeadsMutation();
   const changeStageMutation = useChangeLeadStageMutation();
   const currentUser = useAuthStore((state) => state.user);
   const { confirmIfWeeklyOff, WeeklyOffScheduleModal } = useWeeklyOffScheduleGuard();
@@ -272,6 +275,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
   }, [isOpen, handleDrawerClose]);
 
   const [formValues, setFormValues] = useState<LeadFormValues>(createEmptyLeadFormValues());
+  const [changedFields, setChangedFields] = useState<Set<string>>(new Set());
   const [lobModalOpen, setLobModalOpen] = useState(false);
   const [lobExitModalOpen, setLobExitModalOpen] = useState(false);
   const [lobExitReason, setLobExitReason] = useState('');
@@ -297,6 +301,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
 
   useEffect(() => {
     if (isOpen) {
+      setChangedFields(new Set());
       console.log('[Diagnostic] Drawer Opened');
       console.log('[Diagnostic] Payment section initialized');
       if (mode === 'create') {
@@ -574,18 +579,18 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
       return;
     }
 
-    if (mode === 'create') {
-      const createKey = 'create';
-      if (initializedLeadKeyRef.current === createKey) {
+    if (mode === 'create' || mode === 'bulk-edit') {
+      const initKey = mode;
+      if (initializedLeadKeyRef.current === initKey) {
         return;
       }
-      initializedLeadKeyRef.current = createKey;
+      initializedLeadKeyRef.current = initKey;
 
       console.log('[Frontend] Initializing Form', { mode, isOpen });
-      console.log('[Frontend] Form Initialized for Create');
+      console.log(`[Frontend] Form Initialized for ${mode}`);
       setFormValues({
         ...createEmptyLeadFormValues(),
-        assignedToId: currentUser?.id || '',
+        assignedToId: mode === 'create' ? (currentUser?.id || '') : '',
       });
       setValidationErrors({});
       setPreviousStageId('');
@@ -609,6 +614,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
     isLeadLoading ||
     createMutation.isPending ||
     updateMutation.isPending ||
+    bulkUpdateMutation.isPending ||
     changeStageMutation.isPending;
 
   useEffect(() => {
@@ -627,6 +633,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
   const disabledStageIds = useMemo(() => new Set<string>(), []);
 
   const handleAddProductRow = () => {
+    setChangedFields((prev) => new Set(prev).add('products'));
     setValidationErrors((current) => {
       const next = { ...current };
       delete next.products;
@@ -639,6 +646,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
   };
 
   const handleProductRowChange = (index: number, field: 'productId' | 'quantity', value: string | number) => {
+    setChangedFields((prev) => new Set(prev).add('products'));
     setValidationErrors((current) => {
       const next = { ...current };
       delete next.products;
@@ -663,6 +671,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
   };
 
   const handleRemoveProductRow = (index: number) => {
+    setChangedFields((prev) => new Set(prev).add('products'));
     setValidationErrors((current) => {
       const next = { ...current };
       delete next.products;
@@ -681,6 +690,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
   };
 
   const handleFieldChange = (field: keyof LeadFormValues, value: any) => {
+    setChangedFields((prev) => new Set(prev).add(field));
     setValidationErrors((current) => {
       if (!current[field]) return current;
       const next = { ...current };
@@ -760,6 +770,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
   };
 
   const handleDynamicFieldChange = (fieldId: string, value: string | string[]) => {
+    setChangedFields((prev) => new Set(prev).add(`dynamic_${fieldId}`));
     setValidationErrors((current) => {
       const next = { ...current };
       delete next.dynamicValues;
@@ -848,7 +859,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
     setValidationErrors({});
     console.log('[Frontend] Save Clicked');
 
-    if (!formValues.name.trim()) {
+    if (mode !== 'bulk-edit' && !formValues.name.trim()) {
       toast.error('Lead name is required');
       return;
     }
@@ -1025,6 +1036,60 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
           }
         }
         console.log('[Diagnostic] Lead created successfully');
+      } else if (mode === 'bulk-edit' && selectedLeadIds && selectedLeadIds.length > 0) {
+        const bulkPayload: Record<string, any> = {};
+        
+        // Only include fields that were actually changed
+        const fieldsMapping: Record<string, any> = {
+          name: formValues.name.trim(),
+          email: nullableTrimmed(formValues.email),
+          phone: nullableTrimmed(formValues.phone),
+          companyName: nullableTrimmed(formValues.companyName),
+          address: nullableTrimmed(formValues.address),
+          assignedToId: canAssignOtherUsers ? nullableTrimmed(formValues.assignedToId) : undefined,
+          stageId: formValues.stageId || null,
+          lifecycleId: formValues.lifecycleId || null,
+          sourceId: formValues.sourceId || null,
+          nextFollowUpAt: toIsoOrNull(formValues.nextFollowUpAt),
+          nextFollowUpType: formValues.nextFollowUpType,
+          reasonId: formValues.reasonId.trim() || null,
+          remarks: nullableTrimmed(formValues.leadRemarks),
+          lobRemarks: nullableTrimmed(formValues.remarks),
+          totalAmount: Number.isFinite(totalAmount) ? totalAmount : 0,
+          totalAmountReason: optionalTrimmed(totalAmountReason),
+          reason: optionalTrimmed(totalAmountReason),
+          products: safeProducts,
+        };
+
+        Object.keys(fieldsMapping).forEach(key => {
+          if (changedFields.has(key)) {
+            bulkPayload[key] = fieldsMapping[key];
+          }
+        });
+
+        // Add dynamic values
+        const dynamicValues: any[] = [];
+        dynamicPayload.forEach((dv: any) => {
+          if (changedFields.has(`dynamic_${dv.fieldId}`)) {
+            dynamicValues.push(dv);
+          }
+        });
+        
+        if (dynamicValues.length > 0) {
+          bulkPayload.dynamicValues = dynamicValues;
+        }
+
+        if (Object.keys(bulkPayload).length > 0) {
+          await bulkUpdateMutation.mutateAsync({
+            leadIds: selectedLeadIds,
+            updates: bulkPayload
+          });
+          onSuccess?.();
+          handleDrawerClose();
+        } else {
+          toast.error("No fields were modified.");
+          return;
+        }
       } else if (lead?.id) {
         await updateMutation.mutateAsync({
           id: lead.id,
@@ -1177,13 +1242,15 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
                   <div>
                     <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.25em] text-emerald-600">
                       <Sparkles className="h-3.5 w-3.5" />
-                      <span>{mode === 'create' ? 'New Lead' : 'Edit Lead'}</span>
+                      <span>{mode === 'create' ? 'New Lead' : mode === 'bulk-edit' ? 'Bulk Edit' : 'Edit Lead'}</span>
                     </div>
                     <h2 className="text-2xl font-black text-gray-900">
-                      {mode === 'create' ? 'Add a new pipeline opportunity' : `Update ${lead?.name || 'lead'}`}
+                      {mode === 'create' ? 'Add a new pipeline opportunity' : mode === 'bulk-edit' ? `Bulk Update ${selectedLeadIds?.length || 0} Leads` : `Update ${lead?.name || 'lead'}`}
                     </h2>
                     <p className="mt-1 max-w-xl text-sm font-semibold text-gray-500">
-                      Capture general lead details, follow-up cadence, and any active advanced fields defined by the workspace.
+                      {mode === 'bulk-edit' 
+                        ? 'Fields modified here will be updated across all selected leads. Unchanged fields will be ignored.'
+                        : 'Capture general lead details, follow-up cadence, and any active advanced fields defined by the workspace.'}
                     </p>
                   </div>
                   <button
@@ -1921,7 +1988,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, onC
                         >
                           <Save className="h-4 w-4" />
                           <span>
-                            {isBusy ? 'Saving…' : mode === 'create' ? 'Create Lead' : 'Save Changes'}
+                            {isBusy ? 'Saving…' : mode === 'create' ? 'Create Lead' : mode === 'bulk-edit' ? 'Update Selected' : 'Save Changes'}
                           </span>
                         </button>
                       </div>

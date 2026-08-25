@@ -351,7 +351,7 @@ export interface LeadFormValues {
 
 export interface LeadDrawerState {
   isOpen: boolean;
-  mode: 'create' | 'edit';
+  mode: 'create' | 'edit' | 'bulk-edit';
 }
 
 export interface LeadOption {

@@ -20,6 +20,7 @@ interface LeadStoreState {
   setDynamicFields: (dynamicFields: LeadMetaOptions['dynamicFields']) => void;
   openCreateDrawer: () => void;
   openEditDrawer: (lead: LeadListItem) => void;
+  openBulkEditDrawer: () => void;
   closeDrawer: () => void;
 }
 
@@ -95,6 +96,12 @@ export const useLeadStore = create<LeadStoreState>((set) => ({
     set({
       selectedLead: lead,
       drawerState: { isOpen: true, mode: 'edit' },
+      lobModalOpen: false,
+    }),
+  openBulkEditDrawer: () =>
+    set({
+      selectedLead: null,
+      drawerState: { isOpen: true, mode: 'bulk-edit' },
       lobModalOpen: false,
     }),
   closeDrawer: () =>

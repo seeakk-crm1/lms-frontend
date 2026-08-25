@@ -18,6 +18,7 @@ import {
   bulkDeleteLeads,
   toggleLeadStar,
   updateLead,
+  bulkUpdateLeads,
 } from '../services/leads.api';
 import type {
   LeadCreatePayload,
@@ -548,3 +549,29 @@ export const useExportLeadsXlsx = () =>
       toast.error(error?.response?.data?.message || 'Unable to generate the XLSX export. Please try again.');
     },
   });
+
+export const useBulkUpdateLeadsMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: { leadIds: string[]; updates: LeadUpdatePayload }) =>
+      bulkUpdateLeads(data.leadIds, data.updates),
+    onSuccess: (data) => {
+      // Data might contain partial success results, but we invalidate all leads to refresh the list
+      queryClient.invalidateQueries({ queryKey: ['leads'] });
+      queryClient.invalidateQueries({ queryKey: ['leads-dashboard'] });
+      
+      const successCount = data.data?.successCount || 0;
+      const failedCount = data.data?.failedCount || 0;
+
+      if (failedCount > 0) {
+        toast.success(`Successfully updated ${successCount} leads. Failed: ${failedCount} leads.`, { duration: 5000 });
+      } else {
+        toast.success(`Successfully updated ${successCount} leads.`);
+      }
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || 'Failed to perform bulk update.');
+    },
+  });
+};

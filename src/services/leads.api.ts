@@ -74,6 +74,11 @@ export const updateLead = async (id: string, payload: LeadUpdatePayload) => {
   return response.data;
 };
 
+export const bulkUpdateLeads = async (leadIds: string[], updates: LeadUpdatePayload) => {
+  const response = await api.patch('/leads/bulk', { leadIds, updates });
+  return response.data;
+};
+
 export const uploadLeadProfileImage = async (id: string, file: File) => {
   const formData = new FormData();
   formData.append('image', file);
