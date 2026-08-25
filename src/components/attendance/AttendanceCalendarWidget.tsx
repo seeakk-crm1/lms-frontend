@@ -19,7 +19,11 @@ import toast from 'react-hot-toast';
 import useAuthStore from '../../store/useAuthStore';
 import { hasPermission } from '../../utils/permission.util';
 import * as attendanceApi from '../../services/attendance.api';
-import { formatAttendanceTime } from '../../utils/attendanceTimezone';
+import {
+  formatAttendanceTime,
+  resolveAttendanceCheckIn,
+  resolveAttendanceCheckOut,
+} from '../../utils/attendanceTimezone';
 
 export interface CalendarDayDetail {
   date: string;
@@ -1086,35 +1090,41 @@ const AttendanceCalendarWidget: React.FC = () => {
               </div>
 
               {/* Main Timing Grid */}
-              <div className="grid grid-cols-2 gap-4 mb-6">
-                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/60">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Check-In Time</span>
-                  <span className="text-base font-black text-slate-900 mt-1 block">
-                    {formatAttendanceTime(selectedDayPopup.checkInTime)}
-                  </span>
-                </div>
+              {(() => {
+                const resolvedCheckIn = resolveAttendanceCheckIn(selectedDayPopup);
+                const resolvedCheckOut = resolveAttendanceCheckOut(selectedDayPopup);
+                return (
+                  <div className="grid grid-cols-2 gap-4 mb-6">
+                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/60">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Check-In Time</span>
+                      <span className="text-base font-black text-slate-900 mt-1 block">
+                        {formatAttendanceTime(resolvedCheckIn)}
+                      </span>
+                    </div>
 
-                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/60">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Check-Out Time</span>
-                  <span className="text-base font-black text-slate-900 mt-1 block">
-                    {formatAttendanceTime(selectedDayPopup.checkOutTime)}
-                  </span>
-                </div>
+                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/60">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Check-Out Time</span>
+                      <span className="text-base font-black text-slate-900 mt-1 block">
+                        {formatAttendanceTime(resolvedCheckOut)}
+                      </span>
+                    </div>
 
-                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/60">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Working Hours</span>
-                  <span className="text-base font-black text-emerald-700 mt-1 block">
-                    {selectedDayPopup.workingHours} Hours
-                  </span>
-                </div>
+                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/60">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Working Hours</span>
+                      <span className="text-base font-black text-emerald-700 mt-1 block">
+                        {selectedDayPopup.workingHours} Hours
+                      </span>
+                    </div>
 
-                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/60">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Late Minutes</span>
-                  <span className="text-base font-black text-amber-700 mt-1 block">
-                    {selectedDayPopup.lateMinutes > 0 ? `${selectedDayPopup.lateMinutes} mins` : 'On Time'}
-                  </span>
-                </div>
-              </div>
+                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/60">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Late Minutes</span>
+                      <span className="text-base font-black text-amber-700 mt-1 block">
+                        {selectedDayPopup.lateMinutes > 0 ? `${selectedDayPopup.lateMinutes} mins` : 'On Time'}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* Detailed Operational Attributes */}
               <div className="space-y-3 bg-slate-50/70 p-5 rounded-2xl border border-slate-200/60 text-xs mb-6">
