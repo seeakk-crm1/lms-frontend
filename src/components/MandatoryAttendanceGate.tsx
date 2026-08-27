@@ -14,6 +14,7 @@ const MandatoryAttendanceGate: React.FC<Props> = ({ children }) => {
   const enabled = useAuthenticatedWorkflowEnabled();
   const [status, setStatus] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [dismissedCheckoutDate, setDismissedCheckoutDate] = useState<string | null>(null);
 
   const loadStatus = useCallback(async () => {
     if (!enabled) {
@@ -41,12 +42,25 @@ const MandatoryAttendanceGate: React.FC<Props> = ({ children }) => {
 
   useEffect(() => subscribeAttendanceRefresh(() => void loadStatus()), [loadStatus]);
 
+  const isCheckoutDismissed = Boolean(
+    status?.date && dismissedCheckoutDate === status.date,
+  );
+
+  const isCheckoutMode = Boolean(
+    status &&
+      !status.requiresMandatoryPopup &&
+      !status.isLocked &&
+      (status.requiresMandatoryCheckoutPopup || status.canCheckOut),
+  );
+
   const blocked = Boolean(
     enabled &&
       status &&
       !status.isHoliday &&
       !status.isWeeklyOff &&
-      (status.requiresMandatoryPopup || status.requiresMandatoryCheckoutPopup || status.isLocked),
+      (status.requiresMandatoryPopup ||
+        (status.requiresMandatoryCheckoutPopup && !isCheckoutDismissed) ||
+        status.isLocked),
   );
 
   useMandatoryNavigationLock(blocked);
@@ -84,7 +98,14 @@ const MandatoryAttendanceGate: React.FC<Props> = ({ children }) => {
   }
 
   const showLoader = blocked && loading;
-  const modal = blocked && !loading && status ? <MandatoryAttendanceModal status={status} onSuccess={() => void loadStatus()} /> : null;
+  const modal =
+    blocked && !loading && status ? (
+      <MandatoryAttendanceModal
+        status={status}
+        onSuccess={() => void loadStatus()}
+        onClose={isCheckoutMode ? () => setDismissedCheckoutDate(status.date) : undefined}
+      />
+    ) : null;
 
   return (
     <>
