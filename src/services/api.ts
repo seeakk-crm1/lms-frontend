@@ -124,9 +124,10 @@ import axiosRetry from 'axios-retry';
 
 // Configure axios-retry for transient failures
 axiosRetry(api, {
-  retries: 3,
+  retries: 2,
   retryDelay: axiosRetry.exponentialDelay,
   retryCondition: (error: AxiosError) => {
+    if (typeof navigator !== 'undefined' && !navigator.onLine) return false;
     // Retry on 502, 503, 504 and network interruptions
     if (!error.response && error.message === 'Network Error') return true;
     if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) return true;

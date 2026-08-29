@@ -17,38 +17,36 @@ import { resolveValidAccessToken, refreshAccessToken, isRefreshAuthFailure } fro
 import { getSocket } from './realtime';
 
 let recoveryInFlight = false;
-let offlineToastShown = false;
+let recoveryTimer: ReturnType<typeof setTimeout> | null = null;
 
-const ONLINE_RECOVERY_DELAY_MS = 800; // brief stabilization window after "online" fires
+const ONLINE_RECOVERY_DELAY_MS = 600; // brief stabilization window after "online" or visibility fires
 
 /**
- * Attempt to restore auth + socket state after network is back.
+ * Attempt to restore auth + socket state after network is back or tab becomes visible.
  * Called at most once per network restoration event.
  */
 const onNetworkRestored = async (): Promise<void> => {
+  if (typeof navigator !== 'undefined' && !navigator.onLine) return;
   if (recoveryInFlight) return;
   recoveryInFlight = true;
 
   try {
-    // 1. Validate / refresh access token once
+    // 1. Validate / refresh access token once if needed
     try {
       await resolveValidAccessToken();
     } catch (err) {
       if (isRefreshAuthFailure(err)) {
-        // Genuine auth failure (401/403/missing token) after network came back — let authToken handle logout
         try {
           await refreshAccessToken();
         } catch {
-          // refreshAccessToken itself will throw; the api interceptor will clear session on the next 401
+          // let interceptor handle session expiry
         }
       }
-      // For network errors at this point, do nothing — socket will reconnect on its own
     }
 
-    // 2. Reconnect socket with a fresh session handshake to avoid stale sids
+    // 2. Reconnect socket if disconnected, ensuring fresh auth token
     const socket = getSocket();
-    if (socket) {
-      socket.disconnect();
+    if (socket && !socket.connected) {
       const freshToken = localStorage.getItem('accessToken') || '';
       if (freshToken) {
         socket.auth = { token: freshToken };
@@ -60,20 +58,31 @@ const onNetworkRestored = async (): Promise<void> => {
   }
 };
 
-const handleOnline = (): void => {
-  offlineToastShown = false;
+const triggerDebouncedRecovery = (): void => {
+  if (recoveryTimer) {
+    clearTimeout(recoveryTimer);
+  }
 
-  // Small delay to let the OS stabilize the new network path before attempting requests
-  setTimeout(() => {
+  recoveryTimer = setTimeout(() => {
+    recoveryTimer = null;
     void onNetworkRestored();
   }, ONLINE_RECOVERY_DELAY_MS);
 };
 
+const handleOnline = (): void => {
+  triggerDebouncedRecovery();
+};
+
 const handleOffline = (): void => {
-  if (!offlineToastShown) {
-    offlineToastShown = true;
-    // No toast here — Socket.IO will reconnect automatically and show transient state.
-    // We only note it internally so that we don't fire unneeded recovery logic while offline.
+  if (recoveryTimer) {
+    clearTimeout(recoveryTimer);
+    recoveryTimer = null;
+  }
+};
+
+const handleVisibilityChange = (): void => {
+  if (document.visibilityState === 'visible' && typeof navigator !== 'undefined' && navigator.onLine) {
+    triggerDebouncedRecovery();
   }
 };
 
@@ -89,10 +98,16 @@ export const installNetworkRecovery = (): (() => void) => {
 
   window.addEventListener('online', handleOnline);
   window.addEventListener('offline', handleOffline);
+  document.addEventListener('visibilitychange', handleVisibilityChange);
 
   return () => {
     installed = false;
+    if (recoveryTimer) {
+      clearTimeout(recoveryTimer);
+      recoveryTimer = null;
+    }
     window.removeEventListener('online', handleOnline);
     window.removeEventListener('offline', handleOffline);
+    document.removeEventListener('visibilitychange', handleVisibilityChange);
   };
 };

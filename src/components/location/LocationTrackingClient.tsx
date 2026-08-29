@@ -106,6 +106,13 @@ const LocationTrackingClient = () => {
     const upload = async (point?: LocationPointPayload) => {
       if (isUploadingRef.current) return;
 
+      if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        if (point) {
+          await idbSavePoints([point]);
+        }
+        return;
+      }
+
       const hasToken = Boolean(localStorage.getItem('accessToken'));
       if (!hasToken) {
         console.warn('[Location Tracking] Aborting upload: No access token available.');

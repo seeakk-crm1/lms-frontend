@@ -124,11 +124,20 @@ export const refreshAccessToken = async (): Promise<string> => {
     throw new AuthSessionError('No refresh token available');
   }
 
+  // If offline, do not hammer the refresh endpoint with multiple attempts
+  if (typeof navigator !== 'undefined' && !navigator.onLine) {
+    throw new Error('Network is offline');
+  }
+
   refreshPromise = (async () => {
     let lastError: unknown;
 
     try {
       for (let attempt = 0; attempt < MAX_REFRESH_ATTEMPTS; attempt += 1) {
+        if (typeof navigator !== 'undefined' && !navigator.onLine) {
+          throw new Error('Network is offline');
+        }
+
         const currentRefreshToken = localStorage.getItem('refreshToken');
         if (!currentRefreshToken) {
           throw new AuthSessionError('No refresh token available');
@@ -153,7 +162,10 @@ export const refreshAccessToken = async (): Promise<string> => {
         } catch (error) {
           lastError = error;
           const canRetry =
-            isTransientRefreshFailure(error) && attempt < MAX_REFRESH_ATTEMPTS - 1;
+            typeof navigator !== 'undefined' &&
+            navigator.onLine &&
+            isTransientRefreshFailure(error) &&
+            attempt < MAX_REFRESH_ATTEMPTS - 1;
           if (!canRetry) {
             throw error;
           }

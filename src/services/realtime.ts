@@ -58,22 +58,7 @@ const resolveSocketTransports = (): ('polling' | 'websocket')[] => {
   if (v === 'polling' || v === 'poll' || v === 'long-polling') return ['polling'];
   if (v === 'websocket' || v === 'ws') return ['websocket'];
 
-  return ['polling'];
-};
-
-/**
- * Render / many reverse proxies handle Engine.IO long-polling reliably but intermittently drop
- * the WebSocket upgrade. `rememberUpgrade: true` skips polling on later connects and retries WS
- * first — that surfaces as "WebSocket connection ... failed" in DevTools while the app looks broken.
- */
-const socketRememberUpgrade = (): boolean => {
-  if (import.meta.env.PROD) return false;
-  const v = String(import.meta.env.VITE_SOCKET_REMEMBER_UPGRADE || '')
-    .trim()
-    .toLowerCase();
-  if (v === 'true' || v === '1') return true;
-  if (v === 'false' || v === '0') return false;
-  return true;
+  return ['websocket', 'polling'];
 };
 
 const isLikelySocketAuthError = (msg: string): boolean => {
@@ -138,7 +123,9 @@ const attachCoreSocketHandlers = (s: Socket, baseUrl: string): void => {
     console.warn('[Socket.io] connect_error:', msg);
     console.warn('[Socket.io]', explainFailureKind(kind, baseUrl));
 
+    // Do not attempt token refresh for transport or network errors or while offline
     if (!isLikelySocketAuthError(msg)) return;
+    if (typeof navigator !== 'undefined' && !navigator.onLine) return;
 
     // Rate-limiting cooldown (10 seconds) for socket-triggered refreshes to prevent redundant refresh calls while the network is unstable.
     const now = Date.now();
@@ -276,29 +263,29 @@ export const connectRealtime = (): Socket | null => {
   lastSocketUserId = userId;
 
   const transports = resolveSocketTransports();
-  const pollingOnly = transports.length === 1 && transports[0] === 'polling';
   socket = io(baseUrl, {
     path: SOCKET_IO_CLIENT_PATH,
     transports,
-    upgrade: !pollingOnly,
+    upgrade: true,
     withCredentials: true,
-    rememberUpgrade: socketRememberUpgrade(),
+    rememberUpgrade: true,
     auth: (cb) => {
       void (async () => {
         try {
           const token = await resolveValidAccessToken();
           cb({ token: token || '' });
         } catch {
-          cb({ token: '' });
+          const token = localStorage.getItem('accessToken') || '';
+          cb({ token });
         }
       })();
     },
     reconnection: true,
-    reconnectionAttempts: safeMaxAttempts,
+    reconnectionAttempts: Infinity,
     reconnectionDelay: 1000,
-    reconnectionDelayMax: 15000,
+    reconnectionDelayMax: 10000,
     randomizationFactor: 0.5,
-    timeout: 30000,
+    timeout: 20000,
     autoConnect: true,
   });
 
