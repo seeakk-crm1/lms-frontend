@@ -283,6 +283,8 @@ export const syncLeadStageAcrossCaches = (queryClient: QueryClient, patch: LeadS
 export const invalidateLeadStageConsumers = (queryClient: QueryClient) => {
   const keys: Array<readonly unknown[]> = [
     ['lead-stages'],
+    ['grouped-substages'],
+    ['lead-substages'],
     ['leads'],
     ['lead'],
     ['lead-meta'],
