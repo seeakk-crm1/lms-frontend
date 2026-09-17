@@ -521,6 +521,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, sel
       setStageRuleSubmitPayload([]);
       setProfileImageStorageUnavailable(false);
       revertFormBeforeRulesRef.current = null;
+      setFormValues(createEmptyLeadFormValues());
       return;
     }
 
@@ -548,7 +549,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, sel
         setValidationErrors({});
         setFormValues(fromLeadToForm(leadDetails));
         setPreviousStageId(leadDetails.stageId || '');
-      } else if (leadToUse && !leadLoading) {
+      } else if (leadToUse && !leadLoading && Boolean((leadToUse as any).stageId || (leadToUse as any).createdAt)) {
         if (revertFormBeforeRulesRef.current || pendingStageId || pendingTransitionStageId) {
           return;
         }
@@ -608,7 +609,8 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, sel
   const selectedFormStage = stageOptions.find((item) => item.id === formValues.stageId);
   const showLobContext = Boolean(isLobStageOption(selectedFormStage));
 
-  const isLeadLoading = metaLoading || (mode === 'edit' && leadLoading && !leadDetails);
+  const isLeadStub = Boolean(lead && !(lead as any).stageId && !(lead as any).createdAt);
+  const isLeadLoading = metaLoading || (mode === 'edit' && (leadLoading || (!leadDetails && isLeadStub)));
 
   const isBusy =
     isLeadLoading ||
@@ -1174,6 +1176,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, sel
 
         await Promise.all([
           queryClient.invalidateQueries({ queryKey: ['lead', lead.id] }),
+          queryClient.invalidateQueries({ queryKey: ['lead-remarks', lead.id] }),
           queryClient.invalidateQueries({ queryKey: ['leads'] }),
           queryClient.invalidateQueries({ queryKey: ['followups'] }),
           queryClient.invalidateQueries({ queryKey: OVERDUE_MANDATORY_QUERY_KEY }),

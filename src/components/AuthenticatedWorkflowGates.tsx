@@ -21,6 +21,7 @@ const GlobalFollowupWorkflowListener: React.FC = () => {
   const content = (
     <Suspense fallback={null}>
       <LeadFormDrawer
+        key={openedLead.id}
         isOpen={true}
         mode="edit"
         lead={openedLead}

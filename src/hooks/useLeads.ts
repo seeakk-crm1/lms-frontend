@@ -218,7 +218,7 @@ export const useLeadRemarksQuery = (leadId?: string, enabled = true) =>
       return response;
     },
     enabled: Boolean(leadId && enabled),
-    staleTime: 60_000,
+    staleTime: 0,
     gcTime: 300_000,
     refetchOnWindowFocus: false,
     retry: (failureCount, error: any) => {
