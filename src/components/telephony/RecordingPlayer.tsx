@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Play, Pause, Volume2, AlertCircle, Loader2 } from 'lucide-react';
 import { getRecordingPlayback } from '../../services/telephony.api';
+import { getImageUrl } from '../../utils/getImageUrl';
 
 interface RecordingPlayerProps {
   sessionId: string;
@@ -33,8 +34,9 @@ const RecordingPlayer: React.FC<RecordingPlayerProps> = ({ sessionId, duration, 
     try {
       const res = await getRecordingPlayback(sessionId);
       if (res.recordingAvailable && res.url) {
-        setAudioUrl(res.url);
-        const audio = new Audio(res.url);
+        const playableUrl = getImageUrl(res.url) || res.url;
+        setAudioUrl(playableUrl);
+        const audio = new Audio(playableUrl);
         audioRef.current = audio;
 
         audio.onended = () => setIsPlaying(false);

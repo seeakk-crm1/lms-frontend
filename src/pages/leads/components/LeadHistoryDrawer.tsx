@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { 
   X, Search, Download, Clock, User as UserIcon, Activity, 
-  DollarSign, RefreshCw, FileText, CheckCircle, XCircle 
+  DollarSign, RefreshCw, FileText, CheckCircle, XCircle, Volume2 
 } from 'lucide-react';
 import api from '../../../services/api';
 import { TimelineEvent } from '../../../types/lead.types';
+import { getImageUrl } from '../../../utils/getImageUrl';
+import RecordingPlayer from '../../../components/telephony/RecordingPlayer';
 
 interface LeadHistoryDrawerProps {
   isOpen: boolean;
@@ -14,6 +16,7 @@ interface LeadHistoryDrawerProps {
 
 const getEventIcon = (eventType: string) => {
   switch (eventType) {
+    case 'RECORDING_AVAILABLE': return <Volume2 className="w-5 h-5 text-emerald-500" />;
     case 'SUBSTAGE_CHANGE': return <RefreshCw className="w-5 h-5 text-emerald-500" />;
     case 'CONNECTION_STATUS_CHANGE': return <Activity className="w-5 h-5 text-blue-500" />;
     case 'PRIORITY_CHANGE': return <Activity className="w-5 h-5 text-amber-500" />;
@@ -266,25 +269,32 @@ const LeadHistoryDrawer: React.FC<LeadHistoryDrawerProps> = ({ isOpen, leadId, o
                       </div>
                     )}
 
-                    {(event as any).metadata?.recordingUrl && (
+                    {Boolean((event as any).metadata?.recordingUrl || (event as any).metadata?.callSessionId) && (
                       <div className="my-3 p-3 bg-emerald-50/60 border border-emerald-200 rounded-xl space-y-2">
                         <div className="flex items-center justify-between text-xs font-bold text-emerald-900">
                           <span className="flex items-center gap-1.5">
                             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                            <span>Call Recording ({(event as any).metadata.provider || 'Knowlarity'})</span>
+                            <span>Call Recording ({(event as any).metadata?.provider || 'Device Dialer'})</span>
                           </span>
-                          {(event as any).metadata.duration ? (
+                          {(event as any).metadata?.duration ? (
                             <span className="font-mono text-[11px] text-slate-500">
                               {Math.floor((event as any).metadata.duration / 60)}m {(event as any).metadata.duration % 60}s
                             </span>
                           ) : null}
                         </div>
-                        <audio
-                          controls
-                          controlsList="nodownload"
-                          src={(event as any).metadata.recordingUrl}
-                          className="w-full h-8 rounded-lg outline-none"
-                        />
+                        {(event as any).metadata?.recordingUrl ? (
+                          <audio
+                            controls
+                            controlsList="nodownload"
+                            src={getImageUrl((event as any).metadata.recordingUrl)}
+                            className="w-full h-8 rounded-lg outline-none"
+                          />
+                        ) : (event as any).metadata?.callSessionId ? (
+                          <RecordingPlayer
+                            sessionId={(event as any).metadata.callSessionId}
+                            duration={(event as any).metadata.duration}
+                          />
+                        ) : null}
                       </div>
                     )}
 
