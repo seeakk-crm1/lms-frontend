@@ -374,6 +374,8 @@ export interface LeadMetaOptions {
 export type TimelineEventType =
   | 'AUDIT'
   | 'ACTIVITY'
+  | 'RECORDING_AVAILABLE'
+  | 'CALL_OUTCOME_SUBMITTED'
   | 'STAGE_CHANGE'
   | 'SUBSTAGE_CHANGE'
   | 'CONNECTION_STATUS_CHANGE'

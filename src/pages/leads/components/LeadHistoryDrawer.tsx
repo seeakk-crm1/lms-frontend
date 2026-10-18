@@ -269,7 +269,11 @@ const LeadHistoryDrawer: React.FC<LeadHistoryDrawerProps> = ({ isOpen, leadId, o
                       </div>
                     )}
 
-                    {Boolean((event as any).metadata?.recordingUrl || (event as any).metadata?.callSessionId) && (
+                    {/* Call Recording Player - Only rendered when recording is available */}
+                    {Boolean(
+                      event.eventType === 'RECORDING_AVAILABLE' ||
+                      ((event as any).metadata?.recordingAvailable && ((event as any).metadata?.recordingUrl || (event as any).metadata?.callSessionId))
+                    ) && (
                       <div className="my-3 p-3 bg-emerald-50/60 border border-emerald-200 rounded-xl space-y-2">
                         <div className="flex items-center justify-between text-xs font-bold text-emerald-900">
                           <span className="flex items-center gap-1.5">
@@ -295,6 +299,31 @@ const LeadHistoryDrawer: React.FC<LeadHistoryDrawerProps> = ({ isOpen, leadId, o
                             duration={(event as any).metadata.duration}
                           />
                         ) : null}
+                      </div>
+                    )}
+
+                    {/* Syncing / Queued / Failed Recording Status Banners */}
+                    {!(event as any).metadata?.recordingAvailable && (
+                      (event as any).metadata?.recordingStatus === 'UPLOADING' ||
+                      (event as any).metadata?.recordingStatus === 'PENDING'
+                    ) && (
+                      <div className="my-3 p-2.5 bg-blue-50 border border-blue-200 rounded-xl flex items-center gap-2 text-xs text-blue-700 font-medium">
+                        <RefreshCw size={14} className="animate-spin text-blue-500" />
+                        <span>Recording is being synced...</span>
+                      </div>
+                    )}
+
+                    {!(event as any).metadata?.recordingAvailable && (event as any).metadata?.recordingStatus === 'QUEUED' && (
+                      <div className="my-3 p-2.5 bg-amber-50 border border-amber-200 rounded-xl flex items-center gap-2 text-xs text-amber-700 font-medium">
+                        <Clock size={14} className="text-amber-500" />
+                        <span>Recording queued for upload</span>
+                      </div>
+                    )}
+
+                    {!(event as any).metadata?.recordingAvailable && (event as any).metadata?.recordingStatus === 'FAILED' && (
+                      <div className="my-3 p-2.5 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2 text-xs text-red-700 font-medium">
+                        <XCircle size={14} className="text-red-500" />
+                        <span>Recording upload failed</span>
                       </div>
                     )}
 
