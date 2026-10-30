@@ -19,6 +19,7 @@ import {
   toggleLeadStar,
   updateLead,
   bulkUpdateLeads,
+  assignLead,
 } from '../services/leads.api';
 import type {
   LeadCreatePayload,
@@ -264,9 +265,13 @@ export const useDynamicFieldsQuery = (enabled = true) => {
   });
 };
 
+let notifyTimeout: any = null;
 const notifyLeadMutated = () => {
   if (typeof window !== 'undefined') {
-    window.dispatchEvent(new CustomEvent('seeakk:leads-updated'));
+    if (notifyTimeout) clearTimeout(notifyTimeout);
+    notifyTimeout = setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('seeakk:leads-updated'));
+    }, 300);
   }
 };
 
@@ -338,6 +343,38 @@ export const useUpdateLeadMutation = () => {
         return;
       }
       toast.error(message || 'Failed to update lead');
+    },
+  });
+};
+
+export const useAssignLeadMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, assignedToId }: { id: string; assignedToId: string | null }) =>
+      assignLead(id, { assignedToId }),
+    onSuccess: (data, variables) => {
+      queryClient
+        .getQueriesData<ListLeadsResponse>({ queryKey: ['leads'] })
+        .forEach(([queryKey]) => {
+          queryClient.setQueryData<ListLeadsResponse>(queryKey, (previous) => {
+            if (!previous) return previous;
+            return {
+              ...previous,
+              leads: previous.leads.map((lead) =>
+                lead.id === variables.id ? { ...lead, assignedToId: variables.assignedToId } : lead,
+              ),
+            };
+          });
+        });
+      queryClient.invalidateQueries({ queryKey: ['leads'] });
+      queryClient.invalidateQueries({ queryKey: ['lead', variables.id] });
+      notifyLeadMutated();
+      toast.success('Lead assigned successfully');
+    },
+    onError: (error: any) => {
+      const message = error?.response?.data?.message || 'Failed to assign lead';
+      toast.error(message);
     },
   });
 };

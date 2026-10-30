@@ -187,9 +187,30 @@ api.interceptors.response.use(
       }
     } else if (status === 429) {
       const data = error.response.data as any;
-      const message =
-        data?.message ||
-        "You're processing requests very quickly. Please wait a few seconds and try again.";
+      const retryAfterHeader = error.response.headers?.['retry-after'];
+      const retryAfterSeconds =
+        data?.retryAfterSeconds ||
+        (retryAfterHeader ? parseInt(retryAfterHeader, 10) : undefined);
+
+      let message = data?.message;
+      if (
+        data?.code === 'LEAD_ASSIGNMENT_RATE_LIMITED' ||
+        originalRequest.url?.includes('/assign') ||
+        (originalRequest.url?.includes('/leads') && originalRequest.method !== 'get')
+      ) {
+        message = data?.message || 'Lead assignment requests are temporarily limited. Please retry shortly.';
+      } else if (!message || message === 'Too many requests, please try again later.') {
+        message = "You're processing requests very quickly. Please wait a few seconds and try again.";
+      }
+
+      if (retryAfterSeconds && Number.isFinite(retryAfterSeconds) && retryAfterSeconds > 0) {
+        const timeFormatted =
+          retryAfterSeconds >= 60
+            ? `${Math.ceil(retryAfterSeconds / 60)} minute${Math.ceil(retryAfterSeconds / 60) > 1 ? 's' : ''}`
+            : `${retryAfterSeconds} second${retryAfterSeconds > 1 ? 's' : ''}`;
+        message = `${message} (Retry after ${timeFormatted})`;
+      }
+
       showToastError(message, 'rate-limit-429');
       return Promise.reject(error);
     }

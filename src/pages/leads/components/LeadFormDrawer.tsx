@@ -335,6 +335,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, sel
   const [isSubmittingTotalAmountReason, setIsSubmittingTotalAmountReason] = useState(false);
 
   const originalTotalAmountRef = useRef<number | null>(null);
+  const isSubmittingRef = useRef(false);
 
   const fetchPayments = async () => {
     if (lead?.id) {
@@ -858,8 +859,12 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, sel
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+    if (isSubmittingRef.current) return;
+    isSubmittingRef.current = true;
     setValidationErrors({});
     console.log('[Frontend] Save Clicked');
+
+    try {
 
     if (mode !== 'bulk-edit' && !formValues.name.trim()) {
       toast.error('Lead name is required');
@@ -1220,6 +1225,9 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, sel
       } else {
         toast.error(error?.response?.data?.message || 'Could not save lead.');
       }
+    }
+    } finally {
+      isSubmittingRef.current = false;
     }
   };
 

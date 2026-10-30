@@ -13,6 +13,7 @@ import BulkAssignPreview from './components/BulkAssignPreview';
 
 const BulkAssignPage: React.FC = () => {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const isAssigningRef = useRef(false);
 
   const {
     filters,
@@ -127,6 +128,8 @@ const BulkAssignPage: React.FC = () => {
 
   const handleConfirmAssign = useCallback(async () => {
     if (!previewCount) return;
+    if (isAssigningRef.current) return;
+    isAssigningRef.current = true;
 
     const assignCount = selectedLeadIds.length > 0 ? selectedLeadIds.length : previewCount;
 
@@ -149,6 +152,8 @@ const BulkAssignPage: React.FC = () => {
       setIsConfirmOpen(false);
     } catch {
       // The mutation hook already surfaces the user-facing error state.
+    } finally {
+      isAssigningRef.current = false;
     }
   }, [appliedFilters, assignmentType, bulkAssignMutation, previewCount, selectedAssignee, selectedAssigneeIds, selectedLeadIds, setProgress]);
 
