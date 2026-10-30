@@ -10,6 +10,12 @@ import AttendanceActivitySection from '../summary/components/AttendanceActivityS
 import TargetActivitySection from '../summary/components/TargetActivitySection';
 import { downloadCsv } from '../shared/exportUtils';
 import { fetchAttendanceSummary } from '../../../services/summaryReports.api';
+import {
+  formatAttendanceTime,
+  formatAttendanceDate,
+  resolveAttendanceCheckIn,
+  resolveAttendanceCheckOut,
+} from '../../../utils/attendanceTimezone';
 
 const AttendanceReportsPage: React.FC = () => {
   const [filters, setFilters] = useState(createDefaultReportFilters());
@@ -25,9 +31,9 @@ const AttendanceReportsPage: React.FC = () => {
     const rows = (attendanceQuery.data?.data || []).map((item: any) => [
       item.user?.name || '-',
       item.status || '-',
-      item.checkInTime || '-',
-      item.checkOutTime || '-',
-      item.date || '-',
+      formatAttendanceTime(resolveAttendanceCheckIn(item)),
+      formatAttendanceTime(resolveAttendanceCheckOut(item)),
+      formatAttendanceDate(item.date),
     ]);
     downloadCsv(`attendance-report-${Date.now()}.csv`, ['User', 'Status', 'Check In', 'Check Out', 'Date'], rows);
   };

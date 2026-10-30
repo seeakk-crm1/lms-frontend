@@ -1,20 +1,59 @@
 import useWorkspaceStore from '../store/useWorkspaceStore';
 
+export const normalizeAttendanceTimezone = (
+  timeZone?: string | null,
+  currencyLocale?: string | null,
+): string => {
+  if (!timeZone || !timeZone.trim()) {
+    if (currencyLocale === 'INR') return 'Asia/Kolkata';
+    if (currencyLocale === 'AED') return 'Asia/Dubai';
+    if (currencyLocale === 'QAR') return 'Asia/Qatar';
+    return 'Asia/Kolkata';
+  }
+
+  const tz = timeZone.trim();
+  if (tz === 'Asia/Kolkata' || tz === 'Asia/Calcutta') return 'Asia/Kolkata';
+
+  // Indian Ocean island territories mistakenly chosen in place of India Standard Time
+  if (
+    tz === 'Indian/Chagos' ||
+    tz === 'Indian/Christmas' ||
+    tz === 'Indian/Mahe' ||
+    tz === 'Indian/Cocos' ||
+    tz === 'Indian/Kerguelen'
+  ) {
+    return 'Asia/Kolkata';
+  }
+
+  if (currencyLocale === 'INR' && (tz === 'UTC' || tz.startsWith('Indian/'))) {
+    return 'Asia/Kolkata';
+  }
+
+  return tz;
+};
+
 export const getResolvedAttendanceTimezone = (overrideTimeZone?: string): string => {
+  const workspaceState = useWorkspaceStore.getState();
+  const workspaceTz = workspaceState.timeZone;
+  const currencyLocale = workspaceState.currencyLocale;
+
   if (overrideTimeZone && overrideTimeZone.trim()) {
-    return overrideTimeZone;
+    return normalizeAttendanceTimezone(overrideTimeZone, currencyLocale);
   }
-  const workspaceTz = useWorkspaceStore.getState().timeZone;
-  if (workspaceTz && workspaceTz !== 'UTC') {
-    return workspaceTz;
+
+  const normalized = normalizeAttendanceTimezone(workspaceTz, currencyLocale);
+  if (normalized && normalized !== 'UTC') {
+    return normalized;
   }
+
   try {
     const browserTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    if (browserTz) return browserTz;
+    if (browserTz) return normalizeAttendanceTimezone(browserTz, currencyLocale);
   } catch {
     // fallback
   }
-  return workspaceTz || 'Asia/Kolkata';
+
+  return normalized || 'Asia/Kolkata';
 };
 
 /**
