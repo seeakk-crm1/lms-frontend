@@ -19,11 +19,11 @@ const ActivityReportsPage: React.FC = () => {
 
     if (Array.isArray(apiFilters.userId)) {
       return (
-        <div className="space-y-12">
+        <div className="space-y-4">
           {apiFilters.userId.map((userId) => {
             const user = users.find((item: any) => item.id === userId);
             return (
-              <div key={userId} className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm print:border-none print:p-0 print:shadow-none">
+              <div key={userId} className="rounded-xl border border-gray-200/80 bg-white p-3.5 sm:p-4 shadow-2xs print:border-none print:p-0 print:shadow-none">
                 <UserReportView filters={{ ...apiFilters, userId }} userName={user?.name || 'Unknown User'} />
               </div>
             );
@@ -40,7 +40,7 @@ const ActivityReportsPage: React.FC = () => {
     <ReportPageShell
       title="Activity Reports"
       description="Complete chronological activity with leads, follow-ups, revenue, attendance, targets, approvals, and timeline."
-      icon={<Activity className="text-emerald-500" size={28} />}
+      icon={<Activity className="text-emerald-600" size={20} />}
       filters={<ReportFiltersBar filters={filters} setFilters={setFilters} />}
     >
       {content}

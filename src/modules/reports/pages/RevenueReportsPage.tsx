@@ -34,7 +34,7 @@ const RevenueReportsPage: React.FC = () => {
     <ReportPageShell
       title="Revenue Reports"
       description="Detailed revenue entries with lead, amount, closer, and date for the selected period."
-      icon={<IndianRupee className="text-emerald-500" size={28} />}
+      icon={<IndianRupee className="text-emerald-600" size={20} />}
       filters={<ReportFiltersBar filters={filters} setFilters={setFilters} />}
       onExportCsv={handleExport}
     >

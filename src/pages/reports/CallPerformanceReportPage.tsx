@@ -169,18 +169,18 @@ export const CallPerformanceReportPage: React.FC = () => {
     <ReportPageShell
       title="Call Performance Analytics"
       description="Track daily unique call attempts, agent connection ratios, substage transitions, and follow-up activities."
-      icon={<PhoneCall className="text-emerald-500" size={28} />}
+      icon={<PhoneCall className="text-emerald-600" size={20} />}
       filters={<ReportFiltersBar filters={filters} setFilters={setFilters} />}
       onExportCsv={() => handleExport('xlsx')}
     >
-      <div className="space-y-6">
+      <div className="space-y-3.5 sm:space-y-4">
         {hasError && (
-          <div className="rounded-3xl border border-rose-200 bg-rose-50/50 p-6 text-center space-y-3">
-            <p className="text-sm font-bold text-rose-800">Unable to load call performance analytics right now.</p>
+          <div className="rounded-xl border border-rose-200 bg-rose-50/50 p-4 text-center space-y-2">
+            <p className="text-xs font-bold text-rose-800">Unable to load call performance analytics right now.</p>
             <button
               type="button"
               onClick={() => loadReports()}
-              className="px-4 py-2 text-xs font-bold bg-rose-600 text-white rounded-xl shadow hover:bg-rose-700 transition"
+              className="px-3 py-1.5 text-xs font-bold bg-rose-600 text-white rounded-lg shadow-2xs hover:bg-rose-700 transition cursor-pointer"
             >
               Retry Call Report
             </button>
@@ -188,26 +188,26 @@ export const CallPerformanceReportPage: React.FC = () => {
         )}
 
         {/* Metric Summary Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-          <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
-            <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Total Attempts</p>
-            <p className="mt-1 text-2xl font-black text-gray-900">{metrics.totalCalls.toLocaleString()}</p>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-3">
+          <div className="h-[74px] sm:h-[78px] rounded-xl border border-gray-200/80 bg-white p-3 shadow-2xs flex flex-col justify-center hover:border-gray-300 transition-all">
+            <p className="text-[10px] sm:text-[11px] font-bold text-gray-500 uppercase tracking-wider truncate">Total Attempts</p>
+            <p className="mt-1 text-xl sm:text-2xl font-black text-gray-900 leading-none">{metrics.totalCalls.toLocaleString()}</p>
           </div>
-          <div className="rounded-2xl border border-emerald-100 bg-emerald-50/50 p-4 shadow-sm">
-            <p className="text-[11px] font-bold text-emerald-700 uppercase tracking-wider">Unique Calls</p>
-            <p className="mt-1 text-2xl font-black text-emerald-700">{metrics.uniqueCalls.toLocaleString()}</p>
+          <div className="h-[74px] sm:h-[78px] rounded-xl border border-emerald-100/90 bg-emerald-50/40 p-3 shadow-2xs flex flex-col justify-center hover:border-emerald-200 transition-all">
+            <p className="text-[10px] sm:text-[11px] font-bold text-emerald-700 uppercase tracking-wider truncate">Unique Calls</p>
+            <p className="mt-1 text-xl sm:text-2xl font-black text-emerald-700 leading-none">{metrics.uniqueCalls.toLocaleString()}</p>
           </div>
-          <div className="rounded-2xl border border-teal-100 bg-teal-50/50 p-4 shadow-sm">
-            <p className="text-[11px] font-bold text-teal-700 uppercase tracking-wider">Attended Calls</p>
-            <p className="mt-1 text-2xl font-black text-teal-700">{metrics.connectedCalls.toLocaleString()}</p>
+          <div className="h-[74px] sm:h-[78px] rounded-xl border border-teal-100/90 bg-teal-50/40 p-3 shadow-2xs flex flex-col justify-center hover:border-teal-200 transition-all">
+            <p className="text-[10px] sm:text-[11px] font-bold text-teal-700 uppercase tracking-wider truncate">Attended Calls</p>
+            <p className="mt-1 text-xl sm:text-2xl font-black text-teal-700 leading-none">{metrics.connectedCalls.toLocaleString()}</p>
           </div>
-          <div className="rounded-2xl border border-rose-100 bg-rose-50/50 p-4 shadow-sm">
-            <p className="text-[11px] font-bold text-rose-700 uppercase tracking-wider">Not Attended</p>
-            <p className="mt-1 text-2xl font-black text-rose-700">{metrics.notConnectedCalls.toLocaleString()}</p>
+          <div className="h-[74px] sm:h-[78px] rounded-xl border border-rose-100/90 bg-rose-50/40 p-3 shadow-2xs flex flex-col justify-center hover:border-rose-200 transition-all">
+            <p className="text-[10px] sm:text-[11px] font-bold text-rose-700 uppercase tracking-wider truncate">Not Attended</p>
+            <p className="mt-1 text-xl sm:text-2xl font-black text-rose-700 leading-none">{metrics.notConnectedCalls.toLocaleString()}</p>
           </div>
-          <div className="rounded-2xl border border-purple-100 bg-purple-50/50 p-4 shadow-sm col-span-2 md:col-span-1">
-            <p className="text-[11px] font-bold text-purple-700 uppercase tracking-wider">Connection Rate</p>
-            <p className="mt-1 text-2xl font-black text-purple-700">{metrics.connectionRate}%</p>
+          <div className="h-[74px] sm:h-[78px] rounded-xl border border-indigo-100/90 bg-indigo-50/40 p-3 shadow-2xs flex flex-col justify-center hover:border-indigo-200 transition-all col-span-2 sm:col-span-1">
+            <p className="text-[10px] sm:text-[11px] font-bold text-indigo-700 uppercase tracking-wider truncate">Connection Rate</p>
+            <p className="mt-1 text-xl sm:text-2xl font-black text-indigo-700 leading-none">{metrics.connectionRate}%</p>
           </div>
         </div>
 

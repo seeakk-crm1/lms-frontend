@@ -59,19 +59,21 @@ const FollowupReportsPage: React.FC = () => {
   return (
     <ReportPageShell
       title="Followup Reports"
-      description="Every follow-up with complete notes, completion notes, extension history, and timeline for the selected period."
-      icon={<PhoneCall className="text-emerald-500" size={28} />}
+      description="All follow-ups, scheduled dates, notes, completion notes, extension history, and status."
+      icon={<PhoneCall className="text-emerald-600" size={20} />}
       filters={<ReportFiltersBar filters={filters} setFilters={setFilters} />}
       onExportCsv={handleExport}
     >
-      <FollowupActivitySection filters={apiFilters} />
-      <FollowupExtensionsSection filters={apiFilters} />
-      <FollowupHistoryTimelineSection filters={apiFilters} />
-      <ReportPagination
-        page={filters.page || 1}
-        totalPages={followupsQuery.data?.pagination?.totalPages}
-        onPageChange={(page) => setFilters((prev) => ({ ...prev, page }))}
-      />
+      <div className="space-y-4">
+        <FollowupActivitySection filters={apiFilters} />
+        <FollowupExtensionsSection filters={apiFilters} />
+        <FollowupHistoryTimelineSection filters={apiFilters} />
+        <ReportPagination
+          page={filters.page || 1}
+          totalPages={followupsQuery.data?.pagination?.totalPages}
+          onPageChange={(page) => setFilters((prev) => ({ ...prev, page }))}
+        />
+      </div>
     </ReportPageShell>
   );
 };

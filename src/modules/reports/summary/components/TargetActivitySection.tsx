@@ -14,36 +14,53 @@ const TargetActivitySection: React.FC<TargetActivitySectionProps> = ({ filters }
     queryFn: () => fetchTargetsSummary(filters),
   });
 
-  if (isLoading) return <div className="h-40 bg-gray-100 animate-pulse rounded-2xl mt-6"></div>;
+  if (isLoading) return <div className="h-32 bg-gray-100/80 animate-pulse rounded-xl border border-gray-200/80" />;
   if (!data?.data || data.data.length === 0) return null;
 
   return (
-    <div className="mt-8">
-      <h2 className="text-lg font-black text-gray-900 mb-4 flex items-center gap-2">
-        <Target className="text-red-500" size={20} /> Target Activity
-      </h2>
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <div className="space-y-3 sm:space-y-3.5">
+      <div className="flex items-center justify-between pb-2 border-b border-gray-200/80">
+        <div className="flex items-center gap-2">
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-rose-50 text-rose-600 border border-rose-100/80">
+            <Target size={15} />
+          </div>
+          <h3 className="text-sm sm:text-base font-bold text-gray-900">Target Activity</h3>
+        </div>
+        <span className="text-[11px] font-semibold text-gray-500">
+          {data.data.length} {data.data.length === 1 ? 'Target' : 'Targets'}
+        </span>
+      </div>
+
+      <div className="bg-white rounded-xl shadow-2xs border border-gray-200/80 overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm text-gray-500">
-            <thead className="text-xs text-gray-700 uppercase bg-gray-50 font-bold border-b border-gray-200">
+          <table className="w-full text-left text-xs text-gray-600">
+            <thead className="text-[10px] text-gray-500 uppercase bg-gray-50/90 font-bold border-b border-gray-200/80 tracking-wider">
               <tr>
-                <th className="px-6 py-4">User</th>
-                <th className="px-6 py-4">Target Cycle</th>
-                <th className="px-6 py-4">Status</th>
-                <th className="px-6 py-4">Last Updated</th>
+                <th className="px-3.5 py-2.5">User</th>
+                <th className="px-3.5 py-2.5">Target Cycle</th>
+                <th className="px-3.5 py-2.5">Status</th>
+                <th className="px-3.5 py-2.5 text-right">Last Updated</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-gray-100">
               {data.data.map((target: any) => (
-                <tr key={target.id} className="border-b border-gray-50 hover:bg-gray-50">
-                  <td className="px-6 py-4 font-bold text-gray-900">{target.user?.name || '-'}</td>
-                  <td className="px-6 py-4">{target.targetCycle?.name || '-'}</td>
-                  <td className="px-6 py-4">
-                    <span className={`px-2 py-1 rounded-md text-xs font-bold ${target.isActive ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
+                <tr key={target.id} className="hover:bg-gray-50/60 transition-colors">
+                  <td className="px-3.5 py-2.5 font-bold text-gray-900">{target.user?.name || '-'}</td>
+                  <td className="px-3.5 py-2.5 text-gray-600">{target.targetCycle?.name || '-'}</td>
+                  <td className="px-3.5 py-2.5">
+                    <span
+                      className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                        target.isActive
+                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                          : 'bg-rose-50 text-rose-700 border border-rose-200'
+                      }`}
+                    >
                       {target.isActive ? 'Active' : 'Locked'}
                     </span>
                   </td>
-                  <td className="px-6 py-4">{format(new Date(target.updatedAt), 'dd MMM yyyy, hh:mm a')}</td>
+                  <td className="px-3.5 py-2.5 text-right text-gray-500">
+                    {format(new Date(target.updatedAt), 'dd MMM yyyy, hh:mm a')}
+                  </td>
                 </tr>
               ))}
             </tbody>

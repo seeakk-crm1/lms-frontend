@@ -14,27 +14,40 @@ const FollowupHistoryTimelineSection: React.FC<FollowupHistoryTimelineSectionPro
     queryFn: () => fetchFollowupsDetailReport(filters),
   });
 
-  if (isLoading) return <div className="mt-8 h-40 animate-pulse rounded-2xl bg-gray-100" />;
+  if (isLoading) return <div className="h-32 animate-pulse rounded-xl bg-gray-100/80 border border-gray-200/80" />;
   if (!data?.data || data.data.length === 0) return null;
 
   return (
-    <div className="mt-8 print:break-before-page">
-      <h2 className="mb-4 flex items-center gap-2 text-lg font-black text-gray-900">
-        <History className="text-indigo-500" size={20} /> Followup History Timeline
-      </h2>
-      <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-3.5 print:break-before-page">
+      <div className="flex items-center justify-between pb-2 border-b border-gray-200/80">
+        <div className="flex items-center gap-2">
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 border border-indigo-100/80">
+            <History size={15} />
+          </div>
+          <h3 className="text-sm sm:text-base font-bold text-gray-900">Followup History Timeline</h3>
+        </div>
+        <span className="text-[11px] font-semibold text-gray-500">
+          {data.data.length} {data.data.length === 1 ? 'Lead' : 'Leads'}
+        </span>
+      </div>
+
+      <div className="space-y-3">
         {(data.data as FollowupDetailReportItem[]).map((followup) => (
-          <div key={followup.id} className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm print:break-inside-avoid">
-            <p className="text-sm font-black text-gray-900">{followup.leadName}</p>
-            <p className="text-xs text-gray-500">{followup.followupType} · {followup.status}</p>
-            <div className="mt-4 space-y-3">
+          <div key={followup.id} className="rounded-xl border border-gray-200/80 bg-white p-3.5 sm:p-4 shadow-2xs print:break-inside-avoid space-y-2.5">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-2">
+              <p className="text-xs sm:text-sm font-bold text-gray-900">{followup.leadName}</p>
+              <p className="text-[11px] font-medium text-gray-500">{followup.followupType} · {followup.status}</p>
+            </div>
+
+            <div className="space-y-2.5 pl-1">
               {followup.timeline.map((entry, index) => (
-                <div key={`${followup.id}-history-${index}`} className="border-l-2 border-indigo-200 pl-4">
-                  <p className="text-xs font-bold text-gray-400">{entry.time}</p>
-                  <p className="text-sm font-black text-gray-900">{entry.event}</p>
-                  {entry.detail ? <p className="mt-1 whitespace-pre-wrap text-sm text-gray-700">"{entry.detail}"</p> : null}
-                  {entry.reason ? <p className="mt-1 text-sm text-gray-600"><strong>Reason:</strong> {entry.reason}</p> : null}
-                  {index < followup.timeline.length - 1 ? <hr className="my-3 border-gray-100" /> : null}
+                <div key={`${followup.id}-history-${index}`} className="border-l-2 border-indigo-200 pl-3 space-y-0.5">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold text-gray-400">{entry.time}</span>
+                    <p className="text-xs font-bold text-gray-900">{entry.event}</p>
+                  </div>
+                  {entry.detail && <p className="text-xs text-gray-700 whitespace-pre-wrap">{entry.detail}</p>}
+                  {entry.reason && <p className="text-xs text-gray-600"><strong>Reason:</strong> {entry.reason}</p>}
                 </div>
               ))}
             </div>

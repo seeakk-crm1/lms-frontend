@@ -22,12 +22,12 @@ interface UserReportViewProps {
 
 const UserReportView: React.FC<UserReportViewProps> = ({ filters, userName }) => {
   return (
-    <div className="space-y-6 mt-8 break-before-page">
-      <div className="flex items-center gap-3 border-b-2 border-emerald-500 pb-3 mb-6">
-        <div className="bg-emerald-100 p-2 rounded-full text-emerald-600">
-          <UserIcon size={24} />
+    <div className="space-y-3.5 sm:space-y-4 break-before-page">
+      <div className="flex items-center gap-2 pb-2 border-b border-gray-200/80">
+        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 border border-emerald-100/80">
+          <UserIcon size={15} />
         </div>
-        <h2 className="text-2xl font-black text-gray-900">Activity Report: {userName}</h2>
+        <h2 className="text-sm sm:text-base font-bold text-gray-900">User Activity Profile: {userName}</h2>
       </div>
 
       <ExecutiveSummarySection filters={filters} />

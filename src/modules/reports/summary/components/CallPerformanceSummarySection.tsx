@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { PhoneCall, CheckCircle2, PhoneOff, Percent, FileSpreadsheet, Download, Layers } from 'lucide-react';
+import { PhoneCall, FileSpreadsheet, Download } from 'lucide-react';
 import { fetchCallSummaryReport, exportCallReport } from '../../../../services/calls.api';
 import { getCallMetricBarWidth } from '../../../../utils/barWidthUtils';
 
@@ -58,32 +58,34 @@ const CallPerformanceSummarySection: React.FC<CallPerformanceSummarySectionProps
       const mimeType = format === 'html' ? 'text/html' : format === 'csv' ? 'text/csv' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
       const url = window.URL.createObjectURL(new Blob([blobData], { type: mimeType }));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `Seeakk_Call_Performance_${format === 'html' ? 'Interactive_' : ''}${Date.now()}.${extension}`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `call-performance-report.${extension}`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
     } catch (err) {
-      console.error('Export failed:', err);
+      console.error('Call report export failed', err);
     } finally {
       setExporting(false);
     }
   };
 
   if (isLoading) {
-    return <div className="h-48 animate-pulse rounded-3xl bg-gray-100 mt-6" />;
+    return <div className="h-44 bg-gray-100/80 animate-pulse rounded-xl border border-gray-200/80" />;
   }
 
   if (isError) {
     return (
-      <div className="mt-8 rounded-3xl border border-rose-200 bg-rose-50/50 p-6 text-center space-y-3">
-        <p className="text-sm font-bold text-rose-800">Unable to load call summary performance right now.</p>
+      <div className="rounded-xl border border-rose-200 bg-rose-50/50 p-4 text-center">
+        <p className="text-xs font-bold text-rose-700">Unable to load call performance data.</p>
         <button
+          type="button"
           onClick={() => refetch()}
-          className="px-4 py-2 bg-rose-600 text-white font-bold text-xs rounded-xl hover:bg-rose-700 transition"
+          className="mt-2 px-3 py-1 text-xs font-bold bg-rose-600 text-white rounded-lg shadow-2xs hover:bg-rose-700 transition cursor-pointer"
         >
-          Retry Call Report
+          Retry
         </button>
       </div>
     );
@@ -99,29 +101,20 @@ const CallPerformanceSummarySection: React.FC<CallPerformanceSummarySectionProps
   };
 
   const usersList = data?.userSummaryList || [];
-  const maxValues = data?.maxValues || {
-    totalAttempts: 1,
-    uniqueCalls: 1,
-    connectedCalls: 1,
-    notConnectedCalls: 1,
-    followUpsCreated: 1,
-    leadsMoved: 1,
-  };
-
   const selectedSubstagesList = data?.selectedSubstages || [];
 
   return (
-    <div className="mt-8 space-y-6 print:break-inside-avoid">
+    <div className="space-y-3.5 sm:space-y-4 print:break-inside-avoid">
       {/* Section Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b-2 border-emerald-500 pb-3">
-        <div className="flex items-center gap-3">
-          <div className="bg-emerald-100 p-2.5 rounded-2xl text-emerald-600">
-            <PhoneCall size={22} />
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-gray-200/80">
+        <div className="flex items-center gap-2">
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 border border-emerald-100/80">
+            <PhoneCall size={15} />
           </div>
           <div>
-            <h3 className="text-xl font-black text-gray-900">Call Performance Summary</h3>
-            <p className="text-xs font-semibold text-gray-500">
-              Workspace call volume, connection rates, and user-wise daily unique call breakdowns.
+            <h3 className="text-sm sm:text-base font-bold text-gray-900 leading-tight">Call Performance Analytics</h3>
+            <p className="text-[11px] font-medium text-gray-500">
+              Workspace call volume, connection rates, and daily unique breakdowns.
             </p>
           </div>
         </div>
@@ -132,44 +125,44 @@ const CallPerformanceSummarySection: React.FC<CallPerformanceSummarySectionProps
             type="button"
             onClick={() => setShowExportMenu(!showExportMenu)}
             disabled={exporting}
-            className="flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-emerald-700 transition"
+            className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border border-gray-200 bg-white text-xs font-semibold text-gray-700 shadow-2xs hover:bg-gray-50 transition cursor-pointer disabled:opacity-60"
           >
-            <Download size={14} />
-            <span>{exporting ? 'Preparing Report...' : 'Export Report'}</span>
+            <Download size={13} className="text-gray-500" />
+            <span>{exporting ? 'Preparing...' : 'Export Calls'}</span>
           </button>
 
           {showExportMenu && (
-            <div className="absolute right-0 mt-2 w-52 rounded-2xl border border-gray-100 bg-white p-1.5 shadow-xl z-50 animate-in fade-in zoom-in-95">
+            <div className="absolute right-0 mt-1.5 w-48 rounded-xl border border-gray-200/90 bg-white p-1 shadow-lg z-50">
               <button
                 type="button"
                 onClick={() => handleExport('pdf')}
-                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-bold text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 transition"
+                className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 transition cursor-pointer"
               >
-                <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-rose-100 text-rose-600 font-extrabold text-[10px]">PDF</span>
+                <span className="flex h-5 w-5 items-center justify-center rounded bg-rose-100 text-rose-600 font-extrabold text-[9px]">PDF</span>
                 <span>PDF Report</span>
               </button>
               <button
                 type="button"
                 onClick={() => handleExport('html')}
-                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-bold text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 transition"
+                className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 transition cursor-pointer"
               >
-                <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-blue-100 text-blue-600 font-extrabold text-[10px]">HTML</span>
+                <span className="flex h-5 w-5 items-center justify-center rounded bg-blue-100 text-blue-600 font-extrabold text-[9px]">HTML</span>
                 <span>Interactive HTML</span>
               </button>
               <button
                 type="button"
                 onClick={() => handleExport('xlsx')}
-                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-bold text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 transition"
+                className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 transition cursor-pointer"
               >
-                <FileSpreadsheet size={16} className="text-emerald-600" />
+                <FileSpreadsheet size={15} className="text-emerald-600" />
                 <span>Excel (.xlsx)</span>
               </button>
               <button
                 type="button"
                 onClick={() => handleExport('csv')}
-                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-bold text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 transition"
+                className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 transition cursor-pointer"
               >
-                <Download size={16} className="text-gray-500" />
+                <Download size={14} className="text-gray-400" />
                 <span>CSV File (.csv)</span>
               </button>
             </div>
@@ -178,61 +171,63 @@ const CallPerformanceSummarySection: React.FC<CallPerformanceSummarySectionProps
       </div>
 
       {/* Top Metric Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-        <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
-          <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Total Attempts</p>
-          <p className="mt-1 text-2xl font-black text-gray-900">{metrics.totalCalls.toLocaleString()}</p>
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-3">
+        <div className="h-[74px] sm:h-[78px] rounded-xl border border-gray-200/80 bg-white p-3 shadow-2xs flex flex-col justify-center hover:border-gray-300 transition-all">
+          <p className="text-[10px] sm:text-[11px] font-bold text-gray-500 uppercase tracking-wider truncate">Total Attempts</p>
+          <p className="mt-1 text-xl sm:text-2xl font-black text-gray-900 leading-none">{metrics.totalCalls.toLocaleString()}</p>
         </div>
-        <div className="rounded-2xl border border-emerald-100 bg-emerald-50/50 p-4 shadow-sm">
-          <p className="text-[11px] font-bold text-emerald-700 uppercase tracking-wider">Unique Calls</p>
-          <p className="mt-1 text-2xl font-black text-emerald-700">{metrics.uniqueCalls.toLocaleString()}</p>
+        <div className="h-[74px] sm:h-[78px] rounded-xl border border-emerald-100/90 bg-emerald-50/40 p-3 shadow-2xs flex flex-col justify-center hover:border-emerald-200 transition-all">
+          <p className="text-[10px] sm:text-[11px] font-bold text-emerald-700 uppercase tracking-wider truncate">Unique Calls</p>
+          <p className="mt-1 text-xl sm:text-2xl font-black text-emerald-700 leading-none">{metrics.uniqueCalls.toLocaleString()}</p>
         </div>
-        <div className="rounded-2xl border border-teal-100 bg-teal-50/50 p-4 shadow-sm">
-          <p className="text-[11px] font-bold text-teal-700 uppercase tracking-wider">Attended Calls</p>
-          <p className="mt-1 text-2xl font-black text-teal-700">{metrics.connectedCalls.toLocaleString()}</p>
+        <div className="h-[74px] sm:h-[78px] rounded-xl border border-teal-100/90 bg-teal-50/40 p-3 shadow-2xs flex flex-col justify-center hover:border-teal-200 transition-all">
+          <p className="text-[10px] sm:text-[11px] font-bold text-teal-700 uppercase tracking-wider truncate">Attended Calls</p>
+          <p className="mt-1 text-xl sm:text-2xl font-black text-teal-700 leading-none">{metrics.connectedCalls.toLocaleString()}</p>
         </div>
-        <div className="rounded-2xl border border-rose-100 bg-rose-50/50 p-4 shadow-sm">
-          <p className="text-[11px] font-bold text-rose-700 uppercase tracking-wider">Not Attended</p>
-          <p className="mt-1 text-2xl font-black text-rose-700">{metrics.notConnectedCalls.toLocaleString()}</p>
+        <div className="h-[74px] sm:h-[78px] rounded-xl border border-rose-100/90 bg-rose-50/40 p-3 shadow-2xs flex flex-col justify-center hover:border-rose-200 transition-all">
+          <p className="text-[10px] sm:text-[11px] font-bold text-rose-700 uppercase tracking-wider truncate">Not Attended</p>
+          <p className="mt-1 text-xl sm:text-2xl font-black text-rose-700 leading-none">{metrics.notConnectedCalls.toLocaleString()}</p>
         </div>
-        <div className="rounded-2xl border border-purple-100 bg-purple-50/50 p-4 shadow-sm col-span-2 md:col-span-1">
-          <p className="text-[11px] font-bold text-purple-700 uppercase tracking-wider">Connection Rate</p>
-          <p className="mt-1 text-2xl font-black text-purple-700">{metrics.connectionRate}%</p>
+        <div className="h-[74px] sm:h-[78px] rounded-xl border border-indigo-100/90 bg-indigo-50/40 p-3 shadow-2xs flex flex-col justify-center hover:border-indigo-200 transition-all col-span-2 sm:col-span-1">
+          <p className="text-[10px] sm:text-[11px] font-bold text-indigo-700 uppercase tracking-wider truncate">Connection Rate</p>
+          <p className="mt-1 text-xl sm:text-2xl font-black text-indigo-700 leading-none">{metrics.connectionRate}%</p>
         </div>
       </div>
 
-      {/* User Call Performance Breakdown Table (With Dynamic In-Cell Data Bars per Substage) */}
-      <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-        <div className="p-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
-          <h4 className="font-bold text-gray-900 text-sm">User Call Performance Breakdown</h4>
-          <span className="text-xs font-semibold text-gray-500">{usersList.length} user{usersList.length === 1 ? '' : 's'} in report</span>
+      {/* User Call Performance Breakdown Table */}
+      <div className="rounded-xl border border-gray-200/80 bg-white shadow-2xs overflow-hidden">
+        <div className="px-3.5 py-2.5 border-b border-gray-100 bg-gray-50/60 flex items-center justify-between">
+          <h4 className="font-bold text-gray-900 text-xs sm:text-sm">User Call Breakdown</h4>
+          <span className="text-[11px] font-semibold text-gray-500">
+            {usersList.length} {usersList.length === 1 ? 'user' : 'users'}
+          </span>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs text-gray-600">
-            <thead className="text-[11px] text-gray-500 uppercase bg-gray-50/80 font-black border-b border-gray-200">
+            <thead className="text-[10px] text-gray-500 uppercase bg-gray-50/90 font-bold border-b border-gray-200/80 tracking-wider">
               <tr>
-                <th className="px-4 py-3 min-w-[150px]">User Name</th>
-                <th className="px-4 py-3 min-w-[130px]">Unique Calls</th>
-                <th className="px-4 py-3 min-w-[130px]">Total Calls</th>
-                <th className="px-4 py-3 min-w-[130px]">Attended Calls</th>
-                <th className="px-4 py-3 min-w-[130px]">Not Attended</th>
-                <th className="px-4 py-3 text-center min-w-[110px]">Connection Rate</th>
+                <th className="px-3.5 py-2.5 min-w-[140px]">User Name</th>
+                <th className="px-3.5 py-2.5 min-w-[120px]">Unique Calls</th>
+                <th className="px-3.5 py-2.5 min-w-[120px]">Total Calls</th>
+                <th className="px-3.5 py-2.5 min-w-[120px]">Attended Calls</th>
+                <th className="px-3.5 py-2.5 min-w-[120px]">Not Attended</th>
+                <th className="px-3.5 py-2.5 text-center min-w-[100px]">Connection Rate</th>
                 {selectedSubstagesList.map((sub) => (
-                  <th key={sub.id} className="px-4 py-3 min-w-[140px]">
+                  <th key={sub.id} className="px-3.5 py-2.5 min-w-[130px]">
                     <div className="flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: sub.color || '#3b82f6' }} />
-                      <div>
-                        <div className="font-black text-gray-900 leading-tight">{sub.name}</div>
+                      <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: sub.color || '#3b82f6' }} />
+                      <div className="truncate">
+                        <div className="font-bold text-gray-900 leading-tight truncate">{sub.name}</div>
                         {sub.parentStageName && (
-                          <div className="text-[9px] text-gray-400 font-normal lowercase">{sub.parentStageName}</div>
+                          <div className="text-[9px] text-gray-400 font-normal lowercase truncate">{sub.parentStageName}</div>
                         )}
                       </div>
                     </div>
                   </th>
                 ))}
-                <th className="px-4 py-3 text-right min-w-[110px]">Follow-ups</th>
-                <th className="px-4 py-3 text-right min-w-[110px]">Stage Moved</th>
+                <th className="px-3.5 py-2.5 text-right min-w-[95px]">Follow-ups</th>
+                <th className="px-3.5 py-2.5 text-right min-w-[95px]">Stage Moved</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 font-semibold">
@@ -250,58 +245,58 @@ const CallPerformanceSummarySection: React.FC<CallPerformanceSummarySectionProps
                   const notConnPct = getCallMetricBarWidth(user.notConnectedCalls, user.totalAttempts);
 
                   return (
-                    <tr key={user.userId} className="hover:bg-gray-50/80 transition-colors">
-                      <td className="px-4 py-3 font-bold text-gray-900">
-                        <div>{user.userName}</div>
-                        <div className="text-[10px] text-gray-400 font-normal">{user.officeName} • {user.departmentName}</div>
+                    <tr key={user.userId} className="hover:bg-gray-50/60 transition-colors">
+                      <td className="px-3.5 py-2.5 font-bold text-gray-900">
+                        <div className="truncate max-w-[160px]">{user.userName}</div>
+                        <div className="text-[10px] text-gray-400 font-normal truncate max-w-[160px]">{user.officeName} • {user.departmentName}</div>
                       </td>
 
                       {/* Unique Calls Bar */}
-                      <td className="px-4 py-3">
-                        <div className="relative flex items-center justify-between h-7 px-2.5 rounded-lg bg-emerald-50/50 border border-emerald-100/60 overflow-hidden">
+                      <td className="px-3.5 py-2.5">
+                        <div className="relative flex items-center justify-between h-6 px-2 rounded-md bg-emerald-50/50 border border-emerald-100/60 overflow-hidden">
                           <div
-                            className="absolute left-0 top-0 bottom-0 bg-emerald-200/60 rounded-r-md transition-all duration-300"
+                            className="absolute left-0 top-0 bottom-0 bg-emerald-200/60 rounded-r transition-all duration-300"
                             style={{ width: `${uniquePct}%` }}
                           />
-                          <span className="relative z-10 font-bold text-emerald-900">{user.uniqueCalls}</span>
+                          <span className="relative z-10 font-bold text-emerald-900 text-xs">{user.uniqueCalls}</span>
                         </div>
                       </td>
 
                       {/* Total Calls Bar */}
-                      <td className="px-4 py-3">
-                        <div className="relative flex items-center justify-between h-7 px-2.5 rounded-lg bg-blue-50/50 border border-blue-100/60 overflow-hidden">
+                      <td className="px-3.5 py-2.5">
+                        <div className="relative flex items-center justify-between h-6 px-2 rounded-md bg-blue-50/50 border border-blue-100/60 overflow-hidden">
                           <div
-                            className="absolute left-0 top-0 bottom-0 bg-blue-200/60 rounded-r-md transition-all duration-300"
+                            className="absolute left-0 top-0 bottom-0 bg-blue-200/60 rounded-r transition-all duration-300"
                             style={{ width: `${totalPct}%` }}
                           />
-                          <span className="relative z-10 font-bold text-blue-900">{user.totalAttempts}</span>
+                          <span className="relative z-10 font-bold text-blue-900 text-xs">{user.totalAttempts}</span>
                         </div>
                       </td>
 
                       {/* Attended Calls Bar */}
-                      <td className="px-4 py-3">
-                        <div className="relative flex items-center justify-between h-7 px-2.5 rounded-lg bg-teal-50/50 border border-teal-100/60 overflow-hidden">
+                      <td className="px-3.5 py-2.5">
+                        <div className="relative flex items-center justify-between h-6 px-2 rounded-md bg-teal-50/50 border border-teal-100/60 overflow-hidden">
                           <div
-                            className="absolute left-0 top-0 bottom-0 bg-teal-200/60 rounded-r-md transition-all duration-300"
+                            className="absolute left-0 top-0 bottom-0 bg-teal-200/60 rounded-r transition-all duration-300"
                             style={{ width: `${connPct}%` }}
                           />
-                          <span className="relative z-10 font-bold text-teal-900">{user.connectedCalls}</span>
+                          <span className="relative z-10 font-bold text-teal-900 text-xs">{user.connectedCalls}</span>
                         </div>
                       </td>
 
                       {/* Not Attended Bar */}
-                      <td className="px-4 py-3">
-                        <div className="relative flex items-center justify-between h-7 px-2.5 rounded-lg bg-rose-50/50 border border-rose-100/60 overflow-hidden">
+                      <td className="px-3.5 py-2.5">
+                        <div className="relative flex items-center justify-between h-6 px-2 rounded-md bg-rose-50/50 border border-rose-100/60 overflow-hidden">
                           <div
-                            className="absolute left-0 top-0 bottom-0 bg-rose-200/60 rounded-r-md transition-all duration-300"
+                            className="absolute left-0 top-0 bottom-0 bg-rose-200/60 rounded-r transition-all duration-300"
                             style={{ width: `${notConnPct}%` }}
                           />
-                          <span className="relative z-10 font-bold text-rose-900">{user.notConnectedCalls}</span>
+                          <span className="relative z-10 font-bold text-rose-900 text-xs">{user.notConnectedCalls}</span>
                         </div>
                       </td>
 
-                      <td className="px-4 py-3 text-center">
-                        <span className="inline-block px-2.5 py-1 rounded-md bg-purple-50 text-purple-700 font-bold border border-purple-100">
+                      <td className="px-3.5 py-2.5 text-center">
+                        <span className="inline-block px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 font-bold border border-purple-100 text-[11px]">
                           {user.connectionRate}%
                         </span>
                       </td>
@@ -312,22 +307,22 @@ const CallPerformanceSummarySection: React.FC<CallPerformanceSummarySectionProps
                         const barPct = getCallMetricBarWidth(count, user.totalAttempts);
 
                         return (
-                          <td key={sub.id} className="px-4 py-3">
+                          <td key={sub.id} className="px-3.5 py-2.5">
                             <div
-                              className="relative flex items-center justify-between h-7 px-2.5 rounded-lg border overflow-hidden"
+                              className="relative flex items-center justify-between h-6 px-2 rounded-md border overflow-hidden"
                               style={{
                                 backgroundColor: `${sub.color || '#3b82f6'}10`,
                                 borderColor: `${sub.color || '#3b82f6'}30`,
                               }}
                             >
                               <div
-                                className="absolute left-0 top-0 bottom-0 rounded-r-md transition-all duration-300"
+                                className="absolute left-0 top-0 bottom-0 rounded-r transition-all duration-300"
                                 style={{
                                   width: `${barPct}%`,
                                   backgroundColor: `${sub.color || '#3b82f6'}35`,
                                 }}
                               />
-                              <span className="relative z-10 font-bold" style={{ color: sub.color || '#1e293b' }}>
+                              <span className="relative z-10 font-bold text-xs" style={{ color: sub.color || '#1e293b' }}>
                                 {count}
                               </span>
                             </div>
@@ -335,8 +330,8 @@ const CallPerformanceSummarySection: React.FC<CallPerformanceSummarySectionProps
                         );
                       })}
 
-                      <td className="px-4 py-3 text-right font-bold text-gray-800">{user.followUpsCreated}</td>
-                      <td className="px-4 py-3 text-right font-bold text-gray-800">{user.leadsMoved}</td>
+                      <td className="px-3.5 py-2.5 text-right font-bold text-gray-800">{user.followUpsCreated}</td>
+                      <td className="px-3.5 py-2.5 text-right font-bold text-gray-800">{user.leadsMoved}</td>
                     </tr>
                   );
                 })

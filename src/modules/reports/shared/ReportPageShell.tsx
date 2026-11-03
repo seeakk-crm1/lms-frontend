@@ -12,6 +12,8 @@ interface ReportPageShellProps {
   filters?: ReactNode;
   children: ReactNode;
   onExportCsv?: () => void;
+  onExportInteractive?: () => void;
+  isExportingInteractive?: boolean;
 }
 
 const ReportPageShell: React.FC<ReportPageShellProps> = ({
@@ -21,6 +23,8 @@ const ReportPageShell: React.FC<ReportPageShellProps> = ({
   filters,
   children,
   onExportCsv,
+  onExportInteractive,
+  isExportingInteractive = false,
 }) => {
   const user = useAuthStore((state) => state.user);
   const workspaceName = user?.workspace?.companyName || 'Seeakk';
@@ -29,38 +33,52 @@ const ReportPageShell: React.FC<ReportPageShellProps> = ({
     <DashboardLayout>
       <div className="flex-1 overflow-y-auto custom-scrollbar bg-gray-50 p-3.5 sm:p-5 lg:p-6 print:bg-white print:p-0">
         <div className="mx-auto max-w-[1560px] space-y-3.5 sm:space-y-4">
-          <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center print:hidden">
+          {/* Aligned Page Header Toolbar */}
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between print:hidden">
             <div>
-              <h1 className="flex items-center gap-2.5 text-xl font-bold text-gray-900 sm:text-2xl">
+              <div className="mb-1 inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-700 border border-emerald-100/80">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                <span>Executive Analytics</span>
+              </div>
+              <h1 className="flex items-center gap-2 text-xl sm:text-2xl font-bold tracking-tight text-gray-900">
                 {icon}
-                {title}
+                <span>{title}</span>
               </h1>
               <p className="mt-0.5 text-xs text-gray-500">{description}</p>
             </div>
-            <div className="flex flex-wrap items-center gap-2">
+
+            <div className="flex flex-wrap items-center gap-2 shrink-0">
               <button
                 type="button"
                 onClick={printReport}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white h-9 px-3 text-xs font-semibold text-gray-700 shadow-xs transition hover:bg-gray-50 cursor-pointer"
+                className="inline-flex items-center justify-center gap-1.5 h-8.5 px-3 rounded-lg border border-gray-200 bg-white text-xs font-semibold text-gray-700 shadow-2xs hover:bg-gray-50 hover:text-gray-900 transition-colors cursor-pointer"
+                title="Print report or save as PDF"
               >
-                <Printer size={15} /> Print / PDF
+                <Printer size={14} className="text-gray-500" />
+                <span>Print / PDF</span>
               </button>
+
               {onExportCsv ? (
                 <button
                   type="button"
                   onClick={onExportCsv}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white h-9 px-3 text-xs font-semibold text-gray-700 shadow-xs transition hover:bg-gray-50 cursor-pointer"
+                  className="inline-flex items-center justify-center gap-1.5 h-8.5 px-3 rounded-lg border border-gray-200 bg-white text-xs font-semibold text-gray-700 shadow-2xs hover:bg-gray-50 hover:text-gray-900 transition-colors cursor-pointer"
+                  title="Export report data as spreadsheet"
                 >
-                  <FileSpreadsheet size={15} /> Export Excel
+                  <FileSpreadsheet size={14} className="text-emerald-600" />
+                  <span>Export Excel</span>
                 </button>
               ) : null}
+
               <button
                 type="button"
-                onClick={printReport}
-                title="Download the complete filtered report as a scrollable HTML file."
-                className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 h-9 px-3.5 text-xs font-semibold text-white shadow-xs transition hover:bg-emerald-700 cursor-pointer"
+                onClick={onExportInteractive || printReport}
+                disabled={isExportingInteractive}
+                title="Download complete filtered interactive HTML report"
+                className="inline-flex items-center justify-center gap-1.5 h-8.5 px-3.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-2xs transition-colors cursor-pointer disabled:opacity-60"
               >
-                <Download size={15} /> Download Interactive Report
+                <Download size={14} />
+                <span>{isExportingInteractive ? 'Preparing Report...' : 'Download Interactive Report'}</span>
               </button>
             </div>
           </div>

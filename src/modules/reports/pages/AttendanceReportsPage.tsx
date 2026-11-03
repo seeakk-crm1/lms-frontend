@@ -42,17 +42,19 @@ const AttendanceReportsPage: React.FC = () => {
     <ReportPageShell
       title="Attendance Reports"
       description="Attendance check-in/out records and target activity for the selected users and period."
-      icon={<CalendarCheck className="text-emerald-500" size={28} />}
+      icon={<CalendarCheck className="text-emerald-600" size={20} />}
       filters={<ReportFiltersBar filters={filters} setFilters={setFilters} />}
       onExportCsv={handleExport}
     >
-      <AttendanceActivitySection filters={apiFilters} />
-      <TargetActivitySection filters={apiFilters} />
-      <ReportPagination
-        page={filters.page || 1}
-        totalPages={attendanceQuery.data?.pagination?.totalPages}
-        onPageChange={(page) => setFilters((prev) => ({ ...prev, page }))}
-      />
+      <div className="space-y-4">
+        <AttendanceActivitySection filters={apiFilters} />
+        <TargetActivitySection filters={apiFilters} />
+        <ReportPagination
+          page={filters.page || 1}
+          totalPages={attendanceQuery.data?.pagination?.totalPages}
+          onPageChange={(page) => setFilters((prev) => ({ ...prev, page }))}
+        />
+      </div>
     </ReportPageShell>
   );
 };

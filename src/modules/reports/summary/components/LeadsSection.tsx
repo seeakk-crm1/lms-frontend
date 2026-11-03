@@ -14,38 +14,51 @@ const LeadsSection: React.FC<LeadsSectionProps> = ({ filters }) => {
     queryFn: () => fetchLeadsSummary(filters),
   });
 
-  if (isLoading) return <div className="h-40 bg-gray-100 animate-pulse rounded-2xl mt-6"></div>;
+  if (isLoading) {
+    return <div className="h-36 bg-gray-100/80 animate-pulse rounded-xl border border-gray-200/80" />;
+  }
   if (!data?.data || data.data.length === 0) return null;
 
   return (
-    <div className="mt-8">
-      <h2 className="text-lg font-black text-gray-900 mb-4 flex items-center gap-2">
-        <Users className="text-blue-500" size={20} /> Lead Creation Summary
-      </h2>
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <div className="space-y-3 sm:space-y-3.5">
+      <div className="flex items-center justify-between pb-2 border-b border-gray-200/80">
+        <div className="flex items-center gap-2">
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-50 text-blue-600 border border-blue-100/80">
+            <Users size={15} />
+          </div>
+          <h3 className="text-sm sm:text-base font-bold text-gray-900">Lead Creation Summary</h3>
+        </div>
+        <span className="text-[11px] font-semibold text-gray-500">
+          {data.data.length} {data.data.length === 1 ? 'Lead' : 'Leads'}
+        </span>
+      </div>
+
+      <div className="bg-white rounded-xl shadow-2xs border border-gray-200/80 overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm text-gray-500">
-            <thead className="text-xs text-gray-700 uppercase bg-gray-50 font-bold border-b border-gray-200">
+          <table className="w-full text-left text-xs text-gray-600">
+            <thead className="text-[10px] text-gray-500 uppercase bg-gray-50/90 font-bold border-b border-gray-200/80 tracking-wider">
               <tr>
-                <th className="px-6 py-4">Lead Name</th>
-                <th className="px-6 py-4">Source</th>
-                <th className="px-6 py-4">Stage</th>
-                <th className="px-6 py-4">Assigned To</th>
-                <th className="px-6 py-4">Created Time</th>
+                <th className="px-3.5 py-2.5">Lead Name</th>
+                <th className="px-3.5 py-2.5">Source</th>
+                <th className="px-3.5 py-2.5">Stage</th>
+                <th className="px-3.5 py-2.5">Assigned To</th>
+                <th className="px-3.5 py-2.5 text-right">Created Time</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-gray-100">
               {data.data.map((lead: any) => (
-                <tr key={lead.id} className="border-b border-gray-50 hover:bg-gray-50">
-                  <td className="px-6 py-4 font-bold text-gray-900">{lead.name}</td>
-                  <td className="px-6 py-4">{lead.source?.name || '-'}</td>
-                  <td className="px-6 py-4">
-                    <span className="px-2 py-1 rounded-md text-xs font-bold bg-gray-100 text-gray-600">
+                <tr key={lead.id} className="hover:bg-gray-50/60 transition-colors">
+                  <td className="px-3.5 py-2.5 font-bold text-gray-900">{lead.name}</td>
+                  <td className="px-3.5 py-2.5 text-gray-600">{lead.source?.name || '-'}</td>
+                  <td className="px-3.5 py-2.5">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
                       {lead.stage?.name || '-'}
                     </span>
                   </td>
-                  <td className="px-6 py-4">{lead.createdBy?.name || '-'}</td>
-                  <td className="px-6 py-4">{format(new Date(lead.createdAt), 'dd MMM yyyy, hh:mm a')}</td>
+                  <td className="px-3.5 py-2.5 text-gray-600">{lead.createdBy?.name || '-'}</td>
+                  <td className="px-3.5 py-2.5 text-right text-gray-500 font-medium">
+                    {format(new Date(lead.createdAt), 'dd MMM yyyy, hh:mm a')}
+                  </td>
                 </tr>
               ))}
             </tbody>

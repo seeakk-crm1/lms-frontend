@@ -37,18 +37,20 @@ const LeadReportsPage: React.FC = () => {
     <ReportPageShell
       title="Lead Reports"
       description="Every lead created, updated, and stage movement with full lead-level detail."
-      icon={<Briefcase className="text-emerald-500" size={28} />}
+      icon={<Briefcase className="text-emerald-600" size={20} />}
       filters={<ReportFiltersBar filters={filters} setFilters={setFilters} />}
       onExportCsv={handleExport}
     >
-      <LeadsSection filters={apiFilters} />
-      <LeadUpdatesSection filters={apiFilters} />
-      <StageMovementsSection filters={apiFilters} />
-      <ReportPagination
-        page={filters.page || 1}
-        totalPages={leadsQuery.data?.pagination?.totalPages}
-        onPageChange={(page) => setFilters((prev) => ({ ...prev, page }))}
-      />
+      <div className="space-y-4">
+        <LeadsSection filters={apiFilters} />
+        <LeadUpdatesSection filters={apiFilters} />
+        <StageMovementsSection filters={apiFilters} />
+        <ReportPagination
+          page={filters.page || 1}
+          totalPages={leadsQuery.data?.pagination?.totalPages}
+          onPageChange={(page) => setFilters((prev) => ({ ...prev, page }))}
+        />
+      </div>
     </ReportPageShell>
   );
 };

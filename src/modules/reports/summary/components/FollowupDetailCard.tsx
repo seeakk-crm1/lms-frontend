@@ -8,80 +8,91 @@ interface FollowupDetailCardProps {
 
 const FollowupDetailCard: React.FC<FollowupDetailCardProps> = ({ followup }) => {
   return (
-    <article className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm print:break-inside-avoid">
-      <div className="border-b border-gray-100 pb-4">
-        <h3 className="text-base font-black text-gray-900">Followup Details</h3>
-        <dl className="mt-3 grid gap-2 text-sm text-gray-700 sm:grid-cols-2">
-          <div><dt className="font-bold text-gray-500">Lead Name</dt><dd>{followup.leadName}</dd></div>
-          <div><dt className="font-bold text-gray-500">Lead ID</dt><dd className="font-mono text-xs">{followup.leadId}</dd></div>
-          <div><dt className="font-bold text-gray-500">Assigned User</dt><dd>{followup.assignedUser}</dd></div>
-          <div><dt className="font-bold text-gray-500">Followup Type</dt><dd>{followup.followupType}</dd></div>
-          <div><dt className="font-bold text-gray-500">Created Date</dt><dd>{followup.createdDate}</dd></div>
-          <div><dt className="font-bold text-gray-500">Scheduled Date</dt><dd>{followup.scheduledDate}</dd></div>
-          <div><dt className="font-bold text-gray-500">Status</dt><dd className="font-bold capitalize">{followup.status.toLowerCase()}</dd></div>
+    <article className="rounded-xl border border-gray-200/80 bg-white p-3.5 sm:p-4 shadow-2xs print:break-inside-avoid space-y-3">
+      {/* Header and key fields */}
+      <div className="border-b border-gray-100 pb-3">
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+          <h4 className="text-xs sm:text-sm font-bold text-gray-900">{followup.leadName}</h4>
+          <span
+            className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+              followup.status.toUpperCase() === 'COMPLETED'
+                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                : followup.status.toUpperCase() === 'OVERDUE'
+                ? 'bg-rose-50 text-rose-700 border border-rose-200'
+                : 'bg-gray-100 text-gray-700 border border-gray-200'
+            }`}
+          >
+            {followup.status.toLowerCase()}
+          </span>
+        </div>
+
+        <dl className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+          <div>
+            <dt className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Lead ID</dt>
+            <dd className="font-mono text-gray-600 truncate mt-0.5">{followup.leadId}</dd>
+          </div>
+          <div>
+            <dt className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Assigned User</dt>
+            <dd className="font-semibold text-gray-800 truncate mt-0.5">{followup.assignedUser}</dd>
+          </div>
+          <div>
+            <dt className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Followup Type</dt>
+            <dd className="font-semibold text-gray-800 truncate mt-0.5">{followup.followupType}</dd>
+          </div>
+          <div>
+            <dt className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Scheduled</dt>
+            <dd className="font-semibold text-gray-800 truncate mt-0.5">{followup.scheduledDate}</dd>
+          </div>
         </dl>
       </div>
 
-      {followup.notes.length > 0 ? (
-        <section className="mt-4 border-b border-gray-100 pb-4">
-          <h4 className="text-sm font-black uppercase tracking-wide text-purple-700">Followup Notes</h4>
-          <div className="mt-3 space-y-4">
+      {followup.notes.length > 0 && (
+        <section className="space-y-2 border-b border-gray-100 pb-3">
+          <h5 className="text-[10px] font-bold uppercase tracking-wider text-purple-700">Followup Notes</h5>
+          <div className="space-y-1.5">
             {followup.notes.map((note) => (
-              <div key={`${followup.id}-note-${note.noteNumber}`} className="rounded-xl bg-gray-50 p-4">
-                <p className="text-xs font-black uppercase text-gray-400">Note #{note.noteNumber}</p>
-                <p className="mt-1 text-xs text-gray-500">Date: {note.date} · Time: {note.time} · Added By: {note.addedBy}</p>
-                <p className="mt-2 whitespace-pre-wrap text-sm text-gray-800">{note.note}</p>
+              <div key={`${followup.id}-note-${note.noteNumber}`} className="rounded-lg bg-gray-50/80 p-2.5 text-xs border border-gray-100">
+                <div className="flex items-center justify-between text-[10px] text-gray-400 mb-1">
+                  <span className="font-bold text-gray-500">Note #{note.noteNumber} by {note.addedBy}</span>
+                  <span>{note.date} {note.time}</span>
+                </div>
+                <p className="whitespace-pre-wrap text-gray-700 font-medium leading-relaxed">{note.note}</p>
               </div>
             ))}
           </div>
         </section>
-      ) : null}
+      )}
 
-      {followup.completion ? (
-        <section className="mt-4 border-b border-gray-100 pb-4">
-          <h4 className="text-sm font-black uppercase tracking-wide text-emerald-700">Followup Completion Notes</h4>
-          <div className="mt-3 rounded-xl bg-emerald-50 p-4 text-sm text-gray-800">
-            <p className="text-xs text-gray-500">
-              Completed By: {followup.completion.completedBy} ·{' '}
-              {format(new Date(followup.completion.completedAt), 'dd/MM/yyyy hh:mm a')}
+      {followup.completion && (
+        <section className="space-y-1.5 border-b border-gray-100 pb-3">
+          <h5 className="text-[10px] font-bold uppercase tracking-wider text-emerald-700">Completion Summary</h5>
+          <div className="rounded-lg bg-emerald-50/60 p-2.5 text-xs text-gray-800 border border-emerald-100/80">
+            <p className="text-[10px] font-medium text-emerald-800">
+              Completed by <span className="font-bold">{followup.completion.completedBy}</span> on{' '}
+              {format(new Date(followup.completion.completedAt), 'dd MMM yyyy, hh:mm a')}
             </p>
-            <p className="mt-2 whitespace-pre-wrap font-medium">{followup.completion.note || 'No completion note provided.'}</p>
+            <p className="mt-1 whitespace-pre-wrap font-medium text-gray-800">{followup.completion.note || 'No completion note provided.'}</p>
           </div>
         </section>
-      ) : null}
+      )}
 
-      {followup.extensions.length > 0 ? (
-        <section className="mt-4 border-b border-gray-100 pb-4">
-          <h4 className="text-sm font-black uppercase tracking-wide text-rose-700">Followup Extension Notes</h4>
-          <div className="mt-3 space-y-4">
+      {followup.extensions.length > 0 && (
+        <section className="space-y-1.5">
+          <h5 className="text-[10px] font-bold uppercase tracking-wider text-amber-700">Extension History</h5>
+          <div className="space-y-1.5">
             {followup.extensions.map((ext, index) => (
-              <div key={`${followup.id}-ext-${index}`} className="rounded-xl bg-rose-50/60 p-4 text-sm text-gray-800">
-                <p><strong>Original Date:</strong> {ext.originalDate}</p>
-                <p><strong>Extended To:</strong> {ext.extendedTo}</p>
-                <p><strong>Extension Reason:</strong> {ext.reason || 'Not specified'}</p>
-                <p><strong>Extended By:</strong> {ext.extendedBy} · {format(new Date(ext.extendedAt), 'dd/MM/yyyy hh:mm a')}</p>
-                <p className="mt-2 whitespace-pre-wrap"><strong>Description:</strong> {ext.description || 'No description provided.'}</p>
+              <div key={`${followup.id}-ext-${index}`} className="rounded-lg bg-amber-50/50 p-2 text-xs text-gray-800 border border-amber-100/80">
+                <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold text-amber-900">
+                  <span>Extended by {ext.extendedBy}:</span>
+                  <span>{ext.originalDate} → {ext.extendedTo}</span>
+                </div>
+                {ext.reason && <p className="text-[11px] text-gray-600 mt-0.5">Reason: {ext.reason}</p>}
+                {ext.description && <p className="text-[11px] text-gray-600 mt-0.5">{ext.description}</p>}
               </div>
             ))}
           </div>
         </section>
-      ) : null}
-
-      {followup.timeline.length > 0 ? (
-        <section className="mt-4">
-          <h4 className="text-sm font-black uppercase tracking-wide text-indigo-700">Followup History Timeline</h4>
-          <div className="mt-3 space-y-3">
-            {followup.timeline.map((entry, index) => (
-              <div key={`${followup.id}-timeline-${index}`} className="border-l-2 border-indigo-200 pl-4">
-                <p className="text-xs font-bold text-gray-400">{entry.time} · {entry.date}</p>
-                <p className="text-sm font-black text-gray-900">{entry.event}</p>
-                {entry.detail ? <p className="mt-1 whitespace-pre-wrap text-sm text-gray-700">"{entry.detail}"</p> : null}
-                {entry.reason ? <p className="mt-1 text-sm text-gray-600"><strong>Reason:</strong> {entry.reason}</p> : null}
-              </div>
-            ))}
-          </div>
-        </section>
-      ) : null}
+      )}
     </article>
   );
 };
