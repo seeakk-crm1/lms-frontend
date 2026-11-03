@@ -8,12 +8,45 @@ interface DashboardLayoutProps {
 }
 
 const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
-    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => {
+        try {
+            return localStorage.getItem('seeakk_sidebar_collapsed') === 'true';
+        } catch {
+            return false;
+        }
+    });
+
+    const toggleSidebar = useCallback(() => {
+        setIsSidebarCollapsed((prev) => {
+            const next = !prev;
+            try {
+                localStorage.setItem('seeakk_sidebar_collapsed', String(next));
+            } catch {}
+            return next;
+        });
+    }, []);
+
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const closeMobileMenu = useCallback(() => setMobileMenuOpen(false), []);
     const toggleMobileMenu = useCallback(() => {
         setMobileMenuOpen((prev) => !prev);
     }, []);
+
+    useEffect(() => {
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'b') {
+                const target = event.target as HTMLElement;
+                if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
+                    return;
+                }
+                event.preventDefault();
+                toggleSidebar();
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [toggleSidebar]);
 
     useEffect(() => {
         if (!mobileMenuOpen) {
@@ -41,7 +74,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
             {/* Desktop Sidebar */}
             <DashboardSidebar
                 isCollapsed={isSidebarCollapsed}
-                toggleCollapsed={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+                toggleCollapsed={toggleSidebar}
             />
 
             {/* Mobile Sidebar Overlay */}
@@ -74,8 +107,13 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
             </AnimatePresence>
 
             {/* Main Content Area */}
-            <main className="flex-1 flex flex-col h-full overflow-hidden relative print:h-auto print:overflow-visible print:static">
-                <DashboardHeader isMobileMenuOpen={mobileMenuOpen} onToggleMobileMenu={toggleMobileMenu} />
+            <main className="flex-1 min-w-0 flex flex-col h-full overflow-hidden relative print:h-auto print:overflow-visible print:static">
+                <DashboardHeader
+                    isMobileMenuOpen={mobileMenuOpen}
+                    onToggleMobileMenu={toggleMobileMenu}
+                    isSidebarCollapsed={isSidebarCollapsed}
+                    onToggleSidebar={toggleSidebar}
+                />
                 {children}
             </main>
         </div>

@@ -1,6 +1,6 @@
 import React, { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { AlertTriangle, Download, Filter, RotateCcw, TrendingDown, WalletCards } from 'lucide-react';
+import { AlertTriangle, Download, Filter, RotateCcw, TrendingDown, WalletCards, CheckCircle2, XCircle, BriefcaseBusiness } from 'lucide-react';
 import DashboardLayout from '../../components/dashboard/DashboardLayout';
 import { useClosedLeadsQuery, useExportClosedLeads, useReopenLeadMutation } from '../../hooks/useClosedLeads';
 import { useLeadMetaQuery } from '../../hooks/useLeads';
@@ -173,9 +173,30 @@ const ClosedLeadsPage: React.FC = () => {
 
   const stats = useMemo(
     () => [
-      { label: 'Closed Leads', value: totalClosed, accent: 'from-slate-500 to-slate-700' },
-      { label: 'Won Revenue', value: formatCurrency(wonRevenue), accent: 'from-emerald-500 to-emerald-600' },
-      { label: 'Lost Deals', value: lostCount, accent: 'from-rose-500 to-rose-600' },
+      {
+        label: 'Closed Leads',
+        value: totalClosed,
+        icon: BriefcaseBusiness,
+        iconBg: 'bg-slate-100 text-slate-700 border-slate-200/80',
+        lineColor: '#475569',
+        sparkPath: 'M 2,24 C 20,24 35,22 48,16 C 60,10 68,12 78,6',
+      },
+      {
+        label: 'Won Revenue',
+        value: formatCurrency(wonRevenue),
+        icon: CheckCircle2,
+        iconBg: 'bg-emerald-50 text-emerald-600 border-emerald-100/70',
+        lineColor: '#10b981',
+        sparkPath: 'M 2,24 C 20,24 35,22 48,14 C 60,6 68,10 78,4',
+      },
+      {
+        label: 'Lost Deals',
+        value: lostCount,
+        icon: XCircle,
+        iconBg: 'bg-rose-50 text-rose-600 border-rose-100/70',
+        lineColor: '#ef4444',
+        sparkPath: 'M 2,8 C 18,10 32,16 46,20 C 60,24 68,22 78,26',
+      },
     ],
     [lostCount, totalClosed, wonRevenue],
   );
@@ -184,69 +205,75 @@ const ClosedLeadsPage: React.FC = () => {
 
   return (
     <DashboardLayout>
-        <div className="relative flex-1 overflow-x-hidden overflow-y-auto custom-scrollbar p-4 md:p-8">
-          <div className="absolute left-0 top-0 -z-10 h-[520px] w-[760px] bg-gradient-to-br from-slate-100 via-transparent to-transparent" />
+      <div className="relative flex-1 overflow-x-hidden overflow-y-auto custom-scrollbar p-3.5 sm:p-5 lg:p-6">
+        <div className="absolute left-0 top-0 -z-10 h-[360px] w-[560px] bg-gradient-to-br from-slate-100/70 via-transparent to-transparent pointer-events-none" />
 
-          <div className="mx-auto max-w-[1520px] space-y-6 md:space-y-8">
-            <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
-              <motion.div initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }}>
-                <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-[10px] font-black uppercase tracking-[0.26em] text-slate-600">
-                  <TrendingDown className="h-3.5 w-3.5" />
-                  <span>Outcome Ledger</span>
-                </div>
-                <h1 className="text-3xl font-black tracking-tight text-gray-900 md:text-4xl">Closed Leads</h1>
-                <p className="mt-2 text-sm font-semibold text-gray-500">
-                  Revenue outcomes, closure decisions, and reopen controls in one audit-ready view.
-                </p>
-              </motion.div>
+        <div className="mx-auto max-w-[1560px] space-y-3.5 sm:space-y-4">
+          {/* Header */}
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <div className="mb-1.5 inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-600 border border-slate-200/80">
+                <TrendingDown className="h-3 w-3" />
+                <span>Outcome Ledger</span>
+              </div>
+              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-gray-900">Closed Leads</h1>
+              <p className="mt-0.5 text-xs text-gray-500">
+                Revenue outcomes, closure decisions, and reopen controls in one audit-ready view.
+              </p>
+            </div>
 
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="flex flex-col gap-3 sm:flex-row sm:flex-wrap xl:justify-end"
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setIsExportModalOpen(true)}
+                disabled={exportMutation.isPending}
+                className="inline-flex items-center justify-center gap-1.5 h-9 px-3 rounded-lg border border-gray-200 bg-white text-xs font-semibold text-gray-700 shadow-xs hover:bg-gray-50 transition-colors cursor-pointer disabled:opacity-60"
               >
-                <button
-                  type="button"
-                  onClick={() => setIsExportModalOpen(true)}
-                  disabled={exportMutation.isPending}
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-black text-gray-700 shadow-sm transition-all hover:border-emerald-200 hover:text-emerald-600 disabled:cursor-not-allowed disabled:opacity-70"
-                >
-                  <Download className="h-4 w-4" />
-                  <span>{exportMutation.isPending ? 'Exporting…' : 'Export'}</span>
-                </button>
+                <Download className="h-3.5 w-3.5" />
+                <span>{exportMutation.isPending ? 'Exporting…' : 'Export'}</span>
+              </button>
 
-                <button
-                  type="button"
-                  onClick={() => setShowFilters((value) => !value)}
-                  className={`inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3 text-sm font-black transition-all ${
-                    showFilters
-                      ? 'bg-gray-900 text-white shadow-lg shadow-gray-900/10'
-                      : 'border border-gray-200 bg-white text-gray-700 shadow-sm hover:border-gray-300'
-                  }`}
-                >
-                  <Filter className="h-4 w-4" />
-                  <span>Filters</span>
-                </button>
-              </motion.div>
+              <button
+                type="button"
+                onClick={() => setShowFilters((value) => !value)}
+                className={`inline-flex items-center justify-center gap-1.5 h-9 px-3 rounded-lg text-xs font-semibold shadow-xs transition-colors cursor-pointer ${
+                  showFilters
+                    ? 'bg-gray-900 text-white'
+                    : 'border border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                <Filter className="h-3.5 w-3.5" />
+                <span>Filters</span>
+              </button>
             </div>
+          </div>
 
-            <div className="grid gap-4 md:grid-cols-3">
-              {stats.map((stat, index) => (
-                <motion.div
-                  key={stat.label}
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.08 }}
-                  className="overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm"
-                >
-                  <div className={`h-1.5 bg-gradient-to-r ${stat.accent}`} />
-                  <div className="p-5">
-                    <div className="text-[11px] font-black uppercase tracking-[0.24em] text-gray-400">{stat.label}</div>
-                    <div className="mt-3 text-3xl font-black tracking-tight text-gray-900 md:text-4xl">{stat.value}</div>
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-3.5">
+            {stats.map((stat, index) => (
+              <motion.div
+                key={stat.label}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.04 }}
+                className="h-[76px] sm:h-[80px] rounded-xl border border-gray-200/80 bg-white p-3 sm:p-3.5 shadow-xs flex items-center justify-between hover:border-gray-300 transition-all"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className={`h-10 w-10 rounded-lg flex items-center justify-center shrink-0 border ${stat.iconBg}`}>
+                    <stat.icon size={20} strokeWidth={2.2} />
                   </div>
-                </motion.div>
-              ))}
-            </div>
+                  <div className="min-w-0">
+                    <div className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-gray-500 truncate">{stat.label}</div>
+                    <div className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight leading-none mt-1 truncate">{stat.value}</div>
+                  </div>
+                </div>
+
+                <svg className="w-16 sm:w-20 h-8 shrink-0 overflow-visible ml-2" viewBox="0 0 80 32" fill="none">
+                  <path d={stat.sparkPath} stroke={stat.lineColor} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </motion.div>
+            ))}
+          </div>
 
             {showFilters ? (
               <ClosedLeadFilters

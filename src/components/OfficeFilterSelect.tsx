@@ -9,6 +9,7 @@ type OfficeFilterSelectProps = {
   onChange: (officeId?: string) => void;
   placeholder?: string;
   name?: string;
+  size?: 'sm' | 'md';
 };
 
 const formatOfficeLocation = (office: Office): string => {
@@ -28,6 +29,7 @@ const OfficeFilterSelect: React.FC<OfficeFilterSelectProps> = ({
   onChange,
   placeholder = 'Office Location',
   name = 'officeId',
+  size = 'md',
 }) => {
   const officesQuery = useQuery({
     queryKey: ['office-filter-options'],
@@ -55,6 +57,7 @@ const OfficeFilterSelect: React.FC<OfficeFilterSelectProps> = ({
       placeholder={officesQuery.isLoading ? 'Loading offices...' : placeholder}
       allowClear
       clearLabel="All Offices"
+      size={size}
       onChange={(event) => onChange(event.target.value || undefined)}
     />
   );

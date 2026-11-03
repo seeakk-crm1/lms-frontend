@@ -27,40 +27,40 @@ const ReportPageShell: React.FC<ReportPageShellProps> = ({
 
   return (
     <DashboardLayout>
-      <div className="flex-1 overflow-y-auto custom-scrollbar bg-gray-50 p-4 md:p-8 print:bg-white print:p-0">
-        <div className="mx-auto max-w-[1400px] space-y-6">
-          <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center print:hidden">
+      <div className="flex-1 overflow-y-auto custom-scrollbar bg-gray-50 p-3.5 sm:p-5 lg:p-6 print:bg-white print:p-0">
+        <div className="mx-auto max-w-[1560px] space-y-3.5 sm:space-y-4">
+          <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center print:hidden">
             <div>
-              <h1 className="flex items-center gap-3 text-2xl font-black text-gray-900 md:text-3xl">
+              <h1 className="flex items-center gap-2.5 text-xl font-bold text-gray-900 sm:text-2xl">
                 {icon}
                 {title}
               </h1>
-              <p className="mt-1 text-sm text-gray-500">{description}</p>
+              <p className="mt-0.5 text-xs text-gray-500">{description}</p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
                 onClick={printReport}
-                className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-bold text-gray-700 shadow-sm transition hover:bg-gray-50"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white h-9 px-3 text-xs font-semibold text-gray-700 shadow-xs transition hover:bg-gray-50 cursor-pointer"
               >
-                <Printer size={16} /> Print / PDF
+                <Printer size={15} /> Print / PDF
               </button>
               {onExportCsv ? (
                 <button
                   type="button"
                   onClick={onExportCsv}
-                  className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-bold text-gray-700 shadow-sm transition hover:bg-gray-50"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white h-9 px-3 text-xs font-semibold text-gray-700 shadow-xs transition hover:bg-gray-50 cursor-pointer"
                 >
-                  <FileSpreadsheet size={16} /> Export Excel
+                  <FileSpreadsheet size={15} /> Export Excel
                 </button>
               ) : null}
               <button
                 type="button"
                 onClick={printReport}
                 title="Download the complete filtered report as a scrollable HTML file."
-                className="flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-600"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 h-9 px-3.5 text-xs font-semibold text-white shadow-xs transition hover:bg-emerald-700 cursor-pointer"
               >
-                <Download size={16} /> Download Interactive Report
+                <Download size={15} /> Download Interactive Report
               </button>
             </div>
           </div>

@@ -57,12 +57,10 @@ const FollowUpBadge: React.FC<FollowUpBadgeProps> = ({ value }) => {
   const Icon = descriptor.icon;
 
   return (
-    <div className={`inline-flex min-w-[138px] items-start gap-2 rounded-2xl border px-3 py-2 ${descriptor.className}`}>
-      <Icon className="mt-0.5 h-4 w-4 shrink-0" />
-      <div>
-        <div className="text-xs font-black uppercase tracking-wider">{descriptor.label}</div>
-        <div className="text-[11px] font-semibold opacity-80">{descriptor.subtitle}</div>
-      </div>
+    <div className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs transition-colors whitespace-nowrap ${descriptor.className}`}>
+      <Icon className="h-3.5 w-3.5 shrink-0" />
+      <span className="font-bold tracking-tight">{descriptor.label}</span>
+      <span className="text-[10px] font-medium opacity-75">· {descriptor.subtitle}</span>
     </div>
   );
 };

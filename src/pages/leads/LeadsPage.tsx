@@ -1,6 +1,19 @@
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Download, Filter, Plus, TrendingUp, Upload, SlidersHorizontal } from 'lucide-react';
+import {
+  Download,
+  Filter,
+  Plus,
+  TrendingUp,
+  Upload,
+  SlidersHorizontal,
+  Users,
+  Layers,
+  CalendarClock,
+  IndianRupee,
+  Check,
+  CheckSquare,
+} from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useLocation, useNavigate } from 'react-router-dom';
 import DashboardLayout from '../../components/dashboard/DashboardLayout';
@@ -419,13 +432,37 @@ const LeadsPage: React.FC = () => {
 
   const stats = useMemo(
     () => [
-      { label: 'Total Leads', value: totalLeads, accent: 'from-emerald-500 to-emerald-600' },
-      { label: 'Open Pipeline', value: openLeadCount, accent: 'from-blue-500 to-blue-600' },
-      { label: 'Due Today', value: dueTodayCount, accent: 'from-amber-500 to-orange-500' },
+      {
+        label: 'Total Leads',
+        value: totalLeads,
+        icon: Users,
+        iconBg: 'bg-emerald-50 text-emerald-600 border-emerald-100/70',
+        lineColor: '#10b981',
+        sparkPath: 'M 2,24 C 20,24 35,22 48,14 C 60,6 68,10 78,4',
+      },
+      {
+        label: 'Open Pipeline',
+        value: openLeadCount,
+        icon: Layers,
+        iconBg: 'bg-sky-50 text-sky-600 border-sky-100/70',
+        lineColor: '#0284c7',
+        sparkPath: 'M 2,22 C 18,22 28,26 42,20 C 56,14 66,8 78,6',
+      },
+      {
+        label: 'Due Today',
+        value: dueTodayCount,
+        icon: CalendarClock,
+        iconBg: 'bg-amber-50 text-amber-600 border-amber-100/70',
+        lineColor: '#f59e0b',
+        sparkPath: 'M 2,24 C 20,24 38,20 52,16 C 64,12 70,8 78,6',
+      },
       {
         label: 'Expected Revenue',
         value: formatCurrency(expectedRevenue),
-        accent: 'from-violet-500 to-fuchsia-600',
+        icon: IndianRupee,
+        iconBg: 'bg-violet-50 text-violet-600 border-violet-100/70',
+        lineColor: '#8b5cf6',
+        sparkPath: 'M 2,24 C 18,24 32,22 46,16 C 60,10 68,14 78,4',
       },
     ],
     [dueTodayCount, expectedRevenue, openLeadCount, totalLeads],
@@ -484,190 +521,203 @@ const LeadsPage: React.FC = () => {
 
   return (
     <DashboardLayout>
-      <div className="relative flex-1 overflow-x-hidden overflow-y-auto custom-scrollbar p-4 md:p-8">
-          <div className="absolute right-0 top-0 -z-10 h-[480px] w-[760px] bg-gradient-to-bl from-emerald-50 via-transparent to-transparent" />
+      <div className="relative flex-1 overflow-x-hidden overflow-y-auto custom-scrollbar p-3.5 sm:p-5 lg:p-6">
+        <div className="absolute right-0 top-0 -z-10 h-[360px] w-[560px] bg-gradient-to-bl from-emerald-50/60 via-transparent to-transparent pointer-events-none" />
 
-          <div className="mx-auto max-w-[1480px] space-y-6 md:space-y-8">
-            <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
-              <motion.div initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }}>
-                <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.26em] text-emerald-600">
-                  <TrendingUp className="h-3.5 w-3.5" />
-                  <span>Pipeline Control Room</span>
-                </div>
-                <h1 className="text-3xl font-black tracking-tight text-gray-900 md:text-4xl">All Leads</h1>
-                <p className="mt-2 text-sm font-semibold text-gray-500 flex items-center gap-4">
-                  <span>Total Count: <span className="font-black text-gray-900">{totalLeads}</span></span>
-                  {selectedLeadIds.length > 0 && (
-                    <motion.span 
-                      initial={{ opacity: 0, scale: 0.9 }} 
-                      animate={{ opacity: 1, scale: 1 }}
-                      className="inline-flex items-center gap-3 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-100"
-                    >
-                      <span className="text-xs font-black text-indigo-700">{selectedLeadIds.length} Selected</span>
-                      <button 
-                        onClick={() => useLeadStore.getState().openBulkEditDrawer()}
-                        className="text-xs font-bold text-emerald-600 hover:text-emerald-700 transition-colors"
-                      >
-                        Edit Selected
-                      </button>
-                      <div className="w-px h-3 bg-indigo-200"></div>
-                      <button 
-                        onClick={handleBulkDeleteOpen}
-                        disabled={bulkDeleteMutation.isPending}
-                        className="text-xs font-bold text-rose-600 hover:text-rose-700 transition-colors disabled:opacity-50"
-                      >
-                        {bulkDeleteMutation.isPending ? 'Processing...' : 'Delete Selected'}
-                      </button>
-                    </motion.span>
-                  )}
-                </p>
-              </motion.div>
+        <div className="mx-auto max-w-[1560px] space-y-3.5 sm:space-y-4">
+          {/* Page Header */}
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <div className="mb-1.5 inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-700 border border-emerald-100/80">
+                <TrendingUp className="h-3 w-3" />
+                <span>Pipeline Control Room</span>
+              </div>
+              <div className="flex flex-wrap items-center gap-2.5">
+                <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-gray-900">All Leads</h1>
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-600 border border-gray-200/60">
+                  {totalLeads} total leads
+                </span>
 
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="flex flex-col gap-3 sm:flex-row sm:flex-wrap xl:justify-end"
-              >
-
-
-                <button
-                  type="button"
-                  onClick={handleToggleSelectionMode}
-                  className={`inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3 text-sm font-black shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500
-                    ${isSelectionMode 
-                      ? 'bg-emerald-100 text-emerald-700 border border-emerald-200 hover:bg-emerald-200' 
-                      : 'border border-gray-200 bg-white text-gray-700 hover:border-emerald-200 hover:text-emerald-600'
-                    }`}
-                >
-                  <span>{isSelectionMode ? 'Cancel Selection' : 'Select'}</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleImportClick}
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-black text-gray-700 shadow-sm transition-all hover:border-emerald-200 hover:text-emerald-600"
-                >
-                  <Upload className="h-4 w-4" />
-                  <span>Import</span>
-                </button>
-
-                <div className="flex flex-col gap-2 rounded-2xl border border-gray-100 bg-gray-50/80 px-4 py-3 sm:flex-row sm:items-center sm:gap-4">
-                  <label className="flex cursor-pointer items-center gap-2 text-xs font-bold text-gray-600">
-                    <input
-                      type="checkbox"
-                      checked={exportIncludeArchived}
-                      onChange={(event) => setExportIncludeArchived(event.target.checked)}
-                      className="h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
-                    />
-                    <span>Include archived leads in export</span>
-                  </label>
-                  <div className="relative sm:ml-auto" ref={exportMenuRef}>
+                {selectedLeadIds.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="inline-flex items-center gap-2 px-2.5 py-1 rounded-lg bg-indigo-50 border border-indigo-100 text-xs font-bold text-indigo-700"
+                  >
+                    <span>{selectedLeadIds.length} Selected</span>
                     <button
                       type="button"
-                      onClick={() => setIsExportOpen(!isExportOpen)}
-                      disabled={exportMutation.isPending || exportXlsxMutation.isPending}
-                      title="Exports every lead that matches your current filters (all pages), not only the visible table."
-                      className="inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-black text-gray-700 shadow-sm transition-all hover:border-emerald-200 hover:text-emerald-600 disabled:cursor-not-allowed disabled:opacity-70"
+                      onClick={() => useLeadStore.getState().openBulkEditDrawer()}
+                      className="text-emerald-600 hover:text-emerald-700 font-semibold cursor-pointer"
                     >
-                      <Download className="h-4 w-4" />
-                      <span>
-                        {exportMutation.isPending || exportXlsxMutation.isPending
-                          ? 'Exporting…'
-                          : 'Export'}
-                      </span>
+                      Edit
                     </button>
+                    <span className="text-indigo-200">|</span>
+                    <button
+                      type="button"
+                      onClick={handleBulkDeleteOpen}
+                      disabled={bulkDeleteMutation.isPending}
+                      className="text-rose-600 hover:text-rose-700 font-semibold disabled:opacity-50 cursor-pointer"
+                    >
+                      {bulkDeleteMutation.isPending ? 'Processing...' : 'Delete'}
+                    </button>
+                  </motion.div>
+                )}
+              </div>
+            </div>
 
-                    <AnimatePresence>
-                      {isExportOpen && (
-                        <motion.div
-                          initial={{ opacity: 0, y: -5 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -5 }}
-                          transition={{ duration: 0.15 }}
-                          className="absolute right-0 z-50 mt-2 w-56 origin-top-right rounded-2xl border border-gray-100 bg-white p-1.5 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] focus:outline-none"
-                        >
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setIsExportOpen(false);
-                              setExportModalState({ isOpen: true, format: 'xlsx' });
-                            }}
-                            disabled={exportMutation.isPending || exportXlsxMutation.isPending}
-                            className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm font-bold text-gray-700 hover:bg-emerald-50 hover:text-emerald-600 transition-colors disabled:opacity-50"
-                          >
-                            <span>Excel Workbook (.xlsx)</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setIsExportOpen(false);
-                              setExportModalState({ isOpen: true, format: 'csv' });
-                            }}
-                            disabled={exportMutation.isPending || exportXlsxMutation.isPending}
-                            className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm font-bold text-gray-700 hover:bg-emerald-50 hover:text-emerald-600 transition-colors disabled:opacity-50"
-                          >
-                            <span>CSV (.csv)</span>
-                          </button>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
+            {/* Action Toolbar */}
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={handleToggleSelectionMode}
+                className={`inline-flex items-center justify-center gap-1.5 h-9 px-3 rounded-lg text-xs font-semibold shadow-xs transition-all cursor-pointer ${
+                  isSelectionMode
+                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                    : 'border border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                <span>{isSelectionMode ? 'Cancel Selection' : 'Select'}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleImportClick}
+                className="inline-flex items-center justify-center gap-1.5 h-9 px-3 rounded-lg border border-gray-200 bg-white text-xs font-semibold text-gray-700 shadow-xs hover:bg-gray-50 transition-colors cursor-pointer"
+              >
+                <Upload className="h-3.5 w-3.5" />
+                <span>Import</span>
+              </button>
+
+              <div className="relative" ref={exportMenuRef}>
+                <button
+                  type="button"
+                  onClick={() => setIsExportOpen(!isExportOpen)}
+                  disabled={exportMutation.isPending || exportXlsxMutation.isPending}
+                  className="inline-flex items-center justify-center gap-1.5 h-9 px-3 rounded-lg border border-gray-200 bg-white text-xs font-semibold text-gray-700 shadow-xs hover:bg-gray-50 transition-colors cursor-pointer disabled:opacity-60"
+                  title="Export leads to Excel or CSV"
+                >
+                  <Download className="h-3.5 w-3.5" />
+                  <span>
+                    {exportMutation.isPending || exportXlsxMutation.isPending
+                      ? 'Exporting…'
+                      : 'Export'}
+                  </span>
+                </button>
+
+                <AnimatePresence>
+                  {isExportOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -4 }}
+                      transition={{ duration: 0.12 }}
+                      className="absolute right-0 z-50 mt-1.5 w-60 origin-top-right rounded-xl border border-gray-200 bg-white p-2 shadow-xl focus:outline-none"
+                    >
+                      <label className="flex items-center gap-2 px-2.5 py-1.5 text-xs font-medium text-gray-600 border-b border-gray-100 mb-1 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={exportIncludeArchived}
+                          onChange={(event) => setExportIncludeArchived(event.target.checked)}
+                          className="h-3.5 w-3.5 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                        />
+                        <span>Include archived leads</span>
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsExportOpen(false);
+                          setExportModalState({ isOpen: true, format: 'xlsx' });
+                        }}
+                        disabled={exportMutation.isPending || exportXlsxMutation.isPending}
+                        className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-xs font-semibold text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 transition-colors cursor-pointer"
+                      >
+                        <span>Excel Workbook (.xlsx)</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsExportOpen(false);
+                          setExportModalState({ isOpen: true, format: 'csv' });
+                        }}
+                        disabled={exportMutation.isPending || exportXlsxMutation.isPending}
+                        className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-xs font-semibold text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 transition-colors cursor-pointer"
+                      >
+                        <span>CSV (.csv)</span>
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsColumnsModalOpen(true)}
+                className="inline-flex items-center justify-center gap-1.5 h-9 px-3 rounded-lg border border-gray-200 bg-white text-xs font-semibold text-gray-700 shadow-xs hover:bg-gray-50 transition-colors cursor-pointer"
+              >
+                <SlidersHorizontal className="h-3.5 w-3.5 text-emerald-600" />
+                <span>Columns</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowFilters((value) => !value)}
+                className={`inline-flex items-center justify-center gap-1.5 h-9 px-3 rounded-lg text-xs font-semibold shadow-xs transition-colors cursor-pointer ${
+                  showFilters
+                    ? 'bg-gray-900 text-white'
+                    : 'border border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                <Filter className="h-3.5 w-3.5" />
+                <span>Filters</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={openCreateDrawer}
+                className="inline-flex items-center justify-center gap-1.5 h-9 px-3.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-xs font-bold text-white shadow-xs transition-all active:scale-95 cursor-pointer"
+              >
+                <Plus className="h-4 w-4" />
+                <span>New Lead</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Statistics Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-3.5">
+            {stats.map((stat, index) => (
+              <motion.div
+                key={stat.label}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.04 }}
+                className="h-[76px] sm:h-[80px] rounded-xl border border-gray-200/80 bg-white p-3 sm:p-3.5 shadow-xs flex items-center justify-between hover:border-gray-300 transition-all"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className={`h-10 w-10 rounded-lg flex items-center justify-center shrink-0 border ${stat.iconBg}`}>
+                    <stat.icon size={20} strokeWidth={2.2} />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-gray-500 truncate">
+                      {stat.label}
+                    </div>
+                    <div className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight leading-none mt-1 truncate">
+                      {stat.value}
+                    </div>
                   </div>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => setIsColumnsModalOpen(true)}
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-black text-gray-700 shadow-sm transition-all hover:border-emerald-200 hover:text-emerald-600 cursor-pointer"
-                >
-                  <SlidersHorizontal className="h-4 w-4 text-emerald-600" />
-                  <span>Columns</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setShowFilters((value) => !value)}
-                  className={`inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3 text-sm font-black transition-all ${
-                    showFilters
-                      ? 'bg-gray-900 text-white shadow-lg shadow-gray-900/10'
-                      : 'border border-gray-200 bg-white text-gray-700 shadow-sm hover:border-gray-300'
-                  }`}
-                >
-                  <Filter className="h-4 w-4" />
-                  <span>Filters</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={openCreateDrawer}
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-500 px-5 py-3 text-sm font-black text-white shadow-xl shadow-emerald-500/20 transition-all hover:bg-emerald-600"
-                >
-                  <Plus className="h-4 w-4" />
-                  <span>New Lead</span>
-                </button>
+                <svg className="w-16 sm:w-20 h-8 shrink-0 overflow-visible ml-2" viewBox="0 0 80 32" fill="none">
+                  <path d={stat.sparkPath} stroke={stat.lineColor} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
               </motion.div>
-            </div>
+            ))}
+          </div>
 
-            <div className="grid gap-4 md:grid-cols-4">
-              {stats.map((stat, index) => (
-                <motion.div
-                  key={stat.label}
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.08 }}
-                  className="overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm"
-                >
-                  <div className={`h-1.5 bg-gradient-to-r ${stat.accent}`} />
-                  <div className="p-5">
-                    <div className="text-[11px] font-black uppercase tracking-[0.24em] text-gray-400">{stat.label}</div>
-                    <div className="mt-3 text-4xl font-black tracking-tight text-gray-900">{stat.value}</div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-
-            {showFilters ? (
-              <LeadFilters
-                search={searchDraft}
+          {/* Filter Toolbar */}
+          {showFilters ? (
+            <LeadFilters
+              search={searchDraft}
                 filters={showOfficeFilter ? filters : { ...filters, officeId: undefined }}
                 meta={meta}
                 onSearchChange={setSearchDraft}

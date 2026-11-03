@@ -707,26 +707,26 @@ const AttendancePage: React.FC = () => {
 
   return (
     <DashboardLayout>
-      <div className="flex-1 overflow-x-hidden overflow-y-auto custom-scrollbar relative p-4 md:p-8">
+      <div className="flex-1 overflow-x-hidden overflow-y-auto custom-scrollbar relative p-3.5 sm:p-5 lg:p-6">
         {/* Banner Glow */}
-        <div className="absolute top-0 right-0 w-[600px] h-[400px] bg-gradient-to-bl from-emerald-50/70 via-transparent to-transparent pointer-events-none -z-10" />
+        <div className="absolute top-0 right-0 w-[500px] h-[300px] bg-gradient-to-bl from-emerald-50/60 via-transparent to-transparent pointer-events-none -z-10" />
 
-        <div className="max-w-[1400px] mx-auto space-y-6 md:space-y-8">
+        <div className="max-w-[1560px] mx-auto space-y-3.5 sm:space-y-4">
           
           {/* Header Area */}
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-600 text-[10px] font-bold uppercase tracking-wider">Enterprise Compliance</span>
-              <h1 className="text-2xl md:text-3xl font-black text-gray-900 tracking-tight mt-1">Attendance Management</h1>
-              <p className="text-sm text-gray-500 mt-1">Configure WiFi network validation, apply types, approve requests, and export reports.</p>
+              <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-700 text-[10px] font-bold uppercase tracking-wider">Enterprise Compliance</span>
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight mt-1">Attendance Management</h1>
+              <p className="text-xs text-gray-500 mt-0.5">Configure WiFi network validation, apply types, approve requests, and export reports.</p>
             </div>
             
             {todayStatus && todayStatus.requiresMandatoryPopup && !todayStatus.isHoliday && !todayStatus.isWeeklyOff && (
               <button
                 onClick={() => setActiveTab('mark')}
-                className="flex items-center gap-2 px-6 py-3 bg-emerald-500 text-white rounded-2xl text-sm font-bold shadow-lg shadow-emerald-500/20 active:scale-95 transition-all hover:bg-emerald-600 cursor-pointer"
+                className="inline-flex items-center gap-1.5 h-9 px-4 bg-emerald-600 text-white rounded-lg text-xs font-semibold shadow-xs active:scale-95 transition-all hover:bg-emerald-700 cursor-pointer"
               >
-                <Clock size={16} />
+                <Clock size={15} />
                 <span>Mark Attendance</span>
               </button>
             )}
@@ -737,16 +737,16 @@ const AttendancePage: React.FC = () => {
                   setActiveTab('mark');
                   setShowCheckOutModal(true);
                 }}
-                className="flex items-center gap-2 px-6 py-3 bg-rose-500 text-white rounded-2xl text-sm font-bold shadow-lg shadow-rose-500/20 active:scale-95 transition-all hover:bg-rose-600 cursor-pointer"
+                className="inline-flex items-center gap-1.5 h-9 px-4 bg-rose-600 text-white rounded-lg text-xs font-semibold shadow-xs active:scale-95 transition-all hover:bg-rose-700 cursor-pointer"
               >
-                <Clock size={16} />
+                <Clock size={15} />
                 <span>Check Out</span>
               </button>
             )}
           </div>
 
           {/* Navigation Tabs */}
-          <div className="flex border-b border-gray-100 overflow-x-auto space-x-6 pb-2 scrollbar-none">
+          <div className="flex border-b border-gray-200/90 overflow-x-auto space-x-4 pb-1.5 scrollbar-none">
             {[
               { id: 'dashboard', label: 'Dashboard', icon: TrendingUp },
               { id: 'mark', label: 'Mark Attendance', icon: Clock },
@@ -764,13 +764,13 @@ const AttendancePage: React.FC = () => {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 pb-3 text-sm font-bold border-b-2 transition-all shrink-0 cursor-pointer ${
+                  className={`flex items-center gap-1.5 pb-2 text-xs font-semibold border-b-2 transition-all shrink-0 cursor-pointer ${
                     activeTab === tab.id
-                      ? 'border-emerald-500 text-emerald-600'
-                      : 'border-transparent text-gray-400 hover:text-gray-600'
+                      ? 'border-emerald-600 text-emerald-700'
+                      : 'border-transparent text-gray-500 hover:text-gray-800'
                   }`}
                 >
-                  <tab.icon size={16} />
+                  <tab.icon size={14} />
                   <span>{tab.label}</span>
                 </button>
               );
@@ -782,10 +782,10 @@ const AttendancePage: React.FC = () => {
             
             {/* 1. DASHBOARD */}
             {activeTab === 'dashboard' && (
-              <div className="space-y-6">
+              <div className="space-y-3.5 sm:space-y-4">
                 
                 {/* Daily Status Banner */}
-                <div className="p-6 bg-white rounded-3xl border border-gray-100 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="p-4 sm:p-5 bg-white rounded-xl border border-gray-200/90 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
                     <h3 className="text-lg font-bold text-gray-800">Today's Check-In Status</h3>
                     <p className="text-xs text-gray-400 mt-1">{new Date().toDateString()}</p>

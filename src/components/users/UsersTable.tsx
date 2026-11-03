@@ -259,40 +259,41 @@ const UsersTable: React.FC = () => {
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
+    <div className="bg-white rounded-xl shadow-xs border border-gray-200/90 overflow-hidden flex flex-col">
       {/* Search and Filters Header */}
-      <div className="p-4 border-b border-gray-50 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+      <div className="p-3 sm:p-3.5 border-b border-gray-100 flex flex-col gap-2.5 lg:flex-row lg:items-center lg:justify-between">
         <div className="relative group flex-1 max-w-full sm:max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-emerald-500 transition-colors" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 group-focus-within:text-emerald-500 transition-colors" />
           <input
             type="text"
             placeholder="Search users..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-50 rounded-xl focus:bg-white focus:border-emerald-500/30 focus:ring-4 focus:ring-emerald-500/5 outline-none transition-all text-sm"
+            className="w-full h-9 pl-8 pr-3 bg-gray-50/70 border border-gray-200/90 rounded-lg focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all text-xs font-medium"
           />
         </div>
 
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           {showOfficeFilter ? (
-            <div className="w-full sm:w-80">
+            <div className="w-full sm:w-64">
               <OfficeFilterSelect
                 value={filters.officeId || ''}
+                size="sm"
                 onChange={(officeId) => setFilters({ ...filters, officeId })}
               />
             </div>
           ) : null}
 
-          <div className="flex bg-gray-50 p-1 rounded-xl border border-gray-50 flex-1 sm:flex-none overflow-x-auto">
+          <div className="flex h-9 bg-gray-50/90 p-0.5 rounded-lg border border-gray-200/70 flex-1 sm:flex-none">
             <button
               onClick={() => setFilters({ ...filters, isActive: undefined })}
-              className={`flex-1 sm:flex-none px-3 py-1.5 text-[10px] sm:text-xs font-bold rounded-lg transition-all ${filters.isActive === undefined ? 'bg-white shadow-sm text-emerald-600' : 'text-gray-500 hover:text-gray-700'}`}
+              className={`flex-1 sm:flex-none px-3 py-1 text-xs font-bold rounded-md transition-all ${filters.isActive === undefined ? 'bg-white shadow-2xs text-emerald-700' : 'text-gray-500 hover:text-gray-700'}`}
             >
               All
             </button>
             <button
               onClick={() => setFilters({ ...filters, isActive: false })}
-              className={`flex-1 sm:flex-none px-3 py-1.5 text-[10px] sm:text-xs font-bold rounded-lg transition-all ${filters.isActive === false ? 'bg-white shadow-sm text-amber-600' : 'text-gray-500 hover:text-gray-700'}`}
+              className={`flex-1 sm:flex-none px-3 py-1 text-xs font-bold rounded-md transition-all ${filters.isActive === false ? 'bg-white shadow-2xs text-amber-700' : 'text-gray-500 hover:text-gray-700'}`}
             >
               Inactive
             </button>
@@ -301,11 +302,11 @@ const UsersTable: React.FC = () => {
           {canCreate && (
             <button
               onClick={() => openCreateModal()}
-              className="flex items-center justify-center gap-2 p-2 sm:px-4 sm:py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl transition-all shadow-lg shadow-emerald-500/20 active:scale-95 shrink-0"
+              className="flex items-center justify-center gap-1.5 h-9 px-3.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-all shadow-xs active:scale-95 shrink-0 cursor-pointer"
               title="Add New User"
             >
-              <UserPlus className="w-4 h-4 sm:w-5 sm:h-5" />
-              <span className="hidden xs:inline text-xs sm:text-sm font-bold">Add</span>
+              <UserPlus className="w-3.5 h-3.5" />
+              <span className="text-xs font-bold">Add User</span>
             </button>
           )}
         </div>
@@ -313,33 +314,33 @@ const UsersTable: React.FC = () => {
 
       {/* Desktop Table View */}
       <div className="hidden md:block overflow-x-auto">
-        <table className="w-full text-left border-collapse min-w-[920px]">
+        <table className="w-full text-left border-collapse min-w-[850px]">
           <thead>
-            <tr className="bg-gray-50/50">
-              <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">User</th>
-              <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Role / Dept</th>
-              <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Status</th>
-              <th className="min-w-[280px] px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider text-right">Actions</th>
+            <tr className="bg-gray-50/80 border-b border-gray-200/80">
+              <th className="px-3.5 py-2.5 text-[10px] font-bold text-gray-500 uppercase tracking-wider">User</th>
+              <th className="px-3.5 py-2.5 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Role / Dept</th>
+              <th className="px-3.5 py-2.5 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Status</th>
+              <th className="min-w-[240px] px-3.5 py-2.5 text-[10px] font-bold text-gray-500 uppercase tracking-wider text-right">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-50">
+          <tbody className="divide-y divide-gray-100">
             {isLoading ? (
               [...Array(5)].map((_, i) => (
                 <tr key={i} className="animate-pulse">
-                  <td className="px-6 py-4"><div className="h-10 w-40 bg-gray-100 rounded-lg"></div></td>
-                  <td className="px-6 py-4"><div className="h-10 w-32 bg-gray-100 rounded-lg"></div></td>
-                  <td className="px-6 py-4"><div className="h-6 w-20 bg-gray-100 rounded-full"></div></td>
-                  <td className="px-6 py-4"><div className="h-8 w-8 ml-auto bg-gray-100 rounded-lg"></div></td>
+                  <td className="px-3.5 py-2.5"><div className="h-8 w-36 bg-gray-100 rounded-lg"></div></td>
+                  <td className="px-3.5 py-2.5"><div className="h-8 w-28 bg-gray-100 rounded-lg"></div></td>
+                  <td className="px-3.5 py-2.5"><div className="h-5 w-16 bg-gray-100 rounded-full"></div></td>
+                  <td className="px-3.5 py-2.5"><div className="h-7 w-7 ml-auto bg-gray-100 rounded-lg"></div></td>
                 </tr>
               ))
             ) : users.length === 0 ? (
               <tr>
-                <td colSpan={4} className="px-6 py-20 text-center">
-                  <div className="flex flex-col items-center gap-3">
-                    <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center">
-                      <Search className="w-8 h-8 text-gray-300" />
+                <td colSpan={4} className="px-4 py-16 text-center">
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center">
+                      <Search className="w-6 h-6 text-gray-300" />
                     </div>
-                    <p className="text-gray-500 font-medium">No users found match your criteria</p>
+                    <p className="text-xs text-gray-500 font-medium">No users found match your criteria</p>
                   </div>
                 </td>
               </tr>
@@ -353,18 +354,17 @@ const UsersTable: React.FC = () => {
                   onClick={(e) => {
                     if (!canEdit) return;
                     const target = e.target as HTMLElement;
-                    // Only open modal if clicking the row background or cells, not buttons/links
                     if (target.tagName === 'TD' || target.classList.contains('group')) {
                       openCreateModal(user.id);
                     }
                   }}
-                  className={`hover:bg-gray-50/50 transition-colors group ${canEdit ? 'cursor-pointer' : ''}`}
+                  className={`hover:bg-emerald-50/20 transition-colors group ${canEdit ? 'cursor-pointer' : ''}`}
                 >
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
+                  <td className="px-3.5 py-2.5 sm:py-3">
+                    <div className="flex items-center gap-2.5">
                       <div 
                         onClick={(e) => e.stopPropagation()}
-                        className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-600 font-bold shrink-0 overflow-hidden"
+                        className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold text-xs shrink-0 overflow-hidden border border-emerald-200/60"
                       >
                         {user.profileImageUrl ? (
                           <img src={getImageUrl(user.profileImageUrl)} alt={user.name || 'User'} className="w-full h-full object-cover" />
@@ -375,7 +375,7 @@ const UsersTable: React.FC = () => {
                       <div className="min-w-0">
                         <div 
                           onClick={(e) => e.stopPropagation()}
-                          className="text-sm font-bold text-gray-900 truncate flex items-center gap-2 flex-wrap"
+                          className="text-xs sm:text-sm font-semibold text-gray-900 truncate flex items-center gap-1.5 flex-wrap"
                         >
                           <span>{user.name || 'Invited User'}</span>
                           {(!user.monthlySalary || user.monthlySalary <= 0) && (

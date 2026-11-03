@@ -16,6 +16,8 @@ interface SearchableSelectProps {
     name: string;
     allowClear?: boolean;
     clearLabel?: string;
+    size?: 'sm' | 'md';
+    className?: string;
 }
 
 const SearchableSelect: React.FC<SearchableSelectProps> = ({
@@ -26,6 +28,8 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
     name,
     allowClear = false,
     clearLabel = 'None',
+    size = 'md',
+    className = '',
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
@@ -64,25 +68,33 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, [wrapperRef]);
 
+    const isCompact = size === 'sm';
+
     return (
-        <div ref={wrapperRef} className="relative w-full">
+        <div ref={wrapperRef} className={`relative w-full ${className}`}>
             <div
-                className={`w-full px-4 py-2.5 bg-gray-50 border ${isOpen ? 'border-emerald-500 ring-2 ring-emerald-500/20' : 'border-gray-200'} text-gray-900 rounded-xl text-sm transition-all font-medium cursor-pointer flex justify-between items-center`}
+                className={`w-full ${
+                    isCompact
+                        ? 'h-9 px-3 py-1.5 text-xs rounded-lg'
+                        : 'px-4 py-2.5 text-sm rounded-xl'
+                } bg-gray-50/70 hover:bg-white border ${
+                    isOpen ? 'border-emerald-500 ring-2 ring-emerald-500/20 bg-white' : 'border-gray-200 hover:border-gray-300'
+                } text-gray-900 transition-all font-medium cursor-pointer flex justify-between items-center`}
                 onClick={() => {
                     setIsOpen(!isOpen);
                     setSearchTerm(''); // Reset search on open
                 }}
             >
-                <span className={`flex min-w-0 items-center gap-2 ${selectedOption ? "text-gray-900" : "text-gray-400"}`}>
+                <span className={`flex min-w-0 items-center gap-2 ${selectedOption ? "text-gray-900 font-semibold" : "text-gray-400"}`}>
                     {selectedOption?.color ? (
                         <span
-                            className="h-2.5 w-2.5 shrink-0 rounded-full border border-gray-200"
+                            className="h-2 w-2 shrink-0 rounded-full border border-gray-200"
                             style={{ backgroundColor: selectedOption.color }}
                         />
                     ) : null}
                     <span className="truncate">{selectedOption ? selectedOption.label : placeholder}</span>
                 </span>
-                <ChevronDown size={16} className={`text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown size={isCompact ? 14 : 16} className={`text-gray-400 shrink-0 ml-1 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
             </div>
 
             <AnimatePresence>

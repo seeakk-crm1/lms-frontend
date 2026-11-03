@@ -538,25 +538,25 @@ const FollowUpSettingsPage: React.FC = () => {
 
   return (
     <DashboardLayout>
-      <div className="flex-1 overflow-y-auto px-4 pb-8 pt-5 md:px-6 lg:px-8 print:p-0 print:bg-white print:text-black">
-        <div className="mx-auto flex w-full max-w-[1700px] flex-col gap-6 print:max-w-full">
+      <div className="flex-1 overflow-y-auto custom-scrollbar p-3.5 sm:p-5 lg:p-6 print:p-0 print:bg-white print:text-black">
+        <div className="mx-auto flex w-full max-w-[1560px] flex-col space-y-3.5 sm:space-y-4 print:max-w-full">
           {/* Header Card */}
-          <section className="relative overflow-hidden rounded-[24px] border border-white/70 bg-[radial-gradient(circle_at_top_left,_rgba(16,185,129,0.18),_transparent_42%),linear-gradient(180deg,rgba(255,255,255,0.98),rgba(249,250,251,0.96))] p-4 shadow-[0_30px_80px_-40px_rgba(15,23,42,0.35)] sm:rounded-[32px] sm:p-6 print:hidden">
-            <div className="flex flex-col gap-4 sm:gap-6 lg:flex-row lg:items-end lg:justify-between">
+          <section className="relative overflow-hidden rounded-xl border border-gray-200/90 bg-white p-3.5 sm:p-5 shadow-2xs print:hidden">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0 max-w-3xl">
-                <p className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-emerald-600 sm:px-4 sm:py-1.5 sm:text-xs sm:tracking-[0.24em]">
-                  <Settings size={14} />
+                <p className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-700">
+                  <Settings size={13} />
                   Follow-Up Settings
                 </p>
-                <h1 className="mt-3 text-3xl font-black tracking-tight text-gray-950 sm:mt-4 sm:text-4xl md:text-5xl">
+                <h1 className="mt-1 text-xl sm:text-2xl font-bold tracking-tight text-gray-900">
                   Capacity &amp; Extensions
                 </h1>
-                <p className="mt-3 max-w-2xl text-sm font-semibold leading-6 text-gray-500 sm:mt-4 sm:text-base sm:leading-7">
+                <p className="mt-0.5 text-xs text-gray-500">
                   Centrally control daily follow-up limits, manage temporary bulk extension access, execute bulk reassignments, and analyze capacities with reports.
                 </p>
               </div>
 
-              <div className="flex w-full flex-wrap gap-3 sm:w-auto">
+              <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={() => {
@@ -566,9 +566,9 @@ const FollowUpSettingsPage: React.FC = () => {
                     if (activeTab === 'reports') loadReport();
                     if (activeTab === 'audit') loadAuditLogs(auditPage);
                   }}
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-bold text-gray-700 transition hover:border-gray-300 hover:text-gray-900 sm:w-auto"
+                  className="inline-flex items-center justify-center gap-1.5 h-9 px-3 rounded-lg border border-gray-200 bg-white text-xs font-semibold text-gray-700 shadow-xs hover:bg-gray-50 transition-colors cursor-pointer"
                 >
-                  <RefreshCw size={16} className={`${loading ? 'animate-spin' : ''}`} />
+                  <RefreshCw size={14} className={`${loading ? 'animate-spin' : ''}`} />
                   Refresh
                 </button>
               </div>
@@ -576,48 +576,48 @@ const FollowUpSettingsPage: React.FC = () => {
           </section>
 
           {/* Navigation Tabs */}
-          <div className="flex gap-1.5 overflow-x-auto rounded-2xl bg-white/70 p-1.5 shadow-sm [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden print:hidden">
+          <div className="flex gap-1.5 overflow-x-auto rounded-xl bg-gray-100/80 p-1 border border-gray-200/70 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden print:hidden">
             {access.canManageSettings ? (
               <button
                 onClick={() => setActiveTab('settings')}
-                className={`flex shrink-0 items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-xs font-bold transition-all sm:min-w-[7.5rem] sm:flex-1 sm:gap-2 sm:px-4 sm:py-3 sm:text-sm ${
-                  activeTab === 'settings' ? 'bg-emerald-500 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-950'
+                className={`flex shrink-0 items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
+                  activeTab === 'settings' ? 'bg-white text-emerald-700 shadow-xs' : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
-                <Settings size={16} className="shrink-0" />
+                <Settings size={14} className="shrink-0" />
                 <span className="whitespace-nowrap">Settings</span>
               </button>
             ) : null}
             {access.canGrantTemp ? (
               <button
                 onClick={() => setActiveTab('temp-access')}
-                className={`flex shrink-0 items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-xs font-bold transition-all sm:min-w-[7.5rem] sm:flex-1 sm:gap-2 sm:px-4 sm:py-3 sm:text-sm ${
-                  activeTab === 'temp-access' ? 'bg-emerald-500 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-950'
+                className={`flex shrink-0 items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
+                  activeTab === 'temp-access' ? 'bg-white text-emerald-700 shadow-xs' : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
-                <UserCheck size={16} className="shrink-0" />
+                <UserCheck size={14} className="shrink-0" />
                 <span className="whitespace-nowrap">Temporary Access</span>
               </button>
             ) : null}
             {access.canBulkExtend ? (
               <button
                 onClick={() => setActiveTab('bulk-extend')}
-                className={`flex shrink-0 items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-xs font-bold transition-all sm:min-w-[7.5rem] sm:flex-1 sm:gap-2 sm:px-4 sm:py-3 sm:text-sm ${
-                  activeTab === 'bulk-extend' ? 'bg-emerald-500 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-950'
+                className={`flex shrink-0 items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
+                  activeTab === 'bulk-extend' ? 'bg-white text-emerald-700 shadow-xs' : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
-                <Calendar size={16} className="shrink-0" />
+                <Calendar size={14} className="shrink-0" />
                 <span className="whitespace-nowrap">Bulk Reschedule</span>
               </button>
             ) : null}
             {access.canViewReports ? (
               <button
                 onClick={() => setActiveTab('reports')}
-                className={`flex shrink-0 items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-xs font-bold transition-all sm:min-w-[7.5rem] sm:flex-1 sm:gap-2 sm:px-4 sm:py-3 sm:text-sm ${
-                  activeTab === 'reports' ? 'bg-emerald-500 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-950'
+                className={`flex shrink-0 items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
+                  activeTab === 'reports' ? 'bg-white text-emerald-700 shadow-xs' : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
-                <FileText size={16} className="shrink-0" />
+                <FileText size={14} className="shrink-0" />
                 <span className="whitespace-nowrap">Capacity Reports</span>
               </button>
             ) : null}

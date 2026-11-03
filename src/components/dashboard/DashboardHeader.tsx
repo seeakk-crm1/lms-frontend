@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, Menu, Plus, X } from 'lucide-react';
+import { Search, Menu, Plus, X, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import useAuthStore from '../../store/useAuthStore';
 import { hasPermission } from '../../utils/permissions';
@@ -10,9 +10,16 @@ import BrandLogo from '../BrandLogo';
 interface DashboardHeaderProps {
     isMobileMenuOpen: boolean;
     onToggleMobileMenu: () => void;
+    isSidebarCollapsed?: boolean;
+    onToggleSidebar?: () => void;
 }
 
-const DashboardHeader: React.FC<DashboardHeaderProps> = ({ isMobileMenuOpen, onToggleMobileMenu }) => {
+const DashboardHeader: React.FC<DashboardHeaderProps> = ({
+    isMobileMenuOpen,
+    onToggleMobileMenu,
+    isSidebarCollapsed = false,
+    onToggleSidebar,
+}) => {
     const { user } = useAuthStore();
     const navigate = useNavigate();
     const canCreateLead = hasPermission(user, 'LEADS_CREATE');
@@ -24,9 +31,22 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ isMobileMenuOpen, onT
     };
 
     return (
-        <header className="h-16 sm:h-20 bg-white border-b border-gray-100 flex items-center justify-between px-4 sm:px-6 shrink-0 relative z-30 w-full transition-colors duration-300">
-            {/* Left Section: Mobile Menu Toggle & Search */}
-            <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
+        <header className="h-14 sm:h-16 bg-white border-b border-gray-200/80 flex items-center justify-between px-3 sm:px-5 shrink-0 relative z-30 w-full transition-colors duration-200">
+            {/* Left Section: Sidebar Toggle, Mobile Menu & Search */}
+            <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                {/* Desktop Sidebar Toggle */}
+                {onToggleSidebar && (
+                    <button
+                        type="button"
+                        onClick={onToggleSidebar}
+                        title={isSidebarCollapsed ? "Expand sidebar (⌘B)" : "Collapse sidebar (⌘B)"}
+                        aria-label={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+                        className="hidden md:flex items-center justify-center h-9 w-9 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer shrink-0"
+                    >
+                        {isSidebarCollapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
+                    </button>
+                )}
+
                 {/* Mobile Hamburger (hidden on large screens) */}
                 <button
                     type="button"
@@ -34,30 +54,30 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ isMobileMenuOpen, onT
                     aria-label={isMobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
                     aria-expanded={isMobileMenuOpen}
                     aria-controls="mobile-dashboard-sidebar"
-                    className="md:hidden p-2 text-gray-500 hover:bg-gray-50 rounded-lg transition-colors"
+                    className="md:hidden p-2 text-gray-500 hover:bg-gray-50 rounded-lg transition-colors shrink-0"
                 >
                     {isMobileMenuOpen ? (
-                        <X size={20} className="sm:w-6 sm:h-6" />
+                        <X size={20} className="sm:w-5 sm:h-5" />
                     ) : (
-                        <Menu size={20} className="sm:w-6 sm:h-6" />
+                        <Menu size={20} className="sm:w-5 sm:h-5" />
                     )}
                 </button>
 
                 {/* Mobile Logo */}
-                <div className="md:hidden flex items-center shrink-0 py-3">
+                <div className="md:hidden flex items-center shrink-0 py-1">
                     {workspaceLogo ? (
-                        <div className="flex h-9 w-11 items-center justify-center overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm pointer-events-none select-none">
+                        <div className="flex h-8 w-10 items-center justify-center overflow-hidden rounded-xl border border-gray-100 bg-white shadow-xs pointer-events-none select-none">
                             <img
                                 src={workspaceLogo}
                                 alt={workspaceName}
-                                className="h-full w-full object-contain p-1.5"
+                                className="h-full w-full object-contain p-1"
                             />
                         </div>
                     ) : (
                         <BrandLogo
                             alt={workspaceName}
-                            width={92}
-                            height={30}
+                            width={82}
+                            height={26}
                             className="pointer-events-none select-none"
                             imgClassName="object-left"
                         />
@@ -65,34 +85,33 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ isMobileMenuOpen, onT
                 </div>
 
                 {/* Global Search */}
-                <div className="hidden sm:flex relative max-w-md w-full ml-4 md:ml-0 group">
-                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                        <Search size={18} className="text-gray-400 group-focus-within:text-emerald-500 transition-colors" />
+                <div className="hidden sm:flex relative max-w-sm lg:max-w-md w-full group">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <Search size={15} className="text-gray-400 group-focus-within:text-emerald-500 transition-colors" />
                     </div>
                     <input
                         type="search"
-                        className="block w-full pl-10 pr-4 py-2.5 bg-gray-50/50 border border-gray-200 rounded-full text-sm font-medium text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 hover:border-gray-300 transition-all shadow-sm"
+                        className="block w-full h-9 pl-9 pr-14 bg-gray-50/70 border border-gray-200/90 rounded-lg text-xs sm:text-sm font-medium text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 focus:bg-white hover:border-gray-300 transition-all shadow-xs"
                         placeholder="Search leads, users, configurations..."
                     />
-                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                        <kbd className="hidden lg:inline-flex items-center gap-1 text-[10px] font-bold text-gray-400 bg-white border border-gray-200 px-2 py-1 rounded shadow-sm">
-                            <span className="text-xs">⌘</span> K
+                    <div className="absolute inset-y-0 right-0 pr-2.5 flex items-center pointer-events-none">
+                        <kbd className="hidden lg:inline-flex items-center gap-0.5 text-[10px] font-bold text-gray-400 bg-white border border-gray-200 px-1.5 py-0.5 rounded shadow-xs">
+                            <span className="text-xs">⌘</span>K
                         </kbd>
                     </div>
                 </div>
             </div>
 
             {/* Right Section: Actions & Profile */}
-            <div className="flex items-center gap-2 sm:gap-3 md:gap-5 shrink-0 ml-2 sm:ml-4">
-
+            <div className="flex items-center gap-2 sm:gap-3 shrink-0 ml-2 sm:ml-4">
                 {/* Quick Add Button */}
                 {canCreateLead && (
                     <button
                         type="button"
                         onClick={handleAddLead}
-                        className="hidden md:flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2.5 rounded-full text-sm font-bold shadow-[0_4px_14px_0_rgba(16,185,129,0.39)] hover:shadow-[0_6px_20px_rgba(16,185,129,0.23)] transition-all active:scale-95"
+                        className="hidden md:inline-flex items-center gap-1.5 h-9 bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 rounded-lg text-xs font-bold shadow-xs transition-all active:scale-95 cursor-pointer"
                     >
-                        <Plus size={16} strokeWidth={3} />
+                        <Plus size={15} strokeWidth={2.5} />
                         <span>Add Lead</span>
                     </button>
                 )}
@@ -102,14 +121,14 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ isMobileMenuOpen, onT
                     <button
                         type="button"
                         onClick={handleAddLead}
-                        className="md:hidden w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center bg-emerald-500 text-white rounded-full shadow-md active:scale-95 transition-all"
+                        className="md:hidden w-8 h-8 flex items-center justify-center bg-emerald-600 text-white rounded-lg shadow-sm active:scale-95 transition-all"
+                        aria-label="Add Lead"
                     >
-                        <Plus size={18} strokeWidth={3} className="sm:hidden" />
-                        <Plus size={20} strokeWidth={3} className="hidden sm:block" />
+                        <Plus size={17} strokeWidth={2.5} />
                     </button>
                 )}
 
-                <div className="w-px h-8 bg-gray-200 mx-1 hidden sm:block"></div>
+                <div className="w-px h-6 bg-gray-200 mx-0.5 hidden sm:block" />
 
                 <NotificationBell />
 

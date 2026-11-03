@@ -159,40 +159,39 @@ const BulkAssignPage: React.FC = () => {
 
   return (
     <DashboardLayout>
-        <div className="relative flex-1 overflow-x-hidden overflow-y-auto custom-scrollbar p-4 md:p-8">
-          <div className="absolute right-0 top-0 -z-10 h-[420px] w-[760px] bg-gradient-to-bl from-emerald-50 via-transparent to-transparent" />
+      <div className="relative flex-1 overflow-x-hidden overflow-y-auto custom-scrollbar p-3.5 sm:p-5 lg:p-6">
+        <div className="absolute right-0 top-0 -z-10 h-[360px] w-[560px] bg-gradient-to-bl from-emerald-50/60 via-transparent to-transparent pointer-events-none" />
 
-          <div className="mx-auto max-w-[1480px] space-y-6 md:space-y-8">
-            <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
-              <motion.div initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }}>
-                <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.26em] text-emerald-600">
-                  <SendToBack className="h-3.5 w-3.5" />
-                  <span>Mass Ownership Update</span>
+        <div className="mx-auto max-w-[1560px] space-y-3.5 sm:space-y-4">
+          <div className="flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
+            <motion.div initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }}>
+              <div className="mb-1.5 inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-700 border border-emerald-100/80">
+                <SendToBack className="h-3 w-3" />
+                <span>Mass Ownership Update</span>
+              </div>
+              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-gray-900">Bulk Assign Leads</h1>
+              <p className="mt-0.5 max-w-2xl text-xs text-gray-500">
+                Keep the assignment workspace stable while filters update matching leads, preview counts, and reassignment actions in place.
+              </p>
+            </motion.div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-3.5">
+            {stats.map((stat, index) => (
+              <motion.div
+                key={stat.label}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.04 }}
+                className="h-[76px] sm:h-[80px] rounded-xl border border-gray-200/80 bg-white p-3 sm:p-3.5 shadow-xs flex items-center justify-between hover:border-gray-300 transition-all"
+              >
+                <div>
+                  <div className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-gray-400">{stat.label}</div>
+                  <div className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight leading-none mt-1">{stat.value}</div>
                 </div>
-                <h1 className="text-3xl font-black tracking-tight text-gray-900 md:text-4xl">Bulk Assign Leads</h1>
-                <p className="mt-2 max-w-2xl text-sm font-semibold text-gray-500">
-                  Keep the assignment workspace stable while filters update matching leads, preview counts, and reassignment actions in place.
-                </p>
               </motion.div>
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-3">
-              {stats.map((stat, index) => (
-                <motion.div
-                  key={stat.label}
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.08 }}
-                  className="overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm"
-                >
-                  <div className={`h-1.5 bg-gradient-to-r ${stat.accent}`} />
-                  <div className="p-5">
-                    <div className="text-[11px] font-black uppercase tracking-[0.24em] text-gray-400">{stat.label}</div>
-                    <div className="mt-3 text-4xl font-black tracking-tight text-gray-900">{stat.value}</div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
+            ))}
+          </div>
 
             <BulkAssignFilters
               filters={filters}
