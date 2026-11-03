@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { BarChart3 } from 'lucide-react';
 import type { LOBAnalysisSummary, LOBStageBreakdown } from './types/lobAnalysis.types';
 
 interface LOBStageChartProps {
@@ -29,37 +30,55 @@ const LOBStageChart: React.FC<LOBStageChartProps> = ({ breakdown, summary, loadi
     return [];
   }, [breakdown, summary]);
 
+  const totalReferenced = breakdown?.total_reference || summary?.total_leads || 0;
+
   return (
-    <section className="rounded-[28px] border border-white/70 bg-white/90 p-5 shadow-[0_20px_50px_-30px_rgba(15,23,42,0.25)] backdrop-blur">
-      <div className="mb-5 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-        <div>
-          <p className="text-xs font-black uppercase tracking-[0.24em] text-emerald-500">Stage Breakdown</p>
-          <h2 className="mt-1 text-2xl font-black text-gray-900">Where Leads Are Falling Into LOB</h2>
+    <section className="rounded-xl border border-gray-200/80 bg-white p-3.5 sm:p-4 shadow-2xs flex flex-col justify-between">
+      <div className="mb-3.5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between pb-3 border-b border-gray-100">
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 border border-emerald-100/80">
+            <BarChart3 size={15} />
+          </div>
+          <div>
+            <h2 className="text-xs sm:text-sm font-bold text-gray-900">Where Leads Fall Into LOB</h2>
+            <p className="text-[11px] text-gray-500">Volume breakdown by lead pipeline stage</p>
+          </div>
         </div>
-        <div className="rounded-2xl bg-gray-50 px-4 py-2 text-sm font-black text-gray-500">
-          {breakdown?.total_reference || summary?.total_leads || 0} leads referenced
+        <div className="text-[11px] font-semibold text-gray-500 bg-gray-50 border border-gray-200/70 rounded-md px-2.5 py-1 self-start sm:self-auto">
+          <span className="font-bold text-gray-900">{totalReferenced.toLocaleString()}</span> leads referenced
         </div>
       </div>
 
       {loading && !chartData.length ? (
-        <div className="h-[320px] animate-pulse rounded-[24px] bg-gray-100" />
+        <div className="h-[260px] sm:h-[280px] animate-pulse rounded-lg bg-gray-50 border border-gray-100" />
       ) : chartData.length ? (
-        <div className="h-[320px] w-full">
+        <div className="h-[260px] sm:h-[280px] w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={chartData} margin={{ top: 12, right: 12, left: 0, bottom: 12 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+            <BarChart data={chartData} margin={{ top: 10, right: 10, left: -15, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
               <XAxis
                 dataKey="stage"
                 tickLine={false}
+                axisLine={{ stroke: '#e2e8f0' }}
+                tick={{ fill: '#64748b', fontSize: 11, fontWeight: 600 }}
+              />
+              <YAxis
+                tickLine={false}
                 axisLine={false}
-                tick={{ fill: '#6b7280', fontSize: 12, fontWeight: 700 }}
+                tick={{ fill: '#64748b', fontSize: 11, fontWeight: 600 }}
+                allowDecimals={false}
               />
-              <YAxis tickLine={false} axisLine={false} tick={{ fill: '#6b7280', fontSize: 12, fontWeight: 700 }} />
               <Tooltip
-                cursor={{ fill: 'rgba(16, 185, 129, 0.06)' }}
-                contentStyle={{ borderRadius: 16, borderColor: '#d1fae5', boxShadow: '0 15px 40px -15px rgba(15, 23, 42, 0.25)' }}
+                cursor={{ fill: 'rgba(16, 185, 129, 0.04)' }}
+                contentStyle={{
+                  borderRadius: 8,
+                  borderColor: '#e2e8f0',
+                  boxShadow: '0 4px 12px -2px rgba(15, 23, 42, 0.08)',
+                  fontSize: 12,
+                  padding: '8px 12px',
+                }}
               />
-              <Bar dataKey="count" radius={[14, 14, 6, 6]}>
+              <Bar dataKey="count" radius={[5, 5, 0, 0]}>
                 {chartData.map((item, index) => (
                   <Cell key={`${item.stage}-${index}`} fill={colors[index % colors.length]} />
                 ))}
@@ -68,10 +87,10 @@ const LOBStageChart: React.FC<LOBStageChartProps> = ({ breakdown, summary, loadi
           </ResponsiveContainer>
         </div>
       ) : (
-        <div className="flex h-[320px] items-center justify-center rounded-[24px] border border-dashed border-gray-200 bg-gray-50 text-center">
+        <div className="flex h-[260px] sm:h-[280px] items-center justify-center rounded-lg border border-dashed border-gray-200 bg-gray-50/50 text-center p-4">
           <div>
-            <p className="text-lg font-black text-gray-900">No stage breakdown available</p>
-            <p className="mt-2 text-sm font-semibold text-gray-500">Try widening the date range or removing one of the filters.</p>
+            <p className="text-xs sm:text-sm font-bold text-gray-800">No stage breakdown available</p>
+            <p className="mt-1 text-xs text-gray-500">Try widening your date range or adjusting applied filters.</p>
           </div>
         </div>
       )}

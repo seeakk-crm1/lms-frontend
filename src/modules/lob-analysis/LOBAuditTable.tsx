@@ -1,6 +1,6 @@
 import React from 'react';
 import { format } from 'date-fns';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ClipboardList } from 'lucide-react';
 import type { LOBAuditItem } from './types/lobAnalysis.types';
 
 interface LOBAuditTableProps {
@@ -24,90 +24,120 @@ const LOBAuditTable: React.FC<LOBAuditTableProps> = ({
   emptyDescription = 'Adjust the filters or wait for new LOB movements to appear.',
   onPageChange,
 }) => (
-  <section className="rounded-[28px] border border-white/70 bg-white/90 p-5 shadow-[0_20px_50px_-30px_rgba(15,23,42,0.25)] backdrop-blur">
-    <div className="mb-5 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-      <div>
-        <p className="text-xs font-black uppercase tracking-[0.24em] text-emerald-500">Audit Trail</p>
-        <h2 className="mt-1 text-2xl font-black text-gray-900">LOB Movement Log</h2>
+  <section className="rounded-xl border border-gray-200/80 bg-white shadow-2xs overflow-hidden">
+    <div className="px-3.5 py-3 border-b border-gray-100 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex items-center gap-2.5">
+        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 border border-emerald-100/80">
+          <ClipboardList size={15} />
+        </div>
+        <div>
+          <h2 className="text-xs sm:text-sm font-bold text-gray-900">LOB Movement Log</h2>
+          <p className="text-[11px] text-gray-500">Comprehensive audit trail of stage transitions into LOB</p>
+        </div>
       </div>
-      <div className="rounded-2xl bg-gray-50 px-4 py-2 text-sm font-black text-gray-500">{total} records</div>
+      <div className="text-[11px] font-semibold text-gray-600 bg-gray-50 border border-gray-200/70 rounded-md px-2.5 py-1 self-start sm:self-auto">
+        <span className="font-bold text-gray-900">{total.toLocaleString()}</span> records
+      </div>
     </div>
 
-    <div className="overflow-hidden rounded-[24px] border border-gray-100">
-      <div className="overflow-x-auto">
-        <table className="min-w-[960px] w-full border-collapse text-left">
-          <thead className="bg-gray-50/90">
-            <tr className="border-b border-gray-100">
-              {['Lead', 'Previous Stage', 'Reason', 'Changed By', 'Comment', 'Date & Time'].map((heading) => (
-                <th key={heading} className="px-5 py-4 text-[11px] font-black uppercase tracking-[0.22em] text-gray-400">
-                  {heading}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100 bg-white">
-            {loading ? (
-              Array.from({ length: 6 }).map((_, index) => (
-                <tr key={index} className="animate-pulse">
-                  {Array.from({ length: 6 }).map((__, cellIndex) => (
-                    <td key={cellIndex} className="px-5 py-4">
-                      <div className="h-5 rounded-xl bg-gray-100" />
-                    </td>
-                  ))}
-                </tr>
-              ))
-            ) : data.length ? (
-              data.map((row) => (
-                <tr key={`${row.lead_id}-${row.created_at}`} className="transition-colors hover:bg-emerald-50/35">
-                  <td className="px-5 py-4">
-                    <div className="text-sm font-black text-gray-900">{row.lead_name}</div>
-                    <div className="mt-1 text-xs font-semibold text-gray-400">{row.lead_id}</div>
+    <div className="overflow-x-auto">
+      <table className="min-w-[880px] w-full border-collapse text-left">
+        <thead className="bg-gray-50/80 border-b border-gray-100">
+          <tr>
+            <th className="px-3.5 py-2.5 text-[10px] font-bold uppercase tracking-wider text-gray-500">Lead</th>
+            <th className="px-3.5 py-2.5 text-[10px] font-bold uppercase tracking-wider text-gray-500">Previous Stage</th>
+            <th className="px-3.5 py-2.5 text-[10px] font-bold uppercase tracking-wider text-gray-500">Reason</th>
+            <th className="px-3.5 py-2.5 text-[10px] font-bold uppercase tracking-wider text-gray-500">Changed By</th>
+            <th className="px-3.5 py-2.5 text-[10px] font-bold uppercase tracking-wider text-gray-500">Remarks / Comment</th>
+            <th className="px-3.5 py-2.5 text-[10px] font-bold uppercase tracking-wider text-gray-500">Date & Time</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-100 bg-white">
+          {loading ? (
+            Array.from({ length: 6 }).map((_, index) => (
+              <tr key={index} className="animate-pulse">
+                {Array.from({ length: 6 }).map((__, cellIndex) => (
+                  <td key={cellIndex} className="px-3.5 py-3">
+                    <div className="h-4 rounded bg-gray-100" />
                   </td>
-                  <td className="px-5 py-4 text-sm font-bold text-gray-700">{row.from_stage}</td>
-                  <td className="px-5 py-4 text-sm font-bold text-gray-700">{row.reason}</td>
-                  <td className="px-5 py-4 text-sm font-bold text-gray-700">{row.changed_by}</td>
-                  <td className="px-5 py-4 text-sm font-semibold text-gray-500">{row.comment || 'No remarks'}</td>
-                  <td className="px-5 py-4">
-                    <div className="text-sm font-black text-gray-900">{format(new Date(row.created_at), 'dd MMM yyyy')}</div>
-                    <div className="mt-1 text-xs font-semibold text-gray-400">{format(new Date(row.created_at), 'hh:mm a')}</div>
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={6} className="px-5 py-16 text-center">
-                  <p className="text-lg font-black text-gray-900">{emptyTitle}</p>
-                  <p className="mt-2 text-sm font-semibold text-gray-500">{emptyDescription}</p>
+                ))}
+              </tr>
+            ))
+          ) : data.length ? (
+            data.map((row) => (
+              <tr key={`${row.lead_id}-${row.created_at}`} className="transition-colors hover:bg-emerald-50/30">
+                <td className="px-3.5 py-2.5">
+                  <div className="text-xs font-bold text-gray-900">{row.lead_name}</div>
+                  <div className="text-[10px] font-mono text-gray-400 mt-0.5">{row.lead_id}</div>
+                </td>
+                <td className="px-3.5 py-2.5">
+                  <span className="inline-flex items-center rounded-md bg-gray-100 px-2 py-0.5 text-[11px] font-semibold text-gray-700 border border-gray-200/60">
+                    {row.from_stage}
+                  </span>
+                </td>
+                <td className="px-3.5 py-2.5">
+                  <span className="text-xs font-semibold text-gray-800">{row.reason}</span>
+                </td>
+                <td className="px-3.5 py-2.5">
+                  <span className="text-xs font-medium text-gray-700">{row.changed_by}</span>
+                </td>
+                <td className="px-3.5 py-2.5">
+                  <span
+                    className={`text-xs ${
+                      row.comment ? 'text-gray-600' : 'italic text-gray-400'
+                    } line-clamp-1`}
+                    title={row.comment || undefined}
+                  >
+                    {row.comment || 'No remarks'}
+                  </span>
+                </td>
+                <td className="px-3.5 py-2.5 whitespace-nowrap">
+                  <div className="text-xs font-semibold text-gray-900">
+                    {format(new Date(row.created_at), 'dd MMM yyyy')}
+                  </div>
+                  <div className="text-[10px] text-gray-400 mt-0.5">
+                    {format(new Date(row.created_at), 'hh:mm a')}
+                  </div>
                 </td>
               </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+            ))
+          ) : (
+            <tr>
+              <td colSpan={6} className="px-4 py-12 text-center">
+                <p className="text-xs sm:text-sm font-bold text-gray-800">{emptyTitle}</p>
+                <p className="mt-1 text-xs text-gray-500">{emptyDescription}</p>
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
     </div>
 
-    <div className="mt-4 flex items-center justify-end gap-2">
-      <button
-        type="button"
-        onClick={() => onPageChange(page - 1)}
-        disabled={page <= 1}
-        className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-gray-200 bg-white text-gray-500 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
-        aria-label="Previous page"
-      >
-        <ChevronLeft className="h-4 w-4" />
-      </button>
-      <div className="rounded-2xl bg-gray-50 px-4 py-2 text-sm font-black text-gray-600">
-        Page {page} of {Math.max(1, totalPages)}
+    <div className="px-3.5 py-2.5 border-t border-gray-100 bg-gray-50/50 flex items-center justify-between">
+      <span className="text-xs text-gray-500">
+        Showing page <span className="font-semibold text-gray-800">{page}</span> of{' '}
+        <span className="font-semibold text-gray-800">{Math.max(1, totalPages)}</span>
+      </span>
+      <div className="flex items-center gap-1.5">
+        <button
+          type="button"
+          onClick={() => onPageChange(page - 1)}
+          disabled={page <= 1}
+          className="inline-flex h-7.5 w-7.5 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 shadow-2xs transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
+          aria-label="Previous page"
+        >
+          <ChevronLeft className="h-3.5 w-3.5" />
+        </button>
+        <button
+          type="button"
+          onClick={() => onPageChange(page + 1)}
+          disabled={page >= totalPages}
+          className="inline-flex h-7.5 w-7.5 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 shadow-2xs transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
+          aria-label="Next page"
+        >
+          <ChevronRight className="h-3.5 w-3.5" />
+        </button>
       </div>
-      <button
-        type="button"
-        onClick={() => onPageChange(page + 1)}
-        disabled={page >= totalPages}
-        className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-gray-200 bg-white text-gray-500 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
-        aria-label="Next page"
-      >
-        <ChevronRight className="h-4 w-4" />
-      </button>
     </div>
   </section>
 );
