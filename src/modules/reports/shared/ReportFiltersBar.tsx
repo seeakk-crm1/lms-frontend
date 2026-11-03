@@ -11,6 +11,17 @@ import useAuthStore from '../../../store/useAuthStore';
 import { canUseOfficeFilter } from '../../../utils/officeFilterAccess';
 import { fetchGroupedSubstages } from '../../../services/substages.api';
 
+const toDateStr = (val?: string): string => {
+  if (!val) return '';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(val)) return val;
+  try {
+    const d = new Date(val);
+    return isNaN(d.getTime()) ? '' : format(d, 'yyyy-MM-dd');
+  } catch {
+    return '';
+  }
+};
+
 interface ReportFiltersBarProps {
   filters: ReportFilterState;
   setFilters: React.Dispatch<React.SetStateAction<ReportFilterState>>;
@@ -52,50 +63,51 @@ const ReportFiltersBar: React.FC<ReportFiltersBarProps> = ({ filters, setFilters
 
   const handleDatePreset = (preset: 'today' | 'yesterday' | 'this-week' | 'this-month') => {
     const today = new Date();
-    let startDate = startOfDay(today);
-    let endDate = endOfDay(today);
+    let startDate = format(today, 'yyyy-MM-dd');
+    let endDate = format(today, 'yyyy-MM-dd');
 
     if (preset === 'yesterday') {
-      startDate = startOfDay(subDays(today, 1));
-      endDate = endOfDay(subDays(today, 1));
+      const yesterday = subDays(today, 1);
+      startDate = format(yesterday, 'yyyy-MM-dd');
+      endDate = format(yesterday, 'yyyy-MM-dd');
     } else if (preset === 'this-week') {
-      startDate = startOfWeek(today, { weekStartsOn: 1 });
-      endDate = endOfDay(today);
+      startDate = format(startOfWeek(today, { weekStartsOn: 1 }), 'yyyy-MM-dd');
+      endDate = format(today, 'yyyy-MM-dd');
     } else if (preset === 'this-month') {
-      startDate = startOfMonth(today);
-      endDate = endOfDay(today);
+      startDate = format(startOfMonth(today), 'yyyy-MM-dd');
+      endDate = format(today, 'yyyy-MM-dd');
     }
 
-    setFilters((prev) => ({ ...prev, startDate: startDate.toISOString(), endDate: endDate.toISOString(), page: 1 }));
+    setFilters((prev) => ({ ...prev, startDate, endDate, page: 1 }));
   };
 
   const isTodayActive = useMemo(() => {
     const todayStr = format(new Date(), 'yyyy-MM-dd');
-    const startStr = filters.startDate ? format(new Date(filters.startDate), 'yyyy-MM-dd') : '';
-    const endStr = filters.endDate ? format(new Date(filters.endDate), 'yyyy-MM-dd') : '';
+    const startStr = toDateStr(filters.startDate);
+    const endStr = toDateStr(filters.endDate);
     return startStr === todayStr && endStr === todayStr;
   }, [filters.startDate, filters.endDate]);
 
   const isYesterdayActive = useMemo(() => {
     const yesterdayStr = format(subDays(new Date(), 1), 'yyyy-MM-dd');
-    const startStr = filters.startDate ? format(new Date(filters.startDate), 'yyyy-MM-dd') : '';
-    const endStr = filters.endDate ? format(new Date(filters.endDate), 'yyyy-MM-dd') : '';
+    const startStr = toDateStr(filters.startDate);
+    const endStr = toDateStr(filters.endDate);
     return startStr === yesterdayStr && endStr === yesterdayStr;
   }, [filters.startDate, filters.endDate]);
 
   const isThisWeekActive = useMemo(() => {
     const weekStartStr = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
     const todayStr = format(new Date(), 'yyyy-MM-dd');
-    const startStr = filters.startDate ? format(new Date(filters.startDate), 'yyyy-MM-dd') : '';
-    const endStr = filters.endDate ? format(new Date(filters.endDate), 'yyyy-MM-dd') : '';
+    const startStr = toDateStr(filters.startDate);
+    const endStr = toDateStr(filters.endDate);
     return startStr === weekStartStr && endStr === todayStr;
   }, [filters.startDate, filters.endDate]);
 
   const isThisMonthActive = useMemo(() => {
     const monthStartStr = format(startOfMonth(new Date()), 'yyyy-MM-dd');
     const todayStr = format(new Date(), 'yyyy-MM-dd');
-    const startStr = filters.startDate ? format(new Date(filters.startDate), 'yyyy-MM-dd') : '';
-    const endStr = filters.endDate ? format(new Date(filters.endDate), 'yyyy-MM-dd') : '';
+    const startStr = toDateStr(filters.startDate);
+    const endStr = toDateStr(filters.endDate);
     return startStr === monthStartStr && endStr === todayStr;
   }, [filters.startDate, filters.endDate]);
 
@@ -118,10 +130,10 @@ const ReportFiltersBar: React.FC<ReportFiltersBarProps> = ({ filters, setFilters
   );
 
   const handleResetFilters = () => {
-    const today = new Date();
+    const todayStr = format(new Date(), 'yyyy-MM-dd');
     setFilters({
-      startDate: startOfDay(today).toISOString(),
-      endDate: endOfDay(today).toISOString(),
+      startDate: todayStr,
+      endDate: todayStr,
       userMode: 'all',
       userId: undefined,
       role: undefined,
@@ -164,44 +176,40 @@ const ReportFiltersBar: React.FC<ReportFiltersBarProps> = ({ filters, setFilters
           <button
             type="button"
             onClick={() => handleDatePreset('today')}
-            className={`h-7 px-2.5 text-xs font-semibold rounded-md transition-colors cursor-pointer ${
-              isTodayActive
-                ? 'bg-white text-emerald-700 shadow-2xs font-bold'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
+            className={`h-7 px-2.5 text-xs font-semibold rounded-md transition-colors cursor-pointer ${isTodayActive
+              ? 'bg-white text-emerald-700 shadow-2xs font-bold'
+              : 'text-gray-600 hover:text-gray-900'
+              }`}
           >
             Today
           </button>
           <button
             type="button"
             onClick={() => handleDatePreset('yesterday')}
-            className={`h-7 px-2.5 text-xs font-semibold rounded-md transition-colors cursor-pointer ${
-              isYesterdayActive
-                ? 'bg-white text-emerald-700 shadow-2xs font-bold'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
+            className={`h-7 px-2.5 text-xs font-semibold rounded-md transition-colors cursor-pointer ${isYesterdayActive
+              ? 'bg-white text-emerald-700 shadow-2xs font-bold'
+              : 'text-gray-600 hover:text-gray-900'
+              }`}
           >
             Yesterday
           </button>
           <button
             type="button"
             onClick={() => handleDatePreset('this-week')}
-            className={`h-7 px-2.5 text-xs font-semibold rounded-md transition-colors cursor-pointer ${
-              isThisWeekActive
-                ? 'bg-white text-emerald-700 shadow-2xs font-bold'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
+            className={`h-7 px-2.5 text-xs font-semibold rounded-md transition-colors cursor-pointer ${isThisWeekActive
+              ? 'bg-white text-emerald-700 shadow-2xs font-bold'
+              : 'text-gray-600 hover:text-gray-900'
+              }`}
           >
             This Week
           </button>
           <button
             type="button"
             onClick={() => handleDatePreset('this-month')}
-            className={`h-7 px-2.5 text-xs font-semibold rounded-md transition-colors cursor-pointer ${
-              isThisMonthActive
-                ? 'bg-white text-emerald-700 shadow-2xs font-bold'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
+            className={`h-7 px-2.5 text-xs font-semibold rounded-md transition-colors cursor-pointer ${isThisMonthActive
+              ? 'bg-white text-emerald-700 shadow-2xs font-bold'
+              : 'text-gray-600 hover:text-gray-900'
+              }`}
           >
             This Month
           </button>
@@ -214,8 +222,8 @@ const ReportFiltersBar: React.FC<ReportFiltersBarProps> = ({ filters, setFilters
               type="date"
               aria-label="Filter start date"
               className="h-8 rounded-lg border border-gray-200 bg-white py-1 pl-8 pr-2 text-xs font-medium text-gray-800 shadow-2xs focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 cursor-pointer"
-              value={format(new Date(filters.startDate || new Date()), 'yyyy-MM-dd')}
-              onChange={(e) => setFilters((prev) => ({ ...prev, startDate: startOfDay(new Date(e.target.value)).toISOString(), page: 1 }))}
+              value={toDateStr(filters.startDate)}
+              onChange={(e) => setFilters((prev) => ({ ...prev, startDate: e.target.value || undefined, page: 1 }))}
             />
           </div>
           <span className="text-xs font-medium text-gray-400">to</span>
@@ -225,8 +233,8 @@ const ReportFiltersBar: React.FC<ReportFiltersBarProps> = ({ filters, setFilters
               type="date"
               aria-label="Filter end date"
               className="h-8 rounded-lg border border-gray-200 bg-white py-1 pl-8 pr-2 text-xs font-medium text-gray-800 shadow-2xs focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 cursor-pointer"
-              value={format(new Date(filters.endDate || new Date()), 'yyyy-MM-dd')}
-              onChange={(e) => setFilters((prev) => ({ ...prev, endDate: endOfDay(new Date(e.target.value)).toISOString(), page: 1 }))}
+              value={toDateStr(filters.endDate)}
+              onChange={(e) => setFilters((prev) => ({ ...prev, endDate: e.target.value || undefined, page: 1 }))}
             />
           </div>
         </div>

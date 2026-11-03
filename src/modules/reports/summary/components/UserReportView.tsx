@@ -38,7 +38,7 @@ const UserReportView: React.FC<UserReportViewProps> = ({ filters, userName }) =>
       <FollowupHistoryTimelineSection filters={filters} />
       <StageMovementsSection filters={filters} />
       <RevenueActivitySection filters={filters} />
-      <AttendanceActivitySection filters={filters} />
+      <AttendanceActivitySection filters={filters} hideIfEmpty />
       <TargetActivitySection filters={filters} />
       <ApprovalActivitySection filters={filters} />
       <AuditTrailSection filters={filters} />

@@ -162,7 +162,35 @@ export const formatAttendanceDate = (
   overrideTimeZone?: string,
 ): string => {
   if (!dateInput) return '—';
-  const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
+
+  let date: Date;
+  if (typeof dateInput === 'string') {
+    const match = dateInput.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (match) {
+      date = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])));
+      return new Intl.DateTimeFormat('en-GB', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        timeZone: 'UTC',
+      }).format(date);
+    }
+    date = new Date(dateInput);
+  } else if (dateInput instanceof Date) {
+    if (isNaN(dateInput.getTime())) return '—';
+    if (dateInput.getUTCHours() === 0 && dateInput.getUTCMinutes() === 0 && dateInput.getUTCSeconds() === 0) {
+      return new Intl.DateTimeFormat('en-GB', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        timeZone: 'UTC',
+      }).format(dateInput);
+    }
+    date = dateInput;
+  } else {
+    return '—';
+  }
+
   if (isNaN(date.getTime())) return '—';
 
   const timeZone = getResolvedAttendanceTimezone(overrideTimeZone);
