@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Layers3, SendToBack, UsersRound } from 'lucide-react';
 import { toast } from 'react-hot-toast';
@@ -193,82 +193,82 @@ const BulkAssignPage: React.FC = () => {
             ))}
           </div>
 
-            <BulkAssignFilters
-              filters={filters}
+          <BulkAssignFilters
+            filters={filters}
+            meta={meta}
+            isApplying={previewQuery.isLoading || previewQuery.isFetching}
+            onFilterChange={setFilters}
+            onApply={handleApply}
+            onReset={handleReset}
+          />
+
+          <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px] 2xl:grid-cols-[minmax(0,1fr)_360px]">
+            <BulkAssignPreview
+              previewCount={previewCount}
+              previewLeads={previewLeads}
+              isLoading={previewQuery.isLoading || previewQuery.isFetching}
+              hasApplied={hasApplied}
+              filters={appliedFilters}
               meta={meta}
-              isApplying={previewQuery.isLoading || previewQuery.isFetching}
-              onFilterChange={setFilters}
-              onApply={handleApply}
-              onReset={handleReset}
             />
 
-            <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px] 2xl:grid-cols-[minmax(0,1fr)_360px]">
-              <BulkAssignPreview
+            <div className="xl:sticky xl:top-6 xl:self-start">
+              <BulkAssignActions
+                assignmentType={assignmentType}
+                selectedAssignee={selectedAssignee}
+                selectedAssigneeIds={selectedAssigneeIds}
                 previewCount={previewCount}
-                previewLeads={previewLeads}
-                isLoading={previewQuery.isLoading || previewQuery.isFetching}
                 hasApplied={hasApplied}
-                filters={appliedFilters}
                 meta={meta}
+                isSubmitting={bulkAssignMutation.isPending}
+                progress={progress}
+                lastResult={lastResult}
+                onAssignmentTypeChange={setAssignmentType}
+                onAssigneeChange={setAssignee}
+                onRoundRobinAdd={addRoundRobinAssignee}
+                onRoundRobinRemove={removeRoundRobinAssignee}
+                onAssign={handleAssign}
               />
+            </div>
+          </div>
 
-              <div className="xl:sticky xl:top-6 xl:self-start">
-                <BulkAssignActions
-                  assignmentType={assignmentType}
-                  selectedAssignee={selectedAssignee}
-                  selectedAssigneeIds={selectedAssigneeIds}
-                  previewCount={previewCount}
-                  hasApplied={hasApplied}
-                  meta={meta}
-                  isSubmitting={bulkAssignMutation.isPending}
-                  progress={progress}
-                  lastResult={lastResult}
-                  onAssignmentTypeChange={setAssignmentType}
-                  onAssigneeChange={setAssignee}
-                  onRoundRobinAdd={addRoundRobinAssignee}
-                  onRoundRobinRemove={removeRoundRobinAssignee}
-                  onAssign={handleAssign}
-                />
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-100 text-slate-700">
+                  <Layers3 className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-black text-gray-900">How it works</h3>
+                  <p className="text-sm font-semibold text-gray-500">Apply filters, preview the count, then assign in one step.</p>
+                </div>
+              </div>
+              <div className="mt-5 space-y-3 text-sm font-semibold text-gray-600">
+                <p>1. Select any combination of stage, owner, lifecycle, source, and date ranges.</p>
+                <p>2. Preview how many active leads match the criteria in your workspace.</p>
+                <p>3. Select the assignee and run the bulk update.</p>
               </div>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-100 text-slate-700">
-                    <Layers3 className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-black text-gray-900">How it works</h3>
-                    <p className="text-sm font-semibold text-gray-500">Apply filters, preview the count, then assign in one step.</p>
-                  </div>
+            <div className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700">
+                  <UsersRound className="h-5 w-5" />
                 </div>
-                <div className="mt-5 space-y-3 text-sm font-semibold text-gray-600">
-                  <p>1. Select any combination of stage, owner, lifecycle, source, and date ranges.</p>
-                  <p>2. Preview how many active leads match the criteria in your workspace.</p>
-                  <p>3. Select the assignee and run the bulk update.</p>
+                <div>
+                  <h3 className="text-lg font-black text-gray-900">Safety checks</h3>
+                  <p className="text-sm font-semibold text-gray-500">Only active leads are eligible, and every bulk action is audited.</p>
                 </div>
               </div>
-
-              <div className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700">
-                    <UsersRound className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-black text-gray-900">Safety checks</h3>
-                    <p className="text-sm font-semibold text-gray-500">Only active leads are eligible, and every bulk action is audited.</p>
-                  </div>
-                </div>
-                <div className="mt-5 space-y-3 text-sm font-semibold text-gray-600">
-                  <p>Closed, LOB, and archived leads are excluded automatically.</p>
-                  <p>Inactive assignees cannot be selected through the assignment dropdown.</p>
-                  <p>The backend records both bulk audit data and per-lead activity history.</p>
-                </div>
+              <div className="mt-5 space-y-3 text-sm font-semibold text-gray-600">
+                <p>Closed, LOB, and archived leads are excluded automatically.</p>
+                <p>Inactive assignees cannot be selected through the assignment dropdown.</p>
+                <p>The backend records both bulk audit data and per-lead activity history.</p>
               </div>
             </div>
           </div>
         </div>
+      </div>
 
       <BulkAssignConfirmModal
         isOpen={isConfirmOpen}
