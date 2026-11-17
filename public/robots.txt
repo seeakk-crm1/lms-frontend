@@ -1,5 +1,26 @@
 User-agent: *
-
 Allow: /
+Allow: /privacy-policy
+Allow: /terms
+Allow: /data-deletion
+Disallow: /login
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /invite
+Disallow: /activate-account
+Disallow: /workspace
+Disallow: /dashboard
+Disallow: /admin
+Disallow: /settings
+Disallow: /leads
+Disallow: /calendar
+Disallow: /reports
+Disallow: /attendance
+Disallow: /lob-analysis
+Disallow: /location-tracker
+Disallow: /sheets
+Disallow: /unlock-staff
+Disallow: /salary
+Disallow: /master
 
 Sitemap: https://seeakk.com/sitemap.xml
