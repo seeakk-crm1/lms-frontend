@@ -20,6 +20,7 @@ Disallow: /lob-analysis
 Disallow: /location-tracker
 Disallow: /sheets
 Disallow: /unlock-staff
+Disallow: /billing
 Disallow: /salary
 Disallow: /master
 
