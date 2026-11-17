@@ -39,7 +39,15 @@
   ],
   "rewrites": [
     {
-      "source": "/((?!assets/|.*\\.(?:js|mjs|css|map|json|png|jpg|jpeg|gif|svg|ico|webp|avif|woff|woff2|ttf|eot|wasm)$).*)",
+      "source": "/",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/:route(login|forgot-password|reset-password|invite|activate-account|workspace|dashboard|admin|unlock-staff|salary|settings|leads|calendar|reports|attendance|location-tracker|lob-analysis|sheets|billing|master|privacy-policy|terms|data-deletion)",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/:route(login|forgot-password|reset-password|invite|activate-account|workspace|dashboard|admin|unlock-staff|salary|settings|leads|calendar|reports|attendance|location-tracker|lob-analysis|sheets|billing|master|privacy-policy|terms|data-deletion)/:path*",
       "destination": "/index.html"
     }
   ]
