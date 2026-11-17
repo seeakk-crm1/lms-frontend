@@ -10,14 +10,90 @@
   <link rel="manifest" href="/site.webmanifest" />
   <meta name="theme-color" content="#2a7a3b" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="canonical" href="https://www.seeakk.com/" />
-  <meta property="og:url" content="https://www.seeakk.com/" />
-  <meta property="og:site_name" content="Seeakk" />
-  <title>Seeakk - Lead Performance Dynamics Platform</title>
+
+  <title>SEEAKK – Sales Execution &amp; Accountability Platform with CRM</title>
+  <meta name="description" content="SEEAKK helps sales teams turn targets into execution: lead ownership, mandatory follow-ups, stage approvals, target tracking and loss-of-business analysis in one platform." />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://seeakk.com/" />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="SEEAKK" />
+  <meta property="og:url" content="https://seeakk.com/" />
+  <meta property="og:title" content="SEEAKK – From Sales Targets to Sales Execution" />
+  <meta property="og:description" content="Stop losing leads. Start building accountability. Lead ownership, follow-ups, approvals, targets and loss analysis for sales teams." />
+  <meta property="og:image" content="https://seeakk.com/Seeakknewlogo.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="SEEAKK – From Sales Targets to Sales Execution" />
+  <meta name="twitter:description" content="Stop losing leads. Start building accountability. Lead ownership, follow-ups, approvals, targets and loss analysis for sales teams." />
+  <meta name="twitter:image" content="https://seeakk.com/Seeakknewlogo.png" />
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://seeakk.com/#organization",
+        "name": "SEEAKK",
+        "url": "https://seeakk.com/",
+        "logo": "https://seeakk.com/Seeakknewlogo.png",
+        "sameAs": ["https://www.instagram.com/seeakk.lpe/"],
+        "contactPoint": {
+          "@type": "ContactPoint",
+          "telephone": "+91-86063-00137",
+          "contactType": "sales",
+          "areaServed": "IN",
+          "availableLanguage": ["English", "Malayalam"]
+        }
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://seeakk.com/#website",
+        "url": "https://seeakk.com/",
+        "name": "SEEAKK",
+        "publisher": { "@id": "https://seeakk.com/#organization" }
+      },
+      {
+        "@type": "SoftwareApplication",
+        "name": "SEEAKK",
+        "url": "https://seeakk.com/",
+        "applicationCategory": "BusinessApplication",
+        "operatingSystem": "Web",
+        "description": "Sales execution and accountability platform with CRM capabilities: lead ownership, follow-up management, configurable stage rules and approvals, target cycles, revenue reporting and loss-of-business analysis.",
+        "publisher": { "@id": "https://seeakk.com/#organization" }
+      }
+    ]
+  }
+  </script>
+  <script>
+    // Pre-render fallback content is for the public homepage only; hide it on app routes.
+    if (location.pathname.replace(/\/+$/, '') !== '') document.documentElement.classList.add('seo-app-route');
+  </script>
+  <style>.seo-app-route #seo-fallback{display:none}</style>
 </head>
 
 <body>
-  <div id="root"></div>
+  <div id="root">
+    <!-- Static summary for crawlers / no-JS clients. React replaces this on mount. -->
+    <div id="seo-fallback" style="font-family:system-ui,sans-serif;max-width:720px;margin:48px auto;padding:0 16px;color:#0f172a">
+      <h1>SEEAKK – Sales Execution &amp; Accountability Platform with CRM</h1>
+      <p><strong>From Sales Targets to Sales Execution.</strong> Stop losing leads. Start building accountability.</p>
+      <p>SEEAKK helps business owners and sales heads see who owns each lead, which follow-ups are due or overdue, which stage approvals are pending, how staff are progressing against targets, and why opportunities were lost.</p>
+      <h2>What SEEAKK helps with</h2>
+      <ul>
+        <li>Lead management: assignment, bulk assignment, ownership and lifecycle history</li>
+        <li>Follow-up management: schedule, reschedule, snooze and complete calls, meetings and visits</li>
+        <li>Configurable stages, stage rules and manager approvals</li>
+        <li>Target cycles and progress tracking for staff and teams</li>
+        <li>Revenue reporting and Loss of Business (LOB) analysis</li>
+        <li>Roles and permissions, activity reports, attendance and calendar</li>
+      </ul>
+      <h2>Who it is for</h2>
+      <p>Sales teams with recurring enquiries and multi-step follow-up, such as study-abroad consultancies, real estate developers, solar providers, interiors and construction firms, and automobile dealerships.</p>
+      <p>Book a 20-minute demo: WhatsApp +91 86063 00137 · Instagram @seeakk.lpe</p>
+      <p><a href="/login">Log in</a> · <a href="/privacy-policy">Privacy Policy</a> · <a href="/terms">Terms of Service</a></p>
+    </div>
+  </div>
   <script type="module" src="/src/main.jsx"></script>
 </body>
 
