@@ -33,15 +33,8 @@ FROM nginx:alpine AS production
 # Copy the build output to replace the default nginx contents
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Add custom nginx config for SPA routing (fallback to index.html)
-RUN echo 'server { \
-    listen 80; \
-    location / { \
-        root /usr/share/nginx/html; \
-        index index.html index.htm; \
-        try_files $uri $uri/ /index.html; \
-    } \
-}' > /etc/nginx/conf.d/default.conf
+# Custom nginx config: SPA routes -> index.html, unknown paths -> 404.html (HTTP 404)
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
 
