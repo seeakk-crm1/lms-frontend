@@ -33,6 +33,8 @@ import Login from './pages/Login';
 import PrivacyPolicyPage from './pages/public/PrivacyPolicyPage';
 import TermsOfServicePage from './pages/public/TermsOfServicePage';
 import DataDeletionPage from './pages/public/DataDeletionPage';
+import NotFoundPage from './pages/public/NotFoundPage';
+import RouteSeo from './components/seo/RouteSeo';
 import InvitePage from './pages/InvitePage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
@@ -231,6 +233,7 @@ function App() {
       {workflowEnabled ? <FollowUpReminderListener /> : null}
       {workflowEnabled ? <RealtimeSyncListener /> : null}
       {workflowEnabled ? <LocationTrackingClient /> : null}
+      <RouteSeo />
       <Routes>
         <Route path="/" element={
           <div className="min-h-screen bg-white font-sans text-slate-900 selection:bg-emerald-200 selection:text-emerald-900 overflow-x-hidden">
@@ -585,6 +588,7 @@ function App() {
         } />
 
         <Route path="/master/stage-rules" element={<Navigate to="/admin/stage-rules" replace />} />
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
       </AuthenticatedWorkflowGates>
     </>
