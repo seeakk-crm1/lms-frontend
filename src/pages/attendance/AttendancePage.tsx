@@ -45,6 +45,12 @@ const AttendancePage: React.FC = () => {
 
   const [activeTab, setActiveTab] = useState<string>('dashboard');
 
+  useEffect(() => {
+    if (activeTab === 'settings') {
+      setActiveTab('dashboard');
+    }
+  }, [activeTab]);
+
   // Stats / Overview states
   const [todayStatus, setTodayStatus] = useState<any>(null);
   const [stats, setStats] = useState<any>(null);
@@ -755,8 +761,7 @@ const AttendancePage: React.FC = () => {
               { id: 'approval-history', label: 'Approval History', icon: FileText, permission: 'ATTENDANCE_APPROVE' },
               { id: 'schedules', label: 'Attendance Schedules', icon: Calendar, permission: 'ATTENDANCE_APPROVE' },
               { id: 'users', label: 'Users List', icon: Users, permission: 'view_all_attendance' },
-              { id: 'networks', label: 'Location Settings', icon: Building, permission: 'manage_attendance_locations' },
-              { id: 'settings', label: 'Settings', icon: Settings, permission: 'manage_attendance_settings' }
+              { id: 'networks', label: 'Location Settings', icon: Building, permission: 'manage_attendance_locations' }
             ].map(tab => {
               if (tab.id === 'networks' && !canManageLocations) return null;
               if (tab.permission && tab.id !== 'networks' && !hasPermission(permissions, tab.permission)) return null;
