@@ -18,6 +18,8 @@ if (!googleClientId) {
 
 installChunkLoadRecovery();
 
+(window as any).__SEEAKK_MOUNTED__ = true;
+
 createRoot(rootElement).render(
   <GoogleOAuthProvider clientId={googleClientId}>
     <QueryClientProvider client={queryClient}>
