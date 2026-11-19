@@ -92,6 +92,8 @@ const fromLeadToForm = (lead: LeadListItem): LeadFormValues => ({
   products: (lead.products || []).map((item) => ({
     productId: item.productId || '',
     quantity: item.quantity || 1,
+    type: item.type || '',
+    category: item.category || '',
   })).filter((item) => item.productId),
   totalAmount: (lead as any).totalAmount || 0,
 });
@@ -644,11 +646,15 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, sel
     });
     setFormValues((current) => ({
       ...current,
-      products: [...current.products, { productId: '', quantity: 1 }],
+      products: [...current.products, { productId: '', quantity: 1, type: '', category: '' }],
     }));
   };
 
-  const handleProductRowChange = (index: number, field: 'productId' | 'quantity', value: string | number) => {
+  const handleProductRowChange = (
+    index: number,
+    field: 'productId' | 'quantity' | 'type' | 'category',
+    value: string | number,
+  ) => {
     setChangedFields((prev) => new Set(prev).add('products'));
     setValidationErrors((current) => {
       const next = { ...current };
@@ -657,14 +663,31 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, sel
       return next;
     });
     setFormValues((current) => {
-      const products = current.products.map((item, itemIndex) =>
-        itemIndex === index
-          ? {
-              ...item,
-              [field]: field === 'quantity' ? Math.max(1, Number(value) || 1) : String(value),
-            }
-          : item,
-      );
+      const products = current.products.map((item, itemIndex) => {
+        if (itemIndex !== index) return item;
+
+        if (field === 'productId') {
+          return {
+            ...item,
+            productId: String(value),
+            type: '',
+            category: '',
+          };
+        }
+
+        if (field === 'quantity') {
+          return {
+            ...item,
+            quantity: Math.max(1, Number(value) || 1),
+          };
+        }
+
+        return {
+          ...item,
+          [field]: String(value),
+        };
+      });
+
       return {
         ...current,
         products,
@@ -962,6 +985,8 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, sel
       .map((item) => ({
         productId: item.productId,
         quantity: Math.max(1, Math.trunc(Number(item.quantity) || 1)),
+        type: item.type?.trim() || undefined,
+        category: item.category?.trim() || undefined,
       }));
 
     const normOriginal = normalizeAmount(originalTotalAmountRef.current ?? lead?.totalAmount);
@@ -1696,51 +1721,152 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, sel
                             const quantity = Math.max(1, Number(item.quantity || 1));
                             const lineTotal = unitPrice * quantity;
 
+                            const configuredTypes: string[] = Array.isArray(selectedProduct?.types)
+                              ? selectedProduct.types
+                              : [];
+                            const configuredCategories: string[] =
+                              Array.isArray(selectedProduct?.categories) && selectedProduct.categories.length > 0
+                                ? selectedProduct.categories
+                                : selectedProduct?.category
+                                ? [selectedProduct.category]
+                                : [];
+
+                            const availableTypes =
+                              item.type && !configuredTypes.includes(item.type)
+                                ? [item.type, ...configuredTypes]
+                                : configuredTypes;
+                            const availableCategories =
+                              item.category && !configuredCategories.includes(item.category)
+                                ? [item.category, ...configuredCategories]
+                                : configuredCategories;
+
                             return (
-                              <div key={`${item.productId || 'product'}-${index}`} className="grid gap-3 rounded-2xl border border-gray-100 bg-gray-50 p-3 md:grid-cols-[1.7fr_110px_130px_130px_44px]">
-                                <select
-                                  value={item.productId}
-                                  onChange={(event) => handleProductRowChange(index, 'productId', event.target.value)}
-                                  className={inputClassName}
-                                >
-                                  <option value="">Select product</option>
-                                  {productOptions.map((product: any) => (
-                                    <option key={product.id} value={product.id}>
-                                      {product.name} - {formatCurrency(product.unitPrice || 0)}
-                                    </option>
-                                  ))}
-                                </select>
-                                <input
-                                  type="number"
-                                  min="1"
-                                  value={quantity}
-                                  onChange={(event) => handleProductRowChange(index, 'quantity', event.target.value)}
-                                  className={inputClassName}
-                                  aria-label="Product quantity"
-                                />
-                                <input
-                                  type="text"
-                                  readOnly
-                                  value={formatCurrency(unitPrice)}
-                                  className={`${inputClassName} bg-white text-gray-500`}
-                                  aria-label="Unit price"
-                                />
-                                <input
-                                  type="text"
-                                  readOnly
-                                  value={formatCurrency(lineTotal)}
-                                  className={`${inputClassName} bg-white font-black`}
-                                  aria-label="Line total"
-                                />
-                                <button
-                                  type="button"
-                                  onClick={() => handleRemoveProductRow(index)}
-                                  className="flex h-12 w-12 items-center justify-center rounded-2xl border border-gray-200 bg-white text-gray-400 transition hover:border-rose-200 hover:text-rose-600"
-                                  title="Remove product"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </button>
-                                <div className="md:col-span-5">
+                              <div
+                                key={`${item.productId || 'product'}-${index}`}
+                                className="rounded-2xl border border-gray-100 bg-gray-50/70 p-3.5 space-y-3 transition hover:border-gray-200"
+                              >
+                                <div className="grid grid-cols-1 md:grid-cols-12 gap-2.5 items-end">
+                                  <div className="md:col-span-5">
+                                    <label className="block text-[11px] font-bold text-gray-500 mb-1">
+                                      Product *
+                                    </label>
+                                    <select
+                                      value={item.productId}
+                                      onChange={(event) => handleProductRowChange(index, 'productId', event.target.value)}
+                                      className={inputClassName}
+                                    >
+                                      <option value="">Select product</option>
+                                      {productOptions.map((product: any) => (
+                                        <option key={product.id} value={product.id}>
+                                          {product.name}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  </div>
+
+                                  <div className="md:col-span-3">
+                                    <label className="block text-[11px] font-bold text-gray-500 mb-1">
+                                      Type
+                                    </label>
+                                    <select
+                                      value={item.type || ''}
+                                      disabled={!selectedProduct || availableTypes.length === 0}
+                                      onChange={(event) => handleProductRowChange(index, 'type', event.target.value)}
+                                      className={`${inputClassName} disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed`}
+                                    >
+                                      <option value="">
+                                        {!selectedProduct
+                                          ? 'Select product'
+                                          : availableTypes.length === 0
+                                          ? 'No types'
+                                          : 'Select type'}
+                                      </option>
+                                      {availableTypes.map((t) => (
+                                        <option key={t} value={t}>
+                                          {t}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  </div>
+
+                                  <div className="md:col-span-3">
+                                    <label className="block text-[11px] font-bold text-gray-500 mb-1">
+                                      Category
+                                    </label>
+                                    <select
+                                      value={item.category || ''}
+                                      disabled={!selectedProduct || availableCategories.length === 0}
+                                      onChange={(event) => handleProductRowChange(index, 'category', event.target.value)}
+                                      className={`${inputClassName} disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed`}
+                                    >
+                                      <option value="">
+                                        {!selectedProduct
+                                          ? 'Select product'
+                                          : availableCategories.length === 0
+                                          ? 'No categories'
+                                          : 'Select category'}
+                                      </option>
+                                      {availableCategories.map((c) => (
+                                        <option key={c} value={c}>
+                                          {c}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  </div>
+
+                                  <div className="md:col-span-1 flex justify-end md:justify-center">
+                                    <button
+                                      type="button"
+                                      onClick={() => handleRemoveProductRow(index)}
+                                      className="flex h-12 w-12 items-center justify-center rounded-2xl border border-gray-200 bg-white text-gray-400 transition hover:border-rose-200 hover:text-rose-600 hover:bg-rose-50/50 shadow-sm"
+                                      title="Remove product"
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </button>
+                                  </div>
+                                </div>
+
+                                <div className="grid grid-cols-3 gap-2.5 pt-2 border-t border-gray-200/60">
+                                  <div>
+                                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
+                                      Quantity
+                                    </label>
+                                    <input
+                                      type="number"
+                                      min="1"
+                                      value={quantity}
+                                      onChange={(event) => handleProductRowChange(index, 'quantity', event.target.value)}
+                                      className={`${inputClassName} h-10`}
+                                      aria-label="Product quantity"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
+                                      Unit Price
+                                    </label>
+                                    <input
+                                      type="text"
+                                      readOnly
+                                      value={formatCurrency(unitPrice)}
+                                      className={`${inputClassName} h-10 bg-white text-gray-600 font-semibold`}
+                                      aria-label="Unit price"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
+                                      Line Total
+                                    </label>
+                                    <input
+                                      type="text"
+                                      readOnly
+                                      value={formatCurrency(lineTotal)}
+                                      className={`${inputClassName} h-10 bg-white font-black text-gray-900`}
+                                      aria-label="Line total"
+                                    />
+                                  </div>
+                                </div>
+
+                                <div>
                                   <ErrorText field={[`products.${index}.productId`, `products.${index}.quantity`, 'products']} />
                                 </div>
                               </div>

@@ -5,6 +5,8 @@ export interface Product {
   name: string;
   code?: string | null;
   category?: string | null;
+  categories?: string[];
+  types?: string[];
   description?: string | null;
   unitPrice: number;
   status: ProductStatus;
@@ -36,6 +38,8 @@ export interface ProductInput {
   name: string;
   code?: string;
   category?: string;
+  categories?: string[];
+  types?: string[];
   description?: string;
   unitPrice: number;
   status: ProductStatus;
@@ -44,4 +48,6 @@ export interface ProductInput {
 export interface LeadProductSelection {
   productId: string;
   quantity: number;
+  type?: string;
+  category?: string;
 }
