@@ -3,7 +3,7 @@ export type ProductStatus = 'ACTIVE' | 'INACTIVE';
 export interface ProductTypeOption {
   id?: string;
   name: string;
-  unitPrice: number;
+  unitPrice: number | string;
   status?: ProductStatus;
   isDefault?: boolean;
 }
@@ -51,7 +51,7 @@ export interface ProductInput {
   types?: string[];
   typeOptions?: ProductTypeOption[];
   description?: string;
-  unitPrice: number;
+  unitPrice: number | string;
   status: ProductStatus;
 }
 

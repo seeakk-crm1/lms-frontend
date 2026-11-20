@@ -15,8 +15,17 @@ const emptyForm: ProductInput = {
   types: [],
   typeOptions: [],
   description: '',
-  unitPrice: 0,
+  unitPrice: '',
   status: 'ACTIVE',
+};
+
+const normalizePriceInput = (val: string): string => {
+  if (val === '') return '';
+  // Strip unwanted leading zeros if followed by digits (e.g. "011" -> "11", "01" -> "1"), but preserve "0", "0.", "0.5"
+  if (/^0[0-9]+/.test(val) && !val.startsWith('0.')) {
+    return val.replace(/^0+/, '') || '0';
+  }
+  return val;
 };
 
 const parseStringArray = (val: unknown): string[] => {
@@ -83,6 +92,30 @@ const ProductListPage: React.FC = () => {
           throw new Error(`Duplicate type name "${opt.name.trim()}". Each type name must be unique.`);
         }
         seenNames.add(lower);
+      }
+
+      // Validate unit prices
+      if (rawTypeOptions.length > 0) {
+        for (let i = 0; i < rawTypeOptions.length; i++) {
+          const opt = rawTypeOptions[i];
+          const rawPrice = String(opt.unitPrice ?? '').trim();
+          if (rawPrice === '') {
+            throw new Error(`Unit price for type "${opt.name}" is required.`);
+          }
+          const numPrice = Number(rawPrice);
+          if (isNaN(numPrice) || numPrice < 0) {
+            throw new Error(`Unit price for type "${opt.name}" must be a non-negative number.`);
+          }
+        }
+      } else {
+        const rawBasePrice = String(form.unitPrice ?? '').trim();
+        if (rawBasePrice === '') {
+          throw new Error('Base unit price is required.');
+        }
+        const numBase = Number(rawBasePrice);
+        if (isNaN(numBase) || numBase < 0) {
+          throw new Error('Base unit price must be a non-negative number.');
+        }
       }
 
       const sanitizedTypeOptions: ProductTypeOption[] = rawTypeOptions.map((opt, idx) => ({
@@ -152,9 +185,13 @@ const ProductListPage: React.FC = () => {
     if (!form.name.trim()) return false;
     const currentTypes = form.typeOptions || [];
     if (currentTypes.length > 0) {
-      return currentTypes.every((t) => t.name.trim().length > 0 && Number(t.unitPrice) >= 0);
+      return currentTypes.every((t) => {
+        const pStr = String(t.unitPrice ?? '').trim();
+        return t.name.trim().length > 0 && pStr !== '' && !isNaN(Number(pStr)) && Number(pStr) >= 0;
+      });
     }
-    return Number(form.unitPrice) >= 0;
+    const baseStr = String(form.unitPrice ?? '').trim();
+    return baseStr !== '' && !isNaN(Number(baseStr)) && Number(baseStr) >= 0;
   }, [form.name, form.typeOptions, form.unitPrice]);
 
   const openCreate = () => {
@@ -177,7 +214,7 @@ const ProductListPage: React.FC = () => {
       initialTypeOptions = product.typeOptions.map((t, idx) => ({
         id: t.id || `type-${idx}`,
         name: t.name,
-        unitPrice: Number(t.unitPrice) || 0,
+        unitPrice: t.unitPrice !== undefined && t.unitPrice !== null ? String(t.unitPrice) : '',
         status: t.status || 'ACTIVE',
         isDefault: Boolean(t.isDefault),
       }));
@@ -185,7 +222,7 @@ const ProductListPage: React.FC = () => {
       initialTypeOptions = product.types.map((name, idx) => ({
         id: `type-${idx}`,
         name,
-        unitPrice: Number(product.unitPrice) || 0,
+        unitPrice: product.unitPrice !== undefined && product.unitPrice !== null ? String(product.unitPrice) : '',
         status: 'ACTIVE',
         isDefault: idx === 0,
       }));
@@ -195,6 +232,11 @@ const ProductListPage: React.FC = () => {
       initialTypeOptions[0].isDefault = true;
     }
 
+    const defaultOpt = initialTypeOptions.find((t) => t.isDefault);
+    const initialBasePrice = defaultOpt
+      ? defaultOpt.unitPrice
+      : (product.unitPrice !== undefined && product.unitPrice !== null ? String(product.unitPrice) : '');
+
     setForm({
       name: product.name,
       code: product.code || '',
@@ -203,7 +245,7 @@ const ProductListPage: React.FC = () => {
       types: Array.isArray(product.types) ? product.types : [],
       typeOptions: initialTypeOptions,
       description: product.description || '',
-      unitPrice: product.unitPrice,
+      unitPrice: initialBasePrice,
       status: product.status,
     });
     setCategoryInput('');
@@ -216,7 +258,7 @@ const ProductListPage: React.FC = () => {
     const newRow: ProductTypeOption = {
       id: `type-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
       name: '',
-      unitPrice: form.unitPrice > 0 ? Number(form.unitPrice) : 0,
+      unitPrice: '',
       status: 'ACTIVE',
       isDefault: isFirst,
     };
@@ -233,9 +275,10 @@ const ProductListPage: React.FC = () => {
     setForm((prev) => {
       const current = [...(prev.typeOptions || [])];
       if (!current[index]) return prev;
+      const finalValue = field === 'unitPrice' ? normalizePriceInput(String(value ?? '')) : value;
       const updatedItem = {
         ...current[index],
-        [field]: field === 'unitPrice' ? (value === '' ? 0 : Math.max(0, Number(value) || 0)) : value,
+        [field]: finalValue,
       };
       current[index] = updatedItem;
       const defaultItem = current.find((t) => t.isDefault) || current[0];
@@ -243,7 +286,7 @@ const ProductListPage: React.FC = () => {
         ...prev,
         typeOptions: current,
         types: current.map((t) => t.name).filter(Boolean),
-        unitPrice: defaultItem ? Number(defaultItem.unitPrice || 0) : prev.unitPrice,
+        unitPrice: defaultItem ? defaultItem.unitPrice : prev.unitPrice,
       };
     });
   };
@@ -259,7 +302,7 @@ const ProductListPage: React.FC = () => {
       return {
         ...prev,
         typeOptions: current,
-        unitPrice: selected ? Number(selected.unitPrice || 0) : prev.unitPrice,
+        unitPrice: selected ? selected.unitPrice : prev.unitPrice,
       };
     });
   };
@@ -275,7 +318,7 @@ const ProductListPage: React.FC = () => {
         ...prev,
         typeOptions: current,
         types: current.map((t) => t.name).filter(Boolean),
-        unitPrice: defaultItem ? Number(defaultItem.unitPrice || 0) : prev.unitPrice,
+        unitPrice: defaultItem ? defaultItem.unitPrice : prev.unitPrice,
       };
     });
   };
@@ -635,8 +678,13 @@ const ProductListPage: React.FC = () => {
                         type="number"
                         min="0"
                         step="any"
-                        value={form.unitPrice === 0 ? '0' : (form.unitPrice || '')}
-                        onChange={(event) => setForm({ ...form, unitPrice: Math.max(0, Number(event.target.value) || 0) })}
+                        value={form.unitPrice ?? ''}
+                        onChange={(event) =>
+                          setForm({
+                            ...form,
+                            unitPrice: normalizePriceInput(event.target.value),
+                          })
+                        }
                         placeholder="0.00"
                         readOnly={(form.typeOptions || []).length > 0}
                         className={`h-12 w-full rounded-2xl border border-gray-200 px-4 text-sm font-semibold outline-none transition ${
@@ -777,7 +825,7 @@ const ProductListPage: React.FC = () => {
                                     type="number"
                                     min="0"
                                     step="any"
-                                    value={opt.unitPrice === 0 ? '0' : (opt.unitPrice || '')}
+                                    value={opt.unitPrice ?? ''}
                                     onChange={(e) => handleUpdateTypeRow(idx, 'unitPrice', e.target.value)}
                                     placeholder="0.00"
                                     className="h-9 w-full rounded-lg border border-gray-200 pl-6 pr-2 text-xs font-black text-gray-900 outline-none focus:border-emerald-500 bg-white"
