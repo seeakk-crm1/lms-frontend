@@ -22,7 +22,9 @@ import {
   X,
   UserCheck,
   Building,
-  Bell
+  Bell,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import DashboardLayout from '../../components/dashboard/DashboardLayout';
@@ -161,6 +163,44 @@ const AttendancePage: React.FC = () => {
   const [processingActionRecordId, setProcessingActionRecordId] = useState<string | null>(null);
   const [submittingRejection, setSubmittingRejection] = useState(false);
   const [submittingClarification, setSubmittingClarification] = useState(false);
+
+  // Pending approvals horizontal scroll state
+  const pendingTableScrollRef = React.useRef<HTMLDivElement>(null);
+  const [canScrollPendingLeft, setCanScrollPendingLeft] = useState(false);
+  const [canScrollPendingRight, setCanScrollPendingRight] = useState(false);
+  const [isPendingScrollable, setIsPendingScrollable] = useState(false);
+
+  const checkPendingScroll = () => {
+    const el = pendingTableScrollRef.current;
+    if (!el) return;
+    const { scrollLeft, scrollWidth, clientWidth } = el;
+    const isScrollable = scrollWidth > clientWidth + 2;
+    setIsPendingScrollable(isScrollable);
+    setCanScrollPendingLeft(scrollLeft > 2);
+    setCanScrollPendingRight(scrollLeft + clientWidth < scrollWidth - 2);
+  };
+
+  const scrollPendingTable = (direction: 'left' | 'right') => {
+    const el = pendingTableScrollRef.current;
+    if (!el) return;
+    const scrollAmount = Math.max(260, Math.floor(el.clientWidth * 0.45));
+    el.scrollBy({
+      left: direction === 'left' ? -scrollAmount : scrollAmount,
+      behavior: 'smooth'
+    });
+  };
+
+  useEffect(() => {
+    if (activeTab === 'pending') {
+      const timeoutId = setTimeout(checkPendingScroll, 100);
+      const handleResize = () => checkPendingScroll();
+      window.addEventListener('resize', handleResize);
+      return () => {
+        clearTimeout(timeoutId);
+        window.removeEventListener('resize', handleResize);
+      };
+    }
+  }, [activeTab, pendingList]);
 
   const fetchTodayStatus = async () => {
     try {
@@ -1296,98 +1336,152 @@ const AttendancePage: React.FC = () => {
             {/* 4. PENDING APPROVALS */}
             {activeTab === 'pending' && (
               <div className="space-y-6">
-                <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
-                  <table className="w-full border-collapse text-left">
-                    <thead>
-                      <tr className="bg-gray-50 border-b border-gray-100 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                        <th className="p-4">Employee</th>
-                        <th className="p-4">Role / Dept</th>
-                        <th className="p-4">Type</th>
-                        <th className="p-4">Time</th>
-                        <th className="p-4">Location</th>
-                        <th className="p-4">Notes</th>
-                        <th className="p-4 text-right">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-50 text-xs text-gray-600">
-                      {pendingList.map((record: any) => (
-                        <tr key={record.id} className="hover:bg-gray-50/50">
-                          <td className="p-4">
-                            <p className="font-bold text-gray-900">{record.user?.name}</p>
-                            <p className="text-[10px] text-gray-400 mt-0.5">{record.user?.email}</p>
-                          </td>
-                          <td className="p-4">
-                            <p className="font-bold">{record.user?.department?.name || 'No Dept'}</p>
-                            <p className="text-[10px] text-gray-400 mt-0.5">{record.user?.role?.name}</p>
-                          </td>
-                          <td className="p-4">
-                            <span className="px-2 py-0.5 rounded bg-amber-50 text-amber-600 text-[10px] font-bold">
-                              {record.attendanceType}
-                            </span>
-                          </td>
-                          <td className="p-4">{record.checkInTime ? new Date(record.checkInTime).toLocaleTimeString() : '-'}</td>
-                          <td className="p-4 text-[10px] font-mono">
-                            <p>{record.geoLocation || '—'}</p>
-                            <p className="text-gray-400">
-                              {record.calculatedDistanceMeters != null
-                                ? `${Math.round(record.calculatedDistanceMeters)} m`
-                                : record.isInsideOfficeRadius
-                                ? 'In radius'
-                                : '—'}
-                            </p>
-                          </td>
-                          <td className="p-4 max-w-[200px] truncate">
-                            {record.notes && <p className="font-medium">Check-In: {record.notes}</p>}
-                            {record.workSummary && <p className="text-[10px] text-gray-500 mt-1 truncate">Check-Out Summary: {record.workSummary}</p>}
-                            {!record.notes && !record.workSummary && '—'}
-                          </td>
-                          <td className="p-4 text-right">
-                            <div className="flex justify-end gap-2">
-                              {(record.workSummary || record.notes) && (
+                <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden relative">
+                  {/* Table Control Header */}
+                  <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-100 bg-gray-50/50">
+                    <div className="flex items-center gap-2.5">
+                      <span className="text-xs font-bold text-gray-800">Pending Requests</span>
+                      <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-extrabold">
+                        {pendingList.length}
+                      </span>
+                    </div>
+
+                    {isPendingScrollable && (
+                      <div className="flex items-center gap-1.5 bg-white px-2 py-1 rounded-xl border border-gray-200/80 shadow-xs">
+                        <span className="text-[10px] font-bold text-gray-400 hidden sm:inline">Scroll table:</span>
+                        <button
+                          type="button"
+                          onClick={() => scrollPendingTable('left')}
+                          disabled={!canScrollPendingLeft}
+                          className="p-1 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 disabled:opacity-25 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                          title="Scroll left"
+                          aria-label="Scroll table left"
+                        >
+                          <ChevronLeft size={15} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => scrollPendingTable('right')}
+                          disabled={!canScrollPendingRight}
+                          className="p-1 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 disabled:opacity-25 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                          title="Scroll right"
+                          aria-label="Scroll table right"
+                        >
+                          <ChevronRight size={15} />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Left & Right Subtle Overflow Gradient Indicators */}
+                  {canScrollPendingLeft && (
+                    <div className="pointer-events-none absolute left-0 top-[49px] bottom-0 w-6 bg-gradient-to-r from-gray-900/5 to-transparent z-10 transition-opacity" />
+                  )}
+                  {canScrollPendingRight && (
+                    <div className="pointer-events-none absolute right-0 top-[49px] bottom-0 w-6 bg-gradient-to-l from-gray-900/5 to-transparent z-10 transition-opacity" />
+                  )}
+
+                  {/* Dedicated Scroll Container */}
+                  <div
+                    ref={pendingTableScrollRef}
+                    onScroll={checkPendingScroll}
+                    className="w-full min-w-0 overflow-x-auto custom-scrollbar overscroll-x-contain"
+                    style={{ WebkitOverflowScrolling: 'touch' }}
+                  >
+                    <table className="w-full border-collapse text-left min-w-[1150px]">
+                      <thead>
+                        <tr className="bg-gray-50 border-b border-gray-100 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                          <th className="p-4 whitespace-nowrap min-w-[180px]">Employee</th>
+                          <th className="p-4 whitespace-nowrap min-w-[150px]">Role / Dept</th>
+                          <th className="p-4 whitespace-nowrap min-w-[100px]">Type</th>
+                          <th className="p-4 whitespace-nowrap min-w-[100px]">Time</th>
+                          <th className="p-4 whitespace-nowrap min-w-[160px]">Location</th>
+                          <th className="p-4 whitespace-nowrap min-w-[180px]">Notes</th>
+                          <th className="p-4 text-right whitespace-nowrap min-w-[340px]">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-50 text-xs text-gray-600">
+                        {pendingList.map((record: any) => (
+                          <tr key={record.id} className="hover:bg-gray-50/50">
+                            <td className="p-4 min-w-[180px]">
+                              <p className="font-bold text-gray-900">{record.user?.name}</p>
+                              <p className="text-[10px] text-gray-400 mt-0.5">{record.user?.email}</p>
+                            </td>
+                            <td className="p-4 min-w-[150px]">
+                              <p className="font-bold">{record.user?.department?.name || 'No Dept'}</p>
+                              <p className="text-[10px] text-gray-400 mt-0.5">{record.user?.role?.name}</p>
+                            </td>
+                            <td className="p-4 min-w-[100px] whitespace-nowrap">
+                              <span className="px-2 py-0.5 rounded bg-amber-50 text-amber-600 text-[10px] font-bold">
+                                {record.attendanceType}
+                              </span>
+                            </td>
+                            <td className="p-4 min-w-[100px] whitespace-nowrap">
+                              {record.checkInTime ? new Date(record.checkInTime).toLocaleTimeString() : '-'}
+                            </td>
+                            <td className="p-4 text-[10px] font-mono min-w-[160px]">
+                              <p>{record.geoLocation || '—'}</p>
+                              <p className="text-gray-400">
+                                {record.calculatedDistanceMeters != null
+                                  ? `${Math.round(record.calculatedDistanceMeters)} m`
+                                  : record.isInsideOfficeRadius
+                                  ? 'In radius'
+                                  : '—'}
+                              </p>
+                            </td>
+                            <td className="p-4 min-w-[180px] max-w-[240px]">
+                              {record.notes && <p className="font-medium truncate" title={record.notes}>Check-In: {record.notes}</p>}
+                              {record.workSummary && <p className="text-[10px] text-gray-500 mt-1 truncate" title={record.workSummary}>Check-Out Summary: {record.workSummary}</p>}
+                              {!record.notes && !record.workSummary && '—'}
+                            </td>
+                            <td className="p-4 text-right min-w-[340px] whitespace-nowrap">
+                              <div className="flex justify-end items-center gap-2">
+                                {(record.workSummary || record.notes) && (
+                                  <button
+                                    onClick={() => {
+                                      setSelectedRecordForSummary(record);
+                                      setShowSummaryViewModal(true);
+                                    }}
+                                    className="px-3 py-1.5 bg-gray-50 text-gray-600 rounded-lg font-bold hover:bg-gray-100 transition-colors cursor-pointer"
+                                  >
+                                    View Summary
+                                  </button>
+                                )}
                                 <button
-                                  onClick={() => {
-                                    setSelectedRecordForSummary(record);
-                                    setShowSummaryViewModal(true);
-                                  }}
-                                  className="px-3 py-1.5 bg-gray-50 text-gray-600 rounded-lg font-bold hover:bg-gray-100 transition-colors cursor-pointer"
+                                  onClick={() => handleClarificationRequest(record.id)}
+                                  disabled={processingActionRecordId === record.id}
+                                  className="px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg font-bold hover:bg-blue-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                                 >
-                                  View Summary
+                                  Clarify
                                 </button>
-                              )}
-                              <button
-                                onClick={() => handleClarificationRequest(record.id)}
-                                disabled={processingActionRecordId === record.id}
-                                className="px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg font-bold hover:bg-blue-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                              >
-                                Clarify
-                              </button>
-                              <button
-                                onClick={() => handleReview(record.id, 'APPROVE')}
-                                disabled={processingActionRecordId === record.id}
-                                className="px-3 py-1.5 bg-emerald-50 text-emerald-600 rounded-lg font-bold hover:bg-emerald-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                              >
-                                {processingActionRecordId === record.id ? 'Approving...' : 'Approve'}
-                              </button>
-                              <button
-                                onClick={() => handleReview(record.id, 'REJECT')}
-                                disabled={processingActionRecordId === record.id}
-                                className="px-3 py-1.5 bg-rose-50 text-rose-600 rounded-lg font-bold hover:bg-rose-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                              >
-                                Reject
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                      {pendingList.length === 0 && (
-                        <tr>
-                          <td colSpan={7} className="text-center p-8 text-gray-400 font-semibold">
-                            No pending attendance approvals found.
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
+                                <button
+                                  onClick={() => handleReview(record.id, 'APPROVE')}
+                                  disabled={processingActionRecordId === record.id}
+                                  className="px-3 py-1.5 bg-emerald-50 text-emerald-600 rounded-lg font-bold hover:bg-emerald-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                >
+                                  {processingActionRecordId === record.id ? 'Approving...' : 'Approve'}
+                                </button>
+                                <button
+                                  onClick={() => handleReview(record.id, 'REJECT')}
+                                  disabled={processingActionRecordId === record.id}
+                                  className="px-3 py-1.5 bg-rose-50 text-rose-600 rounded-lg font-bold hover:bg-rose-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                >
+                                  Reject
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                        {pendingList.length === 0 && (
+                          <tr>
+                            <td colSpan={7} className="text-center p-8 text-gray-400 font-semibold">
+                              No pending attendance approvals found.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
             )}
