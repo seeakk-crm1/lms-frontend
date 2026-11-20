@@ -66,6 +66,7 @@ export interface LeadListItem {
     productId: string | null;
     productName: string;
     productCode?: string | null;
+    typeId?: string | null;
     type?: string | null;
     category?: string | null;
     unitPrice: number;

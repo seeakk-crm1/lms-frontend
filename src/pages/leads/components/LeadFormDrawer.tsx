@@ -13,6 +13,7 @@ import { useFollowupWorkflowStore } from '../../../store/followupWorkflowStore';
 import type { FollowUpType } from '../../../types/followup.types';
 import { FOLLOW_UP_TYPE_OPTIONS } from '../../../modules/followups/followUpTypeUi';
 import type { LeadFormValues, LeadListItem, LeadOption } from '../../../types/lead.types';
+import type { LeadProductSelection } from '../../../types/product.types';
 import DynamicFieldRenderer from './DynamicFieldRenderer';
 import { useLeadFieldEdits } from './useLeadFieldEdits';
 import { FieldEditBadge } from './FieldEditBadge';
@@ -92,8 +93,10 @@ const fromLeadToForm = (lead: LeadListItem): LeadFormValues => ({
   products: (lead.products || []).map((item) => ({
     productId: item.productId || '',
     quantity: item.quantity || 1,
+    typeId: (item as any).typeId || undefined,
     type: item.type || '',
     category: item.category || '',
+    unitPrice: item.unitPrice !== undefined ? Number(item.unitPrice) : undefined,
   })).filter((item) => item.productId),
   totalAmount: (lead as any).totalAmount || 0,
 });
@@ -135,14 +138,39 @@ const buildDynamicPayload = (
     : payload;
 };
 
+const resolveItemUnitPrice = (
+  item: LeadProductSelection,
+  product?: any,
+): number => {
+  if (!product) return item.unitPrice !== undefined ? Number(item.unitPrice) : 0;
+
+  const typeOptions: any[] = Array.isArray(product.typeOptions) ? product.typeOptions : [];
+  if (typeOptions.length > 0) {
+    let matched = item.typeId ? typeOptions.find((t: any) => t.id === item.typeId) : null;
+    if (!matched && item.type) {
+      matched = typeOptions.find((t: any) => t.name?.trim().toLowerCase() === item.type?.trim().toLowerCase());
+    }
+    if (matched && matched.unitPrice !== undefined && matched.unitPrice !== null) {
+      return Number(matched.unitPrice);
+    }
+  }
+
+  if (item.unitPrice !== undefined && !isNaN(Number(item.unitPrice)) && Number(item.unitPrice) >= 0) {
+    return Number(item.unitPrice);
+  }
+
+  return Number(product.unitPrice || 0);
+};
+
 const calculateProductTotal = (
   selections: LeadFormValues['products'],
-  products: Array<{ id: string; unitPrice: number }>,
+  products: any[],
 ) => {
   const productById = new Map(products.map((product) => [product.id, product]));
   return selections.reduce((sum, item) => {
     const product = productById.get(item.productId);
-    return sum + Number(product?.unitPrice || 0) * Math.max(1, Number(item.quantity || 1));
+    const unitPrice = resolveItemUnitPrice(item, product);
+    return sum + unitPrice * Math.max(1, Number(item.quantity || 1));
   }, 0);
 };
 
@@ -667,11 +695,49 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, sel
         if (itemIndex !== index) return item;
 
         if (field === 'productId') {
+          const prodId = String(value);
+          const selectedProd = productOptions.find((p: any) => p.id === prodId);
+          const typeOpts: any[] = Array.isArray(selectedProd?.typeOptions) ? selectedProd.typeOptions : [];
+          const defaultType = typeOpts.find((t: any) => t.isDefault) || (typeOpts.length === 1 ? typeOpts[0] : null);
+
+          const initialUnitPrice = defaultType
+            ? Number(defaultType.unitPrice || 0)
+            : Number(selectedProd?.unitPrice || 0);
+
           return {
             ...item,
-            productId: String(value),
-            type: '',
+            productId: prodId,
+            typeId: defaultType ? defaultType.id : undefined,
+            type: defaultType ? defaultType.name : '',
             category: '',
+            unitPrice: initialUnitPrice,
+          };
+        }
+
+        if (field === 'type') {
+          const typeVal = String(value);
+          const selectedProd = productOptions.find((p: any) => p.id === item.productId);
+          const typeOpts: any[] = Array.isArray(selectedProd?.typeOptions) ? selectedProd.typeOptions : [];
+          const matchedOpt = typeOpts.find((o: any) => o.name === typeVal || o.id === typeVal);
+
+          let newUnitPrice: number;
+          let newTypeId: string | undefined = undefined;
+
+          if (matchedOpt) {
+            newUnitPrice = Number(matchedOpt.unitPrice || 0);
+            newTypeId = matchedOpt.id;
+          } else if (!typeVal) {
+            const defaultOpt = typeOpts.find((t: any) => t.isDefault);
+            newUnitPrice = defaultOpt ? Number(defaultOpt.unitPrice || 0) : Number(selectedProd?.unitPrice || 0);
+          } else {
+            newUnitPrice = item.unitPrice !== undefined ? Number(item.unitPrice) : Number(selectedProd?.unitPrice || 0);
+          }
+
+          return {
+            ...item,
+            type: matchedOpt ? matchedOpt.name : typeVal,
+            typeId: newTypeId,
+            unitPrice: newUnitPrice,
           };
         }
 
@@ -1717,13 +1783,17 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, sel
                         <div className="space-y-3">
                           {formValues.products.map((item, index) => {
                             const selectedProduct = productOptions.find((product: any) => product.id === item.productId);
-                            const unitPrice = Number(selectedProduct?.unitPrice || 0);
+                            const unitPrice = resolveItemUnitPrice(item, selectedProduct);
                             const quantity = Math.max(1, Number(item.quantity || 1));
                             const lineTotal = unitPrice * quantity;
 
-                            const configuredTypes: string[] = Array.isArray(selectedProduct?.types)
-                              ? selectedProduct.types
+                            const configuredTypeOptions: any[] = Array.isArray(selectedProduct?.typeOptions)
+                              ? selectedProduct.typeOptions
                               : [];
+                            const configuredTypeNames: string[] = configuredTypeOptions.length > 0
+                              ? configuredTypeOptions.map((t: any) => t.name)
+                              : (Array.isArray(selectedProduct?.types) ? selectedProduct.types : []);
+
                             const configuredCategories: string[] =
                               Array.isArray(selectedProduct?.categories) && selectedProduct.categories.length > 0
                                 ? selectedProduct.categories
@@ -1732,9 +1802,9 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, sel
                                 : [];
 
                             const availableTypes =
-                              item.type && !configuredTypes.includes(item.type)
-                                ? [item.type, ...configuredTypes]
-                                : configuredTypes;
+                              item.type && !configuredTypeNames.includes(item.type)
+                                ? [item.type, ...configuredTypeNames]
+                                : configuredTypeNames;
                             const availableCategories =
                               item.category && !configuredCategories.includes(item.category)
                                 ? [item.category, ...configuredCategories]
@@ -1781,11 +1851,14 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, sel
                                           ? 'No types'
                                           : 'Select type'}
                                       </option>
-                                      {availableTypes.map((t) => (
-                                        <option key={t} value={t}>
-                                          {t}
-                                        </option>
-                                      ))}
+                                      {availableTypes.map((tName) => {
+                                        const matchedOpt = configuredTypeOptions.find((o: any) => o.name === tName);
+                                        return (
+                                          <option key={tName} value={tName}>
+                                            {tName}{matchedOpt ? ` (${formatCurrency(matchedOpt.unitPrice)})` : ''}
+                                          </option>
+                                        );
+                                      })}
                                     </select>
                                   </div>
 

@@ -1,5 +1,13 @@
 export type ProductStatus = 'ACTIVE' | 'INACTIVE';
 
+export interface ProductTypeOption {
+  id?: string;
+  name: string;
+  unitPrice: number;
+  status?: ProductStatus;
+  isDefault?: boolean;
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -7,6 +15,7 @@ export interface Product {
   category?: string | null;
   categories?: string[];
   types?: string[];
+  typeOptions?: ProductTypeOption[];
   description?: string | null;
   unitPrice: number;
   status: ProductStatus;
@@ -40,6 +49,7 @@ export interface ProductInput {
   category?: string;
   categories?: string[];
   types?: string[];
+  typeOptions?: ProductTypeOption[];
   description?: string;
   unitPrice: number;
   status: ProductStatus;
@@ -48,6 +58,8 @@ export interface ProductInput {
 export interface LeadProductSelection {
   productId: string;
   quantity: number;
+  typeId?: string;
   type?: string;
   category?: string;
+  unitPrice?: number;
 }
