@@ -733,10 +733,37 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, sel
             newUnitPrice = item.unitPrice !== undefined ? Number(item.unitPrice) : Number(selectedProd?.unitPrice || 0);
           }
 
+          let newCategory = '';
+          if (matchedOpt) {
+            const allowedCats: string[] = Array.isArray(matchedOpt.categories) ? matchedOpt.categories : [];
+            const isCategoryValid = item.category
+              ? allowedCats.some((c) => c.toLowerCase() === item.category!.toLowerCase())
+              : false;
+            newCategory = isCategoryValid
+              ? (allowedCats.find((c) => c.toLowerCase() === item.category!.toLowerCase()) || item.category || '')
+              : '';
+          } else if (typeOpts.length === 0) {
+            const prodCats: string[] =
+              Array.isArray(selectedProd?.categories) && selectedProd.categories.length > 0
+                ? selectedProd.categories
+                : selectedProd?.category
+                  ? [selectedProd.category]
+                  : [];
+            const isCategoryValid = item.category
+              ? prodCats.some((c) => c.toLowerCase() === item.category!.toLowerCase())
+              : false;
+            newCategory = isCategoryValid
+              ? (prodCats.find((c) => c.toLowerCase() === item.category!.toLowerCase()) || item.category || '')
+              : '';
+          } else {
+            newCategory = '';
+          }
+
           return {
             ...item,
             type: matchedOpt ? matchedOpt.name : typeVal,
             typeId: newTypeId,
+            category: newCategory,
             unitPrice: newUnitPrice,
           };
         }
@@ -1794,21 +1821,46 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, sel
                               ? configuredTypeOptions.map((t: any) => t.name)
                               : (Array.isArray(selectedProduct?.types) ? selectedProduct.types : []);
 
-                            const configuredCategories: string[] =
-                              Array.isArray(selectedProduct?.categories) && selectedProduct.categories.length > 0
-                                ? selectedProduct.categories
-                                : selectedProduct?.category
-                                  ? [selectedProduct.category]
-                                  : [];
+                            const matchedTypeOpt = configuredTypeOptions.find(
+                              (t: any) =>
+                                (item.typeId && t.id === item.typeId) ||
+                                (item.type && (t.name === item.type || t.id === item.type))
+                            );
+
+                            let typeSpecificCategories: string[] = [];
+                            if (matchedTypeOpt) {
+                              typeSpecificCategories = Array.isArray(matchedTypeOpt.categories)
+                                ? matchedTypeOpt.categories
+                                : [];
+                            } else if (configuredTypeOptions.length === 0) {
+                              typeSpecificCategories =
+                                Array.isArray(selectedProduct?.categories) && selectedProduct.categories.length > 0
+                                  ? selectedProduct.categories
+                                  : selectedProduct?.category
+                                    ? [selectedProduct.category]
+                                    : [];
+                            }
 
                             const availableTypes =
                               item.type && !configuredTypeNames.includes(item.type)
                                 ? [item.type, ...configuredTypeNames]
                                 : configuredTypeNames;
                             const availableCategories =
-                              item.category && !configuredCategories.includes(item.category)
-                                ? [item.category, ...configuredCategories]
-                                : configuredCategories;
+                              item.category && !typeSpecificCategories.includes(item.category)
+                                ? [item.category, ...typeSpecificCategories]
+                                : typeSpecificCategories;
+
+                            const isTypeSelectionRequired = configuredTypeNames.length > 0 && !item.type;
+                            const hasNoCategories = availableCategories.length === 0;
+                            const isCategoryDisabled = !selectedProduct || isTypeSelectionRequired || hasNoCategories;
+
+                            const categoryPlaceholder = !selectedProduct
+                              ? 'Select product'
+                              : isTypeSelectionRequired
+                                ? 'Select type first'
+                                : hasNoCategories
+                                  ? 'No categories'
+                                  : 'Select category';
 
                             return (
                               <div
@@ -1868,17 +1920,11 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, sel
                                     </label>
                                     <select
                                       value={item.category || ''}
-                                      disabled={!selectedProduct || availableCategories.length === 0}
+                                      disabled={isCategoryDisabled}
                                       onChange={(event) => handleProductRowChange(index, 'category', event.target.value)}
                                       className={`${inputClassName} disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed`}
                                     >
-                                      <option value="">
-                                        {!selectedProduct
-                                          ? 'Select product'
-                                          : availableCategories.length === 0
-                                            ? 'No categories'
-                                            : 'Select category'}
-                                      </option>
+                                      <option value="">{categoryPlaceholder}</option>
                                       {availableCategories.map((c) => (
                                         <option key={c} value={c}>
                                           {c}
