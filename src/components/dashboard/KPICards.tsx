@@ -30,6 +30,13 @@ const itemVariants: Variants = {
     }
 };
 
+const getValueFontSize = (val: string | number) => {
+    const str = String(val ?? '');
+    if (str.length >= 15) return 'text-base sm:text-lg xl:text-xl';
+    if (str.length >= 11) return 'text-lg sm:text-xl xl:text-2xl';
+    return 'text-xl sm:text-2xl';
+};
+
 const getKpiRoute = (title: string): string | null => {
     const normalized = title.trim().toLowerCase();
     if (normalized === 'closed leads') {
@@ -181,12 +188,12 @@ const KPICards: React.FC<KPICardsProps> = ({ cardPreferences }) => {
 
                         <div className="relative z-10">
                             <p
-                                className="text-[10px] sm:text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1 truncate"
+                                className="text-[10px] sm:text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1 leading-tight whitespace-normal break-words"
                                 title={kpi.displayTitle !== kpi.originalTitle ? `Original metric: ${kpi.originalTitle}` : undefined}
                             >
                                 {kpi.displayTitle}
                             </p>
-                            <h3 className="text-xl sm:text-2xl font-black text-gray-900 leading-tight tracking-tight">{kpi.value}</h3>
+                            <h3 className={`font-black text-gray-900 leading-tight tracking-tight ${getValueFontSize(kpi.value)}`}>{kpi.value}</h3>
                         </div>
                     </motion.div>
                 );

@@ -17,6 +17,13 @@ const LeadViewDrawer = lazyWithChunkRecovery(() => import('./components/LeadView
 
 import { formatCurrency } from '../../utils/currency';
 
+const getValueFontSize = (val: string | number) => {
+  const str = String(val ?? '');
+  if (str.length >= 15) return 'text-base sm:text-lg xl:text-xl';
+  if (str.length >= 11) return 'text-lg sm:text-xl xl:text-2xl';
+  return 'text-xl sm:text-2xl';
+};
+
 const normalizeRole = (role: unknown) =>
   String(typeof role === 'object' && role !== null ? (role as { name?: string }).name || '' : role || '')
     .toLowerCase()
@@ -256,21 +263,48 @@ const ClosedLeadsPage: React.FC = () => {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.04 }}
-                className="h-[76px] sm:h-[80px] rounded-xl border border-gray-200/80 bg-white p-3 sm:p-3.5 shadow-xs flex items-center justify-between hover:border-gray-300 transition-all"
+                className="group rounded-xl border border-gray-200/80 bg-white p-3 sm:p-3.5 shadow-xs flex flex-col justify-between hover:border-gray-300 hover:shadow-sm transition-all min-h-[88px] sm:min-h-[92px]"
               >
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className={`h-10 w-10 rounded-lg flex items-center justify-center shrink-0 border ${stat.iconBg}`}>
-                    <stat.icon size={20} strokeWidth={2.2} />
+                {/* Header: Icon + Full Label */}
+                <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+                  <div className={`h-7 w-7 sm:h-8 sm:w-8 rounded-lg flex items-center justify-center shrink-0 border ${stat.iconBg}`}>
+                    <stat.icon size={15} strokeWidth={2.2} />
                   </div>
-                  <div className="min-w-0">
-                    <div className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-gray-500 truncate">{stat.label}</div>
-                    <div className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight leading-none mt-1 truncate">{stat.value}</div>
-                  </div>
+                  <span
+                    className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-gray-500 leading-tight whitespace-normal break-words"
+                    title={stat.label}
+                  >
+                    {stat.label}
+                  </span>
                 </div>
 
-                <svg className="w-16 sm:w-20 h-8 shrink-0 overflow-visible ml-2" viewBox="0 0 80 32" fill="none">
-                  <path d={stat.sparkPath} stroke={stat.lineColor} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
+                {/* Body: Value + Flexible Sparkline */}
+                <div className="flex items-baseline sm:items-end justify-between gap-2 pt-2 min-w-0">
+                  <div
+                    className={`font-black text-gray-900 tracking-tight leading-none shrink-0 ${getValueFontSize(stat.value)}`}
+                    title={typeof stat.value === 'string' ? stat.value : String(stat.value)}
+                  >
+                    {stat.value}
+                  </div>
+
+                  <div className="min-w-0 shrink flex items-end justify-end self-end pb-0.5">
+                    <svg
+                      className="w-14 sm:w-16 h-6 sm:h-7 shrink overflow-visible opacity-75 group-hover:opacity-100 transition-opacity"
+                      viewBox="0 0 80 32"
+                      fill="none"
+                      preserveAspectRatio="xMidYMid meet"
+                      aria-hidden="true"
+                    >
+                      <path
+                        d={stat.sparkPath}
+                        stroke={stat.lineColor}
+                        strokeWidth="2.4"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </div>
+                </div>
               </motion.div>
             ))}
           </div>
