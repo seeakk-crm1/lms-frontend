@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Edit2, Package, Plus, Power, Search, Trash2, X } from 'lucide-react';
+import { AlertCircle, Edit2, Package, Plus, Power, Search, Trash2, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import DashboardLayout from '../components/dashboard/DashboardLayout';
 import { createProduct, deleteProduct, getProducts, toggleProductStatus, updateProduct } from '../services/products.api';
@@ -53,6 +53,7 @@ const ProductListPage: React.FC = () => {
   const [editing, setEditing] = useState<Product | null>(null);
   const [form, setForm] = useState<ProductInput>(emptyForm);
   const [categoryInput, setCategoryInput] = useState('');
+  const [typeCategoryInputs, setTypeCategoryInputs] = useState<Record<string, string>>({});
 
   const productsQuery = useQuery({
     queryKey: ['products', search, status, page],
@@ -66,16 +67,6 @@ const ProductListPage: React.FC = () => {
 
   const saveMutation = useMutation({
     mutationFn: () => {
-      let currentCategories = [...(form.categories || [])];
-      const pendingCat = categoryInput.trim();
-      if (pendingCat && !currentCategories.some((c) => c.toLowerCase() === pendingCat.toLowerCase())) {
-        currentCategories.push(pendingCat);
-      }
-
-      const sanitizedCategories = Array.from(
-        new Set(currentCategories.map((c) => c.trim()).filter(Boolean)),
-      );
-
       const rawTypeOptions = form.typeOptions || [];
       // Validate non-empty names
       for (let i = 0; i < rawTypeOptions.length; i++) {
@@ -124,6 +115,9 @@ const ProductListPage: React.FC = () => {
         unitPrice: Math.max(0, Number(opt.unitPrice) || 0),
         status: opt.status || 'ACTIVE',
         isDefault: Boolean(opt.isDefault),
+        categories: Array.isArray(opt.categories)
+          ? Array.from(new Set(opt.categories.map((c) => c.trim()).filter(Boolean)))
+          : [],
       }));
 
       if (sanitizedTypeOptions.length > 0 && !sanitizedTypeOptions.some((t) => t.isDefault)) {
@@ -135,11 +129,17 @@ const ProductListPage: React.FC = () => {
         ? Number(defaultOption.unitPrice || 0)
         : Math.max(0, Number(form.unitPrice || 0));
 
+      const allTypeCats = Array.from(
+        new Set(sanitizedTypeOptions.flatMap((t) => t.categories || [])),
+      );
+      const legacyCats = editing && Array.isArray(form.categories) ? form.categories : [];
+      const combinedCategories = Array.from(new Set([...legacyCats, ...allTypeCats]));
+
       const payload: ProductInput = {
         name: form.name.trim(),
         code: form.code?.trim() || undefined,
-        category: sanitizedCategories[0] || form.category?.trim() || undefined,
-        categories: sanitizedCategories,
+        category: combinedCategories[0] || form.category?.trim() || undefined,
+        categories: combinedCategories,
         types: sanitizedTypeOptions.map((t) => t.name),
         typeOptions: sanitizedTypeOptions,
         description: form.description?.trim() || undefined,
@@ -155,6 +155,7 @@ const ProductListPage: React.FC = () => {
       setEditing(null);
       setForm(emptyForm);
       setCategoryInput('');
+      setTypeCategoryInputs({});
       queryClient.invalidateQueries({ queryKey: ['products'] });
     },
     onError: (error: any) => {
@@ -198,6 +199,7 @@ const ProductListPage: React.FC = () => {
     setEditing(null);
     setForm(emptyForm);
     setCategoryInput('');
+    setTypeCategoryInputs({});
     setFormOpen(true);
   };
 
@@ -211,12 +213,13 @@ const ProductListPage: React.FC = () => {
 
     let initialTypeOptions: ProductTypeOption[] = [];
     if (Array.isArray(product.typeOptions) && product.typeOptions.length > 0) {
-      initialTypeOptions = product.typeOptions.map((t, idx) => ({
+      initialTypeOptions = product.typeOptions.map((t: any, idx: number) => ({
         id: t.id || `type-${idx}`,
         name: t.name,
         unitPrice: t.unitPrice !== undefined && t.unitPrice !== null ? String(t.unitPrice) : '',
         status: t.status || 'ACTIVE',
         isDefault: Boolean(t.isDefault),
+        categories: Array.isArray(t.categories) ? t.categories : [],
       }));
     } else if (Array.isArray(product.types) && product.types.length > 0) {
       initialTypeOptions = product.types.map((name, idx) => ({
@@ -225,6 +228,7 @@ const ProductListPage: React.FC = () => {
         unitPrice: product.unitPrice !== undefined && product.unitPrice !== null ? String(product.unitPrice) : '',
         status: 'ACTIVE',
         isDefault: idx === 0,
+        categories: [],
       }));
     }
 
@@ -249,6 +253,7 @@ const ProductListPage: React.FC = () => {
       status: product.status,
     });
     setCategoryInput('');
+    setTypeCategoryInputs({});
     setFormOpen(true);
   };
 
@@ -261,6 +266,7 @@ const ProductListPage: React.FC = () => {
       unitPrice: '',
       status: 'ACTIVE',
       isDefault: isFirst,
+      categories: [],
     };
     const nextOptions = [...current, newRow];
     setForm((prev) => ({
@@ -321,6 +327,35 @@ const ProductListPage: React.FC = () => {
         unitPrice: defaultItem ? defaultItem.unitPrice : prev.unitPrice,
       };
     });
+  };
+
+  const handleAddCategoryToType = (typeIndex: number) => {
+    const current = form.typeOptions || [];
+    const targetType = current[typeIndex];
+    if (!targetType) return;
+    const typeKey = targetType.id || String(typeIndex);
+    const rawInput = typeCategoryInputs[typeKey] || '';
+    const trimmed = rawInput.trim().replace(/\s+/g, ' ');
+    if (!trimmed) return;
+
+    const existingCats = Array.isArray(targetType.categories) ? targetType.categories : [];
+    if (existingCats.some((c) => c.toLowerCase() === trimmed.toLowerCase())) {
+      toast.error(`Category "${trimmed}" already added to this type.`);
+      return;
+    }
+
+    const updatedCats = [...existingCats, trimmed];
+    handleUpdateTypeRow(typeIndex, 'categories', updatedCats);
+    setTypeCategoryInputs((prev) => ({ ...prev, [typeKey]: '' }));
+  };
+
+  const handleRemoveCategoryFromType = (typeIndex: number, catIndex: number) => {
+    const current = form.typeOptions || [];
+    const targetType = current[typeIndex];
+    if (!targetType) return;
+    const existingCats = Array.isArray(targetType.categories) ? targetType.categories : [];
+    const updatedCats = existingCats.filter((_, idx) => idx !== catIndex);
+    handleUpdateTypeRow(typeIndex, 'categories', updatedCats);
   };
 
   const handleAddCategory = () => {
@@ -429,14 +464,18 @@ const ProductListPage: React.FC = () => {
                     </tr>
                   ) : (
                     rows.map((product) => {
-                      const categoriesList =
+                      const typeOptionsList = Array.isArray(product.typeOptions) ? product.typeOptions : [];
+                      const typesList = Array.isArray(product.types) ? product.types : [];
+                      const typeLevelCategories = typeOptionsList.flatMap((t: any) =>
+                        Array.isArray(t.categories) ? t.categories : [],
+                      );
+                      const rawProductCategories =
                         Array.isArray(product.categories) && product.categories.length > 0
                           ? product.categories
                           : product.category
                             ? [product.category]
                             : [];
-                      const typeOptionsList = Array.isArray(product.typeOptions) ? product.typeOptions : [];
-                      const typesList = Array.isArray(product.types) ? product.types : [];
+                      const categoriesList = Array.from(new Set([...typeLevelCategories, ...rawProductCategories]));
 
                       return (
                         <tr key={product.id} className="hover:bg-gray-50/80">
@@ -444,7 +483,7 @@ const ProductListPage: React.FC = () => {
                           <td className="px-5 py-4 text-sm font-semibold text-gray-600">{product.code || '-'}</td>
                           <td className="px-5 py-4 text-sm font-semibold text-gray-600">
                             {typeOptionsList.length > 0 ? (
-                              <div className="flex flex-wrap gap-1.5 max-w-[260px]">
+                              <div className="flex flex-wrap gap-1.5 max-w-[280px]">
                                 {typeOptionsList.map((opt, idx) => (
                                   <span
                                     key={opt.id || idx}
@@ -453,10 +492,19 @@ const ProductListPage: React.FC = () => {
                                         ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
                                         : 'bg-sky-50 text-sky-800 border-sky-100'
                                     }`}
-                                    title={opt.isDefault ? `${opt.name} (Default Type)` : opt.name}
+                                    title={
+                                      opt.isDefault
+                                        ? `${opt.name} (Default Type)${opt.categories?.length ? ` • Categories: ${opt.categories.join(', ')}` : ''}`
+                                        : `${opt.name}${opt.categories?.length ? ` • Categories: ${opt.categories.join(', ')}` : ''}`
+                                    }
                                   >
                                     <span>{opt.name}</span>
                                     <span className="text-[10px] opacity-75">· {formatCurrency(opt.unitPrice)}</span>
+                                    {Array.isArray(opt.categories) && opt.categories.length > 0 && (
+                                      <span className="text-[9px] bg-white/80 border border-current px-1 rounded font-black opacity-80">
+                                        {opt.categories.length} {opt.categories.length === 1 ? 'cat' : 'cats'}
+                                      </span>
+                                    )}
                                     {opt.isDefault && (
                                       <span className="text-[9px] bg-emerald-200/80 text-emerald-900 px-1 rounded font-black">
                                         DEF
@@ -706,121 +754,125 @@ const ProductListPage: React.FC = () => {
                   </label>
                 </div>
 
-                {/* 2. CONFIGURABLE CATEGORIES */}
-                <div className="space-y-3 rounded-2xl border border-gray-100 bg-gray-50/60 p-4">
+                {/* 2. TYPES, PRICING & CATEGORIES */}
+                <div className="space-y-4 rounded-2xl border border-gray-100 bg-gray-50/60 p-4">
                   <div className="flex items-center justify-between">
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-black uppercase tracking-wider text-emerald-700 bg-emerald-100/60 px-2 py-0.5 rounded-md">
-                          2. Configurable Categories
+                          2. Types, Pricing & Categories
                         </span>
                       </div>
                       <p className="text-xs font-semibold text-gray-500 mt-1">
-                        Add multiple selectable categories for this product (e.g. Software, Consulting, Retainer).
+                        Configure distinct types with separate unit prices and type-specific categories. Each type is independently priced and categorized.
                       </p>
                     </div>
                     <span className="text-xs font-black text-gray-500 bg-white px-2.5 py-1 rounded-lg border border-gray-200 shadow-sm">
-                      {(form.categories || []).length} added
+                      {(form.typeOptions || []).length} types configured
                     </span>
                   </div>
 
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={categoryInput}
-                      onChange={(e) => setCategoryInput(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
-                          handleAddCategory();
-                        }
-                      }}
-                      placeholder="Enter category name and press enter or click + Add"
-                      className="flex-1 px-4 py-2.5 bg-white border border-gray-200 rounded-xl outline-none focus:border-emerald-500 text-xs font-bold text-gray-900 transition-all shadow-sm"
-                    />
-                    <button
-                      type="button"
-                      onClick={handleAddCategory}
-                      disabled={!categoryInput.trim()}
-                      className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-xs font-black transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-sm shrink-0 cursor-pointer"
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                      <span>Add Category</span>
-                    </button>
-                  </div>
-
-                  {(form.categories || []).length > 0 ? (
-                    <div className="flex flex-wrap gap-2 pt-1">
-                      {(form.categories || []).map((catVal, idx) => (
-                        <span
-                          key={idx}
-                          className="inline-flex items-center gap-2 px-3 py-1.5 bg-white border border-emerald-200 rounded-xl text-xs font-bold text-emerald-900 shadow-sm"
-                        >
-                          <span>{catVal}</span>
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveCategory(idx)}
-                            title="Remove Category"
-                            aria-label="Remove Category"
-                            className="p-0.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors cursor-pointer"
-                          >
-                            <X className="w-3.5 h-3.5" />
-                          </button>
-                        </span>
-                      ))}
+                  {/* Legacy Categories Alert if editing product has legacy product-level categories */}
+                  {form.categories && form.categories.length > 0 && (
+                    <div className="rounded-xl border border-amber-200 bg-amber-50/80 p-3 text-xs text-amber-900">
+                      <div className="font-bold flex items-center gap-1.5 mb-1">
+                        <AlertCircle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                        <span>Legacy Product Categories ({form.categories.length})</span>
+                      </div>
+                      <p className="text-[11px] text-amber-800 leading-relaxed">
+                        This product previously had product-level categories (<strong className="font-bold">{form.categories.join(', ')}</strong>). Configure categories directly inside each specific type below. Existing categories remain preserved for historical lead selections.
+                      </p>
                     </div>
-                  ) : (
-                    <p className="text-[11px] font-semibold text-gray-400 italic">
-                      No categories added yet. Type a name above and click + Add Category.
-                    </p>
                   )}
-                </div>
 
-                {/* 3. TYPES & PRICING TABLE */}
-                <div className="space-y-3 rounded-2xl border border-gray-100 bg-gray-50/60 p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-black uppercase tracking-wider text-emerald-700 bg-emerald-100/60 px-2 py-0.5 rounded-md">
-                          3. Types & Pricing
-                        </span>
-                      </div>
-                      <p className="text-xs font-semibold text-gray-500 mt-1">
-                        Configure distinct types with separate unit prices. Each type can be independently priced and selected on leads.
-                      </p>
-                    </div>
-                    <span className="text-xs font-black text-gray-500 bg-white px-2.5 py-1 rounded-lg border border-gray-200 shadow-sm">
-                      {(form.typeOptions || []).length} configured
-                    </span>
-                  </div>
-
+                  {/* Type Cards */}
                   {(form.typeOptions || []).length > 0 ? (
-                    <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
-                      <table className="min-w-full divide-y divide-gray-200 text-left text-xs">
-                        <thead className="bg-gray-50">
-                          <tr>
-                            <th className="px-3.5 py-3 font-black text-gray-600 uppercase tracking-wider">Type Name *</th>
-                            <th className="px-3.5 py-3 font-black text-gray-600 uppercase tracking-wider w-[140px]">Unit Price *</th>
-                            <th className="px-3.5 py-3 font-black text-gray-600 uppercase tracking-wider w-[120px]">Status</th>
-                            <th className="px-3.5 py-3 font-black text-gray-600 uppercase tracking-wider w-[90px] text-center">Default</th>
-                            <th className="px-3.5 py-3 font-black text-gray-600 uppercase tracking-wider w-[60px] text-center">Actions</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-100 bg-white">
-                          {(form.typeOptions || []).map((opt, idx) => (
-                            <tr key={opt.id || idx} className="hover:bg-gray-50/80 transition">
-                              <td className="px-3 py-2.5">
+                    <div className="space-y-3.5">
+                      {(form.typeOptions || []).map((opt, idx) => {
+                        const typeKey = opt.id || String(idx);
+                        const typeInputVal = typeCategoryInputs[typeKey] || '';
+                        const optCats = Array.isArray(opt.categories) ? opt.categories : [];
+
+                        return (
+                          <div
+                            key={opt.id || idx}
+                            className={`rounded-2xl border bg-white p-4 transition-all shadow-xs space-y-3.5 ${
+                              opt.isDefault ? 'border-emerald-300 ring-1 ring-emerald-100' : 'border-gray-200 hover:border-gray-300'
+                            }`}
+                          >
+                            {/* Type Card Header */}
+                            <div className="flex items-center justify-between pb-2 border-b border-gray-100 flex-wrap gap-2">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-black text-gray-700 bg-gray-100 px-2 py-0.5 rounded-md">
+                                  Type #{idx + 1}
+                                </span>
+                                {opt.name.trim() && (
+                                  <span className="text-xs font-bold text-gray-900 max-w-[180px] truncate">
+                                    {opt.name.trim()}
+                                  </span>
+                                )}
+                                {opt.isDefault && (
+                                  <span className="text-[10px] font-black uppercase tracking-wider text-emerald-800 bg-emerald-100/80 px-2 py-0.5 rounded-md border border-emerald-200">
+                                    Default Type
+                                  </span>
+                                )}
+                              </div>
+
+                              <div className="flex items-center gap-3">
+                                <label className="inline-flex cursor-pointer items-center gap-1.5 text-xs font-bold text-gray-600" title="Set as default type for this product">
+                                  <input
+                                    type="radio"
+                                    name="defaultProductTypeSelection"
+                                    checked={Boolean(opt.isDefault)}
+                                    onChange={() => handleSetDefaultType(idx)}
+                                    className="h-3.5 w-3.5 cursor-pointer accent-emerald-600"
+                                  />
+                                  <span>Default</span>
+                                </label>
+
+                                <select
+                                  value={opt.status || 'ACTIVE'}
+                                  onChange={(e) => handleUpdateTypeRow(idx, 'status', e.target.value)}
+                                  className="h-7 rounded-lg border border-gray-200 px-2 text-xs font-bold text-gray-700 outline-none focus:border-emerald-500 bg-gray-50/50 cursor-pointer"
+                                  title="Type Status"
+                                >
+                                  <option value="ACTIVE">Active</option>
+                                  <option value="INACTIVE">Inactive</option>
+                                </select>
+
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveTypeRow(idx)}
+                                  title="Remove this type"
+                                  aria-label="Remove this type"
+                                  className="rounded-lg p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 transition cursor-pointer"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Type Inputs: Name & Unit Price */}
+                            <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
+                              <div className="sm:col-span-7">
+                                <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">
+                                  Type Name *
+                                </label>
                                 <input
                                   type="text"
                                   value={opt.name}
                                   onChange={(e) => handleUpdateTypeRow(idx, 'name', e.target.value)}
-                                  placeholder="e.g. Online, In-Person, VIP"
-                                  className="h-9 w-full rounded-lg border border-gray-200 px-3 text-xs font-bold text-gray-900 outline-none focus:border-emerald-500 bg-white"
+                                  placeholder="e.g. Basic, Premium, Online, Offline"
+                                  className="h-10 w-full rounded-xl border border-gray-200 px-3 text-xs font-bold text-gray-900 outline-none focus:border-emerald-500 bg-white"
                                 />
-                              </td>
-                              <td className="px-3 py-2.5">
+                              </div>
+
+                              <div className="sm:col-span-5">
+                                <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">
+                                  Unit Price *
+                                </label>
                                 <div className="relative">
-                                  <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400">₹</span>
+                                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400">₹</span>
                                   <input
                                     type="number"
                                     min="0"
@@ -828,50 +880,92 @@ const ProductListPage: React.FC = () => {
                                     value={opt.unitPrice ?? ''}
                                     onChange={(e) => handleUpdateTypeRow(idx, 'unitPrice', e.target.value)}
                                     placeholder="0.00"
-                                    className="h-9 w-full rounded-lg border border-gray-200 pl-6 pr-2 text-xs font-black text-gray-900 outline-none focus:border-emerald-500 bg-white"
+                                    className="h-10 w-full rounded-xl border border-gray-200 pl-7 pr-3 text-xs font-black text-gray-900 outline-none focus:border-emerald-500 bg-white"
                                   />
                                 </div>
-                              </td>
-                              <td className="px-3 py-2.5">
-                                <select
-                                  value={opt.status || 'ACTIVE'}
-                                  onChange={(e) => handleUpdateTypeRow(idx, 'status', e.target.value)}
-                                  className="h-9 w-full rounded-lg border border-gray-200 px-2 text-xs font-bold text-gray-700 outline-none focus:border-emerald-500 bg-white"
-                                >
-                                  <option value="ACTIVE">Active</option>
-                                  <option value="INACTIVE">Inactive</option>
-                                </select>
-                              </td>
-                              <td className="px-3 py-2.5 text-center">
-                                <label className="inline-flex cursor-pointer items-center justify-center p-1" title="Mark as default type for this product">
-                                  <input
-                                    type="radio"
-                                    name="defaultProductTypeSelection"
-                                    checked={Boolean(opt.isDefault)}
-                                    onChange={() => handleSetDefaultType(idx)}
-                                    className="h-4 w-4 cursor-pointer accent-emerald-600"
-                                  />
-                                </label>
-                              </td>
-                              <td className="px-3 py-2.5 text-center">
+                              </div>
+                            </div>
+
+                            {/* Type-Specific Categories Sub-Section */}
+                            <div className="pt-2 border-t border-gray-100 space-y-2">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-[11px] font-black uppercase tracking-wider text-gray-600">
+                                    Categories
+                                  </span>
+                                  <span className="text-[10px] font-black text-emerald-800 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-100">
+                                    {optCats.length} added
+                                  </span>
+                                </div>
+                                <span className="text-[10px] text-gray-400 font-semibold">
+                                  Selectable when this type is chosen on leads
+                                </span>
+                              </div>
+
+                              {/* Add Category Input */}
+                              <div className="flex gap-2">
+                                <input
+                                  type="text"
+                                  value={typeInputVal}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    setTypeCategoryInputs((prev) => ({ ...prev, [typeKey]: val }));
+                                  }}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                      e.preventDefault();
+                                      handleAddCategoryToType(idx);
+                                    }
+                                  }}
+                                  placeholder={`Enter category for "${opt.name.trim() || `Type #${idx + 1}`}" and press enter...`}
+                                  className="h-9 flex-1 px-3 bg-white border border-gray-200 rounded-xl outline-none focus:border-emerald-500 text-xs font-semibold text-gray-900 transition-all shadow-2xs"
+                                />
                                 <button
                                   type="button"
-                                  onClick={() => handleRemoveTypeRow(idx)}
-                                  title="Remove Type"
-                                  className="rounded-lg p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 transition cursor-pointer"
+                                  onClick={() => handleAddCategoryToType(idx)}
+                                  disabled={!typeInputVal.trim()}
+                                  className="inline-flex items-center gap-1 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-xs font-black transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-2xs shrink-0 cursor-pointer"
                                 >
-                                  <Trash2 className="h-4 w-4" />
+                                  <Plus className="w-3.5 h-3.5" />
+                                  <span>Add</span>
                                 </button>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                              </div>
+
+                              {/* Category Chips for this Type */}
+                              {optCats.length > 0 ? (
+                                <div className="flex flex-wrap gap-1.5 pt-0.5">
+                                  {optCats.map((catVal, catIdx) => (
+                                    <span
+                                      key={catIdx}
+                                      className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50/80 border border-emerald-200 rounded-lg text-xs font-bold text-emerald-900 shadow-2xs"
+                                    >
+                                      <span>{catVal}</span>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleRemoveCategoryFromType(idx, catIdx)}
+                                        title={`Remove "${catVal}" from this type`}
+                                        aria-label={`Remove "${catVal}" from this type`}
+                                        className="p-0.5 text-emerald-600 hover:text-red-500 hover:bg-red-50 rounded transition-colors cursor-pointer"
+                                      >
+                                        <X className="w-3 h-3" />
+                                      </button>
+                                    </span>
+                                  ))}
+                                </div>
+                              ) : (
+                                <p className="text-[11px] font-medium text-gray-400 italic">
+                                  No categories for this type yet. Add categories above (e.g. Online, Offline, VIP).
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   ) : (
                     <div className="rounded-xl border border-dashed border-gray-200 p-4 text-center text-xs font-semibold text-gray-500 bg-white/70">
                       No types configured yet. This product will use the single Base Unit Price.
-                      Click &ldquo;+ Add Type&rdquo; below to set up type-based pricing.
+                      Click &ldquo;+ Add Type&rdquo; below to configure type-specific pricing and categories.
                     </div>
                   )}
 

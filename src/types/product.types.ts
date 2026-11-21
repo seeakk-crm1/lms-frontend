@@ -6,6 +6,7 @@ export interface ProductTypeOption {
   unitPrice: number | string;
   status?: ProductStatus;
   isDefault?: boolean;
+  categories?: string[];
 }
 
 export interface Product {

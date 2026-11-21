@@ -65,9 +65,9 @@ const fromSavedDynamicValues = (lead: LeadListItem): Record<string, string | str
     values[entry.fieldId] =
       entry.field?.inputType === 'CHECKBOX'
         ? entry.value
-            .split(',')
-            .map((item) => item.trim())
-            .filter(Boolean)
+          .split(',')
+          .map((item) => item.trim())
+          .filter(Boolean)
         : entry.value;
   }
   return values;
@@ -435,9 +435,9 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, sel
     queryClient.setQueriesData<ListLeadsResponse>({ queryKey: ['leads'] }, (previous) =>
       previous
         ? {
-            ...previous,
-            leads: previous.leads.map((item) => (item.id === nextLead.id ? { ...item, ...nextLead } : item)),
-          }
+          ...previous,
+          leads: previous.leads.map((item) => (item.id === nextLead.id ? { ...item, ...nextLead } : item)),
+        }
         : previous,
     );
     queryClient.invalidateQueries({ queryKey: ['lead', nextLead.id] });
@@ -792,7 +792,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, sel
     if (field === 'stageId') {
       const nextStage = stageOptions.find((item) => item.id === value);
       const prevStage = stageOptions.find((item) => item.id === formValues.stageId);
-      
+
       const isEnteringLob = !isLobStageOption(prevStage) && isLobStageOption(nextStage);
       if (isEnteringLob) {
         stageIdBeforeLobRef.current = formValues.stageId;
@@ -955,368 +955,368 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, sel
 
     try {
 
-    if (mode !== 'bulk-edit' && !formValues.name.trim()) {
-      toast.error('Lead name is required');
-      return;
-    }
+      if (mode !== 'bulk-edit' && !formValues.name.trim()) {
+        toast.error('Lead name is required');
+        return;
+      }
 
-    if (isEditingFromFollowup) {
-      console.log('[Frontend] Follow-up Validation Started', {
-        currentScheduledAt: currentFollowup?.scheduledAt || currentFollowup?.scheduledDate,
-        newNextFollowUpAt: formValues.nextFollowUpAt,
-        stageId: formValues.stageId,
-      });
+      if (isEditingFromFollowup) {
+        console.log('[Frontend] Follow-up Validation Started', {
+          currentScheduledAt: currentFollowup?.scheduledAt || currentFollowup?.scheduledDate,
+          newNextFollowUpAt: formValues.nextFollowUpAt,
+          stageId: formValues.stageId,
+        });
+
+        const selectedStage = stageOptions.find((item) => item.id === formValues.stageId);
+        const isLob = isLobStageOption(selectedStage) || Boolean(selectedStage?.isLOB) || Boolean((selectedStage as any)?.isLob);
+
+        if (isLob) {
+          console.log('[Frontend] LOB Detected', { stageId: formValues.stageId });
+          console.log('[Frontend] Follow-up Validation Passed');
+        } else {
+          const currentScheduledTime = currentFollowup?.scheduledAt || currentFollowup?.scheduledDate || currentFollowup?.nextFollowUpAt;
+          const newScheduledTime = formValues.nextFollowUpAt;
+
+          let isValidExtension = false;
+          if (newScheduledTime && currentScheduledTime) {
+            const currentTimeMs = new Date(currentScheduledTime).getTime();
+            const newTimeMs = new Date(newScheduledTime).getTime();
+            if (newTimeMs > currentTimeMs) {
+              isValidExtension = true;
+            }
+          } else if (newScheduledTime && !currentScheduledTime) {
+            isValidExtension = new Date(newScheduledTime).getTime() > Date.now();
+          }
+
+          if (!isValidExtension) {
+            console.log('[Frontend] Follow-up Validation Failed', {
+              currentScheduledTime,
+              newScheduledTime,
+            });
+            toast.error('Please extend the next follow-up before saving this lead.', { id: 'followup-extension-required' });
+            return;
+          }
+          console.log('[Frontend] Follow-up Validation Passed');
+        }
+      }
+
+      if (formValues.nextFollowUpAt) {
+        const nextDate = new Date(formValues.nextFollowUpAt);
+        if (nextDate.getTime() <= Date.now()) {
+          toast.error('Follow-up date must be in the future.');
+          return;
+        }
+
+        const proceed = await confirmIfWeeklyOff(formValues.nextFollowUpAt);
+        if (!proceed) return;
+      }
+
+      if (formValues.leadRemarks.length > 1000) {
+        toast.error('Remarks must be 1000 characters or fewer.');
+        return;
+      }
+
+      if (containsUnsafeMarkup(formValues.leadRemarks)) {
+        toast.error('Remarks cannot contain HTML or script content.');
+        return;
+      }
+
+      console.log('[Frontend] Lead Validation Passed');
 
       const selectedStage = stageOptions.find((item) => item.id === formValues.stageId);
-      const isLob = isLobStageOption(selectedStage) || Boolean(selectedStage?.isLOB) || Boolean((selectedStage as any)?.isLob);
 
-      if (isLob) {
-        console.log('[Frontend] LOB Detected', { stageId: formValues.stageId });
-        console.log('[Frontend] Follow-up Validation Passed');
-      } else {
-        const currentScheduledTime = currentFollowup?.scheduledAt || currentFollowup?.scheduledDate || currentFollowup?.nextFollowUpAt;
-        const newScheduledTime = formValues.nextFollowUpAt;
+      const prevStageId = mode === 'edit' ? lead?.stageId : null;
+      const prevStage = stageOptions.find((item) => item.id === prevStageId);
+      const prevStageIsLob = mode === 'edit' ? isLobStageOption(prevStage) : false;
+      const newStageIsLob = isLobStageOption(selectedStage);
+      const isNewLobTransition = prevStageId !== formValues.stageId && !prevStageIsLob && newStageIsLob;
 
-        let isValidExtension = false;
-        if (newScheduledTime && currentScheduledTime) {
-          const currentTimeMs = new Date(currentScheduledTime).getTime();
-          const newTimeMs = new Date(newScheduledTime).getTime();
-          if (newTimeMs > currentTimeMs) {
-            isValidExtension = true;
-          }
-        } else if (newScheduledTime && !currentScheduledTime) {
-          isValidExtension = new Date(newScheduledTime).getTime() > Date.now();
-        }
-
-        if (!isValidExtension) {
-          console.log('[Frontend] Follow-up Validation Failed', {
-            currentScheduledTime,
-            newScheduledTime,
-          });
-          toast.error('Please extend the next follow-up before saving this lead.', { id: 'followup-extension-required' });
-          return;
-        }
-        console.log('[Frontend] Follow-up Validation Passed');
-      }
-    }
-
-    if (formValues.nextFollowUpAt) {
-      const nextDate = new Date(formValues.nextFollowUpAt);
-      if (nextDate.getTime() <= Date.now()) {
-        toast.error('Follow-up date must be in the future.');
+      if (isNewLobTransition && !formValues.reasonId.trim()) {
+        setPendingStageId(formValues.stageId);
+        setLobModalOpen(true);
         return;
       }
 
-      const proceed = await confirmIfWeeklyOff(formValues.nextFollowUpAt);
-      if (!proceed) return;
-    }
-
-    if (formValues.leadRemarks.length > 1000) {
-      toast.error('Remarks must be 1000 characters or fewer.');
-      return;
-    }
-
-    if (containsUnsafeMarkup(formValues.leadRemarks)) {
-      toast.error('Remarks cannot contain HTML or script content.');
-      return;
-    }
-
-    console.log('[Frontend] Lead Validation Passed');
-
-    const selectedStage = stageOptions.find((item) => item.id === formValues.stageId);
-    
-    const prevStageId = mode === 'edit' ? lead?.stageId : null;
-    const prevStage = stageOptions.find((item) => item.id === prevStageId);
-    const prevStageIsLob = mode === 'edit' ? isLobStageOption(prevStage) : false;
-    const newStageIsLob = isLobStageOption(selectedStage);
-    const isNewLobTransition = prevStageId !== formValues.stageId && !prevStageIsLob && newStageIsLob;
-
-    if (isNewLobTransition && !formValues.reasonId.trim()) {
-      setPendingStageId(formValues.stageId);
-      setLobModalOpen(true);
-      return;
-    }
-
-    if (mode === 'create') {
-      const missingRequiredField = getMissingRequiredDynamicField(formValues.dynamicValues, meta?.dynamicFields || []);
-      if (missingRequiredField) {
-        toast.error(`${missingRequiredField.name} is required.`);
-        return;
-      }
-    }
-
-    const totalAmount = Number(formValues.totalAmount || 0);
-    const safeProducts = formValues.products
-      .filter((item) => item.productId && productOptions.some((product: any) => product.id === item.productId))
-      .map((item) => ({
-        productId: item.productId,
-        quantity: Math.max(1, Math.trunc(Number(item.quantity) || 1)),
-        type: item.type?.trim() || undefined,
-        category: item.category?.trim() || undefined,
-      }));
-
-    const normOriginal = normalizeAmount(originalTotalAmountRef.current ?? lead?.totalAmount);
-    const normSubmitted = normalizeAmount(formValues.totalAmount);
-
-    const isAmountChanged = mode === 'edit' && (
-      (normOriginal === null && normSubmitted !== null) ||
-      (normOriginal !== null && normSubmitted === null) ||
-      (normOriginal !== null && normSubmitted !== null && Math.abs(normOriginal - normSubmitted) > 0.01)
-    );
-
-    if (isAmountChanged && !totalAmountReason.trim()) {
-      setTotalAmountReasonModalOpen(true);
-      return;
-    }
-
-    const safeAdvances = localAdvances
-      .filter((adv) => Number(adv.amount) > 0 && adv.paymentDate)
-      .map((adv) => ({
-        amount: Number(adv.amount),
-        paymentDate: adv.paymentDate,
-        paymentMethod: adv.paymentMethod || 'OTHER',
-        referenceNumber: optionalTrimmed(adv.referenceNumber),
-        notes: optionalTrimmed(adv.notes),
-      }));
-
-    const payload = compactObject({
-      name: formValues.name.trim(),
-      email: optionalTrimmed(formValues.email),
-      phone: optionalTrimmed(formValues.phone),
-      companyName: optionalTrimmed(formValues.companyName),
-      address: optionalTrimmed(formValues.address),
-      assignedToId: canAssignOtherUsers
-        ? optionalTrimmed(formValues.assignedToId)
-        : currentUser?.id,
-      stageId: optionalTrimmed(formValues.stageId),
-      lifecycleId: optionalTrimmed(formValues.lifecycleId),
-      sourceId: optionalTrimmed(formValues.sourceId),
-      nextFollowUpAt: toIsoOrUndefined(formValues.nextFollowUpAt),
-      nextFollowUpType: formValues.nextFollowUpType,
-      followUpDescription: optionalTrimmed(formValues.followUpDescription),
-      reasonId: optionalTrimmed(formValues.reasonId),
-      remarks: optionalTrimmed(formValues.leadRemarks),
-      lobRemarks: optionalTrimmed(formValues.remarks),
-      totalAmount: Number.isFinite(totalAmount) ? totalAmount : 0,
-      totalAmountReason: optionalTrimmed(totalAmountReason),
-      reason: optionalTrimmed(totalAmountReason),
-      products: safeProducts,
-      ...(mode === 'create' ? { advancePayments: safeAdvances } : {}),
-    });
-
-    const targetStageId = formValues.stageId;
-    const selectedTargetStage = stageOptions.find((item) => item.id === targetStageId);
-    const isMovingOutOfLob = currentStageIsLob && Boolean(selectedTargetStage) && !isLobStageOption(selectedTargetStage);
-    const stageTransitionRemarks = isMovingOutOfLob
-      ? formValues.leadRemarks.trim()
-      : formValues.remarks.trim();
-    const dynamicPayload = buildDynamicPayload(formValues.dynamicValues, meta?.dynamicFields || [], mode === 'edit');
-    const stageChanged = mode === 'edit' && Boolean(targetStageId) && targetStageId !== currentStageId;
-    const shouldUseStageTransitionFlow = stageChanged && Boolean(currentStageId);
-    const payloadWithDynamicValues = compactObject({
-      ...payload,
-      dynamicValues: dynamicPayload,
-    });
-
-    try {
       if (mode === 'create') {
-        const response = await createMutation.mutateAsync({ payload: payloadWithDynamicValues });
-        const createdLeadId = response?.data?.id;
-        if (createdLeadId && profileImageFile && !profileImageStorageUnavailable) {
-          try {
-            const imageResponse = await uploadLeadProfileImage(createdLeadId, profileImageFile);
-            if (imageResponse?.data) patchLeadProfileImageCaches(imageResponse.data);
-            clearSelectedProfileImage();
-          } catch (error: any) {
-            if (!handleProfileImageStorageError(error)) {
-              toast.error(error?.response?.data?.message || 'Lead saved, but the profile image could not be uploaded.');
-            }
-          }
-        }
-        console.log('[Diagnostic] Lead created successfully');
-      } else if (mode === 'bulk-edit' && selectedLeadIds && selectedLeadIds.length > 0) {
-        const bulkPayload: Record<string, any> = {};
-        
-        // Only include fields that were actually changed
-        const fieldsMapping: Record<string, any> = {
-          name: formValues.name.trim(),
-          email: nullableTrimmed(formValues.email),
-          phone: nullableTrimmed(formValues.phone),
-          companyName: nullableTrimmed(formValues.companyName),
-          address: nullableTrimmed(formValues.address),
-          assignedToId: canAssignOtherUsers ? nullableTrimmed(formValues.assignedToId) : undefined,
-          stageId: formValues.stageId || null,
-          lifecycleId: formValues.lifecycleId || null,
-          sourceId: formValues.sourceId || null,
-          nextFollowUpAt: toIsoOrNull(formValues.nextFollowUpAt),
-          nextFollowUpType: formValues.nextFollowUpType,
-          reasonId: formValues.reasonId.trim() || null,
-          remarks: nullableTrimmed(formValues.leadRemarks),
-          lobRemarks: nullableTrimmed(formValues.remarks),
-          totalAmount: Number.isFinite(totalAmount) ? totalAmount : 0,
-          totalAmountReason: optionalTrimmed(totalAmountReason),
-          reason: optionalTrimmed(totalAmountReason),
-          products: safeProducts,
-        };
-
-        Object.keys(fieldsMapping).forEach(key => {
-          if (changedFields.has(key)) {
-            // Prevent clearing Lead Name in bulk edit
-            if (key === 'name' && !fieldsMapping[key]) {
-              return;
-            }
-            bulkPayload[key] = fieldsMapping[key];
-          }
-        });
-
-        // Add dynamic values
-        const dynamicValues: any[] = [];
-        dynamicPayload.forEach((dv: any) => {
-          if (changedFields.has(`dynamic_${dv.fieldId}`)) {
-            dynamicValues.push(dv);
-          }
-        });
-        
-        if (dynamicValues.length > 0) {
-          bulkPayload.dynamicValues = dynamicValues;
-        }
-
-        if (Object.keys(bulkPayload).length > 0) {
-          await bulkUpdateMutation.mutateAsync({
-            leadIds: selectedLeadIds,
-            updates: bulkPayload
-          });
-          onSuccess?.();
-          handleDrawerClose();
-        } else {
-          toast.error("No fields were modified.");
+        const missingRequiredField = getMissingRequiredDynamicField(formValues.dynamicValues, meta?.dynamicFields || []);
+        if (missingRequiredField) {
+          toast.error(`${missingRequiredField.name} is required.`);
           return;
         }
-      } else if (lead?.id) {
-        await updateMutation.mutateAsync({
-          id: lead.id,
-          payload: {
-            ...payloadWithDynamicValues,
+      }
+
+      const totalAmount = Number(formValues.totalAmount || 0);
+      const safeProducts = formValues.products
+        .filter((item) => item.productId && productOptions.some((product: any) => product.id === item.productId))
+        .map((item) => ({
+          productId: item.productId,
+          quantity: Math.max(1, Math.trunc(Number(item.quantity) || 1)),
+          type: item.type?.trim() || undefined,
+          category: item.category?.trim() || undefined,
+        }));
+
+      const normOriginal = normalizeAmount(originalTotalAmountRef.current ?? lead?.totalAmount);
+      const normSubmitted = normalizeAmount(formValues.totalAmount);
+
+      const isAmountChanged = mode === 'edit' && (
+        (normOriginal === null && normSubmitted !== null) ||
+        (normOriginal !== null && normSubmitted === null) ||
+        (normOriginal !== null && normSubmitted !== null && Math.abs(normOriginal - normSubmitted) > 0.01)
+      );
+
+      if (isAmountChanged && !totalAmountReason.trim()) {
+        setTotalAmountReasonModalOpen(true);
+        return;
+      }
+
+      const safeAdvances = localAdvances
+        .filter((adv) => Number(adv.amount) > 0 && adv.paymentDate)
+        .map((adv) => ({
+          amount: Number(adv.amount),
+          paymentDate: adv.paymentDate,
+          paymentMethod: adv.paymentMethod || 'OTHER',
+          referenceNumber: optionalTrimmed(adv.referenceNumber),
+          notes: optionalTrimmed(adv.notes),
+        }));
+
+      const payload = compactObject({
+        name: formValues.name.trim(),
+        email: optionalTrimmed(formValues.email),
+        phone: optionalTrimmed(formValues.phone),
+        companyName: optionalTrimmed(formValues.companyName),
+        address: optionalTrimmed(formValues.address),
+        assignedToId: canAssignOtherUsers
+          ? optionalTrimmed(formValues.assignedToId)
+          : currentUser?.id,
+        stageId: optionalTrimmed(formValues.stageId),
+        lifecycleId: optionalTrimmed(formValues.lifecycleId),
+        sourceId: optionalTrimmed(formValues.sourceId),
+        nextFollowUpAt: toIsoOrUndefined(formValues.nextFollowUpAt),
+        nextFollowUpType: formValues.nextFollowUpType,
+        followUpDescription: optionalTrimmed(formValues.followUpDescription),
+        reasonId: optionalTrimmed(formValues.reasonId),
+        remarks: optionalTrimmed(formValues.leadRemarks),
+        lobRemarks: optionalTrimmed(formValues.remarks),
+        totalAmount: Number.isFinite(totalAmount) ? totalAmount : 0,
+        totalAmountReason: optionalTrimmed(totalAmountReason),
+        reason: optionalTrimmed(totalAmountReason),
+        products: safeProducts,
+        ...(mode === 'create' ? { advancePayments: safeAdvances } : {}),
+      });
+
+      const targetStageId = formValues.stageId;
+      const selectedTargetStage = stageOptions.find((item) => item.id === targetStageId);
+      const isMovingOutOfLob = currentStageIsLob && Boolean(selectedTargetStage) && !isLobStageOption(selectedTargetStage);
+      const stageTransitionRemarks = isMovingOutOfLob
+        ? formValues.leadRemarks.trim()
+        : formValues.remarks.trim();
+      const dynamicPayload = buildDynamicPayload(formValues.dynamicValues, meta?.dynamicFields || [], mode === 'edit');
+      const stageChanged = mode === 'edit' && Boolean(targetStageId) && targetStageId !== currentStageId;
+      const shouldUseStageTransitionFlow = stageChanged && Boolean(currentStageId);
+      const payloadWithDynamicValues = compactObject({
+        ...payload,
+        dynamicValues: dynamicPayload,
+      });
+
+      try {
+        if (mode === 'create') {
+          const response = await createMutation.mutateAsync({ payload: payloadWithDynamicValues });
+          const createdLeadId = response?.data?.id;
+          if (createdLeadId && profileImageFile && !profileImageStorageUnavailable) {
+            try {
+              const imageResponse = await uploadLeadProfileImage(createdLeadId, profileImageFile);
+              if (imageResponse?.data) patchLeadProfileImageCaches(imageResponse.data);
+              clearSelectedProfileImage();
+            } catch (error: any) {
+              if (!handleProfileImageStorageError(error)) {
+                toast.error(error?.response?.data?.message || 'Lead saved, but the profile image could not be uploaded.');
+              }
+            }
+          }
+          console.log('[Diagnostic] Lead created successfully');
+        } else if (mode === 'bulk-edit' && selectedLeadIds && selectedLeadIds.length > 0) {
+          const bulkPayload: Record<string, any> = {};
+
+          // Only include fields that were actually changed
+          const fieldsMapping: Record<string, any> = {
+            name: formValues.name.trim(),
             email: nullableTrimmed(formValues.email),
             phone: nullableTrimmed(formValues.phone),
             companyName: nullableTrimmed(formValues.companyName),
             address: nullableTrimmed(formValues.address),
             assignedToId: canAssignOtherUsers ? nullableTrimmed(formValues.assignedToId) : undefined,
-            stageId: stageChanged ? (shouldUseStageTransitionFlow ? undefined : targetStageId || null) : undefined,
+            stageId: formValues.stageId || null,
             lifecycleId: formValues.lifecycleId || null,
             sourceId: formValues.sourceId || null,
             nextFollowUpAt: toIsoOrNull(formValues.nextFollowUpAt),
             nextFollowUpType: formValues.nextFollowUpType,
-            reasonId: stageChanged
-              ? (shouldUseStageTransitionFlow ? undefined : formValues.reasonId.trim() || null)
-              : (isLobStageOption(selectedTargetStage) || formValues.reasonId.trim() ? formValues.reasonId.trim() || null : undefined),
-            remarks:
-              isMovingOutOfLob && shouldUseStageTransitionFlow
-                ? undefined
-                : nullableTrimmed(formValues.leadRemarks),
-            lobRemarks: stageChanged
-              ? (shouldUseStageTransitionFlow ? undefined : nullableTrimmed(formValues.remarks))
-              : (isLobStageOption(selectedTargetStage) || formValues.remarks.trim() ? nullableTrimmed(formValues.remarks) : undefined),
-          },
-        });
+            reasonId: formValues.reasonId.trim() || null,
+            remarks: nullableTrimmed(formValues.leadRemarks),
+            lobRemarks: nullableTrimmed(formValues.remarks),
+            totalAmount: Number.isFinite(totalAmount) ? totalAmount : 0,
+            totalAmountReason: optionalTrimmed(totalAmountReason),
+            reason: optionalTrimmed(totalAmountReason),
+            products: safeProducts,
+          };
 
-        if (shouldUseStageTransitionFlow) {
-          try {
-            const rulesRes = (await getLeadTransitionStageRules(targetStageId)) as ListStageRulesResponse;
-            const transitionRules = rulesRes?.data || [];
-            if (transitionRules.length > 0 && stageRuleSubmitPayload.length === 0) {
-              revertFormBeforeRulesRef.current = {
-                stageId: currentStageId,
-                reasonId: formValues.reasonId,
-                remarks: formValues.remarks,
-              };
-              setPendingTransitionStageId(targetStageId);
-              setStageRulesForTransition(transitionRules);
-              setStageRulesModalOpen(true);
-              toast.error('Complete the stage information fields before saving.');
-              return;
+          Object.keys(fieldsMapping).forEach(key => {
+            if (changedFields.has(key)) {
+              // Prevent clearing Lead Name in bulk edit
+              if (key === 'name' && !fieldsMapping[key]) {
+                return;
+              }
+              bulkPayload[key] = fieldsMapping[key];
             }
-          } catch {
-            toast.error('Could not verify stage rules. Try again.');
+          });
+
+          // Add dynamic values
+          const dynamicValues: any[] = [];
+          dynamicPayload.forEach((dv: any) => {
+            if (changedFields.has(`dynamic_${dv.fieldId}`)) {
+              dynamicValues.push(dv);
+            }
+          });
+
+          if (dynamicValues.length > 0) {
+            bulkPayload.dynamicValues = dynamicValues;
+          }
+
+          if (Object.keys(bulkPayload).length > 0) {
+            await bulkUpdateMutation.mutateAsync({
+              leadIds: selectedLeadIds,
+              updates: bulkPayload
+            });
+            onSuccess?.();
+            handleDrawerClose();
+          } else {
+            toast.error("No fields were modified.");
             return;
           }
-
-          if (selectedTargetStage?.isApprovalRequired) {
-            console.log('[Frontend] Approval Required Enabled', { targetStageId });
-            console.log('[Frontend] Approval API Called', { targetStageId });
-          }
-
-          const stageChangeRes = await changeStageMutation.mutateAsync({
+        } else if (lead?.id) {
+          await updateMutation.mutateAsync({
             id: lead.id,
             payload: {
-              stageId: targetStageId,
-              reasonId: isMovingOutOfLob ? undefined : formValues.reasonId.trim() || undefined,
-              remarks: stageTransitionRemarks || undefined,
-              nextFollowUpAt: formValues.nextFollowUpAt
-                ? new Date(formValues.nextFollowUpAt).toISOString()
-                : undefined,
+              ...payloadWithDynamicValues,
+              email: nullableTrimmed(formValues.email),
+              phone: nullableTrimmed(formValues.phone),
+              companyName: nullableTrimmed(formValues.companyName),
+              address: nullableTrimmed(formValues.address),
+              assignedToId: canAssignOtherUsers ? nullableTrimmed(formValues.assignedToId) : undefined,
+              stageId: stageChanged ? (shouldUseStageTransitionFlow ? undefined : targetStageId || null) : undefined,
+              lifecycleId: formValues.lifecycleId || null,
+              sourceId: formValues.sourceId || null,
+              nextFollowUpAt: toIsoOrNull(formValues.nextFollowUpAt),
               nextFollowUpType: formValues.nextFollowUpType,
-              followUpDescription: formValues.followUpDescription.trim() || undefined,
-              stageRuleValues: stageRuleSubmitPayload.length ? stageRuleSubmitPayload : [],
+              reasonId: stageChanged
+                ? (shouldUseStageTransitionFlow ? undefined : formValues.reasonId.trim() || null)
+                : (isLobStageOption(selectedTargetStage) || formValues.reasonId.trim() ? formValues.reasonId.trim() || null : undefined),
+              remarks:
+                isMovingOutOfLob && shouldUseStageTransitionFlow
+                  ? undefined
+                  : nullableTrimmed(formValues.leadRemarks),
+              lobRemarks: stageChanged
+                ? (shouldUseStageTransitionFlow ? undefined : nullableTrimmed(formValues.remarks))
+                : (isLobStageOption(selectedTargetStage) || formValues.remarks.trim() ? nullableTrimmed(formValues.remarks) : undefined),
             },
           });
 
-          if ((stageChangeRes as any)?.approvalRequired) {
-            console.log('[Frontend] Approval Created', { approvalId: (stageChangeRes as any)?.approval?.id });
+          if (shouldUseStageTransitionFlow) {
+            try {
+              const rulesRes = (await getLeadTransitionStageRules(targetStageId)) as ListStageRulesResponse;
+              const transitionRules = rulesRes?.data || [];
+              if (transitionRules.length > 0 && stageRuleSubmitPayload.length === 0) {
+                revertFormBeforeRulesRef.current = {
+                  stageId: currentStageId,
+                  reasonId: formValues.reasonId,
+                  remarks: formValues.remarks,
+                };
+                setPendingTransitionStageId(targetStageId);
+                setStageRulesForTransition(transitionRules);
+                setStageRulesModalOpen(true);
+                toast.error('Complete the stage information fields before saving.');
+                return;
+              }
+            } catch {
+              toast.error('Could not verify stage rules. Try again.');
+              return;
+            }
+
+            if (selectedTargetStage?.isApprovalRequired) {
+              console.log('[Frontend] Approval Required Enabled', { targetStageId });
+              console.log('[Frontend] Approval API Called', { targetStageId });
+            }
+
+            const stageChangeRes = await changeStageMutation.mutateAsync({
+              id: lead.id,
+              payload: {
+                stageId: targetStageId,
+                reasonId: isMovingOutOfLob ? undefined : formValues.reasonId.trim() || undefined,
+                remarks: stageTransitionRemarks || undefined,
+                nextFollowUpAt: formValues.nextFollowUpAt
+                  ? new Date(formValues.nextFollowUpAt).toISOString()
+                  : undefined,
+                nextFollowUpType: formValues.nextFollowUpType,
+                followUpDescription: formValues.followUpDescription.trim() || undefined,
+                stageRuleValues: stageRuleSubmitPayload.length ? stageRuleSubmitPayload : [],
+              },
+            });
+
+            if ((stageChangeRes as any)?.approvalRequired) {
+              console.log('[Frontend] Approval Created', { approvalId: (stageChangeRes as any)?.approval?.id });
+            }
           }
+
+          console.log('[Frontend] Lead Update Success', { id: lead.id });
+          console.log('[Frontend] Refreshing Follow-up Cache');
+          console.log('[Frontend] Refreshing Dashboard');
+
+          await Promise.all([
+            queryClient.invalidateQueries({ queryKey: ['lead', lead.id] }),
+            queryClient.invalidateQueries({ queryKey: ['lead-remarks', lead.id] }),
+            queryClient.invalidateQueries({ queryKey: ['leads'] }),
+            queryClient.invalidateQueries({ queryKey: ['followups'] }),
+            queryClient.invalidateQueries({ queryKey: OVERDUE_MANDATORY_QUERY_KEY }),
+            queryClient.invalidateQueries({ queryKey: MANDATORY_FOLLOWUP_QUERY_KEY }),
+            queryClient.invalidateQueries({ queryKey: ['dashboard'] }),
+          ]);
+
+          console.log('[Frontend] Checking Overdue');
+          const overdueQueryData = queryClient.getQueryData<any>(OVERDUE_MANDATORY_QUERY_KEY);
+          const remainingCount = overdueQueryData?.data?.items?.length ?? 0;
+          console.log('[Frontend] Overdue Result', { remainingOverdueCount: remainingCount });
         }
 
-        console.log('[Frontend] Lead Update Success', { id: lead.id });
-        console.log('[Frontend] Refreshing Follow-up Cache');
-        console.log('[Frontend] Refreshing Dashboard');
+        originalTotalAmountRef.current = normSubmitted;
+        setTotalAmountReason('');
 
-        await Promise.all([
-          queryClient.invalidateQueries({ queryKey: ['lead', lead.id] }),
-          queryClient.invalidateQueries({ queryKey: ['lead-remarks', lead.id] }),
-          queryClient.invalidateQueries({ queryKey: ['leads'] }),
-          queryClient.invalidateQueries({ queryKey: ['followups'] }),
-          queryClient.invalidateQueries({ queryKey: OVERDUE_MANDATORY_QUERY_KEY }),
-          queryClient.invalidateQueries({ queryKey: MANDATORY_FOLLOWUP_QUERY_KEY }),
-          queryClient.invalidateQueries({ queryKey: ['dashboard'] }),
-        ]);
+        console.log('[Frontend] Lead Save Completed', { mode, leadId: lead?.id });
 
-        console.log('[Frontend] Checking Overdue');
-        const overdueQueryData = queryClient.getQueryData<any>(OVERDUE_MANDATORY_QUERY_KEY);
-        const remainingCount = overdueQueryData?.data?.items?.length ?? 0;
-        console.log('[Frontend] Overdue Result', { remainingOverdueCount: remainingCount });
-      }
-
-      originalTotalAmountRef.current = normSubmitted;
-      setTotalAmountReason('');
-
-      console.log('[Frontend] Lead Save Completed', { mode, leadId: lead?.id });
-
-      if (isEditingFromFollowup) {
-        handleLeadSaveSuccess();
-      } else {
-        onClose();
-      }
-      console.log('[Frontend] Popup Closed');
-    } catch (error: any) {
-      const status = error?.response?.status;
-      const responseErrors = error?.response?.data?.errors;
-      if (status === 422) {
-        if (responseErrors) {
-          const nextErrors = buildValidationMap(responseErrors);
-          setValidationErrors(nextErrors);
-          const firstMessage = Object.values(nextErrors)[0];
-          if (firstMessage) {
-            toast.error(firstMessage);
-          }
-        } else if (error?.response?.data?.message) {
-          toast.error(error.response.data.message);
+        if (isEditingFromFollowup) {
+          handleLeadSaveSuccess();
         } else {
-          toast.error('Validation failed.');
+          onClose();
         }
-      } else {
-        toast.error(error?.response?.data?.message || 'Could not save lead.');
+        console.log('[Frontend] Popup Closed');
+      } catch (error: any) {
+        const status = error?.response?.status;
+        const responseErrors = error?.response?.data?.errors;
+        if (status === 422) {
+          if (responseErrors) {
+            const nextErrors = buildValidationMap(responseErrors);
+            setValidationErrors(nextErrors);
+            const firstMessage = Object.values(nextErrors)[0];
+            if (firstMessage) {
+              toast.error(firstMessage);
+            }
+          } else if (error?.response?.data?.message) {
+            toast.error(error.response.data.message);
+          } else {
+            toast.error('Validation failed.');
+          }
+        } else {
+          toast.error(error?.response?.data?.message || 'Could not save lead.');
+        }
       }
-    }
     } finally {
       isSubmittingRef.current = false;
     }
@@ -1354,7 +1354,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, sel
                       {mode === 'create' ? 'Add a new pipeline opportunity' : mode === 'bulk-edit' ? `Bulk Update ${selectedLeadIds?.length || 0} Leads` : `Update ${lead?.name || 'lead'}`}
                     </h2>
                     <p className="mt-1 max-w-xl text-sm font-semibold text-gray-500">
-                      {mode === 'bulk-edit' 
+                      {mode === 'bulk-edit'
                         ? 'Fields modified here will be updated across all selected leads. Unchanged fields will be ignored.'
                         : 'Capture general lead details, follow-up cadence, and any active advanced fields defined by the workspace.'}
                     </p>
@@ -1467,10 +1467,10 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, sel
                                 audit={
                                   lead?.id
                                     ? {
-                                        entityType: 'Lead',
-                                        entityId: lead.id,
-                                        entityName: formValues.name || lead.name,
-                                      }
+                                      entityType: 'Lead',
+                                      entityId: lead.id,
+                                      entityName: formValues.name || lead.name,
+                                    }
                                     : undefined
                                 }
                               />
@@ -1488,7 +1488,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, sel
                           <div className="mb-2 flex items-center justify-between">
                             <FieldLabel fieldKey="email" label="Email" className="block text-sm font-black text-gray-900" />
                             {formValues.email && (
-                              <a 
+                              <a
                                 href={`mailto:${formValues.email}`}
                                 className="text-[10px] font-bold text-emerald-600 hover:underline"
                               >
@@ -1543,10 +1543,10 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, sel
                           ) : (
                             <div className={`${inputClassName} flex min-h-[50px] items-center`}>
                               {hydratedLead?.assignedTo?.displayName ||
-                               hydratedLead?.assignedTo?.name ||
-                               (mode === 'create'
-                                 ? currentUser?.name || currentUser?.email || 'You'
-                                 : 'Unassigned')}
+                                hydratedLead?.assignedTo?.name ||
+                                (mode === 'create'
+                                  ? currentUser?.name || currentUser?.email || 'You'
+                                  : 'Unassigned')}
                             </div>
                           )}
                           <ErrorText field="assignedToId" />
@@ -1798,8 +1798,8 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, sel
                               Array.isArray(selectedProduct?.categories) && selectedProduct.categories.length > 0
                                 ? selectedProduct.categories
                                 : selectedProduct?.category
-                                ? [selectedProduct.category]
-                                : [];
+                                  ? [selectedProduct.category]
+                                  : [];
 
                             const availableTypes =
                               item.type && !configuredTypeNames.includes(item.type)
@@ -1848,8 +1848,8 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, sel
                                         {!selectedProduct
                                           ? 'Select product'
                                           : availableTypes.length === 0
-                                          ? 'No types'
-                                          : 'Select type'}
+                                            ? 'No types'
+                                            : 'Select type'}
                                       </option>
                                       {availableTypes.map((tName) => {
                                         const matchedOpt = configuredTypeOptions.find((o: any) => o.name === tName);
@@ -1876,8 +1876,8 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, sel
                                         {!selectedProduct
                                           ? 'Select product'
                                           : availableCategories.length === 0
-                                          ? 'No categories'
-                                          : 'Select category'}
+                                            ? 'No categories'
+                                            : 'Select category'}
                                       </option>
                                       {availableCategories.map((c) => (
                                         <option key={c} value={c}>
@@ -1969,11 +1969,10 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, sel
                             placeholder="0.00"
                             value={formValues.totalAmount || ''}
                             onChange={(e) => handleFieldChange('totalAmount', e.target.value)}
-                            className={`${inputClassName} ${
-                              mode === 'edit' && paymentData && Number(formValues.totalAmount) !== Number(paymentData.totalAmount)
-                                ? 'text-red-600 font-bold border-red-300 focus:border-red-500 focus:ring-red-500/10'
-                                : ''
-                            }`}
+                            className={`${inputClassName} ${mode === 'edit' && paymentData && Number(formValues.totalAmount) !== Number(paymentData.totalAmount)
+                              ? 'text-red-600 font-bold border-red-300 focus:border-red-500 focus:ring-red-500/10'
+                              : ''
+                              }`}
                           />
                           <ErrorText field="totalAmount" />
                           {formValues.products.length > 0 && (() => {
@@ -2075,13 +2074,12 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, sel
                                   <div className="space-y-1">
                                     <div className="flex items-center gap-2">
                                       <span className="text-sm font-black text-gray-900">{adv.amount.toFixed(2)}</span>
-                                      <span className={`px-2 py-0.5 rounded-lg border text-[10px] font-bold ${
-                                        adv.status === 'APPROVED'
-                                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                          : adv.status === 'REJECTED' || adv.status === 'DENIED'
-                                            ? 'bg-rose-50 text-rose-700 border-rose-200'
-                                            : 'bg-amber-50 text-amber-700 border-amber-200'
-                                      }`}>
+                                      <span className={`px-2 py-0.5 rounded-lg border text-[10px] font-bold ${adv.status === 'APPROVED'
+                                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                        : adv.status === 'REJECTED' || adv.status === 'DENIED'
+                                          ? 'bg-rose-50 text-rose-700 border-rose-200'
+                                          : 'bg-amber-50 text-amber-700 border-amber-200'
+                                        }`}>
                                         {adv.status}
                                       </span>
                                     </div>
@@ -2333,7 +2331,7 @@ const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({ isOpen, mode, lead, sel
                     setTotalAmountReasonModalOpen(false);
                     console.log('[Diagnostic] Popup Closed', { popup: 'TotalAmountReasonModal' });
                     setTimeout(() => {
-                      handleSubmit({ preventDefault: () => {} } as any);
+                      handleSubmit({ preventDefault: () => { } } as any);
                     }, 0);
                   }}
                   className="rounded-2xl bg-emerald-500 px-5 py-2.5 text-sm font-black text-white hover:bg-emerald-600 shadow-lg shadow-emerald-500/20 disabled:opacity-50"
