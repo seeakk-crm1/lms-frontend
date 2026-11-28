@@ -98,6 +98,11 @@ export const getMetaFormFields = async (pageConnectionId: string, metaFormId: st
   return response.data.data;
 };
 
+export const subscribeMetaPage = async (pageConnectionId: string): Promise<any> => {
+  const response = await api.post(`/integrations/meta/pages/${pageConnectionId}/subscribe`);
+  return response.data;
+};
+
 export const getSeeakkLeadFields = async (): Promise<any[]> => {
   const response = await api.get('/integrations/meta/seeakk-lead-fields');
   return response.data.data;

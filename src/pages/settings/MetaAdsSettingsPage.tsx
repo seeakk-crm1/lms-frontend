@@ -29,6 +29,7 @@ import {
   getMetaPagesForConnection,
   getMetaPageForms,
   getMetaFormFields,
+  subscribeMetaPage,
   getSeeakkLeadFields,
   getMetaAutomations,
   createMetaAutomation,
@@ -102,6 +103,7 @@ const MetaAdsSettingsPage: React.FC = () => {
   const [availableMetaFields, setAvailableMetaFields] = useState<Array<{ key: string; label: string; type: string }>>([]);
   const [fetchingForms, setFetchingForms] = useState(false);
   const [fetchingFields, setFetchingFields] = useState(false);
+  const [subscribingPageId, setSubscribingPageId] = useState<string | null>(null);
 
   // Automation Mapping & Setup State
   const [formEnabled, setFormEnabled] = useState(true);
@@ -453,6 +455,23 @@ const MetaAdsSettingsPage: React.FC = () => {
     }
   };
 
+  const handleSubscribePage = async (pageId: string) => {
+    setSubscribingPageId(pageId);
+    try {
+      const res = await subscribeMetaPage(pageId);
+      if (res.data?.subscribed) {
+        setMessage({ text: 'Facebook Page successfully subscribed to Meta Leadgen webhook.', type: 'success' });
+      } else {
+        setMessage({ text: res.data?.message || 'Webhook subscription failed. Check Meta Page permissions.', type: 'error' });
+      }
+      await loadData();
+    } catch (err: any) {
+      setMessage({ text: err.response?.data?.error?.message || err.message || 'Failed to subscribe page.', type: 'error' });
+    } finally {
+      setSubscribingPageId(null);
+    }
+  };
+
   const handleAddMappingRow = () => {
     const defaultMetaField = availableMetaFields[0]?.key || 'full_name';
     setFieldMappings([
@@ -778,10 +797,34 @@ const MetaAdsSettingsPage: React.FC = () => {
                               <div>
                                 <span className="font-bold text-xs text-slate-800 block">{page.pageName}</span>
                                 <span className="text-[10px] text-slate-400">Page ID: {page.metaPageId}</span>
+                                <div className="mt-1 flex items-center gap-1.5">
+                                  {page.subscribedToLeadgen ? (
+                                    <span className="inline-flex items-center gap-1 text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded font-medium">
+                                      <CheckCircle2 size={10} /> Webhook Subscribed
+                                    </span>
+                                  ) : (
+                                    <span className="inline-flex items-center gap-1 text-[10px] text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded font-medium">
+                                      <AlertCircle size={10} /> Webhook Not Subscribed
+                                    </span>
+                                  )}
+                                </div>
                               </div>
-                              <span className="text-[10px] px-2 py-0.5 rounded-md font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                {page.status}
-                              </span>
+                              <div className="flex items-center gap-2">
+                                {!page.subscribedToLeadgen && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleSubscribePage(page.id)}
+                                    disabled={subscribingPageId === page.id}
+                                    className="text-[11px] font-bold px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                                  >
+                                    <Zap size={11} className={subscribingPageId === page.id ? 'animate-spin' : ''} />
+                                    {subscribingPageId === page.id ? 'Subscribing...' : 'Subscribe Webhook'}
+                                  </button>
+                                )}
+                                <span className="text-[10px] px-2 py-0.5 rounded-md font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                  {page.status}
+                                </span>
+                              </div>
                             </div>
                           ))}
                         </div>
@@ -825,6 +868,8 @@ const MetaAdsSettingsPage: React.FC = () => {
                                   ? 'bg-emerald-100 text-emerald-800'
                                   : log.status === 'PROCESSING'
                                   ? 'bg-blue-100 text-blue-800'
+                                  : log.status === 'DUPLICATE'
+                                  ? 'bg-purple-100 text-purple-800'
                                   : 'bg-rose-100 text-rose-800'
                               }`}
                             >
@@ -834,7 +879,7 @@ const MetaAdsSettingsPage: React.FC = () => {
                           <td className="p-3 font-medium text-slate-900">{log.lead?.name || '—'}</td>
                           <td className="p-3 text-slate-600">{log.lead?.stage?.name || '—'}</td>
                           <td className="p-3">
-                            {log.status !== 'IMPORTED' && (
+                            {log.status !== 'IMPORTED' && log.status !== 'DUPLICATE' && (
                               <button
                                 type="button"
                                 onClick={() => handleRetryImport(log.id)}
